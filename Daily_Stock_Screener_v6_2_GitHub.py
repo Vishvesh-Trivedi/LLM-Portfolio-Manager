@@ -1395,7 +1395,10 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
 
     sectors_in_pool  = list(set([c['sector'] for c in candidates if c['sector'] != 'Unknown']))
     macro_text       = '\n'.join(headlines[:20])
-    sector_text      = '\n'.join([f'[{sec}] {" | ".join(n[:3])}' for sec, n in sector_news.items() if sec in sectors_in_pool]) or 'No sector news'
+    sector_text      = '\n'.join([
+        f'[{sec}] {v["sentiment"]} avg_news={v["avg_news"]} mom={v["avg_mom"]:+.2f}% tickers={",".join(v["tickers"][:3])}'
+        for sec, v in sector_news.items() if sec in sectors_in_pool
+    ]) or 'No sector news'
     stock_news_pool  = {c['ticker']: all_stock_news.get(c['ticker'], []) for c in candidates}
     stock_text       = '\n'.join([f'{t}: {h[0]}' for t, h in stock_news_pool.items() if h]) or 'No individual stock news'
 
@@ -1440,7 +1443,8 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
                 part = part.strip()
                 if part.startswith('json'): part = part[4:].strip()
                 if part.startswith('{'): raw = part; break
-        if '{' in raw: raw = raw[raw.index('{'):]
+        if '{' in raw and '}' in raw:
+            raw = raw[raw.index('{'):raw.rindex('}')+1]
         nd = json.loads(raw)
         print(f'  Sentiment: {nd.get("market_sentiment","?")} | Adj: {int(nd.get("overall_market_adjustment",0)):+d}')
         return nd
@@ -1532,8 +1536,8 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
 
 
 def batch_catalyst_score(candidates, ctx, all_stock_news):
-    """LLM scores every candidate's short-term catalyst quality. 10 stocks per call."""
-    BATCH = 10
+    """LLM scores every candidate's short-term catalyst quality. 8 stocks per call."""
+    BATCH = 8
     batches = [candidates[i:i+BATCH] for i in range(0, len(candidates), BATCH)]
     n_calls = len(batches)
     print(f'  Catalyst scoring: {len(candidates)} stocks → {n_calls} LLM calls...')
@@ -1562,8 +1566,9 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
             f'"auto_drop":false,"reason":"..."}}]}}'
         )
         try:
-            raw = call_llm(sys_msg, user_msg, max_tokens=600)
-            if '{' in raw: raw = raw[raw.index('{'):]
+            raw = call_llm(sys_msg, user_msg, max_tokens=900)
+            if '{' in raw and '}' in raw:
+                raw = raw[raw.index('{'):raw.rindex('}')+1]
             for r in json.loads(raw).get('ratings', []):
                 t = r.get('ticker', '')
                 match = next((c for c in candidates if c['ticker'] == t), None)
@@ -1623,7 +1628,8 @@ def analyze_exit_signals(ctx, all_stock_news):
             )
             try:
                 raw = call_llm(sys_msg, user_msg, max_tokens=250)
-                if '{' in raw: raw = raw[raw.index('{'):]
+                if '{' in raw and '}' in raw:
+                    raw = raw[raw.index('{'):raw.rindex('}')+1]
                 rec = json.loads(raw)
                 action = rec.get('action', 'HOLD')
                 urgency = rec.get('urgency', 'LOW')
