@@ -242,33 +242,29 @@ NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct'   # ← change this line to switch model
 
 
-def call_llm(system, user, max_tokens=2000):
-    """Call NVIDIA NIM via requests (avoids openai SDK SSL issues in Colab).
-    Handles DeepSeek R1 <think> blocks automatically."""
-    _is_deepseek_r1 = 'deepseek-r1' in NVIDIA_MODEL.lower()
-    _max_tokens = max_tokens + 2000 if _is_deepseek_r1 else max_tokens
+_LLM_CALL_COUNT = [0]
+_LLM_LAST_CALL  = [0.0]
+_LLM_MIN_GAP    = 1.6   # 40/min = 1 call per 1.5s, +0.1s buffer
 
-    headers = {
-        "Authorization": f"Bearer {NVIDIA_API_KEY}",
-        "Content-Type": "application/json"
-    }
+def call_llm(system, user, max_tokens=2000):
+    """Call NVIDIA NIM. Built-in rate limiter (40/min). Strips DeepSeek <think> blocks."""
+    gap = time.time() - _LLM_LAST_CALL[0]
+    if gap < _LLM_MIN_GAP:
+        time.sleep(_LLM_MIN_GAP - gap)
+    _LLM_LAST_CALL[0] = time.time()
+    _LLM_CALL_COUNT[0] += 1
+
+    _is_r1 = 'deepseek-r1' in NVIDIA_MODEL.lower()
+    headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
     payload = {
         "model": NVIDIA_MODEL,
-        "max_tokens": _max_tokens,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user",   "content": user}
-        ]
+        "max_tokens": max_tokens + (2000 if _is_r1 else 0),
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]
     }
-
     for attempt in range(3):
         try:
-            resp = requests.post(
-                "https://integrate.api.nvidia.com/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
+            resp = requests.post("https://integrate.api.nvidia.com/v1/chat/completions",
+                                 headers=headers, json=payload, timeout=120)
             resp.raise_for_status()
             raw = resp.json()['choices'][0]['message']['content'].strip()
             if '</think>' in raw:
@@ -1535,8 +1531,117 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
     return b_cands
 
 
+def batch_catalyst_score(candidates, ctx, all_stock_news):
+    """LLM scores every candidate's short-term catalyst quality. 10 stocks per call."""
+    BATCH = 10
+    batches = [candidates[i:i+BATCH] for i in range(0, len(candidates), BATCH)]
+    n_calls = len(batches)
+    print(f'  Catalyst scoring: {len(candidates)} stocks → {n_calls} LLM calls...')
+    sys_msg = ('You are a short-to-medium term equity trader (1-4 week holds). '
+               'Rate each stock purely on near-term tradability. Respond ONLY with valid JSON.')
+    for bi, batch in enumerate(batches):
+        lines = []
+        for c in batch:
+            news = ' | '.join((all_stock_news.get(c['ticker'], []))[:3]) or 'No news'
+            lines.append(
+                f'{c["ticker"]} [{c["sector"]}] RSI={c["rsi"]:.0f} ADX={c["adx"]:.0f} '
+                f'mom5d={c["momentum_5d"]:+.1f}% tech={c.get("tech_score",0)} '
+                f'earnings_in={c.get("earnings_days_away","?")}d '
+                f'news="{news}"'
+            )
+        user_msg = (
+            f'Market: VIX={ctx["vix_level"]:.1f} ({ctx["vix_regime"][:10]}) | '
+            f'QQQ={ctx["qqq_trend"]} | SPY={ctx["spy_return_today"]:+.2f}%\n\n'
+            f'Rate each for SHORT-TERM trading (1-4 weeks):\n' + '\n'.join(lines) + '\n\n'
+            f'For each:\n'
+            f'- catalyst_score: 1-10 (10=strong specific near-term catalyst, 1=no reason to buy now)\n'
+            f'- catalyst_type: EARNINGS_CATALYST|UPGRADE|BREAKOUT|SECTOR_ROTATION|MOMENTUM|NEWS_HYPE|NONE\n'
+            f'- auto_drop: true if news is clearly negative or there is zero short-term reason to buy\n'
+            f'- reason: one sentence — the specific 1-4 week thesis or why dropping\n\n'
+            f'Return ONLY: {{"ratings":[{{"ticker":"X","catalyst_score":7,"catalyst_type":"BREAKOUT",'
+            f'"auto_drop":false,"reason":"..."}}]}}'
+        )
+        try:
+            raw = call_llm(sys_msg, user_msg, max_tokens=600)
+            if '{' in raw: raw = raw[raw.index('{'):]
+            for r in json.loads(raw).get('ratings', []):
+                t = r.get('ticker', '')
+                match = next((c for c in candidates if c['ticker'] == t), None)
+                if match:
+                    match['catalyst_score']  = r.get('catalyst_score', 5)
+                    match['catalyst_type']   = r.get('catalyst_type', 'NONE')
+                    match['short_term_reason'] = r.get('reason', '')
+                    if r.get('auto_drop'):
+                        match['auto_drop'] = True
+                        match['news_notes'] = f'AUTO DROP: {r.get("reason","no short-term catalyst")}'
+            print(f'    Batch {bi+1}/{n_calls} ✓')
+        except Exception as e:
+            print(f'    Batch {bi+1}/{n_calls} failed: {e}')
+    dropped = sum(1 for c in candidates if c.get('auto_drop'))
+    print(f'  Catalyst scoring done — {dropped} auto-dropped, {len(candidates)-dropped} remain')
+    return candidates
+
+
+def analyze_exit_signals(ctx, all_stock_news):
+    """Check every pending pick — LLM says HOLD / EXIT / ADD for each."""
+    for fp, label in [(PICKS_CSV, 'BUY'), (WATCH_CSV, 'WATCH')]:
+        if not os.path.exists(fp): continue
+        df = pd.read_csv(fp)
+        pending = df[df['Result'] == 'Pending']
+        if pending.empty: continue
+        print(f'  Exit check: {len(pending)} pending {label} picks...')
+        for _, row in pending.iterrows():
+            ticker = str(row.get('Ticker', '')).strip()
+            if not ticker or ticker in ('', 'nan', 'NONE'): continue
+            entry_str = str(row.get('Entry_Price', 'N/A')).strip()
+            pick_date = str(row.get('Date', '')).strip()
+            try:
+                days_in = (datetime.now() - datetime.strptime(pick_date, '%Y-%m-%d')).days
+            except: days_in = 0
+            try:
+                curr = round(float(yf.Ticker(ticker).history(period='2d')['Close'].iloc[-1]), 2)
+                entry = float(entry_str)
+                unreal = round((curr - entry) / entry * 100, 1)
+                price_line = f'Entry=${entry} Current=${curr} Unrealized={unreal:+.1f}%'
+            except:
+                price_line = f'Entry={entry_str} (current price unavailable)'
+                unreal = None
+            news = ' | '.join((all_stock_news or {}).get(ticker, [])[:3]) or 'No fresh news'
+            sys_msg = 'You are managing an open short-to-medium term position (1-4 week horizon). Respond ONLY with valid JSON.'
+            user_msg = (
+                f'OPEN {label}: {ticker} | {price_line} | Days held: {days_in}/30\n'
+                f'Original thesis: {str(row.get("Reasoning",""))[:120]}\n'
+                f'Stop zone: {row.get("Stop_Zone","N/A")} | Target: {row.get("Target_Zone","N/A")}\n'
+                f'Today\'s news: {news}\n'
+                f'Market: VIX={ctx["vix_level"]:.1f} | QQQ={ctx["qqq_trend"]}\n\n'
+                f'Decision for a 1-4 week trade:\n'
+                f'- action: EXIT (take profit or cut loss now) | HOLD | ADD (strong setup, consider adding)\n'
+                f'- urgency: HIGH | MEDIUM | LOW\n'
+                f'- reason: one sentence\n'
+                f'- exit_price: suggested exit price or null\n\n'
+                f'Return ONLY: {{"ticker":"{ticker}","action":"HOLD","urgency":"LOW","reason":"...","exit_price":null}}'
+            )
+            try:
+                raw = call_llm(sys_msg, user_msg, max_tokens=250)
+                if '{' in raw: raw = raw[raw.index('{'):]
+                rec = json.loads(raw)
+                action = rec.get('action', 'HOLD')
+                urgency = rec.get('urgency', 'LOW')
+                reason = rec.get('reason', '')
+                unreal_str = f'{unreal:+.1f}%' if unreal is not None else '?'
+                if action == 'EXIT':
+                    icon = '🚨'
+                elif action == 'ADD' and urgency == 'HIGH':
+                    icon = '📈'
+                else:
+                    icon = '⏳'
+                print(f'  {icon} {action} [{urgency}] {ticker} ({unreal_str} in {days_in}d): {reason}')
+            except Exception as e:
+                print(f'  {ticker}: exit check failed ({e})')
+
+
 def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
-    """Final scoring with pre_score awareness + self-calibration from past performance."""
+    """3-round LLM deliberation: rank → deep-dive → final pick. No 1-shot guessing."""
     if not candidates: return None
     print(f'\nPhase 6 - NVIDIA final scoring ({len(candidates)} candidates)...')
 
@@ -1660,74 +1765,164 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
     priority_present = [c['ticker'] for c in candidates if c['ticker'].upper() in my_set]
     priority_note = f'\nUSER PRIORITY STOCKS (always evaluate these, even if scores are modest): {priority_present}\n' if priority_present else ''
 
-    system = ('You are a short-to-medium term equity trader (1-4 week holding period). '
-              'You are NOT a long-term investor. You care about momentum, catalysts, and near-term price action. '
-              'Analyst 12-month price targets are a weak signal for you — near-term momentum and news catalysts matter more. '
-              'Earnings within 2 weeks = elevated risk. Earnings within 5 days = near-disqualifier unless the setup is exceptional. '
-              'You learn from every trade: derive your own rules from your history before scoring — no hardcoded rules. '
-              'Respond with ONLY a valid JSON object. Start with { end with }. Nothing else.')
-    user = (
-        f'MARKET REGIME:\nVIX={ctx["vix_level"]} (p{ctx["vix_percentile"]}) {ctx["vix_regime"]} | '
-        f'mult={mult}x | QQQ={ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.2f}% | SPY today={ctx["spy_return_today"]:+.2f}% | Defensive={"YES" if ctx["defensive_mode"] else "NO"}\n\n'
-        f'MACRO CONTEXT:\n{nd.get("macro_summary","N/A")}\nSentiment: {nd.get("market_sentiment","NEUTRAL")} | Adj: {int(nd.get("overall_market_adjustment",0)):+d}\n'
-        f'FED: {nd.get("fed_signal",{}).get("detail","none")}\nTRUMP: {nd.get("trump_signal",{}).get("detail","none")}\n'
-        f'DATA: {nd.get("macro_data_signal",{}).get("detail","none")}\nGEO: {nd.get("geopolitical_signal",{}).get("detail","none")}'
-        f'{src_note}{hard_note}{priority_note}{hist_block}\n\n'
-        f'CANDIDATES (with pre-computed scores):\n{json.dumps(compact, indent=2)}\n\n'
-        f'YOUR JOB: Review pre_score as grounded baseline. Apply qualitative adjustments Claude formulas cannot capture. Add news_adjustment. Apply VIX multiplier {mult}x. Clamp 0-100.\n\n'
-        f'Return ONLY this JSON:\n'
-        f'{{"derived_rules":["Rule 1 (n=12, wr=75%, HIGH confidence): <pattern + why it matters>","Rule 2 (n=3, wr=66%, LOW confidence): ..."],'
-        f'"learning_summary":"One sentence: what changed vs prior runs and why — cite regime and sample sizes.",'
-        f'"top_pick":{{"ticker":"X","confidence":85,"signal":"BUY","tech_score":48,"news_score":32,"pre_score":80,"vix_multiplier":{mult},'
-        f'"score_breakdown":"Tech:48/60 | News:32/40 | VIX:{mult}x = 85","reasoning":"Two sentences max.","devils_advocate":"Two risks.","key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}},'
-        f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","tech_score":40,"news_score":28,"pre_score":68,"score_breakdown":"Tech:40 | News:28 | VIX:{mult}x = 74","reasoning":"One sentence.","key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}}]}}\n\n'
-        f'derived_rules MUST list every rule you derived from history (not generic advice — cite the data). '
-        f'If no history yet, write ["No history yet — using baseline judgment"].\n'
-        f'signal=NO PICK if confidence < {BUY_THRESHOLD}. Watch range: {WATCH_THRESHOLD}-{BUY_THRESHOLD-1}.'
+    SYS = ('You are a short-to-medium term equity trader (1-4 week holds). '
+           'NOT a long-term investor. Momentum, catalysts, and near-term price action matter most. '
+           'Analyst 12-month targets are nearly irrelevant — focus on what moves in 1-4 weeks. '
+           'Earnings within 2 weeks = elevated risk. Earnings within 5 days = near-disqualifier. '
+           'Respond ONLY with valid JSON. Start with { end with }. No markdown.')
+
+    market_ctx = (
+        f'MARKET: VIX={ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]}) {ctx["vix_regime"]} | '
+        f'VIX_mult={mult}x | QQQ={ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.2f}% vs 50MA | '
+        f'SPY today={ctx["spy_return_today"]:+.2f}% | Defensive={"YES" if ctx["defensive_mode"] else "NO"}\n'
+        f'MACRO: {nd.get("macro_summary","N/A")[:200]} | Sentiment={nd.get("market_sentiment","NEUTRAL")}\n'
+        f'FED: {nd.get("fed_signal",{}).get("detail","none")} | '
+        f'TRUMP: {nd.get("trump_signal",{}).get("detail","none")}'
+    )
+
+    # ── ROUND 1: Rank all candidates → surface top 10 ───────────────────────
+    print(f'  Round 1/3: Ranking {len(candidates)} candidates...')
+    compact_brief = [{
+        'ticker': c['ticker'], 'sector': c['sector'], 'source': c['source'],
+        'pre_score': c.get('pre_score', 0),
+        'catalyst_score': c.get('catalyst_score', 5),
+        'catalyst_type': c.get('catalyst_type', 'NONE'),
+        'short_term_reason': c.get('short_term_reason', ''),
+        'rsi': round(c['rsi'], 1), 'adx': round(c['adx'], 1),
+        'momentum_5d': round(c['momentum_5d'], 2),
+        'vol_ratio': round(c['vol_ratio'], 2),
+        'earnings_days_away': c.get('earnings_days_away', 'N/A'),
+        'insider': c.get('insider_label', 'NEUTRAL'),
+        'options': c.get('options_label', 'NEUTRAL'),
+        'news_notes': c.get('news_notes', '')[:80],
+    } for c in candidates]
+
+    r1_user = (
+        f'{market_ctx}\n{hard_note}{priority_note}\n'
+        f'CANDIDATES:\n{json.dumps(compact_brief, indent=1)}\n\n'
+        f'TASK: Rank these for a 1-4 week trade. Identify:\n'
+        f'1. Top 10 to deep-analyse (best short-term setups)\n'
+        f'2. Immediate drops (no short-term catalyst, negative news, earnings too soon)\n'
+        f'Return ONLY: {{"top10":["TICK1","TICK2"...],"drop":["TICK"],"r1_notes":"2 sentences on what you see"}}'
+    )
+    top10 = [c['ticker'] for c in candidates[:10]]
+    r1_notes = ''
+    try:
+        raw1 = call_llm(SYS, r1_user, max_tokens=400)
+        if '{' in raw1: raw1 = raw1[raw1.index('{'):]
+        r1 = json.loads(raw1)
+        top10 = r1.get('top10', top10)[:10]
+        r1_notes = r1.get('r1_notes', '')
+        for t in r1.get('drop', []):
+            m = next((c for c in candidates if c['ticker'] == t), None)
+            if m: m['auto_drop'] = True; m['news_notes'] = 'R1 drop: no short-term catalyst'
+        print(f'  Round 1 → Top 10: {top10}')
+    except Exception as e:
+        print(f'  Round 1 failed ({e}) — using pre_score top 10')
+
+    # ── ROUND 2: Deep-dive top 10 → bull/bear for each ──────────────────────
+    print(f'  Round 2/3: Deep-diving top 10...')
+    top10_candidates = [c for c in candidates if c['ticker'] in top10 and not c.get('auto_drop')]
+    compact_deep = [{
+        'ticker': c['ticker'], 'sector': c['sector'], 'source': c['source'],
+        'price': c['price'], 'mkt_cap_b': c['mkt_cap_b'],
+        'pre_score': c.get('pre_score', 0), 'tech_score': c.get('tech_score', 0),
+        'news_score': c.get('news_score', 0), 'catalyst_score': c.get('catalyst_score', 5),
+        'catalyst_type': c.get('catalyst_type', 'NONE'),
+        'short_term_reason': c.get('short_term_reason', ''),
+        'rsi': round(c['rsi'], 1), 'adx': round(c['adx'], 1),
+        'vol_ratio': round(c['vol_ratio'], 2), 'momentum_5d': round(c['momentum_5d'], 2),
+        'macd_bull': c['macd_bullish'], 'hh_hl': c.get('hh_hl', False),
+        'rs_vs_spy': round(c['rs_vs_spy'], 2), 'pct_from_52h': round(c['pct_from_52h'], 1),
+        'cmf': round(c.get('cmf', 0), 3), 'stoch_rsi': round(c.get('stoch_rsi', 0.5), 2),
+        'short_ratio': c.get('short_ratio'), 'earnings_days_away': c.get('earnings_days_away', 'N/A'),
+        'insider': c.get('insider_label', 'NEUTRAL'), 'options': c.get('options_label', 'NEUTRAL'),
+        'analyst_rating': c.get('analyst_rating'), 'news_notes': c.get('news_notes', '')[:100],
+    } for c in top10_candidates]
+
+    r2_user = (
+        f'{market_ctx}\n\n'
+        f'These are your top 10 candidates for a 1-4 week trade.\n'
+        f'For each, give a BULL case and BEAR case specific to the next 4 weeks:\n'
+        f'{json.dumps(compact_deep, indent=1)}\n\n'
+        f'Return ONLY: {{"analyses":[{{"ticker":"X","bull":"specific 1-4 week bull case",'
+        f'"bear":"specific 1-4 week risk","short_term_edge":"what makes this better than holding cash","rank":1}}]}}'
+    )
+    r2_analyses = {}
+    try:
+        raw2 = call_llm(SYS, r2_user, max_tokens=1200)
+        if '{' in raw2: raw2 = raw2[raw2.index('{'):]
+        r2 = json.loads(raw2)
+        for a in r2.get('analyses', []):
+            r2_analyses[a['ticker']] = a
+        print(f'  Round 2 → analyses for {list(r2_analyses.keys())}')
+    except Exception as e:
+        print(f'  Round 2 failed ({e})')
+
+    # ── ROUND 3: Final pick — uses rounds 1+2 + full history + regime ────────
+    print(f'  Round 3/3: Final deliberation...')
+    r2_summary = '\n'.join([
+        f'  {t}: BULL={a.get("bull","")} | BEAR={a.get("bear","")} | EDGE={a.get("short_term_edge","")}'
+        for t, a in r2_analyses.items()
+    ]) or 'Round 2 unavailable'
+
+    r3_user = (
+        f'{market_ctx}\n\n'
+        f'ROUND 1 NOTES: {r1_notes}\n\n'
+        f'ROUND 2 BULL/BEAR ANALYSIS:\n{r2_summary}\n\n'
+        f'{src_note}{hist_block}\n\n'
+        f'NOW: Make your final decision for a 1-4 week trade.\n'
+        f'Apply your self-derived rules from history. Consider regime, catalyst quality, risk/reward.\n'
+        f'VIX multiplier: {mult}x. BUY threshold: {BUY_THRESHOLD}. Watch: {WATCH_THRESHOLD}-{BUY_THRESHOLD-1}.\n\n'
+        f'Return ONLY:\n'
+        f'{{"derived_rules":["Rule (n=X, wr=Y%, HIGH/LOW confidence): <data-backed pattern>"],'
+        f'"learning_summary":"One sentence on what history taught you this run.",'
+        f'"top_pick":{{"ticker":"X","confidence":85,"signal":"BUY","tech_score":48,"news_score":32,'
+        f'"pre_score":80,"catalyst_score":8,"catalyst_type":"BREAKOUT",'
+        f'"score_breakdown":"Tech:48 | News:32 | Catalyst:8 | VIX:{mult}x = 85",'
+        f'"reasoning":"2 sentences — specific 1-4 week thesis citing the bull case.",'
+        f'"devils_advocate":"2 specific risks in the next 4 weeks.",'
+        f'"key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}},'
+        f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","reasoning":"1 sentence.","key_risk":"1 sentence.","sector":"X","source":"TECHNICAL"}}]}}\n'
+        f'If no stock clears {BUY_THRESHOLD} confidence, signal=NO PICK.'
     )
 
     try:
-        raw = call_llm(system, user, max_tokens=2000)
-        if '```' in raw:
-            for part in raw.split('```'):
-                part=part.strip()
-                if part.startswith('json'): part=part[4:].strip()
-                if part.startswith('{'): raw=part; break
-        if '{' in raw:
-            start=raw.index('{'); depth=0; end=start
-            for i,ch in enumerate(raw[start:],start):
-                if ch=='{': depth+=1
-                elif ch=='}':
-                    depth-=1
-                    if depth==0: end=i; break
-            raw=raw[start:end+1]
-        result=json.loads(raw)
-        pick=result.get('top_pick',{})
-        print(f'  Pick: {pick.get("ticker")} | pre={pick.get("pre_score","?")} -> final={pick.get("confidence")}/100 | {pick.get("signal")}')
+        raw3 = call_llm(SYS, r3_user, max_tokens=2000)
+        if '```' in raw3:
+            for part in raw3.split('```'):
+                part = part.strip()
+                if part.startswith('json'): part = part[4:].strip()
+                if part.startswith('{'): raw3 = part; break
+        if '{' in raw3:
+            start = raw3.index('{'); depth = 0; end = start
+            for i, ch in enumerate(raw3[start:], start):
+                if ch == '{': depth += 1
+                elif ch == '}':
+                    depth -= 1
+                    if depth == 0: end = i; break
+            raw3 = raw3[start:end+1]
+        result = json.loads(raw3)
+        pick = result.get('top_pick', {})
+        print(f'  Final pick: {pick.get("ticker")} | pre={pick.get("pre_score","?")} → {pick.get("confidence")}/100 | {pick.get("signal")} | {_LLM_CALL_COUNT[0]} LLM calls this run')
 
-        # Show derived rules so user can see what the LLM actually learned
         rules = result.get('derived_rules', [])
         summary = result.get('learning_summary', '')
         if rules:
-            print(f'\n┌─ LLM SELF-DERIVED RULES (from your trade history) {"─"*30}')
+            print(f'\n┌─ LLM SELF-DERIVED RULES {"─"*44}')
             for i, r in enumerate(rules, 1):
                 print(f'│ {i}. {r}')
-            if summary:
-                print(f'│ Summary: {summary}')
+            if summary: print(f'│ → {summary}')
             print(f'└{"─"*62}')
-            # Save rules log to Drive so user can track evolution
             rules_log = os.path.join(DRIVE_FOLDER, 'rules_log.csv')
             today_str = datetime.now().strftime('%Y-%m-%d %H:%M')
-            rows = [{'Date': today_str, 'Rule': r, 'Learning_Summary': summary, 'Win_Rate': round(sum(1 for h in (pick_history or []) if h['result']=='Win') / max(len(pick_history or []),1)*100,1)} for r in rules]
-            rules_df = pd.DataFrame(rows)
-            if os.path.exists(rules_log):
-                rules_df.to_csv(rules_log, mode='a', header=False, index=False)
-            else:
-                rules_df.to_csv(rules_log, index=False)
+            wr_now = round(sum(1 for h in (pick_history or []) if h['result'] == 'Win') / max(len(pick_history or []), 1) * 100, 1)
+            pd.DataFrame([{'Date': today_str, 'Rule': r, 'Learning_Summary': summary, 'Win_Rate': wr_now} for r in rules]).to_csv(
+                rules_log, mode='a', header=not os.path.exists(rules_log), index=False)
 
         return result
     except Exception as e:
-        print(f'  NVIDIA LLM failed: {e}'); return None
+        print(f'  Round 3 failed: {e}'); return None
 
 
 PICK_COLS = [
@@ -2179,12 +2374,14 @@ def run_screener():
     print(f'   Stocks: {len(STOCK_UNIVERSE)} | ETFs: {len(KEY_ETFS)}')
     print('='*65)
 
-    print('\nStep 1/8: Updating past results...')
+    print('\nStep 1/8: Updating past results + exit signals...')
     update_results(PICKS_CSV, PICK_COLS)
     update_results(WATCH_CSV, WATCH_COLS)
+    _LLM_CALL_COUNT[0] = 0  # reset call counter for this run
 
     print('\nStep 2/8: Market context...')
     ctx = get_market_context()
+    analyze_exit_signals(ctx, {})
 
     print('\nStep 3/8: Fetching all data (parallel)...')
     batch_data = batch_download(STOCK_UNIVERSE + KEY_ETFS)
@@ -2216,6 +2413,10 @@ def run_screener():
 
     print('\nStep 4.6/8: Options P/C + insider signals...')
     options_data, insider_data = fetch_options_and_insider_parallel(candidates)
+
+    print('\nStep 4.7/8: LLM catalyst scoring (every candidate)...')
+    candidates = batch_catalyst_score(candidates, ctx, all_stock_news)
+    candidates = [c for c in candidates if not c.get('auto_drop')]
 
     print('\nStep 5/8: News intelligence (3 layers)...')
     nd         = get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_news)
