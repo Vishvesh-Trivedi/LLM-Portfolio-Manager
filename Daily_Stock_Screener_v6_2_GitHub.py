@@ -1132,11 +1132,13 @@ def compute_indicators(df, spy_return_today=0.0):
     try:
         hi = df['High']
         lo = df['Low']
-        cl = df['Close']
+        cl = df['Close'].dropna()
         vo = df['Volume']
+        if len(cl) < 20:
+            return None
         p  = float(cl.iloc[-1])
 
-        if p <= 0:
+        if not (p > 0):  # catches NaN and non-positive
             return None
 
         m20  = float(cl.rolling(20).mean().iloc[-1])
@@ -2463,10 +2465,11 @@ def run_screener():
     ep='N/A'
     if sig=='BUY' and conf>=BUY_THRESHOLD:
         match=next((c for c in candidates if c['ticker']==pick['ticker']),{})
-        if match.get('price'):
-            ep=round(float(match['price']),2)
+        _p = match.get('price')
+        if _p is not None and float(_p) > 0:
+            ep=round(float(_p),2)
         else:
-            try: ep=round(float(yf.Ticker(pick['ticker']).history(period='2d')['Close'].iloc[-1]),2)
+            try: ep=round(float(yf.Ticker(pick['ticker']).history(period='2d')['Close'].dropna().iloc[-1]),2)
             except: ep='N/A'
 
     display_result(result, ctx, nd, ep, wl, all_candidates=candidates)
@@ -2477,10 +2480,11 @@ def run_screener():
     for w in wl:
         if w.get('confidence',0)>=WATCH_THRESHOLD:
             wmatch = next((c for c in candidates if c['ticker']==w['ticker']),{})
-            if wmatch.get('price'):
-                wp = round(float(wmatch['price']),2)
+            _wp = wmatch.get('price')
+            if _wp is not None and float(_wp) > 0:
+                wp = round(float(_wp),2)
             else:
-                try: wp=round(float(yf.Ticker(w['ticker']).history(period='2d')['Close'].iloc[-1]),2)
+                try: wp=round(float(yf.Ticker(w['ticker']).history(period='2d')['Close'].dropna().iloc[-1]),2)
                 except: wp='N/A'
             save_pick(w, ctx, wp, WATCH_CSV, WATCH_COLS, all_candidates=candidates, watch_score=w.get('confidence'))
 
