@@ -2381,7 +2381,6 @@ def run_screener():
 
     print('\nStep 2/8: Market context...')
     ctx = get_market_context()
-    analyze_exit_signals(ctx, {})
 
     print('\nStep 3/8: Fetching all data (parallel)...')
     batch_data = batch_download(STOCK_UNIVERSE + KEY_ETFS)
@@ -2406,6 +2405,9 @@ def run_screener():
     for c in b_cands:
         if c['ticker'] not in existing:
             candidates.append(c); existing.add(c['ticker'])
+
+    # Exit analysis here — has both market context AND fresh news
+    analyze_exit_signals(ctx, all_stock_news)
 
     if not candidates:
         print('\nNo candidates from any stream today - NO PICK')
