@@ -15,20 +15,20 @@ LinkedIn: https://www.linkedin.com/in/vishvesh-trivedi
 Option A - Google Colab (Recommended):
   1. Click the 🔑 Secrets icon in the left sidebar
   2. Add a new secret:
-       Name:  ANTHROPIC_API_KEY
-       Value: your-key-here (get it from console.anthropic.com)
+       Name:  NVIDIA_API_KEY
+       Value: your-key-here (get it free from build.nvidia.com → sign up → "Get API Key")
   3. Enable the secret for this notebook
   4. The code below will read it automatically
 
 Option B - Local Python:
   1. Create a file called .env in the same folder as this script
-  2. Add this line:  ANTHROPIC_API_KEY=your-key-here
+  2. Add this line:  NVIDIA_API_KEY=your-key-here
   3. Install python-dotenv:  pip install python-dotenv
   4. The code below will read it automatically
 
 Option C - Paste directly (Colab only, NOT for GitHub):
-  Find the line:  ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-  Replace with:   ANTHROPIC_API_KEY = "your-key-here"
+  Find the line:  NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
+  Replace with:   NVIDIA_API_KEY = "your-key-here"
   ⚠️  Never upload this version to GitHub!
 
 ─────────────────────────────────────────────────────────────
@@ -50,14 +50,14 @@ Every evening after market close:
   → Saves everything to Google Drive
   → Auto-updates 10-day and 30-day returns over time
 
-Tech Stack (all free except Anthropic API):
+Tech Stack (100% free):
   • yfinance       — market data
   • VADER          — free NLP sentiment (no API key needed)
   • 16 RSS feeds   — macro news (Reuters, CNBC, MarketWatch, BBC...)
-  • Anthropic API  — AI reasoning layer (~$0.05-0.10 per run)
+  • NVIDIA NIM API — AI reasoning layer (free tier at build.nvidia.com)
   • Google Colab + Drive — zero-infrastructure deployment
 
-Cost per run:  ~$0.05 - $0.10
+Cost per run:  ~$0.00 (NVIDIA NIM free tier)
 Runtime:       ~7 - 9 minutes
 
 ─────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ not guarantee future results. Always do your own research.
 ─────────────────────────────────────────────────────────────
 Version History:
   FIX 1  enrich_with_scores() is now actually called in run_screener
-  FIX 2  load_performance_history() called and passed to analyze_with_claude
+  FIX 2  load_performance_history() called and passed to analyze_with_nvidia
   FIX 3  Stream B now runs BEFORE options/insider fetch
   FIX 4  Hard caps clamped post-hoc instead of trusted to the LLM
   FIX 5  FI ticker removed (Yahoo Finance delisted - was FISV)
@@ -94,22 +94,31 @@ Version History:
 # ============================================================
 # CELL 1 - MOUNT GOOGLE DRIVE (run every session)
 # ============================================================
-from google.colab import drive
 import os
+try:
+    from google.colab import drive
+    drive.mount('/content/drive')
+    IN_COLAB = True
+    DRIVE_FOLDER = '/content/drive/MyDrive/StockScreener'
+    print('✅ Google Drive mounted')
+except ImportError:
+    IN_COLAB = False
+    DRIVE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'StockScreener')
 
-drive.mount('/content/drive')
-DRIVE_FOLDER = '/content/drive/MyDrive/StockScreener'
 os.makedirs(DRIVE_FOLDER, exist_ok=True)
-
-print('✅ Google Drive mounted')
-print(f'📁 Folder: {DRIVE_FOLDER}')
-print(f'📄 Files:  {os.listdir(DRIVE_FOLDER)}')
+print(f'📁 Output folder: {DRIVE_FOLDER}')
+if os.listdir(DRIVE_FOLDER):
+    print(f'📄 Files:  {os.listdir(DRIVE_FOLDER)}')
 
 # ============================================================
 # CELL 2 - INSTALL DEPENDENCIES (first time only)
 # ============================================================
-!pip install yfinance pandas anthropic requests vaderSentiment --quiet
-print('✅ Dependencies installed')
+# In Colab: uncomment the line below and run it once
+# !pip install yfinance pandas openai requests vaderSentiment python-dotenv --quiet
+#
+# Locally: run this once in your terminal instead:
+#   pip install yfinance pandas openai requests vaderSentiment python-dotenv
+print('✅ Dependencies assumed installed')
 
 # ============================================================
 # CELL 3 - CONFIGURATION
@@ -117,25 +126,35 @@ print('✅ Dependencies installed')
 
 # ── API KEY (reads from Colab Secrets or .env file) ────────
 # Follow the instructions at the top of this file to set your key safely.
+# Get your free NVIDIA NIM API key at: build.nvidia.com → sign up → "Get API Key"
 # Never paste your real key here if you plan to share or upload this file.
 
 import os
 
-# Try Colab Secrets first, then environment variable, then .env file
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+# 1. Try Colab Secrets (userdata API — works in newer Colab)
+NVIDIA_API_KEY = ""
+try:
+    from google.colab import userdata
+    NVIDIA_API_KEY = (userdata.get("NVIDIA_API_KEY") or "").strip()
+except Exception:
+    pass
 
-# If running locally, try loading from .env file
-if not ANTHROPIC_API_KEY:
+# 2. Fall back to os.environ (older Colab / local)
+if not NVIDIA_API_KEY:
+    NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "").strip()
+
+# 3. Fall back to .env file (local only)
+if not NVIDIA_API_KEY:
     try:
         from dotenv import load_dotenv
         load_dotenv()
-        ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+        NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "").strip()
     except ImportError:
-        pass  # dotenv not installed, that's fine
+        pass
 
-if not ANTHROPIC_API_KEY:
+if not NVIDIA_API_KEY:
     print("⚠️  WARNING: No API key found!")
-    print("   Please follow the setup instructions at the top of this file.")
+    print("   Get your FREE key at: build.nvidia.com → sign up → 'Get API Key'")
     print("   In Colab: use the 🔑 Secrets panel on the left sidebar.")
 else:
     print("✅ API key loaded successfully")
@@ -167,15 +186,19 @@ print(f'   Sample size:     {SAMPLE_SIZE}')
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import anthropic
+from openai import OpenAI
 import json
 import os
+import time
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import warnings
+import logging
 warnings.filterwarnings('ignore')
+logging.getLogger('yfinance').setLevel(logging.CRITICAL)
+logging.getLogger('peewee').setLevel(logging.CRITICAL)
 try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer as _VaderAnalyzer
     _VADER = _VaderAnalyzer()
@@ -195,7 +218,68 @@ SECTOR_CONC_MAX      = 3       # max same-sector picks in lookback window
 SECTOR_CONC_PENALTY  = 10      # confidence penalty if concentrated
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
-CLAUDE_MODEL = 'claude-sonnet-4-5'
+# ── NVIDIA MODEL SELECTION ─────────────────────────────────
+# Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
+#
+# RECOMMENDED FOR THIS SCREENER (best JSON + financial reasoning):
+#   'deepseek-ai/deepseek-v4-pro'           ← newest DeepSeek, free on NVIDIA NIM
+#   'meta/llama-3.3-70b-instruct'           ← solid all-rounder
+#   'nvidia/llama-3.1-nemotron-70b-instruct'← NVIDIA-tuned, very strong reasoning
+#   'qwen/qwen2.5-72b-instruct'             ← excellent structured JSON output
+#   'mistralai/mixtral-8x22b-instruct-v0.1' ← fast, good for JSON
+#
+# DEEPSEEK REASONING (chain-of-thought — <think> block stripped automatically):
+#   'deepseek-ai/deepseek-r1'              ← strongest reasoning, but slowest
+#
+# LARGER / MORE POWERFUL (slower, may hit free tier limits):
+#   'meta/llama-3.1-405b-instruct'           ← biggest Llama, best reasoning
+#   'mistralai/mistral-large-latest'         ← strong general reasoning
+#
+# SMALLER / FASTER (lower quality but instant):
+#   'meta/llama-3.2-3b-instruct'             ← very fast, lower quality
+#   'microsoft/phi-3-mini-128k-instruct'     ← lightweight
+
+NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct'   # ← change this line to switch model
+
+
+def call_llm(system, user, max_tokens=2000):
+    """Call NVIDIA NIM via requests (avoids openai SDK SSL issues in Colab).
+    Handles DeepSeek R1 <think> blocks automatically."""
+    _is_deepseek_r1 = 'deepseek-r1' in NVIDIA_MODEL.lower()
+    _max_tokens = max_tokens + 2000 if _is_deepseek_r1 else max_tokens
+
+    headers = {
+        "Authorization": f"Bearer {NVIDIA_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": NVIDIA_MODEL,
+        "max_tokens": _max_tokens,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user",   "content": user}
+        ]
+    }
+
+    for attempt in range(3):
+        try:
+            resp = requests.post(
+                "https://integrate.api.nvidia.com/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=120
+            )
+            resp.raise_for_status()
+            raw = resp.json()['choices'][0]['message']['content'].strip()
+            if '</think>' in raw:
+                raw = raw[raw.index('</think>') + len('</think>'):].strip()
+            return raw
+        except Exception as e:
+            print(f'  LLM attempt {attempt+1}/3 failed: {type(e).__name__}: {e}')
+            if attempt < 2:
+                time.sleep(2 ** attempt)
+            else:
+                raise
 
 # ── TWO-TIER RESCUE KEYWORDS ───────────────────────────────
 RESCUE_TIER1 = [
@@ -452,48 +536,61 @@ def _fetch_options_single(ticker):
         return ticker, None, 'NEUTRAL'
 
 
-def _fetch_insider_single(ticker):
-    """Fetch insider buy/sell from yfinance over last 90 days."""
+_SEC_CIK_CACHE = {}
+
+def _load_sec_cik_map():
+    global _SEC_CIK_CACHE
+    if _SEC_CIK_CACHE: return _SEC_CIK_CACHE
     try:
-        tk      = yf.Ticker(ticker)
-        ins     = tk.insider_transactions
-        if ins is None or ins.empty:
-            return ticker, 0, 'NEUTRAL'
-        ins      = ins.copy()
-        date_col = 'Start Date' if 'Start Date' in ins.columns else 'Date'
-        ins['_dt'] = pd.to_datetime(ins[date_col], errors='coerce')
-        cutoff   = pd.Timestamp.now() - pd.Timedelta(days=90)
-        recent   = ins[ins['_dt'] >= cutoff]
-        if recent.empty:
-            return ticker, 0, 'NEUTRAL'
-        if 'Transaction' in recent.columns:
-            tx_col = 'Transaction'
-        elif 'Type' in recent.columns:
-            tx_col = 'Type'
-        else:
-            return ticker, 0, 'NEUTRAL'
-        if 'Shares' in recent.columns:
-            share_col = 'Shares'
-        elif 'Value' in recent.columns:
-            share_col = 'Value'
-        else:
-            share_col = None
-        def safe_shares(row):
-            if share_col is None: return 0
-            v = row[share_col]
-            try: return abs(float(str(v).replace(',', '')))
-            except: return 0
-        buys  = recent[recent[tx_col].astype(str).str.contains('Buy|Purchase', case=False, na=False)]
-        sells = recent[recent[tx_col].astype(str).str.contains('Sale|Sell',    case=False, na=False)]
-        buy_sh  = sum(safe_shares(r) for _, r in buys.iterrows())
-        sell_sh = sum(safe_shares(r) for _, r in sells.iterrows())
-        net     = int(buy_sh - sell_sh)
-        if   net >  50_000:  label = 'BUYING'
-        elif net < -100_000: label = 'SELLING'
-        else:                label = 'NEUTRAL'
-        return ticker, net, label
-    except:
-        return ticker, 0, 'NEUTRAL'
+        r = requests.get('https://www.sec.gov/files/company_tickers.json',
+                         headers={'User-Agent': 'StockScreener research@example.com'}, timeout=15)
+        _SEC_CIK_CACHE = {v['ticker'].upper(): str(v['cik_str']).zfill(10) for v in r.json().values()}
+    except: pass
+    return _SEC_CIK_CACHE
+
+def _fetch_insider_single(ticker):
+    """Insider signals: try yfinance (3 attribute variations) then SEC EDGAR Form 4."""
+    # --- Try yfinance first ---
+    try:
+        tk = yf.Ticker(ticker)
+        ins = None
+        for attr in ('insider_transactions', 'insider_purchases', 'insider_roster_holders'):
+            try:
+                candidate = getattr(tk, attr, None)
+                if candidate is not None and not getattr(candidate, 'empty', True):
+                    ins = candidate.copy(); break
+            except: pass
+        if ins is not None:
+            date_col = next((c for c in ['Start Date','Date','Transaction Date','startDate'] if c in ins.columns), None)
+            if date_col:
+                ins['_dt'] = pd.to_datetime(ins[date_col], errors='coerce')
+                recent = ins[ins['_dt'] >= pd.Timestamp.now() - pd.Timedelta(days=90)]
+                tx_col = next((c for c in ['Transaction','Type','transactionType','Acquisition or Disposal'] if c in recent.columns), None)
+                if tx_col and not recent.empty:
+                    buys  = recent[recent[tx_col].astype(str).str.contains('Buy|Purchase|^P$|^A$', case=False, na=False, regex=True)]
+                    sells = recent[recent[tx_col].astype(str).str.contains('Sale|Sell|^S$|^D$',    case=False, na=False, regex=True)]
+                    if len(buys) >= 2 and len(buys) > len(sells):
+                        return ticker, len(buys) * 10000, 'BUYING'
+                    if len(sells) >= 3 and len(sells) > len(buys) * 2:
+                        return ticker, -(len(sells) * 10000), 'SELLING'
+                    return ticker, 0, 'NEUTRAL'
+    except: pass
+
+    # --- Fallback: SEC EDGAR Form 4 count (open govt API, always works) ---
+    try:
+        cik = _load_sec_cik_map().get(ticker.upper())
+        if not cik: return ticker, 0, 'NEUTRAL'
+        r = requests.get(f'https://data.sec.gov/submissions/CIK{cik}.json',
+                         headers={'User-Agent': 'StockScreener research@example.com'}, timeout=10)
+        recent_filings = r.json().get('filings', {}).get('recent', {})
+        forms = recent_filings.get('form', [])
+        dates = recent_filings.get('filingDate', [])
+        cutoff = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
+        form4_count = sum(1 for f, d in zip(forms, dates) if f == '4' and d >= cutoff)
+        if form4_count >= 3:
+            return ticker, form4_count * 5000, 'BUYING'
+    except: pass
+    return ticker, 0, 'NEUTRAL'
 
 
 def fetch_options_and_insider_parallel(candidates):
@@ -579,26 +676,100 @@ def enrich_with_scores(candidates, ctx, market_sentiment,
 
 
 def load_performance_history(fp):
-    """Load last 20 evaluated picks for Claude self-calibration."""
+    """Load ALL evaluated picks with full indicator context for self-calibration."""
     if not os.path.exists(fp):
         return []
     try:
         df   = pd.read_csv(fp)
-        done = df[df['Result'].isin(['Win', 'Loss', 'Neutral'])].tail(20)
+        done = df[df['Result'].isin(['Win', 'Loss', 'Neutral'])]
         if done.empty:
             return []
         hist = []
         for _, row in done.iterrows():
             hist.append({
                 'ticker':     str(row.get('Ticker', '')),
+                'date':       str(row.get('Date', '')),
                 'confidence': str(row.get('Confidence', '')),
                 'source':     str(row.get('Source', '')),
+                'sector':     str(row.get('Sector', '')),
                 'result':     str(row.get('Result', '')),
+                'return_10d': str(row.get('Return_10d_pct', '')),
                 'return_30d': str(row.get('Return_30d_pct', '')),
+                'vs_qqq_30d': str(row.get('vs_QQQ_30d', '')),
+                'tech_score': str(row.get('Tech_Score', '')),
+                'news_score': str(row.get('News_Score', '')),
+                'rsi':        str(row.get('RSI', '')),
+                'adx':        str(row.get('ADX', '')),
+                'vix':        str(row.get('VIX', '')),
+                'qqq_trend':  str(row.get('QQQ_Trend', '')),
+                'vader':      str(row.get('Vader_Label', '')),
+                'reasoning':  str(row.get('Reasoning', ''))[:120],
             })
         return hist
     except:
         return []
+
+
+def build_learning_insights(pick_history):
+    """Analyze patterns in wins vs losses so the LLM can adjust its scoring."""
+    if not pick_history or len(pick_history) < 3:
+        return ''
+
+    wins   = [h for h in pick_history if h['result'] == 'Win']
+    losses = [h for h in pick_history if h['result'] == 'Loss']
+
+    def wr_str(subset):
+        if not subset: return 'no data'
+        w = sum(1 for h in subset if h['result'] == 'Win')
+        return f'{w}/{len(subset)} wins ({w/len(subset)*100:.0f}%)'
+
+    def avg_field(subset, key):
+        vals = []
+        for h in subset:
+            try:
+                v = float(h.get(key, ''))
+                vals.append(v)
+            except (ValueError, TypeError):
+                pass
+        return f'{sum(vals)/len(vals):.1f}' if vals else 'n/a'
+
+    lines = ['PATTERN ANALYSIS FROM PAST PICKS:']
+
+    # Win rate by source
+    for src in ['TECHNICAL', 'NEWS', 'BOTH']:
+        sub = [h for h in pick_history if h.get('source', '').upper() == src]
+        if sub:
+            lines.append(f'  Source {src}: {wr_str(sub)}')
+
+    # Win rate by sector (only sectors with 2+ picks)
+    sectors = {}
+    for h in pick_history:
+        s = h.get('sector', 'Unknown')
+        sectors.setdefault(s, []).append(h)
+    for s, sub in sectors.items():
+        if len(sub) >= 2:
+            lines.append(f'  Sector {s}: {wr_str(sub)}')
+
+    # Avg indicator scores: winners vs losers
+    if wins and losses:
+        lines.append(f'  Avg Tech_Score  — wins: {avg_field(wins,"tech_score")}  losses: {avg_field(losses,"tech_score")}')
+        lines.append(f'  Avg News_Score  — wins: {avg_field(wins,"news_score")}  losses: {avg_field(losses,"news_score")}')
+        lines.append(f'  Avg Confidence  — wins: {avg_field(wins,"confidence")}  losses: {avg_field(losses,"confidence")}')
+        lines.append(f'  Avg RSI         — wins: {avg_field(wins,"rsi")}  losses: {avg_field(losses,"rsi")}')
+
+    # Recent losses with full context so LLM can reason about what went wrong
+    recent_losses = [h for h in pick_history[-15:] if h['result'] == 'Loss']
+    if recent_losses:
+        lines.append('RECENT LOSSES — what went wrong:')
+        for h in recent_losses:
+            lines.append(
+                f'  {h["date"]} {h["ticker"]} | conf={h["confidence"]} src={h["source"]} sector={h["sector"]}'
+                f' | Tech={h["tech_score"]} News={h["news_score"]} RSI={h["rsi"]} VIX={h["vix"]} QQQ={h["qqq_trend"]}'
+                f' | return={h["return_30d"]}%30d vsQQQ={h["vs_qqq_30d"]}%'
+                f' | was: {h["reasoning"]}'
+            )
+
+    return '\n'.join(lines)
 
 
 # ── TICKER UNIVERSE ────────────────────────────────────────
@@ -686,7 +857,16 @@ SECTOR_ETF_MAP = {
     'Communication Services': 'XLC',
 }
 
-TICKER_UNIVERSE = list(dict.fromkeys(NASDAQ_100 + SP500_STOCKS + KEY_ETFS))
+# ── YOUR PRIORITY STOCKS ──────────────────────────────────────────────────────
+# These are ALWAYS evaluated by the LLM regardless of pre-score.
+# Add stocks you'd actually consider buying. Broad scan still runs for discovery.
+MY_STOCKS = [
+    # Add your tickers here, e.g.:
+    # 'AAPL', 'NVDA', 'TSLA', 'MSFT',
+]
+# ──────────────────────────────────────────────────────────────────────────────
+
+TICKER_UNIVERSE = list(dict.fromkeys(NASDAQ_100 + SP500_STOCKS + KEY_ETFS + MY_STOCKS))
 UNIVERSE_SET    = set(TICKER_UNIVERSE)
 ETF_SET         = set(KEY_ETFS)
 STOCK_UNIVERSE  = [t for t in TICKER_UNIVERSE if t not in ETF_SET]
@@ -882,27 +1062,27 @@ def fetch_all_fundamentals_parallel(tickers):
 
 
 def fetch_macro_news():
-    """16 RSS feed categories, ~60 headlines total, all free."""
+    """RSS feeds — Reuters removed (shut down 2020), replaced with reliable alternatives."""
     feeds = [
         ('US_MARKET',    'https://finance.yahoo.com/rss/topstories'),
         ('US_MARKET',    'https://finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US'),
-        ('GEOPOLITICAL', 'https://feeds.bbci.co.uk/news/world/rss.xml'),
-        ('GEOPOLITICAL', 'https://feeds.reuters.com/reuters/worldNews'),
-        ('GEOPOLITICAL', 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'),
-        ('US_POLICY',    'https://feeds.reuters.com/reuters/politicsNews'),
-        ('US_POLICY',    'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml'),
-        ('ENERGY',       'https://feeds.reuters.com/reuters/USenergyNews'),
-        ('ENERGY',       'https://oilprice.com/rss/main'),
         ('US_MARKET',    'https://www.cnbc.com/id/100003114/device/rss/rss.html'),
         ('US_MARKET',    'https://feeds.marketwatch.com/marketwatch/topstories/'),
         ('US_MARKET',    'https://feeds.marketwatch.com/marketwatch/bulletins/'),
-        ('FED',          'https://feeds.reuters.com/reuters/USfinancialNews'),
-        ('SECTOR',       'https://feeds.reuters.com/reuters/businessNews'),
+        ('GEOPOLITICAL', 'https://feeds.bbci.co.uk/news/world/rss.xml'),
+        ('GEOPOLITICAL', 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml'),
+        ('US_POLICY',    'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml'),
+        ('US_POLICY',    'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml'),
+        ('ENERGY',       'https://www.eia.gov/rss/news.xml'),           # US Energy Info Admin (official)
+        ('ENERGY',       'https://oilprice.com/rss/main'),
+        ('FED',          'https://www.federalreserve.gov/feeds/press_all.xml'),  # Fed Reserve (official)
+        ('FED',          'https://rss.nytimes.com/services/xml/rss/nyt/Economy.xml'),
         ('EARNINGS',     'https://finance.yahoo.com/rss/2.0/headline?s=earnings&region=US&lang=en-US'),
         ('TECH',         'https://www.cnbc.com/id/19854910/device/rss/rss.html'),
+        ('SECTOR',       'https://feeds.marketwatch.com/marketwatch/marketpulse/'),
     ]
     headlines = []
-    feed_counts = {}
+    active = 0
     for category, url in feeds:
         try:
             r    = requests.get(url, timeout=8, headers={'User-Agent': 'Mozilla/5.0'})
@@ -914,39 +1094,39 @@ def fetch_macro_news():
                     headlines.append(f'[{category}] {title}')
                     ct += 1
                     if ct >= 6: break
-            feed_counts[url.split('/')[2]] = ct
+            if ct > 0:
+                active += 1
         except:
             continue
-    active = sum(1 for v in feed_counts.values() if v > 0)
     print(f'  RSS feeds active: {active}/{len(feeds)} | Headlines: {len(headlines)}')
     return headlines[:60]
 
 
-def fetch_sector_etf_news():
-    """Fetch news for all sector ETFs."""
-    sector_news = {}
-    failed      = []
-    for sector, etf in SECTOR_ETF_MAP.items():
-        _, news = _fetch_stock_news_single(etf)
-        if news:
-            sector_news[sector] = news
-        else:
-            try:
-                ticker = yf.Ticker(etf)
-                raw    = ticker.news or []
-                titles = []
-                for n in raw[:5]:
-                    t = n.get('content', {}).get('title', '') or n.get('title', '')
-                    if t:
-                        titles.append(t.lower())
-                if titles:
-                    sector_news[sector] = titles
-                else:
-                    failed.append(f'{etf}({sector})')
-            except:
-                failed.append(f'{etf}({sector})')
-    print(f'  Sector news fetched: {len(sector_news)}/{len(SECTOR_ETF_MAP)} sectors')
-    return sector_news
+def derive_sector_sentiment(candidates):
+    """Derive sector context from already-fetched stock news/scores — no ETF API needed."""
+    from collections import defaultdict
+    buckets = defaultdict(lambda: {'news_scores': [], 'tickers': [], 'momentum': []})
+    for c in candidates:
+        sec = c.get('sector', '')
+        if not sec or sec in ('', 'Unknown', 'N/A'): continue
+        buckets[sec]['tickers'].append(c['ticker'])
+        buckets[sec]['news_scores'].append(c.get('news_score', 0))
+        buckets[sec]['momentum'].append(c.get('momentum_5d', 0))
+    result = {}
+    for sec, data in buckets.items():
+        n = len(data['tickers'])
+        if n == 0: continue
+        avg_news = sum(data['news_scores']) / n
+        avg_mom  = sum(data['momentum']) / n
+        sentiment = ('POSITIVE' if avg_news > 20 or avg_mom > 1.5
+                     else 'NEGATIVE' if avg_news < 10 and avg_mom < -1.5
+                     else 'NEUTRAL')
+        result[sec] = {'sentiment': sentiment, 'n': n,
+                       'avg_news': round(avg_news, 1), 'avg_mom': round(avg_mom, 2),
+                       'tickers': data['tickers'][:4]}
+    print(f'  Sector sentiment derived: {len(result)}/{len(SECTOR_ETF_MAP)} sectors '
+          f'from {sum(d["n"] for d in result.values())} stocks')
+    return result
 
 
 def compute_indicators(df, spy_return_today=0.0):
@@ -1151,9 +1331,9 @@ def screen_news(batch_data, all_stock_news, technical_passed, ctx):
         rescued[t] = ind
         rescued[t]['rescue_keywords'] = keyword_hits[:5]
         rescued_count += 1
-        print(f'  Rescued: {t} | ${ind["price"]} | Keywords: {keyword_hits[:3]}')
 
-    print(f'  Checked {checked} failed stocks | Rescued: {rescued_count}')
+    rescued_tickers = list(rescued.keys())
+    print(f'  News rescued: {rescued_count} stocks → {rescued_tickers[:10]}{"..." if rescued_count>10 else ""}')
     return rescued
 
 
@@ -1232,9 +1412,9 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
 
     both_note     = f'\nSTRONGEST (passed tech AND have news): {both_tickers}' if both_tickers else ''
     news_note     = f'\nNEWS-SOURCED (relaxed tech filters): {news_tickers}'   if news_tickers else ''
-    earnings_note = f'\nEARNINGS RISK (within 5 days): {earnings_risks}'       if earnings_risks else ''
+    earnings_2w   = [c['ticker'] for c in candidates if 0 <= c.get('earnings_days_away', 999) <= 14]
+    earnings_note = f'\nEARNINGS WITHIN 2 WEEKS (elevated risk for short-term trades): {earnings_2w}' if earnings_2w else ''
 
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     system = 'You are a financial analyst. Respond with ONLY a valid JSON object. Start with { and end with }. No markdown, no explanation.'
     user = (
         f'Today: {today}\n'
@@ -1258,8 +1438,7 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
     )
 
     try:
-        resp = client.messages.create(model=CLAUDE_MODEL, max_tokens=2000, system=system, messages=[{'role':'user','content':user}])
-        raw = resp.content[0].text.strip()
+        raw = call_llm(system, user, max_tokens=2000)
         if '```' in raw:
             for part in raw.split('```'):
                 part = part.strip()
@@ -1267,7 +1446,7 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
                 if part.startswith('{'): raw = part; break
         if '{' in raw: raw = raw[raw.index('{'):]
         nd = json.loads(raw)
-        print(f'  Sentiment: {nd.get("market_sentiment","?")} | Adj: {nd.get("overall_market_adjustment",0):+d}')
+        print(f'  Sentiment: {nd.get("market_sentiment","?")} | Adj: {int(nd.get("overall_market_adjustment",0)):+d}')
         return nd
     except Exception as e:
         print(f'  News intelligence failed ({e}) - neutral baseline')
@@ -1287,16 +1466,16 @@ def apply_news(candidates, nd):
         if tr.get('detected') and c['sector'] in tr.get('affected_sectors', []):
             ta = tr.get('score_adjustment', 0)
             if ta <= -20: drop = True; notes.append('AUTO DROP: Trump targeting sector')
-            else: adj += ta; notes.append(f'Trump:{ta:+d}')
+            else: adj += ta; notes.append(f'Trump:{int(ta):+d}')
         if c['ticker'] in sm:
             sn = sm[c['ticker']]
             if sn.get('auto_drop'): drop = True; notes.append('AUTO DROP: negative stock news')
             else:
                 sa = sn.get('score_adjustment', 0); adj += sa
-                if sa: notes.append(f'News:{sa:+d}')
+                if sa: notes.append(f'News:{int(sa):+d}')
         if c['sector'] in secm:
             sa = secm[c['sector']].get('score_adjustment', 0); adj += sa
-            if sa: notes.append(f'Sector:{sa:+d}')
+            if sa: notes.append(f'Sector:{int(sa):+d}')
         if c.get('earnings_risk'):
             adj -= 15; notes.append('Earnings:-15')
         c['news_adjustment'] = adj
@@ -1314,14 +1493,12 @@ def apply_news(candidates, nd):
 def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_news, fundamentals, ctx):
     """Extract tickers specifically mentioned in macro headlines."""
     if not headlines: return []
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     try:
-        resp = client.messages.create(
-            model=CLAUDE_MODEL, max_tokens=200,
+        raw = call_llm(
             system='Extract US stock tickers from headlines. Return ONLY a JSON array like ["AAPL","GOOGL"]. No explanation.',
-            messages=[{'role':'user','content':f'HEADLINES:\n{chr(10).join(headlines)}\n\nRules: US stocks only, no ETFs, no indices, max 15 tickers, [] if none.'}]
+            user=f'HEADLINES:\n{chr(10).join(headlines)}\n\nRules: US stocks only, no ETFs, no indices, max 15 tickers, [] if none.',
+            max_tokens=200
         )
-        raw = resp.content[0].text.strip()
         if '[' in raw:
             raw = raw[raw.index('['):]
             depth = 0
@@ -1358,16 +1535,24 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
     return b_cands
 
 
-def analyze_with_claude(candidates, ctx, nd, pick_history=None):
-    """Final scoring with pre_score awareness + self-calibration."""
+def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
+    """Final scoring with pre_score awareness + self-calibration from past performance."""
     if not candidates: return None
-    print(f'\nPhase 6 - Claude final scoring ({len(candidates)} candidates)...')
+    print(f'\nPhase 6 - NVIDIA final scoring ({len(candidates)} candidates)...')
 
     if len(candidates) > 30:
-        candidates = sorted(candidates, key=lambda x: x.get('pre_score',0), reverse=True)[:30]
-        print(f'  Trimmed to top 30 by pre_score')
+        my_set = set(t.upper() for t in MY_STOCKS)
+        priority = [c for c in candidates if c['ticker'].upper() in my_set]
+        rest     = [c for c in candidates if c['ticker'].upper() not in my_set]
+        rest_sorted = sorted(rest, key=lambda x: x.get('pre_score',0), reverse=True)
+        # Reserve up to 10 slots for priority stocks, fill rest with top pre_score
+        slots = max(0, 30 - len(priority))
+        candidates = priority + rest_sorted[:slots]
+        if my_set:
+            print(f'  Trimmed to top 30: {len(priority)} priority + {len(candidates)-len(priority)} broad scan')
+        else:
+            print(f'  Trimmed to top 30 by pre_score')
 
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     mult   = ctx['vix_multiplier']
 
     hard_rule_flags = {}
@@ -1399,39 +1584,110 @@ def analyze_with_claude(candidates, ctx, nd, pick_history=None):
     } for c in candidates]
 
     hist_block = ''
+    if not pick_history:
+        hist_block = (
+            '\nNO TRADING HISTORY YET.\n'
+            'derived_rules MUST be exactly: ["No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated."]\n'
+            'Do not invent sample sizes or win rates. There is no data to derive rules from.\n'
+        )
     if pick_history:
-        wins=sum(1 for h in pick_history if h['result']=='Win'); total=len(pick_history)
-        wr=round(wins/total*100,1) if total else 0
-        hist_block = (f'\nYOUR RECENT PICK HISTORY (last {total} evaluated picks - {wr}% win rate):\n'
-                      + '\n'.join([f'  {h["ticker"]} conf={h["confidence"]} [{h["source"]}] -> {h["result"]} ({h["return_30d"]}%30d)' for h in pick_history[-8:]])
-                      + '\nSelf-calibrate: raise the bar if recent picks are losing.\n')
+        wins  = sum(1 for h in pick_history if h['result'] == 'Win')
+        total = len(pick_history)
+        wr    = round(wins / total * 100, 1) if total else 0
+
+        # Group history by market regime so LLM applies regime-specific rules
+        def _regime(h):
+            vix = h.get('vix', '')
+            qqq = h.get('qqq_trend', '')
+            try: v = float(vix)
+            except: v = 20
+            vix_bucket = 'HIGH_VIX' if v > 25 else 'LOW_VIX' if v < 15 else 'MID_VIX'
+            qqq_bucket = 'BULL' if 'bull' in str(qqq).lower() else 'BEAR' if 'bear' in str(qqq).lower() else 'NEUTRAL'
+            return f'{vix_bucket}_{qqq_bucket}'
+
+        from collections import defaultdict
+        regime_groups = defaultdict(list)
+        for h in pick_history:
+            regime_groups[_regime(h)].append(h)
+
+        def _fmt(h):
+            r30 = h.get('return_30d', '')
+            mag = f'{float(r30):+.1f}%' if r30 and r30 not in ('nan','None','') else '?'
+            return (f'    {h["date"]} {h["ticker"]} src={h["source"]} sector={h["sector"]} '
+                    f'conf={h["confidence"]} Tech={h["tech_score"]} News={h["news_score"]} '
+                    f'RSI={h["rsi"]} ADX={h["adx"]} -> {h["result"]} 30d={mag} vsQQQ={h["vs_qqq_30d"]}%'
+                    f' | {h["reasoning"][:80]}')
+
+        # Current regime for today
+        curr_vix = ctx.get('vix_level', 20)
+        curr_qqq = ctx.get('qqq_trend', 'NEUTRAL')
+        curr_regime = _regime({'vix': curr_vix, 'qqq_trend': curr_qqq})
+
+        regime_lines = ''
+        for reg, picks in sorted(regime_groups.items()):
+            reg_wins = sum(1 for p in picks if p['result'] == 'Win')
+            reg_wr = round(reg_wins / len(picks) * 100) if picks else 0
+            r30_vals = []
+            for p in picks:
+                try: r30_vals.append(float(p['return_30d']))
+                except: pass
+            avg_ret = f'{sum(r30_vals)/len(r30_vals):+.1f}%' if r30_vals else '?'
+            marker = ' ← TODAY\'S REGIME' if reg == curr_regime else ''
+            regime_lines += f'\n  REGIME: {reg} | {len(picks)} picks | {reg_wr}% win rate | avg 30d return: {avg_ret}{marker}\n'
+            regime_lines += '\n'.join(_fmt(h) for h in picks) + '\n'
+
+        hist_block = (
+            f'\n── YOUR FULL TRADING HISTORY ({total} evaluated picks | {wr}% win rate) ──\n'
+            f'TODAY\'S REGIME: {curr_regime} (VIX={curr_vix:.1f}, QQQ={curr_qqq})\n'
+            f'{regime_lines}\n'
+            f'SELF-OPTIMIZATION INSTRUCTIONS:\n'
+            f'Step 1 — Study the regime groups above. Focus MOST on the group marked TODAY\'S REGIME\n'
+            f'         since that\'s the market condition you are picking in right now.\n'
+            f'Step 2 — Derive your own rules from the data. For each rule, note: how many picks\n'
+            f'         support it (n=X), the win rate (wr=Y%), and the avg magnitude of wins/losses.\n'
+            f'         A rule based on n<3 picks should be flagged as LOW CONFIDENCE.\n'
+            f'Step 3 — Weight rules by: (a) regime match to today, (b) sample size, (c) magnitude.\n'
+            f'         A rule with n=10, wr=80%, avg+12% beats a rule with n=2, wr=100%, avg+0.5%.\n'
+            f'Step 4 — Apply your rules when scoring today\'s candidates. Reference them in reasoning.\n'
+            f'Rules must be derived from the data. Do not invent rules not supported by history.\n'
+        )
 
     hard_note = ('\nHARD CAPS APPLIED:\n' + '\n'.join([f'{t}: {" ".join(fs)}' for t,fs in hard_rule_flags.items()]) + '\nRSI_CAP=max 70 | ANALYST_CAP=max 65\n') if hard_rule_flags else ''
     both_t=[c['ticker'] for c in candidates if c['source']=='BOTH']
     news_t=[c['ticker'] for c in candidates if c['source']=='NEWS']
     src_note = (f'\nBOTH (strongest): {both_t}' if both_t else '') + (f'\nNEWS-SOURCED: {news_t}' if news_t else '')
+    my_set = set(t.upper() for t in MY_STOCKS)
+    priority_present = [c['ticker'] for c in candidates if c['ticker'].upper() in my_set]
+    priority_note = f'\nUSER PRIORITY STOCKS (always evaluate these, even if scores are modest): {priority_present}\n' if priority_present else ''
 
-    system = ('You are a senior equity trader specialising in momentum and catalyst trades. '
+    system = ('You are a short-to-medium term equity trader (1-4 week holding period). '
+              'You are NOT a long-term investor. You care about momentum, catalysts, and near-term price action. '
+              'Analyst 12-month price targets are a weak signal for you — near-term momentum and news catalysts matter more. '
+              'Earnings within 2 weeks = elevated risk. Earnings within 5 days = near-disqualifier unless the setup is exceptional. '
+              'You learn from every trade: derive your own rules from your history before scoring — no hardcoded rules. '
               'Respond with ONLY a valid JSON object. Start with { end with }. Nothing else.')
     user = (
         f'MARKET REGIME:\nVIX={ctx["vix_level"]} (p{ctx["vix_percentile"]}) {ctx["vix_regime"]} | '
         f'mult={mult}x | QQQ={ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.2f}% | SPY today={ctx["spy_return_today"]:+.2f}% | Defensive={"YES" if ctx["defensive_mode"] else "NO"}\n\n'
-        f'MACRO CONTEXT:\n{nd.get("macro_summary","N/A")}\nSentiment: {nd.get("market_sentiment","NEUTRAL")} | Adj: {nd.get("overall_market_adjustment",0):+d}\n'
+        f'MACRO CONTEXT:\n{nd.get("macro_summary","N/A")}\nSentiment: {nd.get("market_sentiment","NEUTRAL")} | Adj: {int(nd.get("overall_market_adjustment",0)):+d}\n'
         f'FED: {nd.get("fed_signal",{}).get("detail","none")}\nTRUMP: {nd.get("trump_signal",{}).get("detail","none")}\n'
         f'DATA: {nd.get("macro_data_signal",{}).get("detail","none")}\nGEO: {nd.get("geopolitical_signal",{}).get("detail","none")}'
-        f'{src_note}{hard_note}{hist_block}\n\n'
+        f'{src_note}{hard_note}{priority_note}{hist_block}\n\n'
         f'CANDIDATES (with pre-computed scores):\n{json.dumps(compact, indent=2)}\n\n'
         f'YOUR JOB: Review pre_score as grounded baseline. Apply qualitative adjustments Claude formulas cannot capture. Add news_adjustment. Apply VIX multiplier {mult}x. Clamp 0-100.\n\n'
         f'Return ONLY this JSON:\n'
-        f'{{"top_pick":{{"ticker":"X","confidence":85,"signal":"BUY","tech_score":48,"news_score":32,"pre_score":80,"vix_multiplier":{mult},'
+        f'{{"derived_rules":["Rule 1 (n=12, wr=75%, HIGH confidence): <pattern + why it matters>","Rule 2 (n=3, wr=66%, LOW confidence): ..."],'
+        f'"learning_summary":"One sentence: what changed vs prior runs and why — cite regime and sample sizes.",'
+        f'"top_pick":{{"ticker":"X","confidence":85,"signal":"BUY","tech_score":48,"news_score":32,"pre_score":80,"vix_multiplier":{mult},'
         f'"score_breakdown":"Tech:48/60 | News:32/40 | VIX:{mult}x = 85","reasoning":"Two sentences max.","devils_advocate":"Two risks.","key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}},'
         f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","tech_score":40,"news_score":28,"pre_score":68,"score_breakdown":"Tech:40 | News:28 | VIX:{mult}x = 74","reasoning":"One sentence.","key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}}]}}\n\n'
+        f'derived_rules MUST list every rule you derived from history (not generic advice — cite the data). '
+        f'If no history yet, write ["No history yet — using baseline judgment"].\n'
         f'signal=NO PICK if confidence < {BUY_THRESHOLD}. Watch range: {WATCH_THRESHOLD}-{BUY_THRESHOLD-1}.'
     )
 
     try:
-        resp = client.messages.create(model=CLAUDE_MODEL, max_tokens=2000, system=system, messages=[{'role':'user','content':user}])
-        raw = resp.content[0].text.strip()
+        raw = call_llm(system, user, max_tokens=2000)
         if '```' in raw:
             for part in raw.split('```'):
                 part=part.strip()
@@ -1448,16 +1704,37 @@ def analyze_with_claude(candidates, ctx, nd, pick_history=None):
         result=json.loads(raw)
         pick=result.get('top_pick',{})
         print(f'  Pick: {pick.get("ticker")} | pre={pick.get("pre_score","?")} -> final={pick.get("confidence")}/100 | {pick.get("signal")}')
+
+        # Show derived rules so user can see what the LLM actually learned
+        rules = result.get('derived_rules', [])
+        summary = result.get('learning_summary', '')
+        if rules:
+            print(f'\n┌─ LLM SELF-DERIVED RULES (from your trade history) {"─"*30}')
+            for i, r in enumerate(rules, 1):
+                print(f'│ {i}. {r}')
+            if summary:
+                print(f'│ Summary: {summary}')
+            print(f'└{"─"*62}')
+            # Save rules log to Drive so user can track evolution
+            rules_log = os.path.join(DRIVE_FOLDER, 'rules_log.csv')
+            today_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+            rows = [{'Date': today_str, 'Rule': r, 'Learning_Summary': summary, 'Win_Rate': round(sum(1 for h in (pick_history or []) if h['result']=='Win') / max(len(pick_history or []),1)*100,1)} for r in rules]
+            rules_df = pd.DataFrame(rows)
+            if os.path.exists(rules_log):
+                rules_df.to_csv(rules_log, mode='a', header=False, index=False)
+            else:
+                rules_df.to_csv(rules_log, index=False)
+
         return result
     except Exception as e:
-        print(f'  Claude failed: {e}'); return None
+        print(f'  NVIDIA LLM failed: {e}'); return None
 
 
 PICK_COLS = [
     'Date','Ticker','Confidence','Signal','Source','Sector',
     'Reasoning','Key_Risk','Devils_Advocate',
     'Entry_Price','Realistic_Entry','Stop_Zone','Target_Zone',
-    'ATR','ATR_Pct','ADX','MACD_Bull','BB_PctB','OBV_Rising',
+    'ATR','ATR_Pct','RSI','ADX','MACD_Bull','BB_PctB','OBV_Rising',
     'RS_vs_SPY','Pct_From_52H','Dollar_Vol_M',
     'VIX','VIX_Pct','QQQ_Trend',
     'Analyst_Rating','Upside_Pct','Short_Ratio','Earnings_Risk',
@@ -1512,7 +1789,7 @@ def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=
         'Reasoning':pick_data.get('reasoning',''),'Key_Risk':pick_data.get('key_risk',''),
         'Devils_Advocate':pick_data.get('devils_advocate',''),
         'Entry_Price':price,'Realistic_Entry':'','Stop_Zone':stop_zone,'Target_Zone':target_zone,
-        'ATR':match.get('atr',''),'ATR_Pct':match.get('atr_pct',''),'ADX':match.get('adx',''),
+        'ATR':match.get('atr',''),'ATR_Pct':match.get('atr_pct',''),'RSI':match.get('rsi',''),'ADX':match.get('adx',''),
         'MACD_Bull':match.get('macd_bullish',''),'BB_PctB':match.get('bb_pct_b',''),
         'OBV_Rising':match.get('obv_rising',''),'RS_vs_SPY':match.get('rs_vs_spy',''),
         'Pct_From_52H':match.get('pct_from_52h',''),'Dollar_Vol_M':match.get('dollar_vol_m',''),
@@ -1566,53 +1843,325 @@ def update_results(fp, cols):
 
 
 def display_result(result, ctx, nd, ep, wl, all_candidates=None):
-    pk=result.get('top_pick',{}); conf=pk.get('confidence',0); sig=pk.get('signal','NO PICK')
-    src=pk.get('source','TECHNICAL'); ticker=pk.get('ticker','')
-    fund=next((c for c in (all_candidates or []) if c['ticker']==ticker),{})
-    print('\n'+'='*65)
-    print('  DAILY STOCK SCREENER v6.2 - RESULT')
-    print('='*65)
-    print(f'  Date: {datetime.now().strftime("%Y-%m-%d")} | VIX: {ctx["vix_level"]} (p{ctx["vix_percentile"]}) | QQQ: {ctx["qqq_trend"]} | SPY: {ctx["spy_return_today"]:+.2f}%')
-    print(f'  Sentiment: {nd.get("market_sentiment","NEUTRAL")} | Macro: {nd.get("macro_summary","")[:90]}...')
-    print('-'*65)
-    if sig=='NO PICK' or conf<BUY_THRESHOLD:
+    pk   = result.get('top_pick', {})
+    conf = pk.get('confidence', 0)
+    sig  = pk.get('signal', 'NO PICK')
+    src  = pk.get('source', 'TECHNICAL')
+    ticker = pk.get('ticker', '')
+    fund = next((c for c in (all_candidates or []) if c['ticker'] == ticker), {})
+    W = 65
+
+    print('\n' + '█' * W)
+    print(f'  TODAY\'S PICK  —  {datetime.now().strftime("%A, %b %d %Y")}')
+    print('█' * W)
+    print(f'  Market:  VIX {ctx["vix_level"]:.1f} ({ctx["vix_regime"]})  |  QQQ {ctx["qqq_trend"]}  |  SPY {ctx["spy_return_today"]:+.2f}%')
+    print(f'  Macro:   {nd.get("macro_summary","Unavailable")[:80]}')
+    print('─' * W)
+
+    if sig == 'NO PICK' or conf < BUY_THRESHOLD:
         print('  NO PICK TODAY')
-        print(f'  Reason: {pk.get("reasoning","Nothing cleared the threshold")}')
+        print(f'  {pk.get("reasoning","Nothing cleared the confidence threshold.")}')
     else:
-        atr=fund.get('atr',0)
-        stop_price  = round(ep-ATR_STOP_MULT*atr,2)  if atr and isinstance(ep,(int,float)) else 'N/A'
-        tgt_price   = round(ep+ATR_TARGET_MULT*atr,2) if atr and isinstance(ep,(int,float)) else 'N/A'
-        risk_share  = round(ep-stop_price,2)           if atr and isinstance(ep,(int,float)) else 'N/A'
-        er_warn = ' ⚠️ EARNINGS RISK' if fund.get('earnings_risk') else ''
-        print(f'  TICKER:     {ticker} [{src}]{er_warn}')
-        print(f'  SIGNAL:     {sig} | CONFIDENCE: {conf}/100 | SECTOR: {pk.get("sector")}')
-        print(f'  ENTRY REF:  ${ep} | STOP: ~${stop_price} | TARGET: ~${tgt_price} | R:R ~1:2')
-        print(f'  Score:      {pk.get("score_breakdown","")}')
-        print(f'  Reasoning:  {pk.get("reasoning","")}')
-        print(f'  Key Risk:   {pk.get("key_risk","")}')
-        if pk.get('devils_advocate'): print(f'  Devils Adv: {pk.get("devils_advocate","")}')
+        atr        = fund.get('atr', 0)
+        stop_price = round(ep - ATR_STOP_MULT  * atr, 2) if atr and isinstance(ep, (int, float)) else 'N/A'
+        tgt_price  = round(ep + ATR_TARGET_MULT * atr, 2) if atr and isinstance(ep, (int, float)) else 'N/A'
+        er_warn    = '  ⚠️  EARNINGS THIS WEEK' if fund.get('earnings_risk') else ''
+        conf_bar   = '█' * int(conf / 5) + '░' * (20 - int(conf / 5))
+
+        print(f'  BUY  {ticker}  [{src}]{er_warn}')
+        print(f'  Sector:     {pk.get("sector","")}')
+        print(f'  Confidence: {conf}/100  {conf_bar}')
+        print(f'  Entry:  ~${ep}   Stop: ~${stop_price}   Target: ~${tgt_price}   R:R 1:2')
+        print(f'  Score:  {pk.get("score_breakdown","")}')
+        print('─' * W)
+        print(f'  Why:      {pk.get("reasoning","")}')
+        print(f'  Key Risk: {pk.get("key_risk","")}')
+        if pk.get('devils_advocate'):
+            print(f'  Bear case: {pk.get("devils_advocate","")}')
+
     if wl:
         print('\n  WATCH LIST:')
         for w in wl:
-            wf=next((c for c in (all_candidates or []) if c['ticker']==w.get('ticker')), {})
-            print(f'  WATCH: {w.get("ticker")} | {w.get("confidence")}/100 | {w.get("sector")} | {w.get("reasoning","")}')
-    print('='*65)
+            print(f'    {w.get("ticker"):<6}  {w.get("confidence")}/100  [{w.get("sector","")}]  {w.get("reasoning","")[:70]}')
+    print('█' * W)
+
+
+def _build_rules_html(rules, summary):
+    """Render the LLM self-derived rules block for the HTML report."""
+    if not rules:
+        return ''
+    rule_items = ''.join(
+        f'<li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333">'
+        f'<span style="color:#1565c0;font-weight:600">Rule {i}:</span> {r}</li>'
+        for i, r in enumerate(rules, 1)
+    )
+    # Load historical rules to show evolution
+    rules_log = os.path.join(DRIVE_FOLDER, 'rules_log.csv')
+    history_html = ''
+    if os.path.exists(rules_log):
+        try:
+            rdf = pd.read_csv(rules_log)
+            past = rdf[~rdf['Date'].str.startswith(datetime.now().strftime('%Y-%m-%d'), na=False)]
+            if not past.empty:
+                dates = past['Date'].unique()[-5:]
+                history_html = '<details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary>'
+                for d in reversed(dates):
+                    day_rules = past[past['Date']==d]['Rule'].tolist()
+                    history_html += f'<div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">{d}</b><ul style="margin-top:4px;padding-left:16px;font-size:12px">'
+                    for r in day_rules:
+                        history_html += f'<li style="padding:2px 0">{r}</li>'
+                    history_html += '</ul></div>'
+                history_html += '</details>'
+        except: pass
+    return f'''<div class="section" style="border-left:4px solid #1565c0">
+    <h2>🧠 What the AI Learned from Your Trade History</h2>
+    {f'<p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">{summary}</p>' if summary else ''}
+    <ul style="list-style:none;padding:0">{rule_items}</ul>
+    {history_html}
+  </div>'''
+
+
+def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summary='',
+                     stop_price='N/A', target_price='N/A'):
+    """Save a formatted HTML report to Google Drive after each run."""
+    pk   = result.get('top_pick', {}) if result else {}
+    sig  = pk.get('signal', 'NO PICK')
+    conf = pk.get('confidence', 0)
+    ticker = pk.get('ticker', 'N/A')
+    today  = datetime.now().strftime('%Y-%m-%d')
+    stop = f'${stop_price}' if isinstance(stop_price, (int, float)) else stop_price
+    tgt  = f'${target_price}' if isinstance(target_price, (int, float)) else target_price
+
+    pick_color  = '#00c853' if sig == 'BUY' else '#ff1744'
+    pick_label  = f'BUY {ticker}' if sig == 'BUY' else 'NO PICK TODAY'
+    conf_bar    = int(conf / 100 * 200)
+
+    # Load CSVs
+    def load(fp):
+        if not os.path.exists(fp): return pd.DataFrame()
+        df = pd.read_csv(fp)
+        for c in ['Return_10d_pct','Return_30d_pct','vs_QQQ_30d','Confidence']:
+            if c in df.columns: df[c] = pd.to_numeric(df[c], errors='coerce')
+        return df
+
+    picks_df = load(PICKS_CSV)
+    watch_df = load(WATCH_CSV)
+
+    def stats(df):
+        done = df[df['Result'].isin(['Win','Loss','Neutral'])] if 'Result' in df.columns else pd.DataFrame()
+        if done.empty: return {'total':0,'wins':0,'losses':0,'neutral':0,'wr':0,'avg30':0}
+        w=len(done[done['Result']=='Win']); l=len(done[done['Result']=='Loss']); n=len(done[done['Result']=='Neutral'])
+        return {'total':len(done),'wins':w,'losses':l,'neutral':n,
+                'wr':round(w/len(done)*100,1) if len(done) else 0,
+                'avg30':round(done['Return_30d_pct'].mean(),2)}
+
+    ps = stats(picks_df)
+    ws = stats(watch_df)
+
+    def result_badge(r):
+        if r == 'Win':     return '<span style="color:#00c853;font-weight:bold">✅ Win</span>'
+        if r == 'Loss':    return '<span style="color:#ff1744;font-weight:bold">❌ Loss</span>'
+        if r == 'Neutral': return '<span style="color:#ff9800;font-weight:bold">➖ Neutral</span>'
+        return '<span style="color:#999">⏳ Pending</span>'
+
+    def pct(v):
+        try:
+            f = float(v)
+            c = '#00c853' if f > 0 else '#ff1744' if f < 0 else '#999'
+            return f'<span style="color:{c}">{f:+.1f}%</span>'
+        except: return '<span style="color:#999">—</span>'
+
+    def table_rows(df, max_rows=50):
+        if df.empty: return '<tr><td colspan="9">No data yet</td></tr>'
+        rows = ''
+        for _, r in df.sort_values('Date', ascending=False).head(max_rows).iterrows():
+            res = str(r.get('Result','Pending'))
+            bg  = '#f1fff6' if res=='Win' else '#fff1f1' if res=='Loss' else ''
+            rows += f'''<tr style="background:{bg}">
+                <td>{r.get("Date","")}</td>
+                <td><b>{r.get("Ticker","")}</b></td>
+                <td>{r.get("Confidence","")}</td>
+                <td>{r.get("Source","")}</td>
+                <td>{r.get("Sector","")}</td>
+                <td>{pct(r.get("Return_10d_pct",""))}</td>
+                <td>{pct(r.get("Return_30d_pct",""))}</td>
+                <td>{pct(r.get("vs_QQQ_30d",""))}</td>
+                <td>{result_badge(res)}</td>
+                <td style="font-size:11px;color:#555;max-width:200px">{str(r.get("Reasoning",""))[:80]}</td>
+            </tr>'''
+        return rows
+
+    watch_list_html = ''
+    for w in (wl or []):
+        watch_list_html += f'''
+        <div style="background:#fff8e1;border-left:4px solid #ffc107;padding:12px;margin:8px 0;border-radius:4px">
+            <b>{w.get("ticker")}</b> &nbsp;{w.get("confidence")}/100 &nbsp;·&nbsp;
+            {w.get("sector","")} &nbsp;·&nbsp;
+            <span style="color:#555">{w.get("reasoning","")[:120]}</span>
+        </div>'''
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stock Screener — {today}</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+         background: #f0f2f5; color: #1a1a2e; padding: 20px; }}
+  .container {{ max-width: 1100px; margin: 0 auto; }}
+  h1 {{ font-size: 22px; color: #444; margin-bottom: 4px; }}
+  .subtitle {{ color: #888; font-size: 13px; margin-bottom: 24px; }}
+  .pick-card {{ background: #1a1a2e; color: white; border-radius: 14px;
+                padding: 28px; margin-bottom: 24px; border-left: 8px solid {pick_color}; }}
+  .pick-title {{ font-size: 32px; font-weight: 800; color: {pick_color}; margin-bottom: 8px; }}
+  .pick-meta {{ font-size: 13px; color: #aaa; margin-bottom: 20px; }}
+  .pick-grid {{ display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 20px 0; }}
+  .pick-metric {{ background: rgba(255,255,255,0.07); border-radius: 8px; padding: 14px; }}
+  .pick-metric .label {{ font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }}
+  .pick-metric .value {{ font-size: 22px; font-weight: 700; color: white; margin-top: 4px; }}
+  .conf-bar {{ background: rgba(255,255,255,0.1); border-radius: 99px; height: 8px; margin-top: 8px; }}
+  .conf-fill {{ background: {pick_color}; border-radius: 99px; height: 8px; width: {conf_bar}px; max-width:200px; }}
+  .reasoning-box {{ background: rgba(255,255,255,0.05); border-radius: 8px; padding: 14px; margin-top: 16px; font-size: 14px; line-height: 1.6; }}
+  .risk-box {{ background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3);
+              border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 13px; color: #ffaaaa; }}
+  .grid4 {{ display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }}
+  .stat-card {{ background: white; border-radius: 10px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }}
+  .stat-card .val {{ font-size: 28px; font-weight: 700; }}
+  .stat-card .lbl {{ font-size: 12px; color: #888; margin-top: 4px; }}
+  .section {{ background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;
+              box-shadow: 0 1px 4px rgba(0,0,0,0.08); }}
+  .section h2 {{ font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #333;
+                 border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }}
+  table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+  th {{ background: #f8f9fa; padding: 10px 8px; text-align: left; font-weight: 600;
+        color: #555; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }}
+  td {{ padding: 9px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }}
+  tr:last-child td {{ border-bottom: none; }}
+  .market-strip {{ background: white; border-radius: 10px; padding: 14px 20px;
+                   margin-bottom: 20px; display: flex; gap: 24px; align-items: center;
+                   box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 13px; }}
+  .market-item .ml {{ color: #888; font-size: 11px; }}
+  .market-item .mv {{ font-weight: 600; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📈 Daily Stock Screener</h1>
+  <p class="subtitle">{datetime.now().strftime("%A, %B %d %Y  %H:%M")} &nbsp;·&nbsp; Powered by NVIDIA {NVIDIA_MODEL}</p>
+
+  <div class="market-strip">
+    <div class="market-item"><div class="ml">VIX</div><div class="mv">{ctx.get("vix_level","-"):.1f} ({ctx.get("vix_regime","")[:12]})</div></div>
+    <div class="market-item"><div class="ml">QQQ</div><div class="mv">{ctx.get("qqq_trend","")} (+{ctx.get("qqq_vs_ma50",0):.1f}% vs 50MA)</div></div>
+    <div class="market-item"><div class="ml">SPY Today</div><div class="mv">{ctx.get("spy_return_today",0):+.2f}%</div></div>
+    <div class="market-item"><div class="ml">Sentiment</div><div class="mv">{nd.get("market_sentiment","NEUTRAL") if nd else "N/A"}</div></div>
+    <div style="flex:1;color:#666;font-size:12px">{(nd.get("macro_summary","") if nd else "")[:120]}</div>
+  </div>
+
+  <!-- LEARNING RULES -->
+  {_build_rules_html(derived_rules, learning_summary)}
+
+  <!-- TODAY'S PICK -->
+  <div class="pick-card">
+    <div class="pick-title">{pick_label}</div>
+    <div class="pick-meta">{today} &nbsp;·&nbsp; Source: {pk.get("source","")} &nbsp;·&nbsp; Sector: {pk.get("sector","")}</div>
+    <div class="pick-grid">
+      <div class="pick-metric">
+        <div class="label">Confidence</div>
+        <div class="value">{conf}/100</div>
+        <div class="conf-bar"><div class="conf-fill"></div></div>
+      </div>
+      <div class="pick-metric">
+        <div class="label">Entry Price</div>
+        <div class="value">${ep if isinstance(ep,(int,float)) else "N/A"}</div>
+      </div>
+      <div class="pick-metric">
+        <div class="label">Stop → Target</div>
+        <div class="value" style="font-size:15px">{stop} → {tgt}</div>
+      </div>
+    </div>
+    <div class="reasoning-box">{pk.get("reasoning","")}</div>
+    <div class="risk-box">⚠️ Key Risk: {pk.get("key_risk","")}</div>
+    {"<div class='risk-box' style='margin-top:8px;color:#aaa'>🐻 Bear case: "+pk.get("devils_advocate","")+"</div>" if pk.get("devils_advocate") else ""}
+  </div>
+
+  {"<div class='section'><h2>👀 Watch List</h2>" + watch_list_html + "</div>" if wl else ""}
+
+  <!-- SUMMARY STATS -->
+  <div class="grid4">
+    <div class="stat-card"><div class="val" style="color:#00c853">{ps["wins"]}</div><div class="lbl">BUY Wins</div></div>
+    <div class="stat-card"><div class="val" style="color:#ff1744">{ps["losses"]}</div><div class="lbl">BUY Losses</div></div>
+    <div class="stat-card"><div class="val">{ps["wr"]}%</div><div class="lbl">BUY Win Rate</div></div>
+    <div class="stat-card"><div class="val" style="color:{"#00c853" if ps["avg30"]>=0 else "#ff1744"}">{ps["avg30"]:+.1f}%</div><div class="lbl">Avg 30d Return</div></div>
+  </div>
+
+  <!-- CONFIRMED PICKS TABLE -->
+  <div class="section">
+    <h2>✅ Confirmed BUY History</h2>
+    <table>
+      <tr><th>Date</th><th>Ticker</th><th>Conf</th><th>Source</th><th>Sector</th>
+          <th>10d</th><th>30d</th><th>vs QQQ</th><th>Result</th><th>Reasoning</th></tr>
+      {table_rows(picks_df)}
+    </table>
+  </div>
+
+  <!-- WATCH LIST TABLE -->
+  <div class="section">
+    <h2>👀 Watch List History</h2>
+    <table>
+      <tr><th>Date</th><th>Ticker</th><th>Conf</th><th>Source</th><th>Sector</th>
+          <th>10d</th><th>30d</th><th>vs QQQ</th><th>Result</th><th>Reasoning</th></tr>
+      {table_rows(watch_df)}
+    </table>
+  </div>
+
+  <p style="text-align:center;color:#aaa;font-size:11px;margin-top:20px">
+    Not financial advice. Personal learning project. Always do your own research.
+  </p>
+</div>
+</body>
+</html>'''
+
+    # Save dated copy + rolling latest to Drive
+    report_path = os.path.join(DRIVE_FOLDER, f'report_{today}.html')
+    latest_path = os.path.join(DRIVE_FOLDER, 'report_latest.html')
+    for fp in (report_path, latest_path):
+        with open(fp, 'w', encoding='utf-8') as f:
+            f.write(html)
+
+    # Render directly in Colab via iframe (base64 data URI bypasses Colab's style sandbox)
+    try:
+        import base64
+        from IPython.display import display as _ipy_display, HTML as _IPyHTML
+        b64 = base64.b64encode(html.encode('utf-8')).decode('utf-8')
+        iframe = (
+            f'<iframe src="data:text/html;base64,{b64}" '
+            f'width="100%" height="900" style="border:none;border-radius:8px;'
+            f'box-shadow:0 2px 12px rgba(0,0,0,0.1)"></iframe>'
+        )
+        _ipy_display(_IPyHTML(iframe))
+    except Exception:
+        print(f'📊 Report saved → {latest_path}')
 
 
 def display_scorecard():
-    print('\n'+'='*65+'\n  SCORECARD\n'+'='*65)
-    for label, fp in [('CONFIRMED PICKS',PICKS_CSV),('WATCH LIST',WATCH_CSV)]:
+    """Minimal terminal summary — full detail is in the HTML report rendered above."""
+    print('\n' + '─' * 60)
+    for label, fp in [('CONFIRMED PICKS', PICKS_CSV), ('WATCH LIST', WATCH_CSV)]:
         if not os.path.exists(fp): continue
-        df=pd.read_csv(fp); done=df[df['Result'].isin(['Win','Loss','Neutral'])]; pend=df[df['Result']=='Pending']
-        print(f'\n  {label}: {len(df)} total | {len(pend)} pending | {len(done)} evaluated')
-        if not done.empty:
-            w=len(done[done['Result']=='Win']); l=len(done[done['Result']=='Loss']); n=len(done[done['Result']=='Neutral'])
-            wr=round((w/len(done))*100,1); ar=pd.to_numeric(done['Return_30d_pct'],errors='coerce').mean()
-            print(f'  Win:{w} Loss:{l} Neutral:{n} | Win Rate:{wr}% | Avg30d:{ar:+.2f}%')
-        base=['Date','Ticker','Confidence','Source','Entry_Price','Stop_Zone','Target_Zone','Return_10d_pct','Return_30d_pct','Result']
-        show=[c for c in base if c in df.columns]
-        print(df[show].tail(5).to_string(index=False))
-    print(f'\n  📁 Folder: {DRIVE_FOLDER}\n'+'='*65)
+        df   = pd.read_csv(fp)
+        done = df[df['Result'].isin(['Win','Loss','Neutral'])]
+        pend = df[df['Result'] == 'Pending']
+        if done.empty:
+            print(f'  {label}: 0 evaluated yet | {len(pend)} pending')
+            continue
+        wins = len(done[done['Result']=='Win'])
+        wr   = round(wins / len(done) * 100, 1)
+        r30  = pd.to_numeric(done['Return_30d_pct'], errors='coerce').mean()
+        print(f'  {label}: {wins}/{len(done)} wins ({wr}%) | avg 30d {r30:+.1f}% | {len(pend)} pending')
+    print(f'  📁 Full report → {DRIVE_FOLDER}/report_latest.html')
+    print('─' * 60)
 
 
 print('\n✅ All functions loaded - v6.2')
@@ -1646,13 +2195,13 @@ def run_screener():
     headlines        = fetch_macro_news()
     all_stock_news   = fetch_all_stock_news_parallel(STOCK_UNIVERSE)
     all_fundamentals = fetch_all_fundamentals_parallel(STOCK_UNIVERSE)
-    sector_news      = fetch_sector_etf_news()
     sector_ranks, _  = compute_sector_ranks(batch_data)
 
     print('\nStep 4/8: Bidirectional screening...')
     technical_passed = screen_technical(batch_data, ctx)
     news_rescued     = screen_news(batch_data, all_stock_news, technical_passed, ctx)
     candidates       = merge_candidates(technical_passed, news_rescued, all_stock_news, all_fundamentals)
+    sector_news      = derive_sector_sentiment(candidates)  # derived from candidates, not ETF API
 
     print('\nStep 4.5/8: Stream B - headline ticker extraction...')
     b_cands = stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_news, all_fundamentals, ctx)
@@ -1685,9 +2234,9 @@ def run_screener():
         print(f'  Self-calibration: {len(pick_history)} prior picks, {wins/len(pick_history)*100:.0f}% win rate')
 
     print('\nStep 6/8: Claude final scoring...')
-    result = analyze_with_claude(candidates, ctx, nd, pick_history=pick_history)
+    result = analyze_with_nvidia(candidates, ctx, nd, pick_history=pick_history)
     if not result:
-        print('Claude analysis failed - check your API key in Cell 3'); return None
+        print('NVIDIA analysis failed - no result returned'); return None
 
     # Post-hoc hard cap enforcement
     pick = result.get('top_pick',{})
@@ -1704,8 +2253,12 @@ def run_screener():
     wl=result.get('watch_candidates',[]); conf=pick.get('confidence',0); sig=pick.get('signal','NO PICK')
     ep='N/A'
     if sig=='BUY' and conf>=BUY_THRESHOLD:
-        try: ep=round(float(yf.Ticker(pick['ticker']).history(period='2d')['Close'].iloc[-1]),2)
-        except: ep='N/A'
+        match=next((c for c in candidates if c['ticker']==pick['ticker']),{})
+        if match.get('price'):
+            ep=round(float(match['price']),2)
+        else:
+            try: ep=round(float(yf.Ticker(pick['ticker']).history(period='2d')['Close'].iloc[-1]),2)
+            except: ep='N/A'
 
     display_result(result, ctx, nd, ep, wl, all_candidates=candidates)
 
@@ -1714,10 +2267,23 @@ def run_screener():
         save_pick(pick, ctx, ep, PICKS_CSV, PICK_COLS, all_candidates=candidates)
     for w in wl:
         if w.get('confidence',0)>=WATCH_THRESHOLD:
-            try: wp=round(float(yf.Ticker(w['ticker']).history(period='2d')['Close'].iloc[-1]),2)
-            except: wp='N/A'
+            wmatch = next((c for c in candidates if c['ticker']==w['ticker']),{})
+            if wmatch.get('price'):
+                wp = round(float(wmatch['price']),2)
+            else:
+                try: wp=round(float(yf.Ticker(w['ticker']).history(period='2d')['Close'].iloc[-1]),2)
+                except: wp='N/A'
             save_pick(w, ctx, wp, WATCH_CSV, WATCH_COLS, all_candidates=candidates, watch_score=w.get('confidence'))
 
+    _rules = (result or {}).get('derived_rules', [])
+    _summary = (result or {}).get('learning_summary', '')
+    # Compute correct stop/target from actual ATR (same logic as terminal card)
+    _fund = next((c for c in candidates if c['ticker'] == pick.get('ticker', '')), {})
+    _atr  = _fund.get('atr', 0)
+    _stop = round(ep - ATR_STOP_MULT  * _atr, 2) if _atr and isinstance(ep, (int, float)) else 'N/A'
+    _tgt  = round(ep + ATR_TARGET_MULT * _atr, 2) if _atr and isinstance(ep, (int, float)) else 'N/A'
+    save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
+                     stop_price=_stop, target_price=_tgt)
     display_scorecard()
     return result
 
