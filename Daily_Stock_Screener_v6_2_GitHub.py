@@ -2402,38 +2402,66 @@ print('\n✅ All functions loaded - v6.2')
 print('▶  Run Cell 5 to start the screener')
 
 
-def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price):
-    """Send today's pick summary to WhatsApp via CallMeBot (free)."""
+def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
+    """Send detailed daily pick to WhatsApp via CallMeBot (free, 10 msg/day limit)."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
         return
-    ticker  = pick.get('ticker', 'NONE')
-    sig     = pick.get('signal', 'NO PICK')
-    conf    = pick.get('confidence', 0)
-    why     = str(pick.get('reasoning', ''))[:120]
-    watch   = ' | '.join([f'{w["ticker"]}({w.get("confidence",0)})' for w in wl[:3]])
-    ep_str  = f'${ep}' if isinstance(ep, (int, float)) else 'N/A'
-    st_str  = f'${stop_price}' if isinstance(stop_price, (int, float)) else 'N/A'
-    tg_str  = f'${target_price}' if isinstance(target_price, (int, float)) else 'N/A'
+    import urllib.parse
+
+    ticker   = pick.get('ticker', 'NONE')
+    sig      = pick.get('signal', 'NO PICK')
+    conf     = pick.get('confidence', 0)
+    sector   = pick.get('sector', '')
+    why      = str(pick.get('reasoning', ''))[:200]
+    risk     = str(pick.get('key_risk', ''))[:100]
+    bear     = str(pick.get('devils_advocate', ''))[:100]
+    ep_str   = f'${ep}' if isinstance(ep, (int, float)) else 'N/A'
+    st_str   = f'${stop_price}' if isinstance(stop_price, (int, float)) else 'N/A'
+    tg_str   = f'${target_price}' if isinstance(target_price, (int, float)) else 'N/A'
     date_str = datetime.now().strftime('%b %d %Y')
+
+    # Pull technicals from candidates if available
+    tech_line = ''
+    if candidates:
+        m = next((c for c in candidates if c['ticker'] == ticker), None)
+        if m:
+            cat  = m.get('catalyst_type', '')
+            rsi  = m.get('rsi', 0)
+            adx  = m.get('adx', 0)
+            mom  = m.get('momentum_5d', 0)
+            tech_line = f'RSI {rsi:.0f} | ADX {adx:.0f} | Mom5d {mom:+.1f}% | {cat}\n'
+
+    # Watch list with short reasoning
+    watch_lines = ''
+    for w in wl[:3]:
+        wt   = w.get('ticker', '')
+        wc   = w.get('confidence', 0)
+        wr   = str(w.get('reasoning', ''))[:80]
+        watch_lines += f'  {wt} ({wc}/100) - {wr}\n'
 
     if sig == 'BUY':
         msg = (
             f'SCREENER {date_str}\n'
-            f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n\n'
-            f'BUY: {ticker} @ {ep_str} | {conf}/100\n'
+            f'VIX {ctx["vix_level"]:.1f} {ctx["vix_regime"][:12]} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
+            f'{"="*32}\n'
+            f'BUY: {ticker} [{sector}] @ {ep_str} | {conf}/100\n'
             f'Stop: {st_str} | Target: {tg_str}\n'
-            f'Why: {why}\n\n'
-            f'WATCH: {watch or "None"}'
+            f'{tech_line}'
+            f'\nWhy: {why}\n'
+            f'Risk: {risk}\n'
+            f'Bear: {bear}\n'
+            f'{"="*32}\n'
+            f'WATCH:\n{watch_lines or "  None"}'
         )
     else:
         msg = (
             f'SCREENER {date_str}\n'
             f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n\n'
-            f'No BUY today ({sig})\n'
-            f'WATCH: {watch or "None"}'
+            f'No BUY today ({sig})\n\n'
+            f'WATCH:\n{watch_lines or "  None"}'
         )
+
     try:
-        import urllib.parse
         url = (f'https://api.callmebot.com/whatsapp.php'
                f'?phone={WHATSAPP_PHONE}&text={urllib.parse.quote(msg)}&apikey={CALLMEBOT_API_KEY}')
         r = requests.get(url, timeout=15)
@@ -2572,7 +2600,7 @@ def run_screener():
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
                      stop_price=_stop, target_price=_tgt)
     display_scorecard()
-    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt)
+    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates)
     return result
 
 
