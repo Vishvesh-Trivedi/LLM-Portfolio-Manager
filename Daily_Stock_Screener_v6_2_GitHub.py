@@ -2537,21 +2537,37 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
         wr = str(w.get('reasoning', ''))[:70]
         watch_lines += f'  {wt} {wc}/100 - {wr}\n'
 
+    # Congress signal: flag pick + any watch stocks with congressional buys
+    pick_match = next((c for c in (candidates or []) if c['ticker'] == ticker), {})
+    cg_pick = pick_match.get('congress_label') == 'BUYING'
+    cg_who  = pick_match.get('congress_notes', '')
+    cg_others = [
+        f'{c["ticker"]} ({c["congress_notes"]})'
+        for c in (candidates or [])
+        if c.get('congress_label') == 'BUYING' and c['ticker'] != ticker
+    ][:4]
+    congress_line = ''
+    if cg_others:
+        congress_line = f'Congress buys: {", ".join(cg_others)}\n'
+
     history_lines = _recent_picks_summary(days=10)
     history_block = ('-- BUY HISTORY --\n' + '\n'.join(history_lines)) if history_lines else ''
+
+    cg_tag = f' [CONGRESS: {cg_who}]' if cg_pick else ''
 
     if sig == 'BUY':
         msg = (
             f'SCREENER {date_str}\n'
             f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
             f'---\n'
-            f'BUY: {ticker} [{sector}] @ {ep_str} | {conf}/100\n'
+            f'BUY: {ticker} [{sector}] @ {ep_str} | {conf}/100{cg_tag}\n'
             f'Stop: {st_str} | Target: {tg_str}\n'
             f'\nWhy: {why}\n'
             f'\nRisk: {risk}\n'
             f'\nBear: {bear}\n'
             f'---\n'
             f'WATCH:\n{watch_lines or "  None"}'
+            f'{congress_line}'
             f'---\n'
             f'{history_block}'
         )
