@@ -1614,7 +1614,7 @@ def analyze_exit_signals(ctx, all_stock_news):
                 price_line = f'Entry={entry_str} (current price unavailable)'
                 unreal = None
             news = ' | '.join((all_stock_news or {}).get(ticker, [])[:3]) or 'No fresh news'
-            sys_msg = 'You are managing an open short-to-medium term position (1-4 week horizon). Respond ONLY with valid JSON.'
+            sys_msg = 'You are managing an open short-to-medium term position (1-4 week horizon). Respond ONLY with valid JSON. Never use double-quote characters inside string values.'
             user_msg = (
                 f'OPEN {label}: {ticker} | {price_line} | Days held: {days_in}/30\n'
                 f'Original thesis: {str(row.get("Reasoning",""))[:120]}\n'
@@ -1624,26 +1624,41 @@ def analyze_exit_signals(ctx, all_stock_news):
                 f'Decision for a 1-4 week trade:\n'
                 f'- action: EXIT (take profit or cut loss now) | HOLD | ADD (strong setup, consider adding)\n'
                 f'- urgency: HIGH | MEDIUM | LOW\n'
-                f'- reason: one sentence\n'
+                f'- reason: one sentence, no double-quote characters inside\n'
                 f'- exit_price: suggested exit price or null\n\n'
                 f'Return ONLY: {{"ticker":"{ticker}","action":"HOLD","urgency":"LOW","reason":"...","exit_price":null}}'
             )
             try:
-                raw = call_llm(sys_msg, user_msg, max_tokens=250)
-                if '{' in raw and '}' in raw:
-                    raw = raw[raw.index('{'):raw.rindex('}')+1]
-                rec = json.loads(raw)
+                raw = call_llm(sys_msg, user_msg, max_tokens=400)
+                rec = None
+                # Try proper JSON first
+                raw_json = raw
+                if '{' in raw_json and '}' in raw_json:
+                    raw_json = raw_json[raw_json.index('{'):raw_json.rindex('}')+1]
+                try:
+                    rec = json.loads(raw_json)
+                except json.JSONDecodeError:
+                    # Fallback: regex-extract individual fields (handles unescaped quotes in reason)
+                    import re as _re
+                    _a = _re.search(r'"action"\s*:\s*"([^"]+)"', raw)
+                    _u = _re.search(r'"urgency"\s*:\s*"([^"]+)"', raw)
+                    _r = _re.search(r'"reason"\s*:\s*"(.+?)(?:","exit_price|"\s*\})', raw, _re.DOTALL)
+                    rec = {
+                        'action':  _a.group(1) if _a else 'HOLD',
+                        'urgency': _u.group(1) if _u else 'LOW',
+                        'reason':  _r.group(1) if _r else '',
+                    }
                 action = rec.get('action', 'HOLD')
                 urgency = rec.get('urgency', 'LOW')
                 reason = rec.get('reason', '')
                 unreal_str = f'{unreal:+.1f}%' if unreal is not None else '?'
                 if action == 'EXIT':
-                    icon = '🚨'
+                    icon = '!'
                 elif action == 'ADD' and urgency == 'HIGH':
-                    icon = '📈'
+                    icon = '+'
                 else:
-                    icon = '⏳'
-                print(f'  {icon} {action} [{urgency}] {ticker} ({unreal_str} in {days_in}d): {reason}')
+                    icon = '-'
+                print(f'  [{icon}] {action} [{urgency}] {ticker} ({unreal_str} in {days_in}d): {reason}')
             except Exception as e:
                 print(f'  {ticker}: exit check failed ({e})')
 
