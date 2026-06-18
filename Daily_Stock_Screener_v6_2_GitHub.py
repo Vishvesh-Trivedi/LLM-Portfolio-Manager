@@ -2472,9 +2472,9 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
     sig      = pick.get('signal', 'NO PICK')
     conf     = pick.get('confidence', 0)
     sector   = pick.get('sector', '')
-    why      = str(pick.get('reasoning', ''))[:200]
-    risk     = str(pick.get('key_risk', ''))[:100]
-    bear     = str(pick.get('devils_advocate', ''))[:100]
+    why      = str(pick.get('reasoning', '')).split('.')[0]
+    risk     = str(pick.get('key_risk', '')).split('.')[0]
+    bear     = str(pick.get('devils_advocate', '')).split('.')[0]
     # No $ sign — CallMeBot treats $1, $9 etc. as template vars and strips them
     ep_str   = str(ep)  if isinstance(ep, (int, float)) else 'N/A'
     st_str   = str(stop_price)   if isinstance(stop_price, (int, float)) else 'N/A'
