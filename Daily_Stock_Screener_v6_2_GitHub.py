@@ -614,6 +614,46 @@ def _fetch_insider_single(ticker):
     return ticker, 0, 'NEUTRAL'
 
 
+def fetch_congress_trades(days=45):
+    """Fetch recent US House congressional stock purchases (STOCK Act disclosures).
+    Uses the free House Stock Watcher API — no key required.
+    Returns {ticker: {'count': N, 'names': ['Smith', 'Jones', ...]}}
+    """
+    try:
+        r = requests.get('https://housestockwatcher.com/api/transactions',
+                         timeout=20, headers={'User-Agent': 'Mozilla/5.0'})
+        r.raise_for_status()
+        data = r.json()
+    except Exception as e:
+        print(f'  Congress trades: unavailable ({e})')
+        return {}
+
+    cutoff = datetime.now() - timedelta(days=days)
+    result = {}
+    for rec in data:
+        if 'purchase' not in str(rec.get('type', '')).lower():
+            continue
+        ticker = str(rec.get('ticker', '')).strip().upper().replace('$', '')
+        if not ticker or len(ticker) > 5 or not ticker.isalpha():
+            continue
+        try:
+            disc = datetime.strptime(str(rec.get('disclosure_date', ''))[:10], '%Y-%m-%d')
+        except:
+            continue
+        if disc < cutoff:
+            continue
+        name = str(rec.get('representative', '')).split()[-1]  # last name only
+        if ticker not in result:
+            result[ticker] = {'count': 0, 'names': []}
+        result[ticker]['count'] += 1
+        if name not in result[ticker]['names']:
+            result[ticker]['names'].append(name)
+
+    total = sum(v['count'] for v in result.values())
+    print(f'  Congress buys (last {days}d): {total} purchases across {len(result)} stocks')
+    return result
+
+
 def fetch_options_and_insider_parallel(candidates):
     """Fetch options P/C + insider sentiment for ALL candidates in parallel."""
     tickers = [c['ticker'] for c in candidates]
@@ -658,7 +698,7 @@ def compute_sector_ranks(batch_data):
 
 
 def enrich_with_scores(candidates, ctx, market_sentiment,
-                       sector_ranks, options_data, insider_data):
+                       sector_ranks, options_data, insider_data, congress_data=None):
     """Attach tech_score and news_score to every candidate."""
     print(f'\nPhase 5.5 - Computing score breakdown ({len(candidates)} candidates)...')
     for c in candidates:
@@ -686,8 +726,15 @@ def enrich_with_scores(candidates, ctx, market_sentiment,
         c['options_pc']           = opt.get('pc_ratio')
         c['options_label']        = opt.get('label', 'NEUTRAL')
         c['insider_label']        = ins.get('label', 'NEUTRAL')
+        cg = (congress_data or {}).get(t, {})
+        c['congress_count'] = cg.get('count', 0)
+        c['congress_label'] = 'BUYING' if cg.get('count', 0) >= 1 else 'NEUTRAL'
+        c['congress_notes'] = ', '.join(cg.get('names', [])[:3])
         c['pre_score']            = ts + ns
 
+    cg_hits = [c['ticker'] for c in candidates if c.get('congress_label') == 'BUYING']
+    if cg_hits:
+        print(f'  Congress buys in pool: {cg_hits}')
     top5 = sorted(candidates, key=lambda x: x['pre_score'], reverse=True)[:5]
     print('  Pre-score top 5: '
           + '  '.join(f'{c["ticker"]}({c["pre_score"]}='
@@ -1732,6 +1779,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
         'cmf':c.get('cmf',0.0),'stoch_rsi':c.get('stoch_rsi',0.5),'hh_hl':c.get('hh_hl',False),
         'vader_label':c.get('vader_label','NEUTRAL'),'options_label':c.get('options_label','NEUTRAL'),
         'insider_label':c.get('insider_label','NEUTRAL'),'news_adjustment':c.get('news_adjustment',0),
+        'congress_label':c.get('congress_label','NEUTRAL'),'congress_notes':c.get('congress_notes',''),
         'news_notes':c.get('news_notes',''),'mkt_cap_b':c['mkt_cap_b'],
         **({k:c[k] for k in ['analyst_rating','upside_pct','short_ratio','earnings_risk','rescue_keywords','options_pc'] if c.get(k) is not None})
     } for c in candidates]
@@ -1885,6 +1933,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
         'cmf': round(c.get('cmf', 0), 3), 'stoch_rsi': round(c.get('stoch_rsi', 0.5), 2),
         'short_ratio': c.get('short_ratio'), 'earnings_days_away': c.get('earnings_days_away', 'N/A'),
         'insider': c.get('insider_label', 'NEUTRAL'), 'options': c.get('options_label', 'NEUTRAL'),
+        'congress': c.get('congress_label', 'NEUTRAL'), 'congress_who': c.get('congress_notes', ''),
         'analyst_rating': c.get('analyst_rating'), 'news_notes': c.get('news_notes', '')[:100],
     } for c in top10_candidates]
 
@@ -2578,8 +2627,9 @@ def run_screener():
         print('\nNo candidates from any stream today - NO PICK')
         display_scorecard(); return None
 
-    print('\nStep 4.6/8: Options P/C + insider signals...')
+    print('\nStep 4.6/8: Options P/C + insider + congress signals...')
     options_data, insider_data = fetch_options_and_insider_parallel(candidates)
+    congress_data = fetch_congress_trades(days=45)
 
     print('\nStep 4.7/8: LLM catalyst scoring (every candidate)...')
     candidates = batch_catalyst_score(candidates, ctx, all_stock_news)
@@ -2594,7 +2644,7 @@ def run_screener():
         display_scorecard(); return None
 
     market_sentiment = nd.get('market_sentiment','NEUTRAL')
-    candidates = enrich_with_scores(candidates, ctx, market_sentiment, sector_ranks, options_data, insider_data)
+    candidates = enrich_with_scores(candidates, ctx, market_sentiment, sector_ranks, options_data, insider_data, congress_data)
 
     pick_history = load_performance_history(PICKS_CSV)
     if pick_history:
