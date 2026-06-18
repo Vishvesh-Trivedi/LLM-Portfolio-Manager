@@ -2402,6 +2402,56 @@ print('\n✅ All functions loaded - v6.2')
 print('▶  Run Cell 5 to start the screener')
 
 
+def _recent_picks_summary(days=10):
+    """Read PICKS_CSV and return last N days of BUY picks with live P&L for pending ones."""
+    lines = []
+    if not os.path.exists(PICKS_CSV):
+        return lines
+    try:
+        df = pd.read_csv(PICKS_CSV)
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        cutoff = datetime.now() - pd.Timedelta(days=days)
+        recent = df[df['Date'] >= cutoff].sort_values('Date', ascending=False)
+        # Fetch live prices in one batch for pending tickers
+        pending_tickers = recent[recent['Result'] == 'Pending']['Ticker'].dropna().unique().tolist()
+        live_prices = {}
+        if pending_tickers:
+            try:
+                raw = yf.download(pending_tickers, period='2d', auto_adjust=True,
+                                  progress=False, threads=True)
+                closes = raw['Close'] if isinstance(raw.columns, pd.MultiIndex) else raw[['Close']]
+                for t in pending_tickers:
+                    try:
+                        col = closes[t] if t in closes.columns else closes.iloc[:, 0]
+                        live_prices[t] = float(col.dropna().iloc[-1])
+                    except:
+                        pass
+            except:
+                pass
+        for _, row in recent.iterrows():
+            t      = str(row.get('Ticker', '')).strip()
+            d      = row['Date'].strftime('%b %d')
+            entry  = row.get('Entry_Price', '')
+            result = str(row.get('Result', 'Pending')).strip()
+            if result == 'Pending':
+                curr = live_prices.get(t)
+                if curr and entry and str(entry) not in ('', 'nan', 'N/A'):
+                    pct = (curr - float(entry)) / float(entry) * 100
+                    status = f'Open {pct:+.1f}%'
+                else:
+                    status = 'Open'
+            else:
+                ret = row.get('Return_30d_pct', '')
+                try:
+                    status = f'{result} ({float(ret):+.1f}%)'
+                except:
+                    status = result
+            lines.append(f'  {d}: {t} @ ${entry} - {status}')
+    except Exception:
+        pass
+    return lines
+
+
 def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
     """Send daily pick to WhatsApp via CallMeBot (free, 10 msg/day limit)."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
@@ -2428,6 +2478,9 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
         wr = str(w.get('reasoning', ''))[:100]
         watch_lines += f'  {wt} [{ws}] {wc}/100 - {wr}\n'
 
+    history_lines = _recent_picks_summary(days=10)
+    history_block = ('-- LAST 10 DAYS --\n' + '\n'.join(history_lines) + '\n') if history_lines else ''
+
     if sig == 'BUY':
         msg = (
             f'SCREENER {date_str}\n'
@@ -2440,13 +2493,17 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
             f'\nBear: {bear}\n'
             f'{"="*32}\n'
             f'WATCH:\n{watch_lines or "  None"}'
+            f'{"="*32}\n'
+            f'{history_block}'
         )
     else:
         msg = (
             f'SCREENER {date_str}\n'
             f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n\n'
             f'No BUY today ({sig})\n\n'
-            f'WATCH:\n{watch_lines or "  None"}'
+            f'WATCH:\n{watch_lines or "  None"}\n'
+            f'{"="*32}\n'
+            f'{history_block}'
         )
 
     try:
