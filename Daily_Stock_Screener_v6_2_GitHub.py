@@ -2456,7 +2456,7 @@ def _recent_picks_summary(days=10):
                     status = f'{result} ({float(ret):+.1f}%)'
                 except:
                     status = result
-            lines.append(f'  {d}: {t} @ ${entry} - {status}')
+            lines.append(f'  {d}: {t} @ {entry} - {status}')
     except Exception:
         pass
     return lines
@@ -2472,38 +2472,38 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
     sig      = pick.get('signal', 'NO PICK')
     conf     = pick.get('confidence', 0)
     sector   = pick.get('sector', '')
-    why      = str(pick.get('reasoning', ''))[:300]
-    risk     = str(pick.get('key_risk', ''))[:150]
-    bear     = str(pick.get('devils_advocate', ''))[:150]
-    ep_str   = f'${ep}' if isinstance(ep, (int, float)) else 'N/A'
-    st_str   = f'${stop_price}' if isinstance(stop_price, (int, float)) else 'N/A'
-    tg_str   = f'${target_price}' if isinstance(target_price, (int, float)) else 'N/A'
+    why      = str(pick.get('reasoning', ''))[:200]
+    risk     = str(pick.get('key_risk', ''))[:100]
+    bear     = str(pick.get('devils_advocate', ''))[:100]
+    # No $ sign — CallMeBot treats $1, $9 etc. as template vars and strips them
+    ep_str   = str(ep)  if isinstance(ep, (int, float)) else 'N/A'
+    st_str   = str(stop_price)   if isinstance(stop_price, (int, float)) else 'N/A'
+    tg_str   = str(target_price) if isinstance(target_price, (int, float)) else 'N/A'
     date_str = datetime.now().strftime('%b %d %Y')
 
     watch_lines = ''
     for w in wl[:3]:
         wt = w.get('ticker', '')
         wc = w.get('confidence', 0)
-        ws = w.get('sector', '')
-        wr = str(w.get('reasoning', ''))[:100]
-        watch_lines += f'  {wt} [{ws}] {wc}/100 - {wr}\n'
+        wr = str(w.get('reasoning', ''))[:70]
+        watch_lines += f'  {wt} {wc}/100 - {wr}\n'
 
     history_lines = _recent_picks_summary(days=10)
-    history_block = ('-- LAST 10 DAYS --\n' + '\n'.join(history_lines) + '\n') if history_lines else ''
+    history_block = ('-- BUY HISTORY --\n' + '\n'.join(history_lines)) if history_lines else ''
 
     if sig == 'BUY':
         msg = (
             f'SCREENER {date_str}\n'
             f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
-            f'{"="*32}\n'
+            f'---\n'
             f'BUY: {ticker} [{sector}] @ {ep_str} | {conf}/100\n'
             f'Stop: {st_str} | Target: {tg_str}\n'
             f'\nWhy: {why}\n'
             f'\nRisk: {risk}\n'
             f'\nBear: {bear}\n'
-            f'{"="*32}\n'
+            f'---\n'
             f'WATCH:\n{watch_lines or "  None"}'
-            f'{"="*32}\n'
+            f'---\n'
             f'{history_block}'
         )
     else:
@@ -2512,7 +2512,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
             f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n\n'
             f'No BUY today ({sig})\n\n'
             f'WATCH:\n{watch_lines or "  None"}\n'
-            f'{"="*32}\n'
+            f'---\n'
             f'{history_block}'
         )
 
