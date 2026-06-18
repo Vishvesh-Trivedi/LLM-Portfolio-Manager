@@ -153,11 +153,27 @@ if not NVIDIA_API_KEY:
         pass
 
 if not NVIDIA_API_KEY:
-    print("⚠️  WARNING: No API key found!")
-    print("   Get your FREE key at: build.nvidia.com → sign up → 'Get API Key'")
-    print("   In Colab: use the 🔑 Secrets panel on the left sidebar.")
+    print("WARNING: No API key found!")
+    print("   Get your FREE key at: build.nvidia.com -> sign up -> 'Get API Key'")
+    print("   In Colab: use the Secrets panel on the left sidebar.")
 else:
     print("✅ API key loaded successfully")
+
+# ── WHATSAPP (CallMeBot) ────────────────────────────────────
+# Store WHATSAPP_PHONE and CALLMEBOT_API_KEY in Colab Secrets (same panel as NVIDIA_API_KEY)
+# WHATSAPP_PHONE: your number in international format WITHOUT +, e.g. 447911123456 or 919876543210
+WHATSAPP_PHONE      = ""
+CALLMEBOT_API_KEY   = ""
+for _secret in ["WHATSAPP_PHONE", "CALLMEBOT_API_KEY"]:
+    try:
+        from google.colab import userdata as _ud
+        _val = (_ud.get(_secret) or "").strip()
+    except Exception:
+        _val = os.environ.get(_secret, "").strip()
+    if _secret == "WHATSAPP_PHONE":
+        WHATSAPP_PHONE = _val
+    else:
+        CALLMEBOT_API_KEY = _val
 
 # ── SCREENER SETTINGS ──────────────────────────────────────
 BUY_THRESHOLD    = 80    # minimum confidence score to generate a BUY signal
@@ -2386,6 +2402,49 @@ print('\n✅ All functions loaded - v6.2')
 print('▶  Run Cell 5 to start the screener')
 
 
+def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price):
+    """Send today's pick summary to WhatsApp via CallMeBot (free)."""
+    if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
+        return
+    ticker  = pick.get('ticker', 'NONE')
+    sig     = pick.get('signal', 'NO PICK')
+    conf    = pick.get('confidence', 0)
+    why     = str(pick.get('reasoning', ''))[:120]
+    watch   = ' | '.join([f'{w["ticker"]}({w.get("confidence",0)})' for w in wl[:3]])
+    ep_str  = f'${ep}' if isinstance(ep, (int, float)) else 'N/A'
+    st_str  = f'${stop_price}' if isinstance(stop_price, (int, float)) else 'N/A'
+    tg_str  = f'${target_price}' if isinstance(target_price, (int, float)) else 'N/A'
+    date_str = datetime.now().strftime('%b %d %Y')
+
+    if sig == 'BUY':
+        msg = (
+            f'SCREENER {date_str}\n'
+            f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n\n'
+            f'BUY: {ticker} @ {ep_str} | {conf}/100\n'
+            f'Stop: {st_str} | Target: {tg_str}\n'
+            f'Why: {why}\n\n'
+            f'WATCH: {watch or "None"}'
+        )
+    else:
+        msg = (
+            f'SCREENER {date_str}\n'
+            f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n\n'
+            f'No BUY today ({sig})\n'
+            f'WATCH: {watch or "None"}'
+        )
+    try:
+        import urllib.parse
+        url = (f'https://api.callmebot.com/whatsapp.php'
+               f'?phone={WHATSAPP_PHONE}&text={urllib.parse.quote(msg)}&apikey={CALLMEBOT_API_KEY}')
+        r = requests.get(url, timeout=15)
+        if r.status_code == 200:
+            print('  WhatsApp sent')
+        else:
+            print(f'  WhatsApp failed: HTTP {r.status_code}')
+    except Exception as e:
+        print(f'  WhatsApp error: {e}')
+
+
 # ============================================================
 # CELL 5 - RUN DAILY SCREENER
 # ============================================================
@@ -2513,6 +2572,7 @@ def run_screener():
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
                      stop_price=_stop, target_price=_tgt)
     display_scorecard()
+    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt)
     return result
 
 
