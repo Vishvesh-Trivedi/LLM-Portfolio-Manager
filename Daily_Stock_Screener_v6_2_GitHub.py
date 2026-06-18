@@ -175,6 +175,15 @@ for _secret in ["WHATSAPP_PHONE", "CALLMEBOT_API_KEY"]:
     else:
         CALLMEBOT_API_KEY = _val
 
+if WHATSAPP_PHONE and CALLMEBOT_API_KEY:
+    print(f"✅ WhatsApp configured (phone ...{WHATSAPP_PHONE[-4:]})")
+else:
+    missing = []
+    if not WHATSAPP_PHONE:    missing.append("WHATSAPP_PHONE")
+    if not CALLMEBOT_API_KEY: missing.append("CALLMEBOT_API_KEY")
+    print(f"⚠️  WhatsApp disabled — missing Colab Secrets: {', '.join(missing)}")
+    print("   Add them in the Secrets panel (key icon, left sidebar) then re-run Cell 1.")
+
 # ── SCREENER SETTINGS ──────────────────────────────────────
 BUY_THRESHOLD    = 80    # minimum confidence score to generate a BUY signal
 WATCH_THRESHOLD  = 70    # minimum confidence score for WATCH list
@@ -1889,8 +1898,9 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
     )
     r2_analyses = {}
     try:
-        raw2 = call_llm(SYS, r2_user, max_tokens=1200)
-        if '{' in raw2: raw2 = raw2[raw2.index('{'):]
+        raw2 = call_llm(SYS, r2_user, max_tokens=2000)
+        if '{' in raw2 and '}' in raw2:
+            raw2 = raw2[raw2.index('{'):raw2.rindex('}')+1]
         r2 = json.loads(raw2)
         for a in r2.get('analyses', []):
             r2_analyses[a['ticker']] = a
