@@ -256,6 +256,12 @@ _CFG_AVOID_EARNINGS     = False   # if True, auto-drop any earnings-risk ticker
 _CFG_MAX_VIX            = 999     # if VIX > this, skip all BUY signals (go to cash)
 _CFG_MIN_PRICE          = MIN_PRICE   # override minimum price floor
 _CFG_ONLY_PROFITABLE    = False   # only stocks with positive trailing EPS/revenue
+_CFG_REQUIRE_ABOVE_MA   = True    # if False, disable MA20/MA50 filter (catch breakouts)
+_CFG_MIN_DOLLAR_VOL_M   = MIN_DOLLAR_VOLUME_M  # minimum daily dollar volume ($M)
+_CFG_HOLD_DAYS          = 10      # days before position auto-closes and Win/Loss is set
+_CFG_SECTOR_CONC_MAX    = SECTOR_CONC_MAX  # max same-sector picks in rolling window
+_CFG_SAMPLE_SIZE        = SAMPLE_SIZE      # how many stocks to scan each run
+_CFG_ADDITIONAL_TICKERS = []      # LLM can add tickers outside the default universe
 
 # ── NVIDIA MODEL SELECTION ─────────────────────────────────
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
@@ -1376,7 +1382,7 @@ def screen_technical(batch_data, ctx):
         ind = compute_indicators(df, ctx['spy_return_today'])
         if ind is None:
             rejects['price'] += 1; continue
-        if ind['vs_ma20_pct'] < 0 or ind['vs_ma50_pct'] < 0:
+        if _CFG_REQUIRE_ABOVE_MA and (ind['vs_ma20_pct'] < 0 or ind['vs_ma50_pct'] < 0):
             rejects['ma'] += 1; continue
         if ind['vol_ratio'] < vol_threshold:
             rejects['vol'] += 1; continue
@@ -2135,13 +2141,14 @@ def update_results(fp, cols):
                 h=qq.history(start=s-timedelta(days=2),end=e+timedelta(days=4))
                 if h.empty or len(h)<2: return None
                 return ((float(h['Close'].iloc[-1])-float(h['Close'].iloc[0]))/float(h['Close'].iloc[0]))*100
-            if el>=10 and str(row.get('Price_10d','')).strip() in ['','nan','NaN']:
-                p10=gp(pd_+timedelta(days=10))
+            hd = _CFG_HOLD_DAYS  # LLM-controlled hold period (default 10)
+            if el>=hd and str(row.get('Price_10d','')).strip() in ['','nan','NaN']:
+                p10=gp(pd_+timedelta(days=hd))
                 if p10:
-                    r10=round(((p10-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=10))
+                    r10=round(((p10-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=hd))
                     vs10=round(r10-qr,2) if qr else ''
                     df.at[idx,'Price_10d']=p10; df.at[idx,'Return_10d_pct']=r10; df.at[idx,'vs_QQQ_10d']=vs10
-                    # Set final Win/Loss at day 10 using QQQ-relative return
+                    # Set final Win/Loss using QQQ-relative return
                     if vs10 != '' and str(row.get('Result','')).strip() in ('','nan','NaN','Pending'):
                         vs10f = float(vs10)
                         if vs10f >= 2.0:   df.at[idx,'Result'] = 'Win'
@@ -2631,9 +2638,12 @@ def load_config_overrides():
     """Read config_overrides.json (written by LLM) and apply to global screening vars."""
     global RSI_MIN, RSI_MAX, ADX_MIN, BUY_THRESHOLD, WATCH_THRESHOLD
     global ATR_STOP_MULT, ATR_TARGET_MULT, VOLUME_MIN_RATIO, MIN_PRICE
+    global MIN_DOLLAR_VOLUME_M, SECTOR_CONC_MAX, SAMPLE_SIZE
     global _CFG_SECTOR_BLACKLIST, _CFG_SECTOR_WHITELIST, _CFG_SOURCE_PREFERENCE
     global _CFG_REQUIRE_CONGRESS, _CFG_MIN_CATALYST_SCORE, _CFG_MIN_ADX_BUY, _CFG_AVOID_EARNINGS
     global _CFG_MAX_VIX, _CFG_MIN_PRICE, _CFG_ONLY_PROFITABLE
+    global _CFG_REQUIRE_ABOVE_MA, _CFG_MIN_DOLLAR_VOL_M, _CFG_HOLD_DAYS
+    global _CFG_SECTOR_CONC_MAX, _CFG_SAMPLE_SIZE, _CFG_ADDITIONAL_TICKERS
 
     paths = [_CFG_PATH, 'config_overrides.json']
     for p in paths:
@@ -2663,8 +2673,19 @@ def load_config_overrides():
             _CFG_AVOID_EARNINGS     = bool(ov.get('avoid_earnings_week', False))
             _CFG_MAX_VIX            = float(ov.get('max_vix', 999))
             _CFG_MIN_PRICE          = float(ov.get('min_price', MIN_PRICE))
-            _CFG_ONLY_PROFITABLE    = bool(ov.get('only_profitable', False))
-            MIN_PRICE               = _CFG_MIN_PRICE
+            _CFG_ONLY_PROFITABLE    = bool(ov.get('only_profitable',    False))
+            _CFG_REQUIRE_ABOVE_MA   = bool(ov.get('require_above_ma',   True))
+            _CFG_MIN_DOLLAR_VOL_M   = float(ov.get('min_dollar_volume_m', MIN_DOLLAR_VOLUME_M))
+            _CFG_HOLD_DAYS          = int(ov.get('hold_days',            10))
+            _CFG_SECTOR_CONC_MAX    = int(ov.get('sector_conc_max',      SECTOR_CONC_MAX))
+            _CFG_SAMPLE_SIZE        = int(ov.get('sample_size',          SAMPLE_SIZE))
+            _CFG_ADDITIONAL_TICKERS = [t.strip().upper() for t in ov.get('additional_tickers', [])]
+
+            # Sync module-level globals so existing code picks up the new values
+            MIN_PRICE           = _CFG_MIN_PRICE
+            MIN_DOLLAR_VOLUME_M = _CFG_MIN_DOLLAR_VOL_M
+            SECTOR_CONC_MAX     = _CFG_SECTOR_CONC_MAX
+            SAMPLE_SIZE         = _CFG_SAMPLE_SIZE
 
             print(f'✅ Config overrides loaded  RSI {RSI_MIN}-{RSI_MAX}  ADX≥{ADX_MIN}  BUY≥{BUY_THRESHOLD}')
             if _CFG_SECTOR_BLACKLIST:
@@ -2806,6 +2827,12 @@ def update_config_from_llm(pick_history):
         'max_vix': _CFG_MAX_VIX,
         'min_price': _CFG_MIN_PRICE,
         'only_profitable': _CFG_ONLY_PROFITABLE,
+        'require_above_ma': _CFG_REQUIRE_ABOVE_MA,
+        'min_dollar_volume_m': _CFG_MIN_DOLLAR_VOL_M,
+        'hold_days': _CFG_HOLD_DAYS,
+        'sector_conc_max': _CFG_SECTOR_CONC_MAX,
+        'sample_size': _CFG_SAMPLE_SIZE,
+        'additional_tickers': _CFG_ADDITIONAL_TICKERS,
     }
 
     sys_msg = (
@@ -2836,6 +2863,11 @@ YOUR JOB:
    - Set avoid_earnings_week=true if earnings plays keep failing
    - Set only_profitable=true if unprofitable companies are underperforming
    - Raise min_adx_buy to 30+ if weak-trend stocks keep losing
+   - Set require_above_ma=false to catch early breakouts below MA (risky but sometimes right)
+   - Raise min_dollar_volume_m to 50+ for large-cap only if small/mid keeps losing
+   - Change hold_days to 7 or 14 if 10-day results are inconsistent
+   - Add additional_tickers (e.g. ["PLTR","ARM","RDDT"]) to expand the universe
+   - Raise sector_conc_max if diversification is hurting returns, lower it to force diversity
 4. When win rate >65%: fine-tune only. When win rate <50%: make meaningful changes.
 5. If no clear pattern: keep current config unchanged.
 
@@ -2859,6 +2891,12 @@ Return ONLY valid JSON — no markdown fences, no text outside the JSON:
   "max_vix": 999,
   "min_price": {MIN_PRICE},
   "only_profitable": false,
+  "require_above_ma": true,
+  "min_dollar_volume_m": {MIN_DOLLAR_VOLUME_M},
+  "hold_days": {_CFG_HOLD_DAYS},
+  "sector_conc_max": {_CFG_SECTOR_CONC_MAX},
+  "sample_size": {_CFG_SAMPLE_SIZE},
+  "additional_tickers": [],
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
@@ -2896,6 +2934,16 @@ def run_screener():
 
     load_config_overrides()
 
+    # Apply LLM-controlled universe expansions and sample size
+    scan_universe = list(STOCK_UNIVERSE)
+    if _CFG_ADDITIONAL_TICKERS:
+        extra = [t for t in _CFG_ADDITIONAL_TICKERS if t not in UNIVERSE_SET and t not in ETF_SET]
+        if extra:
+            print(f'  LLM added tickers: {", ".join(extra)}')
+            scan_universe = extra + scan_universe  # LLM picks come first
+    if _CFG_SAMPLE_SIZE < len(scan_universe):
+        scan_universe = scan_universe[:_CFG_SAMPLE_SIZE]
+
     print('\nStep 1/8: Updating past results + exit signals...')
     update_results(PICKS_CSV, PICK_COLS)
     update_results(WATCH_CSV, WATCH_COLS)
@@ -2905,7 +2953,7 @@ def run_screener():
     ctx = get_market_context()
 
     print('\nStep 3/8: Fetching all data (parallel)...')
-    batch_data = batch_download(STOCK_UNIVERSE + KEY_ETFS)
+    batch_data = batch_download(scan_universe + KEY_ETFS)
     if not batch_data:
         print('  Batch download failed - cannot proceed')
         display_scorecard(); return None
