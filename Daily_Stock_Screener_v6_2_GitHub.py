@@ -243,6 +243,20 @@ SECTOR_CONC_MAX      = 3       # max same-sector picks in lookback window
 SECTOR_CONC_PENALTY  = 10      # confidence penalty if concentrated
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
+# ── LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) ──────────
+# The screener writes these after each run so the LLM can change its own rules.
+# LLM has FULL AUTHORITY — it can change any of these values or add new ones.
+_CFG_SECTOR_BLACKLIST   = []      # sectors the LLM has decided to avoid
+_CFG_SECTOR_WHITELIST   = []      # sectors the LLM is favouring (gets +5 boost)
+_CFG_SOURCE_PREFERENCE  = 'ANY'   # ANY | TECHNICAL | NEWS | BOTH
+_CFG_REQUIRE_CONGRESS   = False   # if True, only tickers with congress purchases pass
+_CFG_MIN_CATALYST_SCORE = 0       # minimum catalyst score (0-100) after LLM scoring
+_CFG_MIN_ADX_BUY        = ADX_MIN # stricter ADX needed for a BUY (vs passing the pool)
+_CFG_AVOID_EARNINGS     = False   # if True, auto-drop any earnings-risk ticker
+_CFG_MAX_VIX            = 999     # if VIX > this, skip all BUY signals (go to cash)
+_CFG_MIN_PRICE          = MIN_PRICE   # override minimum price floor
+_CFG_ONLY_PROFITABLE    = False   # only stocks with positive trailing EPS/revenue
+
 # ── NVIDIA MODEL SELECTION ─────────────────────────────────
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
 #
@@ -762,6 +776,7 @@ def load_performance_history(fp):
                 'sector':     str(row.get('Sector', '')),
                 'result':     str(row.get('Result', '')),
                 'return_10d': str(row.get('Return_10d_pct', '')),
+                'vs_qqq_10d': str(row.get('vs_QQQ_10d', '')),
                 'return_30d': str(row.get('Return_30d_pct', '')),
                 'vs_qqq_30d': str(row.get('vs_QQQ_30d', '')),
                 'tech_score': str(row.get('Tech_Score', '')),
@@ -2124,7 +2139,15 @@ def update_results(fp, cols):
                 p10=gp(pd_+timedelta(days=10))
                 if p10:
                     r10=round(((p10-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=10))
-                    df.at[idx,'Price_10d']=p10; df.at[idx,'Return_10d_pct']=r10; df.at[idx,'vs_QQQ_10d']=round(r10-qr,2) if qr else ''; updated=True
+                    vs10=round(r10-qr,2) if qr else ''
+                    df.at[idx,'Price_10d']=p10; df.at[idx,'Return_10d_pct']=r10; df.at[idx,'vs_QQQ_10d']=vs10
+                    # Set final Win/Loss at day 10 using QQQ-relative return
+                    if vs10 != '' and str(row.get('Result','')).strip() in ('','nan','NaN','Pending'):
+                        vs10f = float(vs10)
+                        if vs10f >= 2.0:   df.at[idx,'Result'] = 'Win'
+                        elif vs10f <= -2.0: df.at[idx,'Result'] = 'Loss'
+                        else:              df.at[idx,'Result'] = 'Neutral'
+                    updated=True
             if el>=30 and str(row.get('Price_30d','')).strip() in ['','nan','NaN']:
                 p30=gp(pd_+timedelta(days=30))
                 if p30:
@@ -2594,6 +2617,268 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
 
 
 # ============================================================
+# LLM SELF-ADAPTATION  —  config overrides + criteria engine
+# ============================================================
+
+_CFG_PATH = f'{DRIVE_FOLDER}/config_overrides.json'
+
+
+def load_config_overrides():
+    """Read config_overrides.json (written by LLM) and apply to global screening vars."""
+    global RSI_MIN, RSI_MAX, ADX_MIN, BUY_THRESHOLD, WATCH_THRESHOLD
+    global ATR_STOP_MULT, ATR_TARGET_MULT, VOLUME_MIN_RATIO, MIN_PRICE
+    global _CFG_SECTOR_BLACKLIST, _CFG_SECTOR_WHITELIST, _CFG_SOURCE_PREFERENCE
+    global _CFG_REQUIRE_CONGRESS, _CFG_MIN_CATALYST_SCORE, _CFG_MIN_ADX_BUY, _CFG_AVOID_EARNINGS
+    global _CFG_MAX_VIX, _CFG_MIN_PRICE, _CFG_ONLY_PROFITABLE
+
+    paths = [_CFG_PATH, 'config_overrides.json']
+    for p in paths:
+        if not os.path.exists(p):
+            continue
+        try:
+            with open(p) as f:
+                ov = json.load(f)
+
+            # Numeric thresholds — LLM has full authority, no clamping
+            RSI_MIN           = float(ov.get('RSI_MIN',          RSI_MIN))
+            RSI_MAX           = float(ov.get('RSI_MAX',          RSI_MAX))
+            ADX_MIN           = float(ov.get('ADX_MIN',          ADX_MIN))
+            BUY_THRESHOLD     = float(ov.get('BUY_THRESHOLD',    BUY_THRESHOLD))
+            WATCH_THRESHOLD   = float(ov.get('WATCH_THRESHOLD',  WATCH_THRESHOLD))
+            ATR_STOP_MULT     = float(ov.get('ATR_STOP_MULT',    ATR_STOP_MULT))
+            ATR_TARGET_MULT   = float(ov.get('ATR_TARGET_MULT',  ATR_TARGET_MULT))
+            VOLUME_MIN_RATIO  = float(ov.get('VOLUME_MIN_RATIO', VOLUME_MIN_RATIO))
+
+            # Criteria — LLM full authority
+            _CFG_SECTOR_BLACKLIST   = [s.strip() for s in ov.get('sector_blacklist',   [])]
+            _CFG_SECTOR_WHITELIST   = [s.strip() for s in ov.get('sector_whitelist',   [])]
+            _CFG_SOURCE_PREFERENCE  = str(ov.get('source_preference', 'ANY')).upper()
+            _CFG_REQUIRE_CONGRESS   = bool(ov.get('require_congress',   False))
+            _CFG_MIN_CATALYST_SCORE = float(ov.get('min_catalyst_score', 0))
+            _CFG_MIN_ADX_BUY        = float(ov.get('min_adx_buy', ADX_MIN))
+            _CFG_AVOID_EARNINGS     = bool(ov.get('avoid_earnings_week', False))
+            _CFG_MAX_VIX            = float(ov.get('max_vix', 999))
+            _CFG_MIN_PRICE          = float(ov.get('min_price', MIN_PRICE))
+            _CFG_ONLY_PROFITABLE    = bool(ov.get('only_profitable', False))
+            MIN_PRICE               = _CFG_MIN_PRICE
+
+            print(f'✅ Config overrides loaded  RSI {RSI_MIN}-{RSI_MAX}  ADX≥{ADX_MIN}  BUY≥{BUY_THRESHOLD}')
+            if _CFG_SECTOR_BLACKLIST:
+                print(f'   Sector blacklist: {", ".join(_CFG_SECTOR_BLACKLIST)}')
+            if _CFG_SECTOR_WHITELIST:
+                print(f'   Sector whitelist: {", ".join(_CFG_SECTOR_WHITELIST)}')
+            if _CFG_SOURCE_PREFERENCE != 'ANY':
+                print(f'   Source preference: {_CFG_SOURCE_PREFERENCE} only')
+            if _CFG_REQUIRE_CONGRESS:
+                print(f'   Congress filter: ON — only tickers with congressional buys')
+            if _CFG_AVOID_EARNINGS:
+                print(f'   Earnings filter: ON — auto-dropping earnings-risk tickers')
+            if ov.get('reasoning'):
+                print(f'   LLM note: {str(ov["reasoning"])[:120]}')
+            return
+        except Exception as e:
+            print(f'⚠️  config_overrides.json load error: {e}')
+    print('ℹ️  No config_overrides.json — using defaults')
+
+
+def save_config_overrides(cfg: dict):
+    """Persist LLM-proposed config to Drive so next run picks it up."""
+    try:
+        with open(_CFG_PATH, 'w') as f:
+            json.dump(cfg, f, indent=2)
+        print(f'  Config saved → {_CFG_PATH}')
+    except Exception as e:
+        print(f'  Could not save config: {e}')
+
+
+def apply_config_criteria(candidates, ctx=None):
+    """
+    Post-enrichment filter enforcing LLM-written criteria.
+    LLM has full authority — any of these flags can be set.
+    Runs after enrich_with_scores so sector/source/congress fields are populated.
+    """
+    kept, dropped = [], []
+
+    # VIX gate — if market too wild, skip everything
+    vix = (ctx or {}).get('vix_level', 0)
+    if _CFG_MAX_VIX < 999 and vix and float(vix) > _CFG_MAX_VIX:
+        print(f'  VIX {vix:.1f} > {_CFG_MAX_VIX} cap — LLM says go to cash, no BUY signals')
+        return []
+
+    for c in candidates:
+        sector = c.get('sector', '')
+        source = c.get('source', 'TECHNICAL').upper()
+        ticker = c.get('ticker', '')
+
+        # Sector blacklist
+        if _CFG_SECTOR_BLACKLIST and sector in _CFG_SECTOR_BLACKLIST:
+            dropped.append(f'{ticker}(blacklisted sector: {sector})')
+            continue
+
+        # Source preference (LLM can restrict to only TECHNICAL or only NEWS etc.)
+        if _CFG_SOURCE_PREFERENCE not in ('ANY', '') and source != _CFG_SOURCE_PREFERENCE:
+            dropped.append(f'{ticker}(source={source}, want {_CFG_SOURCE_PREFERENCE})')
+            continue
+
+        # Congress filter — only stocks bought by congress members
+        if _CFG_REQUIRE_CONGRESS and c.get('congress_label', 'NEUTRAL') != 'BUYING':
+            dropped.append(f'{ticker}(no congress buy)')
+            continue
+
+        # Earnings avoidance
+        if _CFG_AVOID_EARNINGS and c.get('earnings_risk'):
+            dropped.append(f'{ticker}(earnings risk)')
+            continue
+
+        # Minimum catalyst score
+        cs = c.get('catalyst_score', 0)
+        if cs and float(cs) < _CFG_MIN_CATALYST_SCORE:
+            dropped.append(f'{ticker}(catalyst={cs:.0f}<{_CFG_MIN_CATALYST_SCORE:.0f})')
+            continue
+
+        # Profitable companies only (EPS > 0 if data available)
+        if _CFG_ONLY_PROFITABLE:
+            eps = c.get('eps_ttm', None)
+            if eps is not None and float(eps) <= 0:
+                dropped.append(f'{ticker}(unprofitable EPS={eps})')
+                continue
+
+        # Price floor override
+        if _CFG_MIN_PRICE > MIN_PRICE and c.get('price', 0) < _CFG_MIN_PRICE:
+            dropped.append(f'{ticker}(price<{_CFG_MIN_PRICE})')
+            continue
+
+        # Stricter ADX for BUY pool
+        if _CFG_MIN_ADX_BUY > ADX_MIN and c.get('adx', 0) < _CFG_MIN_ADX_BUY:
+            dropped.append(f'{ticker}(ADX={c.get("adx",0):.0f}<{_CFG_MIN_ADX_BUY:.0f})')
+            continue
+
+        # Sector whitelist — boost score for preferred sectors
+        if _CFG_SECTOR_WHITELIST and sector in _CFG_SECTOR_WHITELIST:
+            c['news_adjustment'] = c.get('news_adjustment', 0) + 5
+
+        kept.append(c)
+
+    if dropped:
+        print(f'  Config criteria dropped: {", ".join(dropped[:8])}{"..." if len(dropped)>8 else ""}')
+    print(f'  {len(kept)} candidates after config criteria')
+    return kept
+
+
+def update_config_from_llm(pick_history):
+    """
+    Ask the LLM to review recent pick performance and propose new screening
+    thresholds AND criteria. Saves result to config_overrides.json on Drive.
+    Only runs when there are enough closed picks to learn from.
+    """
+    closed = [h for h in (pick_history or []) if h.get('result') in ('Win','Loss','Neutral')]
+    if len(closed) < 5:
+        print(f'  Config update skipped — need 5 closed picks, have {len(closed)}')
+        return
+
+    wins = sum(1 for h in closed if h['result'] == 'Win')
+    wr   = wins / len(closed) * 100
+
+    history_lines = []
+    for h in closed[-20:]:
+        line = (f"  {h.get('date','?')}: {h.get('ticker','?')} [{h.get('sector','?')}/{h.get('source','?')}]"
+                f" @ {h.get('price','?')} → {h.get('result','?')}"
+                f" (vs QQQ: {h.get('vs_qqq_10d', h.get('vs_qqq_30d','?'))}%)")
+        history_lines.append(line)
+
+    current_cfg = {
+        'RSI_MIN': RSI_MIN, 'RSI_MAX': RSI_MAX, 'ADX_MIN': ADX_MIN,
+        'BUY_THRESHOLD': BUY_THRESHOLD, 'WATCH_THRESHOLD': WATCH_THRESHOLD,
+        'VOLUME_MIN_RATIO': VOLUME_MIN_RATIO,
+        'ATR_STOP_MULT': ATR_STOP_MULT, 'ATR_TARGET_MULT': ATR_TARGET_MULT,
+        'sector_blacklist': _CFG_SECTOR_BLACKLIST,
+        'sector_whitelist': _CFG_SECTOR_WHITELIST,
+        'source_preference': _CFG_SOURCE_PREFERENCE,
+        'require_congress': _CFG_REQUIRE_CONGRESS,
+        'min_catalyst_score': _CFG_MIN_CATALYST_SCORE,
+        'min_adx_buy': _CFG_MIN_ADX_BUY,
+        'avoid_earnings_week': _CFG_AVOID_EARNINGS,
+        'max_vix': _CFG_MAX_VIX,
+        'min_price': _CFG_MIN_PRICE,
+        'only_profitable': _CFG_ONLY_PROFITABLE,
+    }
+
+    sys_msg = (
+        'You are the autonomous portfolio manager for a short-term (10-day) equity screener. '
+        'You have FULL AUTHORITY to change any screening parameter. '
+        'Your goal: maximize QQQ-relative returns across all picks.'
+    )
+    user_msg = f"""PORTFOLIO PERFORMANCE: {wr:.0f}% win rate ({wins}/{len(closed)} closed picks, Win = beat QQQ by >2% in 10 days)
+
+CURRENT SCREENING CONFIG:
+{json.dumps(current_cfg, indent=2)}
+
+PICK HISTORY (last 20 closed picks, sorted oldest→newest):
+{chr(10).join(history_lines)}
+
+YOUR JOB:
+1. Find the pattern. What sectors, sources, VIX regimes, or signal types are winning vs losing?
+2. Change the config to capitalise on what's working and eliminate what's failing.
+3. You have FULL AUTHORITY — no restrictions. You can:
+   - Change any numeric threshold to any value that makes sense
+   - Blacklist entire sectors that keep losing
+   - Whitelist sectors that keep winning
+   - Set require_congress=true if congress picks outperform
+   - Set max_vix to go to cash when markets are too volatile (e.g. 25)
+   - Restrict source_preference to TECHNICAL/NEWS/BOTH if one clearly outperforms
+   - Raise BUY_THRESHOLD to 85-90 to be more selective when losing
+   - Lower WATCH_THRESHOLD to 60 to see more ideas when confident
+   - Set avoid_earnings_week=true if earnings plays keep failing
+   - Set only_profitable=true if unprofitable companies are underperforming
+   - Raise min_adx_buy to 30+ if weak-trend stocks keep losing
+4. When win rate >65%: fine-tune only. When win rate <50%: make meaningful changes.
+5. If no clear pattern: keep current config unchanged.
+
+Return ONLY valid JSON — no markdown fences, no text outside the JSON:
+{{
+  "RSI_MIN": {RSI_MIN},
+  "RSI_MAX": {RSI_MAX},
+  "ADX_MIN": {ADX_MIN},
+  "BUY_THRESHOLD": {BUY_THRESHOLD},
+  "WATCH_THRESHOLD": {WATCH_THRESHOLD},
+  "VOLUME_MIN_RATIO": {VOLUME_MIN_RATIO},
+  "ATR_STOP_MULT": {ATR_STOP_MULT},
+  "ATR_TARGET_MULT": {ATR_TARGET_MULT},
+  "sector_blacklist": [],
+  "sector_whitelist": [],
+  "source_preference": "ANY",
+  "require_congress": false,
+  "min_catalyst_score": 0,
+  "min_adx_buy": {ADX_MIN},
+  "avoid_earnings_week": false,
+  "max_vix": 999,
+  "min_price": {MIN_PRICE},
+  "only_profitable": false,
+  "reasoning": "one clear sentence: what changed and why the data supports it"
+}}"""
+
+    print('\n  Asking LLM to update screening config based on pick history...')
+    try:
+        raw = call_llm(sys_msg, user_msg, max_tokens=600)
+        if '{' in raw and '}' in raw:
+            raw = raw[raw.index('{'):raw.rindex('}')+1]
+        cfg = json.loads(raw)
+
+        # Validate core keys present
+        required = ['RSI_MIN','RSI_MAX','ADX_MIN','BUY_THRESHOLD','WATCH_THRESHOLD',
+                    'sector_blacklist','source_preference','reasoning']
+        for k in required:
+            if k not in cfg:
+                print(f'  Config update skipped — LLM response missing key: {k}')
+                return
+
+        print(f'  LLM config update: {cfg.get("reasoning","")[:120]}')
+        save_config_overrides(cfg)
+    except Exception as e:
+        print(f'  Config update failed: {e}')
+
+
+# ============================================================
 # CELL 5 - RUN DAILY SCREENER
 # ============================================================
 
@@ -2603,6 +2888,8 @@ def run_screener():
     print(f'   Folder: {DRIVE_FOLDER}')
     print(f'   Stocks: {len(STOCK_UNIVERSE)} | ETFs: {len(KEY_ETFS)}')
     print('='*65)
+
+    load_config_overrides()
 
     print('\nStep 1/8: Updating past results + exit signals...')
     update_results(PICKS_CSV, PICK_COLS)
@@ -2661,6 +2948,12 @@ def run_screener():
 
     market_sentiment = nd.get('market_sentiment','NEUTRAL')
     candidates = enrich_with_scores(candidates, ctx, market_sentiment, sector_ranks, options_data, insider_data, congress_data)
+
+    print('\nStep 5.5/8: Applying LLM config criteria...')
+    candidates = apply_config_criteria(candidates, ctx=ctx)
+    if not candidates:
+        print('All candidates dropped by config criteria')
+        display_scorecard(); return None
 
     pick_history = load_performance_history(PICKS_CSV)
     if pick_history:
@@ -2722,6 +3015,10 @@ def run_screener():
                      stop_price=_stop, target_price=_tgt)
     display_scorecard()
     send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates)
+
+    print('\nStep 9/8: LLM self-adaptation (updating config for next run)...')
+    update_config_from_llm(pick_history)
+
     return result
 
 
