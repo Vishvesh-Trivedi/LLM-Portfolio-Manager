@@ -2152,8 +2152,12 @@ def update_results(fp, cols):
                 p30=gp(pd_+timedelta(days=30))
                 if p30:
                     r30=round(((p30-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=30)); vs30=round(r30-qr,2) if qr else ''
-                    res='Win' if r30>3 and vs30!='' and float(str(vs30))>0 else 'Loss' if r30<-2 else 'Neutral'
-                    df.at[idx,'Price_30d']=p30; df.at[idx,'Return_30d_pct']=r30; df.at[idx,'vs_QQQ_30d']=vs30; df.at[idx,'Result']=res; updated=True
+                    df.at[idx,'Price_30d']=p30; df.at[idx,'Return_30d_pct']=r30; df.at[idx,'vs_QQQ_30d']=vs30
+                    # Only set Result if 10-day evaluation hasn't already closed it
+                    if str(df.at[idx,'Result']).strip() in ('','nan','NaN','Pending'):
+                        res='Win' if r30>3 and vs30!='' and float(str(vs30))>0 else 'Loss' if r30<-2 else 'Neutral'
+                        df.at[idx,'Result']=res
+                    updated=True
         except: continue
     if updated: df.to_csv(fp,index=False); print(f'  {os.path.basename(fp)} updated')
 
@@ -2743,8 +2747,9 @@ def apply_config_criteria(candidates, ctx=None):
                 dropped.append(f'{ticker}(unprofitable EPS={eps})')
                 continue
 
-        # Price floor override
-        if _CFG_MIN_PRICE > MIN_PRICE and c.get('price', 0) < _CFG_MIN_PRICE:
+        # Price floor override (screen_technicals already used updated MIN_PRICE,
+        # but Stream B news rescues can bypass it — check here as a backstop)
+        if c.get('price', 0) < _CFG_MIN_PRICE:
             dropped.append(f'{ticker}(price<{_CFG_MIN_PRICE})')
             continue
 
