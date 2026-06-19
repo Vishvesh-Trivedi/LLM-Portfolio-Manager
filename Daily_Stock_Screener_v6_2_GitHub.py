@@ -266,6 +266,10 @@ _CFG_SECTOR_CONC_MAX    = SECTOR_CONC_MAX  # max same-sector picks in rolling wi
 _CFG_SAMPLE_SIZE        = SAMPLE_SIZE      # how many stocks to scan each run
 _CFG_ADDITIONAL_TICKERS = []      # LLM can add tickers outside the default universe
 _CFG_BROKERAGE_FEE      = BROKERAGE_FEE  # per-trade flat fee (both buy and sell sides)
+_CFG_MIN_CASH_FLOOR     = 500.0   # cash below this = fully deployed, no new buys
+_CFG_DD_CAUTION_PCT     = -10.0   # portfolio drawdown % that triggers caution mode
+_CFG_DD_SEVERE_PCT      = -20.0   # portfolio drawdown % that triggers severe mode
+_CFG_DD_CRITICAL_PCT    = -30.0   # portfolio drawdown % that triggers capital preservation
 
 # ── NVIDIA MODEL SELECTION ─────────────────────────────────
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
@@ -2682,6 +2686,7 @@ def load_config_overrides():
     global _CFG_MAX_VIX, _CFG_MIN_PRICE, _CFG_ONLY_PROFITABLE
     global _CFG_REQUIRE_ABOVE_MA, _CFG_MIN_DOLLAR_VOL_M, _CFG_HOLD_DAYS
     global _CFG_SECTOR_CONC_MAX, _CFG_SAMPLE_SIZE, _CFG_ADDITIONAL_TICKERS, _CFG_BROKERAGE_FEE
+    global _CFG_MIN_CASH_FLOOR, _CFG_DD_CAUTION_PCT, _CFG_DD_SEVERE_PCT, _CFG_DD_CRITICAL_PCT
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -2719,7 +2724,11 @@ def load_config_overrides():
             _CFG_SECTOR_CONC_MAX    = int(ov.get('sector_conc_max',      SECTOR_CONC_MAX))
             _CFG_SAMPLE_SIZE        = int(ov.get('sample_size',          SAMPLE_SIZE))
             _CFG_ADDITIONAL_TICKERS = [t.strip().upper() for t in ov.get('additional_tickers', [])]
-            _CFG_BROKERAGE_FEE      = float(ov.get('brokerage_fee', BROKERAGE_FEE))
+            _CFG_BROKERAGE_FEE      = float(ov.get('brokerage_fee',       BROKERAGE_FEE))
+            _CFG_MIN_CASH_FLOOR     = float(ov.get('min_cash_floor',       _CFG_MIN_CASH_FLOOR))
+            _CFG_DD_CAUTION_PCT     = float(ov.get('dd_caution_pct',       _CFG_DD_CAUTION_PCT))
+            _CFG_DD_SEVERE_PCT      = float(ov.get('dd_severe_pct',        _CFG_DD_SEVERE_PCT))
+            _CFG_DD_CRITICAL_PCT    = float(ov.get('dd_critical_pct',      _CFG_DD_CRITICAL_PCT))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -2874,6 +2883,10 @@ def update_config_from_llm(pick_history):
         'sector_conc_max': _CFG_SECTOR_CONC_MAX,
         'sample_size': _CFG_SAMPLE_SIZE,
         'additional_tickers': _CFG_ADDITIONAL_TICKERS,
+        'min_cash_floor': _CFG_MIN_CASH_FLOOR,
+        'dd_caution_pct': _CFG_DD_CAUTION_PCT,
+        'dd_severe_pct': _CFG_DD_SEVERE_PCT,
+        'dd_critical_pct': _CFG_DD_CRITICAL_PCT,
     }
 
     sys_msg = (
@@ -3038,8 +3051,8 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector=''):
     if any(p['ticker'] == ticker for p in pf['positions']):
         print(f'  Portfolio: already holding {ticker} — skipping')
         return pf
-    # Guard: not enough cash
-    if pf['cash'] < amount_usd or amount_usd < 500:
+    # Guard: not enough cash (floor is LLM-configurable via min_cash_floor)
+    if pf['cash'] < amount_usd or amount_usd < _CFG_MIN_CASH_FLOOR:
         print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position')
         return pf
     shares     = int(amount_usd / entry_price)          # whole shares only — remainder stays as cash
@@ -3136,6 +3149,36 @@ def portfolio_summary_str(pf):
     total_value = round(pf['cash'] + sum(p.get('current_value', p['cost_basis']) for p in pf['positions']), 2)
     total_pnl   = round(total_value - pf['starting_capital'], 2)
     total_pct   = round(total_pnl / pf['starting_capital'] * 100, 2)
+
+    # Drawdown severity — escalating warnings to LLM (thresholds are LLM-configurable)
+    if total_pct <= _CFG_DD_CRITICAL_PCT:
+        dd_warn = (
+            f'CRITICAL DRAWDOWN ({total_pct:.1f}%, threshold {_CFG_DD_CRITICAL_PCT:.0f}%): '
+            f'Capital preservation mode. Output NO PICK unless confidence >= 92. '
+            f'Max position size 5%. Consider going fully to cash.'
+        )
+    elif total_pct <= _CFG_DD_SEVERE_PCT:
+        dd_warn = (
+            f'SEVERE DRAWDOWN ({total_pct:.1f}%, threshold {_CFG_DD_SEVERE_PCT:.0f}%): '
+            f'Only highest-conviction picks (score >= 88). Max position size 10%.'
+        )
+    elif total_pct <= _CFG_DD_CAUTION_PCT:
+        dd_warn = (
+            f'CAUTION — Portfolio down {abs(total_pct):.1f}% (threshold {_CFG_DD_CAUTION_PCT:.0f}%). '
+            f'Prefer smaller positions (5-15%) and tighter entry criteria.'
+        )
+    else:
+        dd_warn = ''
+
+    # Fully deployed — cash at or below LLM-configurable floor
+    if pf['cash'] <= _CFG_MIN_CASH_FLOOR:
+        cash_warn = (
+            f'FULLY DEPLOYED: Only ${pf["cash"]:,.2f} cash remaining (floor ${_CFG_MIN_CASH_FLOOR:,.0f}). '
+            f'Output NO PICK today. Focus on exit signals for open positions only.'
+        )
+    else:
+        cash_warn = ''
+
     lines = [
         f'PORTFOLIO: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs ${pf["starting_capital"]:,.0f} starting)',
         f'Cash available: ${pf["cash"]:,.2f}  |  Open positions: {len(pf["positions"])}',
@@ -3144,11 +3187,15 @@ def portfolio_summary_str(pf):
         upl = p.get("unrealized_pnl", 0)
         upc = p.get("unrealized_pnl_pct", 0)
         lines.append(
-            f'  {p["ticker"]}: {p["shares"]:.2f} shares @ ${p["entry_price"]} → ${p.get("current_price", "?")} '
+            f'  {p["ticker"]}: {p["shares"]} shares @ ${p["entry_price"]} → ${p.get("current_price", "?")} '
             f'({upl:+.0f} / {upc:+.1f}%) | {p.get("hold_days",0)}d held | sector: {p.get("sector","?")}'
         )
     if pf.get('total_realized_pnl'):
         lines.append(f'Realised P&L from {len(pf["closed_trades"])} closed trades: ${pf["total_realized_pnl"]:+,.2f}')
+    if dd_warn:
+        lines.append(f'*** {dd_warn} ***')
+    if cash_warn:
+        lines.append(f'*** {cash_warn} ***')
     return '\n'.join(lines)
 
 
@@ -3179,6 +3226,21 @@ def run_screener():
     portfolio = load_portfolio()
     portfolio = update_portfolio_prices(portfolio)
     print(portfolio_summary_str(portfolio))
+
+    # Drawdown & deployment status (human-readable console summary)
+    _total_val = round(portfolio['cash'] + sum(p.get('current_value', p['cost_basis']) for p in portfolio['positions']), 2)
+    _dd_pct    = round((_total_val - portfolio['starting_capital']) / portfolio['starting_capital'] * 100, 2)
+    if _dd_pct <= _CFG_DD_CRITICAL_PCT:
+        print(f'  *** CRITICAL DRAWDOWN {_dd_pct:.1f}% — portfolio ${_total_val:,.0f} — LLM in capital preservation mode ***')
+    elif _dd_pct <= _CFG_DD_SEVERE_PCT:
+        print(f'  *** SEVERE DRAWDOWN {_dd_pct:.1f}% — portfolio ${_total_val:,.0f} — LLM using high-conviction-only mode ***')
+    elif _dd_pct <= _CFG_DD_CAUTION_PCT:
+        print(f'  CAUTION: Portfolio down {abs(_dd_pct):.1f}% (${_total_val:,.0f})')
+    if portfolio['cash'] <= _CFG_MIN_CASH_FLOOR:
+        if portfolio['positions']:
+            print(f'  FULLY DEPLOYED: ${portfolio["cash"]:,.2f} cash left — {len(portfolio["positions"])} open position(s) still running — no new buys today')
+        else:
+            print(f'  PORTFOLIO DEPLETED: ${portfolio["cash"]:,.2f} cash, no open positions — LLM will output NO PICK')
 
     print('\nStep 1/8: Updating past results + exit signals...')
     update_results(PICKS_CSV, PICK_COLS)
