@@ -3042,27 +3042,32 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector=''):
     if pf['cash'] < amount_usd or amount_usd < 500:
         print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position')
         return pf
-    shares     = round(amount_usd / entry_price, 4)   # fractional shares supported
-    total_cost = round(amount_usd + BROKERAGE_FEE, 2)  # stock cost + broker fee
+    shares     = int(amount_usd / entry_price)          # whole shares only — remainder stays as cash
+    if shares < 1:
+        print(f'  Portfolio: cannot afford even 1 share of {ticker} @ ${entry_price} with ${amount_usd:,.0f}')
+        return pf
+    stock_cost = round(shares * entry_price, 2)         # actual dollars spent on shares
+    total_cost = round(stock_cost + BROKERAGE_FEE, 2)  # + brokerage fee
     pf['positions'].append({
         'ticker':              ticker,
         'shares':              shares,
         'entry_price':         round(entry_price, 2),
-        'cost_basis':          total_cost,   # includes brokerage
+        'cost_basis':          total_cost,   # actual shares cost + brokerage
         'brokerage_in':        BROKERAGE_FEE,
         'entry_date':          datetime.now().strftime('%Y-%m-%d'),
         'stop_price':          round(stop, 2) if isinstance(stop, (int, float)) else None,
         'target_price':        round(target, 2) if isinstance(target, (int, float)) else None,
         'sector':              sector,
         'current_price':       round(entry_price, 2),
-        'current_value':       round(amount_usd, 2),
-        'unrealized_pnl':      round(-BROKERAGE_FEE, 2),   # start in the hole by the fee
-        'unrealized_pnl_pct':  round(-BROKERAGE_FEE / total_cost * 100, 4) if total_cost else 0.0,
+        'current_value':       round(stock_cost, 2),
+        'unrealized_pnl':      round(-BROKERAGE_FEE, 2),
+        'unrealized_pnl_pct':  round(-BROKERAGE_FEE / total_cost * 100, 2) if total_cost else 0.0,
         'hold_days':           0,
     })
     pf['cash'] = round(pf['cash'] - total_cost, 2)
-    fee_note = f' + ${BROKERAGE_FEE:.2f} fee' if BROKERAGE_FEE else ''
-    print(f'  Portfolio: OPENED {ticker}  {shares:.4f} shares @ ${entry_price}  cost ${total_cost:,.2f}{fee_note}  cash remaining ${pf["cash"]:,.2f}')
+    leftover   = round(amount_usd - total_cost, 2)
+    fee_note   = f' + ${BROKERAGE_FEE:.2f} fee' if BROKERAGE_FEE else ''
+    print(f'  Portfolio: OPENED {ticker}  {shares} shares @ ${entry_price}  spent ${total_cost:,.2f}{fee_note}  leftover ${leftover:,.2f}  cash ${pf["cash"]:,.2f}')
     return pf
 
 
