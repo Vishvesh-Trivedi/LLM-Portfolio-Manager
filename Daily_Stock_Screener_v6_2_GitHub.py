@@ -284,7 +284,7 @@ _CFG_ADDITIONAL_TICKERS = []      # LLM can add tickers outside the default univ
 #   'meta/llama-3.2-3b-instruct'             ← very fast, lower quality
 #   'microsoft/phi-3-mini-128k-instruct'     ← lightweight
 
-NVIDIA_MODEL = 'qwen/qwen2.5-72b-instruct'     # ← change this line to switch model
+NVIDIA_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b'  # ← change this line to switch model
 
 
 _LLM_CALL_COUNT = [0]
