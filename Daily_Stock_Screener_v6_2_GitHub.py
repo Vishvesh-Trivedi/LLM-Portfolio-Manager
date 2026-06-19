@@ -195,8 +195,9 @@ SAMPLE_SIZE      = 600   # increase to 500 for weekend full runs
 
 PICKS_CSV      = f'{DRIVE_FOLDER}/stock_picks.csv'
 WATCH_CSV      = f'{DRIVE_FOLDER}/watch_list.csv'
-PORTFOLIO_JSON = f'{DRIVE_FOLDER}/portfolio.json'
+PORTFOLIO_JSON   = f'{DRIVE_FOLDER}/portfolio.json'
 STARTING_CAPITAL = 10_000.00
+BROKERAGE_FEE    = 0.00   # flat fee per trade — $0 for Robinhood/Fidelity/Schwab, set to your broker's rate
 
 # Optional: set to '1' to see why tickers fail compute_indicators
 # os.environ['SCREENER_DEBUG'] = '1'
@@ -264,6 +265,7 @@ _CFG_HOLD_DAYS          = 10      # days before position auto-closes and Win/Los
 _CFG_SECTOR_CONC_MAX    = SECTOR_CONC_MAX  # max same-sector picks in rolling window
 _CFG_SAMPLE_SIZE        = SAMPLE_SIZE      # how many stocks to scan each run
 _CFG_ADDITIONAL_TICKERS = []      # LLM can add tickers outside the default universe
+_CFG_BROKERAGE_FEE      = BROKERAGE_FEE  # per-trade flat fee (both buy and sell sides)
 
 # ── NVIDIA MODEL SELECTION ─────────────────────────────────
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
@@ -2679,7 +2681,8 @@ def load_config_overrides():
     global _CFG_REQUIRE_CONGRESS, _CFG_MIN_CATALYST_SCORE, _CFG_MIN_ADX_BUY, _CFG_AVOID_EARNINGS
     global _CFG_MAX_VIX, _CFG_MIN_PRICE, _CFG_ONLY_PROFITABLE
     global _CFG_REQUIRE_ABOVE_MA, _CFG_MIN_DOLLAR_VOL_M, _CFG_HOLD_DAYS
-    global _CFG_SECTOR_CONC_MAX, _CFG_SAMPLE_SIZE, _CFG_ADDITIONAL_TICKERS
+    global _CFG_SECTOR_CONC_MAX, _CFG_SAMPLE_SIZE, _CFG_ADDITIONAL_TICKERS, _CFG_BROKERAGE_FEE
+    global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
     for p in paths:
@@ -2716,12 +2719,14 @@ def load_config_overrides():
             _CFG_SECTOR_CONC_MAX    = int(ov.get('sector_conc_max',      SECTOR_CONC_MAX))
             _CFG_SAMPLE_SIZE        = int(ov.get('sample_size',          SAMPLE_SIZE))
             _CFG_ADDITIONAL_TICKERS = [t.strip().upper() for t in ov.get('additional_tickers', [])]
+            _CFG_BROKERAGE_FEE      = float(ov.get('brokerage_fee', BROKERAGE_FEE))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
             MIN_DOLLAR_VOLUME_M = _CFG_MIN_DOLLAR_VOL_M
             SECTOR_CONC_MAX     = _CFG_SECTOR_CONC_MAX
             SAMPLE_SIZE         = _CFG_SAMPLE_SIZE
+            BROKERAGE_FEE       = _CFG_BROKERAGE_FEE
 
             print(f'✅ Config overrides loaded  RSI {RSI_MIN}-{RSI_MAX}  ADX≥{ADX_MIN}  BUY≥{BUY_THRESHOLD}')
             if _CFG_SECTOR_BLACKLIST:
@@ -3037,24 +3042,27 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector=''):
     if pf['cash'] < amount_usd or amount_usd < 500:
         print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position')
         return pf
-    shares = round(amount_usd / entry_price, 4)
+    shares     = round(amount_usd / entry_price, 4)   # fractional shares supported
+    total_cost = round(amount_usd + BROKERAGE_FEE, 2)  # stock cost + broker fee
     pf['positions'].append({
         'ticker':              ticker,
         'shares':              shares,
         'entry_price':         round(entry_price, 2),
-        'cost_basis':          round(amount_usd, 2),
+        'cost_basis':          total_cost,   # includes brokerage
+        'brokerage_in':        BROKERAGE_FEE,
         'entry_date':          datetime.now().strftime('%Y-%m-%d'),
         'stop_price':          round(stop, 2) if isinstance(stop, (int, float)) else None,
         'target_price':        round(target, 2) if isinstance(target, (int, float)) else None,
         'sector':              sector,
         'current_price':       round(entry_price, 2),
         'current_value':       round(amount_usd, 2),
-        'unrealized_pnl':      0.0,
-        'unrealized_pnl_pct':  0.0,
+        'unrealized_pnl':      round(-BROKERAGE_FEE, 2),   # start in the hole by the fee
+        'unrealized_pnl_pct':  round(-BROKERAGE_FEE / total_cost * 100, 4) if total_cost else 0.0,
         'hold_days':           0,
     })
-    pf['cash'] = round(pf['cash'] - amount_usd, 2)
-    print(f'  Portfolio: OPENED {ticker}  {shares:.2f} shares @ ${entry_price}  cost ${amount_usd:,.0f}  cash remaining ${pf["cash"]:,.2f}')
+    pf['cash'] = round(pf['cash'] - total_cost, 2)
+    fee_note = f' + ${BROKERAGE_FEE:.2f} fee' if BROKERAGE_FEE else ''
+    print(f'  Portfolio: OPENED {ticker}  {shares:.4f} shares @ ${entry_price}  cost ${total_cost:,.2f}{fee_note}  cash remaining ${pf["cash"]:,.2f}')
     return pf
 
 
@@ -3063,9 +3071,10 @@ def close_position(pf, ticker, exit_price, reason='hold_period'):
     pos = next((p for p in pf['positions'] if p['ticker'] == ticker), None)
     if not pos:
         return pf
-    exit_value    = round(exit_price * pos['shares'], 2)
-    realized_pnl  = round(exit_value - pos['cost_basis'], 2)
-    realized_pct  = round((exit_value / pos['cost_basis'] - 1) * 100, 2)
+    gross_proceeds = round(exit_price * pos['shares'], 2)
+    exit_value     = round(gross_proceeds - BROKERAGE_FEE, 2)   # net after sell-side fee
+    realized_pnl   = round(exit_value - pos['cost_basis'], 2)   # cost_basis already includes buy-side fee
+    realized_pct   = round((exit_value / pos['cost_basis'] - 1) * 100, 2)
     pf['closed_trades'].append({
         'ticker':           ticker,
         'entry_price':      pos['entry_price'],
