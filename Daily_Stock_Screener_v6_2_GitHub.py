@@ -193,8 +193,10 @@ RSI_MAX          = 75    # maximum RSI (avoid overbought)
 MIN_PRICE        = 5.0   # minimum stock price in USD
 SAMPLE_SIZE      = 600   # increase to 500 for weekend full runs
 
-PICKS_CSV = f'{DRIVE_FOLDER}/stock_picks.csv'
-WATCH_CSV = f'{DRIVE_FOLDER}/watch_list.csv'
+PICKS_CSV      = f'{DRIVE_FOLDER}/stock_picks.csv'
+WATCH_CSV      = f'{DRIVE_FOLDER}/watch_list.csv'
+PORTFOLIO_JSON = f'{DRIVE_FOLDER}/portfolio.json'
+STARTING_CAPITAL = 10_000.00
 
 # Optional: set to '1' to see why tickers fail compute_indicators
 # os.environ['SCREENER_DEBUG'] = '1'
@@ -1682,7 +1684,7 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
     return candidates
 
 
-def analyze_exit_signals(ctx, all_stock_news):
+def analyze_exit_signals(ctx, all_stock_news, portfolio=None):
     """Check every pending pick — LLM says HOLD / EXIT / ADD for each."""
     for fp, label in [(PICKS_CSV, 'BUY'), (WATCH_CSV, 'WATCH')]:
         if not os.path.exists(fp): continue
@@ -1747,6 +1749,9 @@ def analyze_exit_signals(ctx, all_stock_news):
                 unreal_str = f'{unreal:+.1f}%' if unreal is not None else '?'
                 if action == 'EXIT':
                     icon = '!'
+                    # Close position in portfolio if held there
+                    if portfolio and curr and curr > 0:
+                        portfolio = close_position(portfolio, ticker, curr, reason=f'LLM EXIT: {reason[:60]}')
                 elif action == 'ADD' and urgency == 'HIGH':
                     icon = '+'
                 else:
@@ -1754,9 +1759,10 @@ def analyze_exit_signals(ctx, all_stock_news):
                 print(f'  [{icon}] {action} [{urgency}] {ticker} ({unreal_str} in {days_in}d): {reason}')
             except Exception as e:
                 print(f'  {ticker}: exit check failed ({e})')
+    return portfolio
 
 
-def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
+def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     """3-round LLM deliberation: rank → deep-dive → final pick. No 1-shot guessing."""
     if not candidates: return None
     print(f'\nPhase 6 - NVIDIA final scoring ({len(candidates)} candidates)...')
@@ -1914,10 +1920,16 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
         'news_notes': c.get('news_notes', '')[:80],
     } for c in candidates]
 
+    portfolio_block = f'\n{portfolio_summary_str(portfolio)}\n' if portfolio else ''
+    open_tickers = {p['ticker'] for p in (portfolio or {}).get('positions', [])}
+    cash_avail   = (portfolio or {}).get('cash', STARTING_CAPITAL)
+
     r1_user = (
-        f'{market_ctx}\n{hard_note}{priority_note}\n'
+        f'{market_ctx}\n{hard_note}{priority_note}{portfolio_block}\n'
         f'CANDIDATES:\n{json.dumps(compact_brief, indent=1)}\n\n'
-        f'TASK: Rank these for a 1-4 week trade. Identify:\n'
+        f'TASK: As portfolio manager with ${cash_avail:,.0f} available cash, rank these for a 1-4 week trade.\n'
+        f'Already held (do NOT pick again): {list(open_tickers) or "none"}\n'
+        f'Identify:\n'
         f'1. Top 10 to deep-analyse (best short-term setups)\n'
         f'2. Immediate drops (no short-term catalyst, negative news, earnings too soon)\n'
         f'Return ONLY: {{"top10":["TICK1","TICK2"...],"drop":["TICK"],"r1_notes":"2 sentences on what you see"}}'
@@ -1999,11 +2011,14 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None):
         f'"top_pick":{{"ticker":"X","confidence":85,"signal":"BUY","tech_score":48,"news_score":32,'
         f'"pre_score":80,"catalyst_score":8,"catalyst_type":"BREAKOUT",'
         f'"score_breakdown":"Tech:48 | News:32 | Catalyst:8 | VIX:{mult}x = 85",'
+        f'"position_size_pct":20,'
         f'"reasoning":"2 sentences — specific 1-4 week thesis citing the bull case.",'
         f'"devils_advocate":"2 specific risks in the next 4 weeks.",'
         f'"key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}},'
         f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","reasoning":"1 sentence.","key_risk":"1 sentence.","sector":"X","source":"TECHNICAL"}}]}}\n'
-        f'If no stock clears {BUY_THRESHOLD} confidence, signal=NO PICK.'
+        f'If no stock clears {BUY_THRESHOLD} confidence, signal=NO PICK.\n'
+        f'position_size_pct = % of available cash (${cash_avail:,.0f}) to deploy. '
+        f'High conviction = 25-40%. Normal = 15-20%. Uncertain market = 5-10%. Max 50%.'
     )
 
     try:
@@ -2545,7 +2560,7 @@ def _recent_picks_summary(days=10):
     return lines
 
 
-def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
+def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None):
     """Send daily pick to WhatsApp via CallMeBot (free, 10 msg/day limit)."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
         return
@@ -2589,16 +2604,35 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
 
     cg_tag = f' [CONGRESS: {cg_who}]' if cg_pick else ''
 
+    # Portfolio block
+    pf_block = ''
+    if portfolio:
+        total_val = round(portfolio['cash'] + sum(p.get('current_value', p['cost_basis']) for p in portfolio['positions']), 2)
+        total_pnl = round(total_val - portfolio['starting_capital'], 2)
+        total_pct = round(total_pnl / portfolio['starting_capital'] * 100, 2)
+        pos_lines = '  ' + ' | '.join(
+            f'{p["ticker"]} {p.get("unrealized_pnl_pct",0):+.1f}%'
+            for p in portfolio['positions']
+        ) if portfolio['positions'] else '  No open positions'
+        pf_block = (
+            f'PORTFOLIO: {total_pnl:+,.0f} ({total_pct:+.1f}%) | Cash: {portfolio["cash"]:,.0f}\n'
+            f'{pos_lines}\n'
+            f'---\n'
+        )
+
     if sig == 'BUY':
+        pct_deployed = pick.get('position_size_pct', 20)
+        amt = round(portfolio['cash'] * pct_deployed / 100, 0) if portfolio else 0
+        amt_str = f' ({pct_deployed}% = {amt:,.0f})' if amt else ''
         msg = (
             f'SCREENER {date_str}\n'
             f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
             f'---\n'
-            f'BUY: {ticker} [{sector}] @ {ep_str} | {conf}/100{cg_tag}\n'
+            f'{pf_block}'
+            f'BUY: {ticker} [{sector}] @ {ep_str}{amt_str} | {conf}/100{cg_tag}\n'
             f'Stop: {st_str} | Target: {tg_str}\n'
-            f'\nWhy: {why}\n'
-            f'\nRisk: {risk}\n'
-            f'\nBear: {bear}\n'
+            f'Why: {why}\n'
+            f'Risk: {risk}\n'
             f'---\n'
             f'WATCH:\n{watch_lines or "  None"}'
             f'{congress_line}'
@@ -2608,7 +2642,9 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None):
     else:
         msg = (
             f'SCREENER {date_str}\n'
-            f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n\n'
+            f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
+            f'---\n'
+            f'{pf_block}'
             f'No BUY today ({sig})\n\n'
             f'WATCH:\n{watch_lines or "  None"}\n'
             f'---\n'
@@ -2922,6 +2958,187 @@ Return ONLY valid JSON — no markdown fences, no text outside the JSON:
 
 
 # ============================================================
+# PORTFOLIO  —  paper trading engine ($10,000 starting capital)
+# ============================================================
+
+def load_portfolio():
+    """Load portfolio.json from Drive, or create fresh $10k portfolio."""
+    paths = [PORTFOLIO_JSON, 'portfolio.json']
+    for p in paths:
+        if os.path.exists(p):
+            try:
+                with open(p) as f:
+                    pf = json.load(f)
+                # Backfill any missing keys (in case schema evolved)
+                pf.setdefault('cash', STARTING_CAPITAL)
+                pf.setdefault('starting_capital', STARTING_CAPITAL)
+                pf.setdefault('positions', [])
+                pf.setdefault('closed_trades', [])
+                pf.setdefault('total_realized_pnl', 0.0)
+                return pf
+            except Exception as e:
+                print(f'  portfolio.json load error: {e}')
+    # First run — create fresh portfolio
+    pf = {
+        'cash': STARTING_CAPITAL,
+        'starting_capital': STARTING_CAPITAL,
+        'positions': [],
+        'closed_trades': [],
+        'total_realized_pnl': 0.0,
+        'created': datetime.now().strftime('%Y-%m-%d'),
+    }
+    print(f'  New portfolio created — starting capital: ${STARTING_CAPITAL:,.0f}')
+    return pf
+
+
+def save_portfolio(pf):
+    pf['last_updated'] = datetime.now().strftime('%Y-%m-%d %H:%M')
+    try:
+        with open(PORTFOLIO_JSON, 'w') as f:
+            json.dump(pf, f, indent=2)
+    except Exception as e:
+        print(f'  portfolio save error: {e}')
+
+
+def update_portfolio_prices(pf):
+    """Fetch live prices for all open positions and update unrealised P&L."""
+    if not pf['positions']:
+        return pf
+    tickers = [p['ticker'] for p in pf['positions']]
+    try:
+        raw = yf.download(tickers, period='2d', auto_adjust=True,
+                          progress=False, threads=True)
+        closes = raw['Close'] if isinstance(raw.columns, pd.MultiIndex) else raw[['Close']]
+        for pos in pf['positions']:
+            try:
+                t = pos['ticker']
+                col = closes[t] if t in closes.columns else closes.iloc[:, 0]
+                curr = float(col.dropna().iloc[-1])
+                pos['current_price']       = round(curr, 2)
+                pos['current_value']       = round(curr * pos['shares'], 2)
+                pos['unrealized_pnl']      = round(pos['current_value'] - pos['cost_basis'], 2)
+                pos['unrealized_pnl_pct']  = round((pos['current_value'] / pos['cost_basis'] - 1) * 100, 2)
+                entry_date = datetime.strptime(pos['entry_date'], '%Y-%m-%d')
+                pos['hold_days'] = (datetime.now() - entry_date).days
+            except Exception:
+                pass
+    except Exception as e:
+        print(f'  price update error: {e}')
+    return pf
+
+
+def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector=''):
+    """Deploy cash into a new position. LLM controls amount_usd."""
+    # Guard: already holding this ticker
+    if any(p['ticker'] == ticker for p in pf['positions']):
+        print(f'  Portfolio: already holding {ticker} — skipping')
+        return pf
+    # Guard: not enough cash
+    if pf['cash'] < amount_usd or amount_usd < 500:
+        print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position')
+        return pf
+    shares = round(amount_usd / entry_price, 4)
+    pf['positions'].append({
+        'ticker':              ticker,
+        'shares':              shares,
+        'entry_price':         round(entry_price, 2),
+        'cost_basis':          round(amount_usd, 2),
+        'entry_date':          datetime.now().strftime('%Y-%m-%d'),
+        'stop_price':          round(stop, 2) if isinstance(stop, (int, float)) else None,
+        'target_price':        round(target, 2) if isinstance(target, (int, float)) else None,
+        'sector':              sector,
+        'current_price':       round(entry_price, 2),
+        'current_value':       round(amount_usd, 2),
+        'unrealized_pnl':      0.0,
+        'unrealized_pnl_pct':  0.0,
+        'hold_days':           0,
+    })
+    pf['cash'] = round(pf['cash'] - amount_usd, 2)
+    print(f'  Portfolio: OPENED {ticker}  {shares:.2f} shares @ ${entry_price}  cost ${amount_usd:,.0f}  cash remaining ${pf["cash"]:,.2f}')
+    return pf
+
+
+def close_position(pf, ticker, exit_price, reason='hold_period'):
+    """Close an open position and return cash + P&L to portfolio."""
+    pos = next((p for p in pf['positions'] if p['ticker'] == ticker), None)
+    if not pos:
+        return pf
+    exit_value    = round(exit_price * pos['shares'], 2)
+    realized_pnl  = round(exit_value - pos['cost_basis'], 2)
+    realized_pct  = round((exit_value / pos['cost_basis'] - 1) * 100, 2)
+    pf['closed_trades'].append({
+        'ticker':           ticker,
+        'entry_price':      pos['entry_price'],
+        'exit_price':       round(exit_price, 2),
+        'shares':           pos['shares'],
+        'cost_basis':       pos['cost_basis'],
+        'exit_value':       exit_value,
+        'realized_pnl':     realized_pnl,
+        'realized_pnl_pct': realized_pct,
+        'entry_date':       pos['entry_date'],
+        'exit_date':        datetime.now().strftime('%Y-%m-%d'),
+        'hold_days':        pos.get('hold_days', 0),
+        'reason':           reason,
+    })
+    pf['cash']                = round(pf['cash'] + exit_value, 2)
+    pf['total_realized_pnl']  = round(pf.get('total_realized_pnl', 0) + realized_pnl, 2)
+    pf['positions']           = [p for p in pf['positions'] if p['ticker'] != ticker]
+    sign = '+' if realized_pnl >= 0 else ''
+    print(f'  Portfolio: CLOSED {ticker} @ ${exit_price}  P&L {sign}${realized_pnl:,.2f} ({sign}{realized_pct:.1f}%)  [{reason}]')
+    return pf
+
+
+def reconcile_closed_picks(pf):
+    """
+    After update_results runs, check PICKS_CSV for any Win/Loss/Neutral entries
+    that still have an open position in the portfolio — and close them.
+    """
+    if not os.path.exists(PICKS_CSV):
+        return pf
+    try:
+        df = pd.read_csv(PICKS_CSV)
+        closed = df[df['Result'].isin(['Win', 'Loss', 'Neutral'])]
+        open_tickers = {p['ticker'] for p in pf['positions']}
+        for _, row in closed.iterrows():
+            t = str(row.get('Ticker', '')).strip()
+            if t not in open_tickers:
+                continue
+            # Use 10-day close price from CSV; fall back to live price
+            price = None
+            try:    price = float(row['Price_10d'])
+            except: pass
+            if not price or not (price > 0):
+                try:    price = float(yf.Ticker(t).history(period='2d')['Close'].dropna().iloc[-1])
+                except: pass
+            if price and price > 0:
+                pf = close_position(pf, t, price, reason=str(row.get('Result', 'hold_period')))
+    except Exception as e:
+        print(f'  reconcile error: {e}')
+    return pf
+
+
+def portfolio_summary_str(pf):
+    """One-block text summary for the LLM — shown before Round 1."""
+    total_value = round(pf['cash'] + sum(p.get('current_value', p['cost_basis']) for p in pf['positions']), 2)
+    total_pnl   = round(total_value - pf['starting_capital'], 2)
+    total_pct   = round(total_pnl / pf['starting_capital'] * 100, 2)
+    lines = [
+        f'PORTFOLIO: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs ${pf["starting_capital"]:,.0f} starting)',
+        f'Cash available: ${pf["cash"]:,.2f}  |  Open positions: {len(pf["positions"])}',
+    ]
+    for p in pf['positions']:
+        upl = p.get("unrealized_pnl", 0)
+        upc = p.get("unrealized_pnl_pct", 0)
+        lines.append(
+            f'  {p["ticker"]}: {p["shares"]:.2f} shares @ ${p["entry_price"]} → ${p.get("current_price", "?")} '
+            f'({upl:+.0f} / {upc:+.1f}%) | {p.get("hold_days",0)}d held | sector: {p.get("sector","?")}'
+        )
+    if pf.get('total_realized_pnl'):
+        lines.append(f'Realised P&L from {len(pf["closed_trades"])} closed trades: ${pf["total_realized_pnl"]:+,.2f}')
+    return '\n'.join(lines)
+
+
+# ============================================================
 # CELL 5 - RUN DAILY SCREENER
 # ============================================================
 
@@ -2944,9 +3161,15 @@ def run_screener():
     if _CFG_SAMPLE_SIZE < len(scan_universe):
         scan_universe = scan_universe[:_CFG_SAMPLE_SIZE]
 
+    print('\nStep 0/8: Loading portfolio...')
+    portfolio = load_portfolio()
+    portfolio = update_portfolio_prices(portfolio)
+    print(portfolio_summary_str(portfolio))
+
     print('\nStep 1/8: Updating past results + exit signals...')
     update_results(PICKS_CSV, PICK_COLS)
     update_results(WATCH_CSV, WATCH_COLS)
+    portfolio = reconcile_closed_picks(portfolio)
     _LLM_CALL_COUNT[0] = 0  # reset call counter for this run
 
     print('\nStep 2/8: Market context...')
@@ -2977,7 +3200,7 @@ def run_screener():
             candidates.append(c); existing.add(c['ticker'])
 
     # Exit analysis here — has both market context AND fresh news
-    analyze_exit_signals(ctx, all_stock_news)
+    portfolio = analyze_exit_signals(ctx, all_stock_news, portfolio=portfolio) or portfolio
 
     if not candidates:
         print('\nNo candidates from any stream today - NO PICK')
@@ -3014,7 +3237,7 @@ def run_screener():
         print(f'  Self-calibration: {len(pick_history)} prior picks, {wins/len(pick_history)*100:.0f}% win rate')
 
     print('\nStep 6/8: Claude final scoring...')
-    result = analyze_with_nvidia(candidates, ctx, nd, pick_history=pick_history)
+    result = analyze_with_nvidia(candidates, ctx, nd, pick_history=pick_history, portfolio=portfolio)
     if not result:
         print('NVIDIA analysis failed - no result returned'); return None
 
@@ -3059,15 +3282,25 @@ def run_screener():
 
     _rules = (result or {}).get('derived_rules', [])
     _summary = (result or {}).get('learning_summary', '')
-    # Compute correct stop/target from actual ATR (same logic as terminal card)
     _fund = next((c for c in candidates if c['ticker'] == pick.get('ticker', '')), {})
     _atr  = _fund.get('atr', 0)
     _stop = round(ep - ATR_STOP_MULT  * _atr, 2) if _atr and isinstance(ep, (int, float)) else 'N/A'
     _tgt  = round(ep + ATR_TARGET_MULT * _atr, 2) if _atr and isinstance(ep, (int, float)) else 'N/A'
+
+    # Open portfolio position — LLM chose position_size_pct
+    if sig == 'BUY' and conf >= BUY_THRESHOLD and isinstance(ep, (int, float)) and ep > 0:
+        pct    = min(max(float(pick.get('position_size_pct', 20)), 1), 100)
+        amount = round(portfolio['cash'] * pct / 100, 2)
+        portfolio = open_position(portfolio, pick.get('ticker',''), ep, amount,
+                                  _stop if isinstance(_stop, float) else 0,
+                                  _tgt  if isinstance(_tgt,  float) else 0,
+                                  pick.get('sector',''))
+        save_portfolio(portfolio)
+
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
                      stop_price=_stop, target_price=_tgt)
     display_scorecard()
-    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates)
+    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates, portfolio=portfolio)
 
     print('\nStep 9/8: LLM self-adaptation (updating config for next run)...')
     update_config_from_llm(pick_history)
