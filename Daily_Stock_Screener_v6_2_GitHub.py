@@ -278,7 +278,7 @@ _CFG_ONLY_PROFITABLE    = False   # only stocks with positive trailing EPS/reven
 #   'meta/llama-3.2-3b-instruct'             ← very fast, lower quality
 #   'microsoft/phi-3-mini-128k-instruct'     ← lightweight
 
-NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct'   # ← change this line to switch model
+NVIDIA_MODEL = 'qwen/qwen2.5-72b-instruct'     # ← change this line to switch model
 
 
 _LLM_CALL_COUNT = [0]
