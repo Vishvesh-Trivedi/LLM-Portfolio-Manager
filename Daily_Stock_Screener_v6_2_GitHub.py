@@ -650,43 +650,91 @@ def _fetch_insider_single(ticker):
     return ticker, 0, 'NEUTRAL'
 
 
-def fetch_congress_trades(days=45):
-    """Fetch recent US House congressional stock purchases (STOCK Act disclosures).
-    Uses the free House Stock Watcher API — no key required.
-    Returns {ticker: {'count': N, 'names': ['Smith', 'Jones', ...]}}
+def fetch_congress_trades(days=60):
     """
-    try:
-        r = requests.get('https://housestockwatcher.com/api/transactions',
-                         timeout=20, headers={'User-Agent': 'Mozilla/5.0'})
-        r.raise_for_status()
-        data = r.json()
-    except Exception as e:
-        print(f'  Congress trades: unavailable ({e})')
+    Fetch recent US congressional stock PURCHASES (House + Senate STOCK Act disclosures).
+    Tries 4 sources in order — stops at first success:
+      1. House S3 bucket  (bypasses DNS issues in Colab)
+      2. Senate S3 bucket
+      3. housestockwatcher.com API  (fallback)
+      4. senate-stock-watcher API   (fallback)
+    Returns {ticker: {'count': N, 'names': ['Smith (R-TX) $15K-50K', ...], 'chamber': ['House'/'Senate']}}
+    """
+    _SOURCES = [
+        # chamber, url, name_field, date_field
+        ('House',  'https://house-stock-watcher-data.s3-us-west-2.amazonaws.com/data/all_transactions.json',
+                   'representative', 'disclosure_date'),
+        ('Senate', 'https://senate-stock-watcher-data.s3-us-west-2.amazonaws.com/aggregate/all_transactions.json',
+                   'senator', 'transaction_date'),
+        ('House',  'https://housestockwatcher.com/api/transactions',
+                   'representative', 'disclosure_date'),
+        ('Senate', 'https://efts.us/s3/senate-stock-watcher-data/aggregate/all_transactions.json',
+                   'senator', 'transaction_date'),
+    ]
+
+    cutoff   = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    result   = {}
+    loaded   = []
+
+    for chamber, url, name_field, date_field in _SOURCES:
+        if chamber in loaded:
+            continue   # already got this chamber from an earlier source
+        try:
+            r = requests.get(url, timeout=25, headers={'User-Agent': 'StockScreener vishvesh.niyati@gmail.com'})
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            if not isinstance(data, list) or not data:
+                continue
+            loaded.append(chamber)
+        except Exception:
+            continue
+
+        for rec in data:
+            if 'purchase' not in str(rec.get('type', '')).lower():
+                continue
+            raw_ticker = str(rec.get('ticker', '')).strip().upper().replace('$', '')
+            if not raw_ticker or len(raw_ticker) > 5 or not raw_ticker.isalpha():
+                continue
+            date_str = str(rec.get(date_field, '') or '')[:10]
+            if date_str < cutoff:
+                continue
+
+            # Build rich name string: "Smith (R-TX) $15K-50K"
+            full_name  = str(rec.get(name_field, '') or '').strip()
+            last_name  = full_name.split()[-1] if full_name else '?'
+            party      = str(rec.get('party', '') or '').strip()
+            state      = str(rec.get('state', '') or '').strip()
+            amount_raw = str(rec.get('amount', '') or '').strip()
+            amount_str = (amount_raw
+                          .replace('$1,001 - $15,000', '$1K-15K')
+                          .replace('$15,001 - $50,000', '$15K-50K')
+                          .replace('$50,001 - $100,000', '$50K-100K')
+                          .replace('$100,001 - $250,000', '$100K-250K')
+                          .replace('$250,001 - $500,000', '$250K-500K')
+                          .replace('$500,001 - $1,000,000', '$500K-1M')
+                          .replace('$1,000,001 - $5,000,000', '$1M-5M')
+                          .replace('Over $5,000,000', '>$5M'))
+            party_state = f' ({party}-{state})' if party and state else ''
+            name_tag    = f'{last_name}{party_state} {amount_str} [{chamber[0]}]'
+
+            if raw_ticker not in result:
+                result[raw_ticker] = {'count': 0, 'names': [], 'chamber': []}
+            result[raw_ticker]['count'] += 1
+            if name_tag not in result[raw_ticker]['names']:
+                result[raw_ticker]['names'].append(name_tag)
+            if chamber not in result[raw_ticker]['chamber']:
+                result[raw_ticker]['chamber'].append(chamber)
+
+        if len(loaded) == 2:
+            break  # got both House and Senate, done
+
+    if not result:
+        print(f'  Congress trades: all sources unavailable')
         return {}
 
-    cutoff = datetime.now() - timedelta(days=days)
-    result = {}
-    for rec in data:
-        if 'purchase' not in str(rec.get('type', '')).lower():
-            continue
-        ticker = str(rec.get('ticker', '')).strip().upper().replace('$', '')
-        if not ticker or len(ticker) > 5 or not ticker.isalpha():
-            continue
-        try:
-            disc = datetime.strptime(str(rec.get('disclosure_date', ''))[:10], '%Y-%m-%d')
-        except:
-            continue
-        if disc < cutoff:
-            continue
-        name = str(rec.get('representative', '')).split()[-1]  # last name only
-        if ticker not in result:
-            result[ticker] = {'count': 0, 'names': []}
-        result[ticker]['count'] += 1
-        if name not in result[ticker]['names']:
-            result[ticker]['names'].append(name)
-
     total = sum(v['count'] for v in result.values())
-    print(f'  Congress buys (last {days}d): {total} purchases across {len(result)} stocks')
+    print(f'  Congress buys (last {days}d): {total} purchases | {len(result)} stocks | sources: {", ".join(loaded)}')
     return result
 
 
@@ -763,9 +811,10 @@ def enrich_with_scores(candidates, ctx, market_sentiment,
         c['options_label']        = opt.get('label', 'NEUTRAL')
         c['insider_label']        = ins.get('label', 'NEUTRAL')
         cg = (congress_data or {}).get(t, {})
-        c['congress_count'] = cg.get('count', 0)
-        c['congress_label'] = 'BUYING' if cg.get('count', 0) >= 1 else 'NEUTRAL'
-        c['congress_notes'] = ', '.join(cg.get('names', [])[:3])
+        c['congress_count']   = cg.get('count', 0)
+        c['congress_label']   = 'BUYING' if cg.get('count', 0) >= 1 else 'NEUTRAL'
+        c['congress_notes']   = ', '.join(cg.get('names', [])[:4])   # e.g. "Smith (R-TX) $15K-50K [H], Tuberville (R-AL) $100K-250K [S]"
+        c['congress_chamber'] = ', '.join(cg.get('chamber', []))
         c['pre_score']            = ts + ns
 
     cg_hits = [c['ticker'] for c in candidates if c.get('congress_label') == 'BUYING']
@@ -2915,12 +2964,12 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     cg_pick    = pick_match.get('congress_label') == 'BUYING'
     cg_who     = pick_match.get('congress_notes', '')
     cg_others  = [
-        f'{c["ticker"]} ({c.get("congress_notes","")})'
+        f'{c["ticker"]}: {c.get("congress_notes","")}'
         for c in (candidates or [])
         if c.get('congress_label') == 'BUYING' and c['ticker'] != ticker
     ][:3]
-    congress_line = f'Congress: {", ".join(cg_others)}\n' if cg_others else ''
-    cg_tag = f' [CONGRESS: {cg_who}]' if cg_pick else ''
+    congress_line = f'Congress also buying:\n' + '\n'.join(f'  {o}' for o in cg_others) + '\n' if cg_others else ''
+    cg_tag = f'\nCONGRESS: {cg_who}' if cg_pick else ''
 
     # ── Technicals from candidate ─────────────────────────────
     rsi     = pick_match.get('rsi')
