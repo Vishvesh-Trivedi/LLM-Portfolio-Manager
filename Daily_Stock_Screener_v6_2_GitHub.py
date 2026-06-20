@@ -3525,13 +3525,26 @@ def run_screener():
 
     load_config_overrides()
 
-    # Weekend check — markets closed Sat (5) and Sun (6)
-    # No new prices, no news flow, nothing to screen. Monday's run handles
-    # result updates and config learning with fresh data anyway.
-    if datetime.now().weekday() >= 5:
-        day_name = 'Saturday' if datetime.now().weekday() == 5 else 'Sunday'
-        print(f'\nMarket closed ({day_name}) — nothing to do. See you Monday.')
+    # Weekend check — always use US Eastern time, not local time.
+    # A user in NZ running Saturday 9 AM NZST is actually Friday 5 PM ET — valid trading day.
+    try:
+        from datetime import timezone, timedelta
+        try:
+            from zoneinfo import ZoneInfo
+            _et_now = datetime.now(ZoneInfo('America/New_York'))
+        except ImportError:
+            # Fallback: approximate EDT/EST offset without zoneinfo
+            _month = datetime.now(timezone.utc).month
+            _et_offset = -4 if 3 <= _month <= 11 else -5  # EDT Mar-Nov, EST Dec-Feb
+            _et_now = datetime.now(timezone(timedelta(hours=_et_offset)))
+    except Exception:
+        _et_now = datetime.now()  # last resort: local time
+
+    if _et_now.weekday() >= 5:
+        _day = 'Saturday' if _et_now.weekday() == 5 else 'Sunday'
+        print(f'\nMarket closed (US {_day} {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — nothing to do. See you Monday.')
         return None
+    print(f'   US ET:  {_et_now.strftime("%Y-%m-%d %H:%M %Z")} (weekday {_et_now.weekday()}, markets open)')
 
     # Apply LLM-controlled universe expansions and sample size
     scan_universe = list(STOCK_UNIVERSE)
