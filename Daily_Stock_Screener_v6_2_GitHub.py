@@ -2035,7 +2035,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","reasoning":"1 sentence.","key_risk":"1 sentence.","sector":"X","source":"TECHNICAL"}}]}}\n'
         f'If no stock clears {BUY_THRESHOLD} confidence, signal=NO PICK.\n'
         f'position_size_pct = % of available cash (${cash_avail:,.0f}) to deploy. '
-        f'High conviction = 25-40%. Normal = 15-20%. Uncertain market = 5-10%. Max 50%.'
+        f'You decide the size based on conviction and portfolio state. Max 100%.'
     )
 
     try:
@@ -2200,7 +2200,7 @@ def update_results(fp, cols):
                             elif vs30f <= _CFG_LOSS_THRESHOLD_PCT: df.at[idx,'Result'] = 'Loss'
                             else:                                   df.at[idx,'Result'] = 'Neutral'
                         else:
-                            df.at[idx,'Result'] = 'Win' if r30 > 3 else 'Loss' if r30 < -2 else 'Neutral'
+                            df.at[idx,'Result'] = 'Neutral'  # no QQQ data — can't compute relative return
                     updated=True
         except: continue
     if updated: df.to_csv(fp,index=False); print(f'  {os.path.basename(fp)} updated')
@@ -2738,7 +2738,7 @@ def load_config_overrides():
             _CFG_ONLY_PROFITABLE    = bool(ov.get('only_profitable',    False))
             _CFG_REQUIRE_ABOVE_MA   = bool(ov.get('require_above_ma',   True))
             _CFG_MIN_DOLLAR_VOL_M   = float(ov.get('min_dollar_volume_m', MIN_DOLLAR_VOLUME_M))
-            _CFG_HOLD_DAYS          = int(ov.get('hold_days',            10))
+            _CFG_HOLD_DAYS          = int(ov.get('hold_days',            _CFG_HOLD_DAYS))
             _CFG_SECTOR_CONC_MAX    = int(ov.get('sector_conc_max',      SECTOR_CONC_MAX))
             _CFG_SAMPLE_SIZE        = int(ov.get('sample_size',          SAMPLE_SIZE))
             _CFG_ADDITIONAL_TICKERS = [t.strip().upper() for t in ov.get('additional_tickers', [])]
@@ -2922,11 +2922,11 @@ def update_config_from_llm(pick_history):
     }
 
     sys_msg = (
-        'You are the autonomous portfolio manager for a short-term (10-day) equity screener. '
-        'You have FULL AUTHORITY to change any screening parameter. '
+        f'You are the autonomous portfolio manager for a short-term ({_CFG_HOLD_DAYS}-day) equity screener. '
+        'You have FULL AUTHORITY to change any screening parameter, including hold_days itself. '
         'Your goal: maximize QQQ-relative returns across all picks.'
     )
-    user_msg = f"""PORTFOLIO PERFORMANCE: {wr:.0f}% win rate ({wins}/{len(closed)} closed picks, Win = beat QQQ by >2% in 10 days)
+    user_msg = f"""PORTFOLIO PERFORMANCE: {wr:.0f}% win rate ({wins}/{len(closed)} closed picks, Win = beat QQQ by >{_CFG_WIN_THRESHOLD_PCT}% in {_CFG_HOLD_DAYS} days)
 
 CURRENT SCREENING CONFIG:
 {json.dumps(current_cfg, indent=2)}
@@ -2957,7 +2957,8 @@ YOUR JOB:
 4. When win rate >65%: fine-tune only. When win rate <50%: make meaningful changes.
 5. If no clear pattern: keep current config unchanged.
 
-Return ONLY valid JSON — no markdown fences, no text outside the JSON:
+Return ONLY valid JSON — no markdown fences, no text outside the JSON.
+You can change ANY value. Keep unchanged values as-is.
 {{
   "RSI_MIN": {RSI_MIN},
   "RSI_MAX": {RSI_MAX},
@@ -2967,22 +2968,34 @@ Return ONLY valid JSON — no markdown fences, no text outside the JSON:
   "VOLUME_MIN_RATIO": {VOLUME_MIN_RATIO},
   "ATR_STOP_MULT": {ATR_STOP_MULT},
   "ATR_TARGET_MULT": {ATR_TARGET_MULT},
-  "sector_blacklist": [],
-  "sector_whitelist": [],
-  "source_preference": "ANY",
-  "require_congress": false,
-  "min_catalyst_score": 0,
-  "min_adx_buy": {ADX_MIN},
-  "avoid_earnings_week": false,
-  "max_vix": 999,
-  "min_price": {MIN_PRICE},
-  "only_profitable": false,
-  "require_above_ma": true,
-  "min_dollar_volume_m": {MIN_DOLLAR_VOLUME_M},
+  "sector_blacklist": {json.dumps(_CFG_SECTOR_BLACKLIST)},
+  "sector_whitelist": {json.dumps(_CFG_SECTOR_WHITELIST)},
+  "source_preference": "{_CFG_SOURCE_PREFERENCE}",
+  "require_congress": {str(_CFG_REQUIRE_CONGRESS).lower()},
+  "min_catalyst_score": {_CFG_MIN_CATALYST_SCORE},
+  "min_adx_buy": {_CFG_MIN_ADX_BUY},
+  "avoid_earnings_week": {str(_CFG_AVOID_EARNINGS).lower()},
+  "max_vix": {_CFG_MAX_VIX},
+  "min_price": {_CFG_MIN_PRICE},
+  "only_profitable": {str(_CFG_ONLY_PROFITABLE).lower()},
+  "require_above_ma": {str(_CFG_REQUIRE_ABOVE_MA).lower()},
+  "min_dollar_volume_m": {_CFG_MIN_DOLLAR_VOL_M},
   "hold_days": {_CFG_HOLD_DAYS},
   "sector_conc_max": {_CFG_SECTOR_CONC_MAX},
   "sample_size": {_CFG_SAMPLE_SIZE},
-  "additional_tickers": [],
+  "additional_tickers": {json.dumps(_CFG_ADDITIONAL_TICKERS)},
+  "brokerage_fee": {_CFG_BROKERAGE_FEE},
+  "min_cash_floor": {_CFG_MIN_CASH_FLOOR},
+  "dd_caution_pct": {_CFG_DD_CAUTION_PCT},
+  "dd_severe_pct": {_CFG_DD_SEVERE_PCT},
+  "dd_critical_pct": {_CFG_DD_CRITICAL_PCT},
+  "win_threshold_pct": {_CFG_WIN_THRESHOLD_PCT},
+  "loss_threshold_pct": {_CFG_LOSS_THRESHOLD_PCT},
+  "min_picks_to_learn": {_CFG_MIN_PICKS_TO_LEARN},
+  "rsi_hard_cap": {_CFG_RSI_HARD_CAP},
+  "rsi_cap_conf": {_CFG_RSI_CAP_CONF},
+  "upside_hard_cap": {_CFG_UPSIDE_HARD_CAP},
+  "upside_cap_conf": {_CFG_UPSIDE_CAP_CONF},
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
