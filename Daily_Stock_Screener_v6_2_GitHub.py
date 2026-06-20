@@ -1064,15 +1064,20 @@ def batch_download(tickers):
 
 
 def _fetch_stock_news_single(ticker):
-    """Fetch news for one ticker."""
+    """Fetch news for one ticker — title + summary for richer LLM context."""
     try:
         news   = yf.Ticker(ticker).news or []
-        titles = []
+        items  = []
         for n in news[:8]:
-            t = n.get('content', {}).get('title', '') or n.get('title', '')
-            if t:
-                titles.append(t.lower())
-        return ticker, titles
+            title   = (n.get('content', {}).get('title',   '') or n.get('title',   '')).strip()
+            summary = (n.get('content', {}).get('summary', '') or n.get('summary', '')).strip()
+            if not title:
+                continue
+            text = title.lower()
+            if summary and len(summary) > 20:
+                text += ' — ' + summary[:160].lower()
+            items.append(text)
+        return ticker, items
     except:
         return ticker, []
 
@@ -1092,20 +1097,23 @@ def fetch_all_stock_news_parallel(tickers):
 
 
 def _fetch_fundamentals_single(ticker):
-    """Fetch fundamentals for one ticker."""
+    """Fetch fundamentals for one ticker — reuses same Ticker object for all calls."""
     result = {
         'earnings_date':      'Unknown',
         'earnings_days_away': -1,
         'earnings_risk':      False,
         'analyst_rating':     None,
         'analyst_target':     None,
+        'analyst_actions':    [],   # recent upgrades/downgrades last 14 days
         'short_ratio':        None,
         'upside_pct':         None,
         'sector':             'Unknown',
         'mkt_cap_b':          0.0,
     }
+    tk = yf.Ticker(ticker)  # one object, reused for all property calls below
+
     try:
-        info  = yf.Ticker(ticker).info
+        info  = tk.info
         rec   = info.get('recommendationMean')
         tgt   = info.get('targetMeanPrice')
         price = info.get('currentPrice') or info.get('regularMarketPrice')
@@ -1124,7 +1132,7 @@ def _fetch_fundamentals_single(ticker):
         pass
 
     try:
-        cal   = yf.Ticker(ticker).calendar
+        cal   = tk.calendar
         today = datetime.now().date()
         ed_raw = None
 
@@ -1147,6 +1155,25 @@ def _fetch_fundamentals_single(ticker):
     except:
         pass
 
+    try:
+        ud = tk.upgrades_downgrades
+        if ud is not None and not ud.empty:
+            cutoff  = pd.Timestamp.now(tz='UTC') - pd.Timedelta(days=14)
+            ud.index = pd.to_datetime(ud.index, utc=True)
+            recent  = ud[ud.index >= cutoff].head(4)
+            actions = []
+            for idx, row in recent.iterrows():
+                firm    = str(row.get('Firm', '?'))
+                action  = str(row.get('Action', ''))
+                to_g    = str(row.get('To Grade', ''))
+                from_g  = str(row.get('From Grade', ''))
+                date_s  = idx.strftime('%m/%d')
+                if to_g or from_g:
+                    actions.append(f'{date_s} {firm}: {from_g}→{to_g} ({action})')
+            result['analyst_actions'] = actions
+    except:
+        pass
+
     return ticker, result
 
 
@@ -1162,6 +1189,53 @@ def fetch_all_fundamentals_parallel(tickers):
     full = sum(1 for v in results.values()
                if v['analyst_rating'] is not None and v['earnings_date'] != 'Unknown')
     print(f'  Full fundamentals: {full}/{len(tickers)} stocks')
+    return results
+
+
+def fetch_sec_8k(tickers, days=7):
+    """
+    Fetch recent 8-K filings from SEC EDGAR for a list of tickers.
+    Free, no API key. Only call for candidates (~20 stocks), not the full universe.
+    8-K = material corporate event: FDA approval, contract win, guidance change, M&A.
+    """
+    from datetime import timedelta
+    import xml.etree.ElementTree as ET_sec
+    start = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    results = {}
+    headers = {'User-Agent': 'StockScreener vishvesh.niyati@gmail.com'}
+
+    def fetch_one(ticker):
+        try:
+            url = (
+                f'https://www.sec.gov/cgi-bin/browse-edgar'
+                f'?action=getcompany&CIK={ticker}&type=8-K'
+                f'&dateb=&owner=include&count=5&search_text=&output=atom'
+            )
+            r = requests.get(url, timeout=10, headers=headers)
+            if r.status_code != 200:
+                return ticker, []
+            root = ET_sec.fromstring(r.content)
+            ns   = {'atom': 'http://www.w3.org/2005/Atom'}
+            filings = []
+            for entry in root.findall('atom:entry', ns):
+                title   = (entry.findtext('atom:title',   '', ns) or '').strip()
+                updated = (entry.findtext('atom:updated', '', ns) or '')[:10]
+                summary = (entry.findtext('atom:summary', '', ns) or '').strip()[:200]
+                if updated >= start and title:
+                    filings.append(f'{updated}: {title}' + (f' — {summary}' if summary else ''))
+            return ticker, filings
+        except:
+            return ticker, []
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futures = {ex.submit(fetch_one, t): t for t in tickers}
+        for f in as_completed(futures):
+            t, filings = f.result()
+            results[t] = filings
+
+    hits = sum(1 for v in results.values() if v)
+    if hits:
+        print(f'  SEC EDGAR 8-K: {hits}/{len(tickers)} candidates have recent filings')
     return results
 
 
@@ -1467,6 +1541,7 @@ def merge_candidates(technical_passed, news_rescued, all_stock_news, fundamental
             'earnings_days_away': fund.get('earnings_days_away', -1),
             'earnings_risk':      fund.get('earnings_risk', False),
             'stock_news':         news[:5],
+            'analyst_actions':    fund.get('analyst_actions', []),
             'rescue_keywords':    keyword_hits[:5] if keyword_hits else [],
         })
 
@@ -1486,6 +1561,7 @@ def merge_candidates(technical_passed, news_rescued, all_stock_news, fundamental
             'earnings_days_away': fund.get('earnings_days_away', -1),
             'earnings_risk':      fund.get('earnings_risk', False),
             'stock_news':         news[:5],
+            'analyst_actions':    fund.get('analyst_actions', []),
             'rescue_keywords':    ind.get('rescue_keywords', []),
         })
 
@@ -1499,8 +1575,8 @@ def merge_candidates(technical_passed, news_rescued, all_stock_news, fundamental
     return candidates
 
 
-def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_news):
-    """3-layer news intelligence via Claude."""
+def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_news, sec_filings=None):
+    """3-layer news intelligence via LLM."""
     print(f'\nPhase 5 - News intelligence ({len(candidates)} candidates, 3 layers)...')
 
     sectors_in_pool  = list(set([c['sector'] for c in candidates if c['sector'] != 'Unknown']))
@@ -1510,7 +1586,27 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
         for sec, v in sector_news.items() if sec in sectors_in_pool
     ]) or 'No sector news'
     stock_news_pool  = {c['ticker']: all_stock_news.get(c['ticker'], []) for c in candidates}
-    stock_text       = '\n'.join([f'{t}: {h[0]}' for t, h in stock_news_pool.items() if h]) or 'No individual stock news'
+    # Show top 3 headlines+summaries per stock (was just 1 title before)
+    stock_text       = '\n'.join([
+        f'{t}: {" | ".join(h[:3])}'
+        for t, h in stock_news_pool.items() if h
+    ]) or 'No individual stock news'
+
+    # Analyst upgrades/downgrades for candidates (last 14 days)
+    action_lines = []
+    for c in candidates:
+        acts = c.get('analyst_actions', [])
+        if acts:
+            action_lines.append(f'{c["ticker"]}: {" | ".join(acts)}')
+    analyst_actions_text = '\n'.join(action_lines) or 'No recent analyst actions'
+
+    # SEC EDGAR 8-K filings for candidates
+    edgar_lines = []
+    for c in candidates:
+        filings = (sec_filings or {}).get(c['ticker'], [])
+        if filings:
+            edgar_lines.append(f'{c["ticker"]}: {" | ".join(filings[:2])}')
+    edgar_text = '\n'.join(edgar_lines) or 'No recent 8-K filings'
 
     all_tickers    = [c['ticker'] for c in candidates]
     both_tickers   = [c['ticker'] for c in candidates if c['source'] == 'BOTH']
@@ -1530,8 +1626,10 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
         f'VIX={ctx["vix_level"]} (p{ctx["vix_percentile"]}) | QQQ={ctx["qqq_trend"]} ({ctx["qqq_vs_ma50"]:+.2f}% vs 50MA) | SPY today={ctx["spy_return_today"]:+.2f}%\n\n'
         f'LAYER 1 - MACRO HEADLINES:\n{macro_text}\n\n'
         f'LAYER 2 - SECTOR NEWS:\n{sector_text}\n\n'
-        f'LAYER 3 - STOCK NEWS:\n{stock_text}\n\n'
-        f'ANALYST CONSENSUS:\n{chr(10).join(analyst_lines) if analyst_lines else "No data"}\n\n'
+        f'LAYER 3 - STOCK NEWS (title + summary):\n{stock_text}\n\n'
+        f'ANALYST UPGRADES/DOWNGRADES (last 14 days):\n{analyst_actions_text}\n\n'
+        f'SEC EDGAR 8-K FILINGS (last 7 days — material corporate events):\n{edgar_text}\n\n'
+        f'ANALYST CONSENSUS (mean rating 1=Strong Buy, 5=Sell | price target upside):\n{chr(10).join(analyst_lines) if analyst_lines else "No data"}\n\n'
         f'ALL CANDIDATES: {all_tickers}{both_note}{news_note}{earnings_note}\n'
         f'SECTORS: {sectors_in_pool}\n\n'
         'Return this JSON:\n'
@@ -1639,7 +1737,8 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
             'analyst_rating':fund.get('analyst_rating'),'analyst_target':fund.get('analyst_target'),
             'upside_pct':fund.get('upside_pct'),'short_ratio':fund.get('short_ratio'),
             'earnings_date':fund.get('earnings_date','Unknown'),'earnings_days_away':fund.get('earnings_days_away',-1),
-            'earnings_risk':fund.get('earnings_risk',False),'stock_news':news[:5],'rescue_keywords':[],
+            'earnings_risk':fund.get('earnings_risk',False),'stock_news':news[:5],
+            'analyst_actions':fund.get('analyst_actions',[]),'rescue_keywords':[],
         })
         print(f'  Stream B added: {t} | ${ind["price"]} | RSI {ind["rsi"]}')
     return b_cands
@@ -3334,16 +3433,18 @@ def run_screener():
         print('\nNo candidates from any stream today - NO PICK')
         display_scorecard(); return None
 
-    print('\nStep 4.6/8: Options P/C + insider + congress signals...')
+    print('\nStep 4.6/8: Options P/C + insider + congress + SEC 8-K...')
     options_data, insider_data = fetch_options_and_insider_parallel(candidates)
     congress_data = fetch_congress_trades(days=45)
+    candidate_tickers = [c['ticker'] for c in candidates]
+    sec_filings = fetch_sec_8k(candidate_tickers, days=7)
 
     print('\nStep 4.7/8: LLM catalyst scoring (every candidate)...')
     candidates = batch_catalyst_score(candidates, ctx, all_stock_news)
     candidates = [c for c in candidates if not c.get('auto_drop')]
 
-    print('\nStep 5/8: News intelligence (3 layers)...')
-    nd         = get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_news)
+    print('\nStep 5/8: News intelligence (3 layers + analyst actions + SEC filings)...')
+    nd         = get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_news, sec_filings=sec_filings)
     candidates = apply_news(candidates, nd)
 
     if not candidates:
