@@ -2789,48 +2789,39 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     sig      = pick.get('signal', 'NO PICK')
     conf     = pick.get('confidence', 0)
     sector   = pick.get('sector', '')
-    why      = str(pick.get('reasoning', '')).split('.')[0]
-    risk     = str(pick.get('key_risk', '')).split('.')[0]
-    bear     = str(pick.get('devils_advocate', '')).split('.')[0]
-    # No $ sign — CallMeBot treats $1, $9 etc. as template vars and strips them
-    ep_str   = str(ep)  if isinstance(ep, (int, float)) else 'N/A'
-    st_str   = str(stop_price)   if isinstance(stop_price, (int, float)) else 'N/A'
-    tg_str   = str(target_price) if isinstance(target_price, (int, float)) else 'N/A'
+    why      = str(pick.get('reasoning', ''))[:120]
+    risk     = str(pick.get('key_risk', ''))[:100]
     date_str = datetime.now().strftime('%b %d %Y')
 
-    watch_lines = ''
-    for w in wl[:3]:
-        wt = w.get('ticker', '')
-        wc = w.get('confidence', 0)
-        wr = str(w.get('reasoning', ''))[:70]
-        watch_lines += f'  {wt} {wc}/100 - {wr}\n'
+    # ── Market context line ───────────────────────────────────
+    gm  = ctx.get('global_macro', {})
+    esf = gm.get('es_futures', {})
+    nqf = gm.get('nq_futures', {})
+    tnx = gm.get('yield_10y', {})
+    dxy = gm.get('dxy', {})
+    s1d = ctx.get('sector_1d', {})
+    top_s  = sorted(s1d.items(), key=lambda x: x[1], reverse=True)
+    top_s_str  = ' | '.join(f'{s} {v:+.1f}%' for s, v in top_s[:3])  if top_s else 'N/A'
+    bot_s_str  = ' | '.join(f'{s} {v:+.1f}%' for s, v in top_s[-2:]) if top_s else 'N/A'
 
-    # Congress signal: flag pick + any watch stocks with congressional buys
-    pick_match = next((c for c in (candidates or []) if c['ticker'] == ticker), {})
-    cg_pick = pick_match.get('congress_label') == 'BUYING'
-    cg_who  = pick_match.get('congress_notes', '')
-    cg_others = [
-        f'{c["ticker"]} ({c["congress_notes"]})'
-        for c in (candidates or [])
-        if c.get('congress_label') == 'BUYING' and c['ticker'] != ticker
-    ][:4]
-    congress_line = ''
-    if cg_others:
-        congress_line = f'Congress buys: {", ".join(cg_others)}\n'
+    fut_str = ''
+    if esf or nqf:
+        fut_str = f'Futures: ES {esf.get("chg_pct",0):+.2f}% | NQ {nqf.get("chg_pct",0):+.2f}%\n'
+    macro_str = ''
+    if tnx.get('price') or dxy.get('price'):
+        macro_str = f'10Y: {tnx.get("price","?")}% ({tnx.get("chg_pct",0):+.2f}%) | DXY: {dxy.get("price","?")} ({dxy.get("chg_pct",0):+.2f}%)\n'
 
-    history_lines = _recent_picks_summary(days=10)
-    history_block = ('-- BUY HISTORY --\n' + '\n'.join(history_lines)) if history_lines else ''
-
-    cg_tag = f' [CONGRESS: {cg_who}]' if cg_pick else ''
-
-    # Portfolio block
+    # ── Portfolio block ───────────────────────────────────────
     pf_block = ''
     if portfolio:
         total_val = round(portfolio['cash'] + sum(p.get('current_value', p['cost_basis']) for p in portfolio['positions']), 2)
         total_pnl = round(total_val - portfolio['starting_capital'], 2)
         total_pct = round(total_pnl / portfolio['starting_capital'] * 100, 2)
-        pos_lines = '  ' + ' | '.join(
-            f'{p["ticker"]} {p.get("unrealized_pnl_pct",0):+.1f}%'
+        pos_lines = '\n'.join(
+            f'  {p["ticker"]} {p["shares"]}sh @ {p["entry_price"]} '
+            f'({p.get("unrealized_pnl_pct",0):+.1f}%) | '
+            f'Stop: {p.get("stop_price","?")} | Target: {p.get("target_price","?")} | '
+            f'{p.get("hold_days",0)}d held'
             for p in portfolio['positions']
         ) if portfolio['positions'] else '  No open positions'
         pf_block = (
@@ -2839,29 +2830,105 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             f'---\n'
         )
 
+    # ── Congress + candidate detail ───────────────────────────
+    pick_match = next((c for c in (candidates or []) if c['ticker'] == ticker), {})
+    cg_pick    = pick_match.get('congress_label') == 'BUYING'
+    cg_who     = pick_match.get('congress_notes', '')
+    cg_others  = [
+        f'{c["ticker"]} ({c.get("congress_notes","")})'
+        for c in (candidates or [])
+        if c.get('congress_label') == 'BUYING' and c['ticker'] != ticker
+    ][:3]
+    congress_line = f'Congress: {", ".join(cg_others)}\n' if cg_others else ''
+    cg_tag = f' [CONGRESS: {cg_who}]' if cg_pick else ''
+
+    # ── Technicals from candidate ─────────────────────────────
+    rsi     = pick_match.get('rsi')
+    adx     = pick_match.get('adx')
+    mom5    = pick_match.get('momentum_5d')
+    vr      = pick_match.get('vol_ratio')
+    analyst = pick_match.get('analyst_rating', '')
+    upside  = pick_match.get('upside_pct')
+    earn_d  = pick_match.get('earnings_days_away', 'N/A')
+    short_f = pick_match.get('short_pct_float')
+    sec_8k  = pick_match.get('sec_8k_filings', [])
+    insider = pick_match.get('insider_label', '')
+    options = pick_match.get('options_label', '')
+    tech_bd = pick_match.get('tech_score_breakdown', {})
+
+    tech_line = ''
+    if rsi is not None:
+        tech_line = f'RSI {rsi:.1f} | ADX {adx:.1f} | Mom5d {mom5:+.1f}% | Vol {vr:.1f}x' if all(v is not None for v in [adx, mom5, vr]) else f'RSI {rsi:.1f}'
+    analyst_line = ''
+    if analyst or upside is not None:
+        up_str = f' | Upside {upside:+.1f}%' if upside is not None else ''
+        analyst_line = f'Analyst: {analyst}{up_str}\n'
+    earnings_line = f'Earnings: {earn_d}d away\n' if earn_d not in ('N/A', None) else ''
+    short_line    = f'Short float: {short_f:.1f}%\n' if short_f is not None else ''
+    flow_line     = ''
+    if insider != 'NEUTRAL' or options != 'NEUTRAL':
+        flow_line = f'Insider: {insider} | Options P/C: {options}\n'
+    sec_line = ''
+    if sec_8k:
+        sec_line = f'SEC 8-K: {sec_8k[0][:80]}\n' if isinstance(sec_8k[0], str) else ''
+
+    # ── R:R ──────────────────────────────────────────────────
+    rr_str = 'N/A'
+    if isinstance(stop_price, (int,float)) and isinstance(target_price, (int,float)) and isinstance(ep, (int,float)) and ep - stop_price > 0:
+        rr = round((target_price - ep) / (ep - stop_price), 1)
+        rr_str = f'1:{rr}'
+
+    # ── Actual position from portfolio ────────────────────────
+    pos = next((p for p in (portfolio or {}).get('positions', []) if p['ticker'] == ticker), None)
+    shares_str = f'{pos["shares"]} shares | Spent: {pos["cost_basis"]:,.0f}' if pos else ''
+
+    # ── Watch list ────────────────────────────────────────────
+    history_lines = _recent_picks_summary(days=10)
+    history_block = ('-- BUY HISTORY --\n' + '\n'.join(history_lines)) if history_lines else ''
+
+    watch_lines = ''
+    for w in wl[:3]:
+        wc = next((c for c in (candidates or []) if c['ticker'] == w.get('ticker','')), {})
+        wr_rsi = wc.get('rsi')
+        wr_mom = wc.get('momentum_5d')
+        wr_tag = f' RSI {wr_rsi:.0f} Mom {wr_mom:+.1f}%' if wr_rsi is not None and wr_mom is not None else ''
+        watch_lines += f'  {w.get("ticker","")} {w.get("confidence",0)}/100{wr_tag} - {str(w.get("reasoning",""))[:60]}\n'
+
+    # ── Build message ─────────────────────────────────────────
     if sig == 'BUY':
-        pct_deployed = pick.get('position_size_pct', 20)
-        amt = round(portfolio['cash'] * pct_deployed / 100, 0) if portfolio else 0
-        amt_str = f' ({pct_deployed}% = {amt:,.0f})' if amt else ''
         msg = (
             f'SCREENER {date_str}\n'
-            f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
+            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.1f}% vs 50MA | SPY {ctx["spy_return_today"]:+.2f}%\n'
+            f'{fut_str}'
+            f'{macro_str}'
+            f'Sectors TOP: {top_s_str}\n'
+            f'Sectors BOT: {bot_s_str}\n'
             f'---\n'
             f'{pf_block}'
-            f'BUY: {ticker} [{sector}] @ {ep_str}{amt_str} | {conf}/100{cg_tag}\n'
-            f'Stop: {st_str} | Target: {tg_str}\n'
+            f'BUY: {ticker} [{sector}] @ {ep} | {conf}/100{cg_tag}\n'
+            f'{shares_str}\n'
+            f'Stop: {stop_price} | Target: {target_price} | R:R {rr_str}\n'
+            f'{tech_line}\n'
+            f'{analyst_line}'
+            f'{earnings_line}'
+            f'{short_line}'
+            f'{flow_line}'
+            f'{sec_line}'
             f'Why: {why}\n'
             f'Risk: {risk}\n'
             f'---\n'
-            f'WATCH:\n{watch_lines or "  None"}'
             f'{congress_line}'
+            f'WATCH:\n{watch_lines or "  None"}'
             f'---\n'
             f'{history_block}'
         )
     else:
         msg = (
             f'SCREENER {date_str}\n'
-            f'VIX {ctx["vix_level"]:.1f} | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
+            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
+            f'{fut_str}'
+            f'{macro_str}'
+            f'Sectors TOP: {top_s_str}\n'
             f'---\n'
             f'{pf_block}'
             f'No BUY today ({sig})\n\n'
