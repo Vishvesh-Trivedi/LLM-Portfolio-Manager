@@ -3250,7 +3250,11 @@ def save_portfolio(pf):
 
 
 def update_portfolio_prices(pf):
-    """Fetch live prices for all open positions and update unrealised P&L."""
+    """
+    Fetch live prices for all open positions, update P&L, then auto-close any
+    position that has hit its stop-loss, profit target, or is 1 day before earnings.
+    These are the three mechanical exit rules for a 10-day swing trade.
+    """
     if not pf['positions']:
         return pf
     tickers = [p['ticker'] for p in pf['positions']]
@@ -3263,16 +3267,63 @@ def update_portfolio_prices(pf):
                 t = pos['ticker']
                 col = closes[t] if t in closes.columns else closes.iloc[:, 0]
                 curr = float(col.dropna().iloc[-1])
-                pos['current_price']       = round(curr, 2)
-                pos['current_value']       = round(curr * pos['shares'], 2)
-                pos['unrealized_pnl']      = round(pos['current_value'] - pos['cost_basis'], 2)
-                pos['unrealized_pnl_pct']  = round((pos['current_value'] / pos['cost_basis'] - 1) * 100, 2)
+                pos['current_price']      = round(curr, 2)
+                pos['current_value']      = round(curr * pos['shares'], 2)
+                pos['unrealized_pnl']     = round(pos['current_value'] - pos['cost_basis'], 2)
+                pos['unrealized_pnl_pct'] = round((pos['current_value'] / pos['cost_basis'] - 1) * 100, 2)
                 entry_date = datetime.strptime(pos['entry_date'], '%Y-%m-%d')
                 pos['hold_days'] = (datetime.now() - entry_date).days
             except Exception:
                 pass
     except Exception as e:
         print(f'  price update error: {e}')
+
+    # ── Mechanical exit rules (run after prices are updated) ─────────────────
+    to_close = []   # (ticker, reason)
+
+    for pos in pf['positions']:
+        curr  = pos.get('current_price')
+        stop  = pos.get('stop_price')
+        tgt   = pos.get('target_price')
+        t     = pos['ticker']
+        if curr is None:
+            continue
+
+        # Rule 1 — Stop-loss breached
+        if stop and float(curr) <= float(stop):
+            to_close.append((t, f'stop_loss (curr={curr} ≤ stop={stop})'))
+            continue
+
+        # Rule 2 — Profit target reached
+        if tgt and float(curr) >= float(tgt):
+            to_close.append((t, f'profit_target (curr={curr} ≥ target={tgt})'))
+            continue
+
+        # Rule 3 — Earnings in ≤1 day: close to avoid binary event risk
+        try:
+            cal    = yf.Ticker(t).calendar
+            ed_raw = None
+            if isinstance(cal, dict):
+                ed_raw = cal.get('Earnings Date')
+                if isinstance(ed_raw, list) and ed_raw:
+                    ed_raw = ed_raw[0]
+            elif cal is not None and hasattr(cal, 'empty') and not cal.empty:
+                if 'Earnings Date' in cal.index:
+                    vals = cal.loc['Earnings Date'].values
+                    if len(vals) > 0:
+                        ed_raw = vals[0]
+            if ed_raw is not None:
+                days_to_earnings = (pd.to_datetime(ed_raw).date() - datetime.now().date()).days
+                if 0 <= days_to_earnings <= 1:
+                    to_close.append((t, f'pre_earnings (earnings in {days_to_earnings}d)'))
+        except:
+            pass
+
+    for ticker, reason in to_close:
+        pos = next((p for p in pf['positions'] if p['ticker'] == ticker), None)
+        if pos:
+            pf = close_position(pf, ticker, pos['current_price'], reason=reason)
+
     return pf
 
 
