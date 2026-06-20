@@ -277,6 +277,7 @@ _CFG_RSI_HARD_CAP       = 999     # RSI above this clamps confidence (999 = disa
 _CFG_RSI_CAP_CONF       = 70      # confidence ceiling when RSI_HARD_CAP is breached
 _CFG_UPSIDE_HARD_CAP    = -999    # analyst upside below this clamps confidence (-999 = disabled)
 _CFG_UPSIDE_CAP_CONF    = 65      # confidence ceiling when UPSIDE_HARD_CAP is breached
+_CFG_MAX_POSITIONS      = 5       # max simultaneous open positions (LLM configurable)
 
 # ── NVIDIA MODEL SELECTION ─────────────────────────────────
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
@@ -1016,11 +1017,13 @@ def get_market_context():
 
     # Global macro — 10Y yield, dollar, overnight markets
     _GLOBAL = {
-        'yield_10y': '^TNX',   # US 10-Year Treasury yield
-        'dxy':       'DX-Y.NYB', # Dollar index
-        'nikkei':    '^N225',  # Japan (overnight)
-        'dax':       '^GDAXI', # Germany (overnight)
-        'ftse':      '^FTSE',  # UK (overnight)
+        'yield_10y':  '^TNX',      # US 10-Year Treasury yield
+        'dxy':        'DX-Y.NYB',  # Dollar index
+        'es_futures': '^ES=F',     # S&P 500 e-mini futures (pre-market direction)
+        'nq_futures': '^NQ=F',     # Nasdaq 100 e-mini futures (pre-market direction)
+        'nikkei':     '^N225',     # Japan (overnight)
+        'dax':        '^GDAXI',    # Germany (overnight)
+        'ftse':       '^FTSE',     # UK (overnight)
     }
     global_macro = {}
     for name, sym in _GLOBAL.items():
@@ -1054,9 +1057,13 @@ def get_market_context():
         tnx = global_macro.get('yield_10y', {})
         dxy = global_macro.get('dxy', {})
         nk  = global_macro.get('nikkei', {})
+        es  = global_macro.get('es_futures', {})
+        nq  = global_macro.get('nq_futures', {})
         print(f'  10Y yield: {tnx.get("price","?")}% ({tnx.get("chg_pct",0):+.2f}%)  '
               f'DXY: {dxy.get("price","?")} ({dxy.get("chg_pct",0):+.2f}%)  '
               f'Nikkei: {nk.get("chg_pct",0):+.2f}%')
+        if es or nq:
+            print(f'  Futures:  ES={es.get("chg_pct",0):+.2f}%  NQ={nq.get("chg_pct",0):+.2f}%')
     if ctx['defensive_mode']:
         print('  *** DEFENSIVE MODE ACTIVE ***')
     return ctx
@@ -2077,6 +2084,8 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     gm   = ctx.get('global_macro', {})
     tnx  = gm.get('yield_10y', {})
     dxy  = gm.get('dxy', {})
+    esf  = gm.get('es_futures', {})
+    nqf  = gm.get('nq_futures', {})
     nk   = gm.get('nikkei', {})
     dax  = gm.get('dax', {})
     s1d  = ctx.get('sector_1d', {})
@@ -2090,6 +2099,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'MARKET: VIX={ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]}) {ctx["vix_regime"]} | '
         f'VIX_mult={mult}x | QQQ={ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.2f}% vs 50MA | '
         f'SPY today={ctx["spy_return_today"]:+.2f}% | Defensive={"YES" if ctx["defensive_mode"] else "NO"}\n'
+        f'FUTURES: ES={esf.get("chg_pct",0):+.2f}% | NQ={nqf.get("chg_pct",0):+.2f}%\n'
         f'GLOBAL: 10Y={tnx.get("price","?")}% ({tnx.get("chg_pct",0):+.2f}%) | '
         f'DXY={dxy.get("price","?")} ({dxy.get("chg_pct",0):+.2f}%) | '
         f'Nikkei={nk.get("chg_pct",0):+.2f}% | DAX={dax.get("chg_pct",0):+.2f}%\n'
@@ -2127,6 +2137,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'CANDIDATES:\n{json.dumps(compact_brief, indent=1)}\n\n'
         f'TASK: As portfolio manager with ${cash_avail:,.0f} available cash, rank these for a 1-4 week trade.\n'
         f'Already held (do NOT pick again): {list(open_tickers) or "none"}\n'
+        f'Max concurrent positions: {_CFG_MAX_POSITIONS} (currently {len(open_tickers)}/{_CFG_MAX_POSITIONS})\n'
         f'Identify:\n'
         f'1. Top 10 to deep-analyse (best short-term setups)\n'
         f'2. Immediate drops (no short-term catalyst, negative news, earnings too soon)\n'
@@ -2891,6 +2902,7 @@ def load_config_overrides():
     global _CFG_MIN_CASH_FLOOR, _CFG_DD_CAUTION_PCT, _CFG_DD_SEVERE_PCT, _CFG_DD_CRITICAL_PCT
     global _CFG_WIN_THRESHOLD_PCT, _CFG_LOSS_THRESHOLD_PCT, _CFG_MIN_PICKS_TO_LEARN
     global _CFG_RSI_HARD_CAP, _CFG_RSI_CAP_CONF, _CFG_UPSIDE_HARD_CAP, _CFG_UPSIDE_CAP_CONF
+    global _CFG_MAX_POSITIONS
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -2940,6 +2952,7 @@ def load_config_overrides():
             _CFG_RSI_CAP_CONF       = float(ov.get('rsi_cap_conf',          _CFG_RSI_CAP_CONF))
             _CFG_UPSIDE_HARD_CAP    = float(ov.get('upside_hard_cap',       _CFG_UPSIDE_HARD_CAP))
             _CFG_UPSIDE_CAP_CONF    = float(ov.get('upside_cap_conf',       _CFG_UPSIDE_CAP_CONF))
+            _CFG_MAX_POSITIONS      = int(ov.get('max_positions',            _CFG_MAX_POSITIONS))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -3105,6 +3118,7 @@ def update_config_from_llm(pick_history):
         'rsi_cap_conf': _CFG_RSI_CAP_CONF,
         'upside_hard_cap': _CFG_UPSIDE_HARD_CAP,
         'upside_cap_conf': _CFG_UPSIDE_CAP_CONF,
+        'max_positions': _CFG_MAX_POSITIONS,
     }
 
     sys_msg = (
@@ -3182,6 +3196,7 @@ You can change ANY value. Keep unchanged values as-is.
   "rsi_cap_conf": {_CFG_RSI_CAP_CONF},
   "upside_hard_cap": {_CFG_UPSIDE_HARD_CAP},
   "upside_cap_conf": {_CFG_UPSIDE_CAP_CONF},
+  "max_positions": {_CFG_MAX_POSITIONS},
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
@@ -3278,6 +3293,21 @@ def update_portfolio_prices(pf):
     except Exception as e:
         print(f'  price update error: {e}')
 
+    # ── Trailing stop — raise stop as price rises, never lower it ───────────
+    for pos in pf['positions']:
+        curr = pos.get('current_price')
+        if curr is None:
+            continue
+        hwm = float(pos.get('high_watermark', pos['entry_price']))
+        if float(curr) > hwm:
+            pos['high_watermark'] = round(float(curr), 2)
+            atr = float(pos.get('atr_at_entry', 0))
+            if atr > 0:
+                new_stop = round(float(curr) - ATR_STOP_MULT * atr, 2)
+                old_stop = float(pos.get('stop_price') or 0)
+                if new_stop > old_stop:
+                    pos['stop_price'] = new_stop
+
     # ── Mechanical exit rules (run after prices are updated) ─────────────────
     to_close = []   # (ticker, reason)
 
@@ -3327,11 +3357,15 @@ def update_portfolio_prices(pf):
     return pf
 
 
-def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector=''):
+def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', atr=0):
     """Deploy cash into a new position. LLM controls amount_usd."""
     # Guard: already holding this ticker
     if any(p['ticker'] == ticker for p in pf['positions']):
         print(f'  Portfolio: already holding {ticker} — skipping')
+        return pf
+    # Guard: max concurrent positions (LLM-configurable via _CFG_MAX_POSITIONS)
+    if len(pf['positions']) >= _CFG_MAX_POSITIONS:
+        print(f'  Portfolio: max positions ({_CFG_MAX_POSITIONS}) reached — skipping {ticker}')
         return pf
     # Guard: not enough cash (floor is LLM-configurable via min_cash_floor)
     if pf['cash'] < amount_usd or amount_usd < _CFG_MIN_CASH_FLOOR:
@@ -3358,6 +3392,8 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector=''):
         'unrealized_pnl':      round(-BROKERAGE_FEE, 2),
         'unrealized_pnl_pct':  round(-BROKERAGE_FEE / total_cost * 100, 2) if total_cost else 0.0,
         'hold_days':           0,
+        'high_watermark':      round(entry_price, 2),   # trailing stop pivot
+        'atr_at_entry':        round(float(atr), 4) if atr else 0.0,
     })
     pf['cash'] = round(pf['cash'] - total_cost, 2)
     leftover   = round(amount_usd - total_cost, 2)
@@ -3462,7 +3498,7 @@ def portfolio_summary_str(pf):
 
     lines = [
         f'PORTFOLIO: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs ${pf["starting_capital"]:,.0f} starting)',
-        f'Cash available: ${pf["cash"]:,.2f}  |  Open positions: {len(pf["positions"])}',
+        f'Cash available: ${pf["cash"]:,.2f}  |  Open positions: {len(pf["positions"])}/{_CFG_MAX_POSITIONS}',
     ]
     for p in pf['positions']:
         upl = p.get("unrealized_pnl", 0)
@@ -3680,7 +3716,7 @@ def run_screener():
         portfolio = open_position(portfolio, pick.get('ticker',''), ep, amount,
                                   _stop if isinstance(_stop, float) else 0,
                                   _tgt  if isinstance(_tgt,  float) else 0,
-                                  pick.get('sector',''))
+                                  pick.get('sector',''), atr=_atr or 0)
         save_portfolio(portfolio)
 
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
