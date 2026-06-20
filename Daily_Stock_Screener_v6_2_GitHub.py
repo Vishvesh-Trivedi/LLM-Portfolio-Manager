@@ -1014,6 +1014,26 @@ def get_market_context():
     except:
         spy_ret = 0.0
 
+    # Global macro — 10Y yield, dollar, overnight markets
+    _GLOBAL = {
+        'yield_10y': '^TNX',   # US 10-Year Treasury yield
+        'dxy':       'DX-Y.NYB', # Dollar index
+        'nikkei':    '^N225',  # Japan (overnight)
+        'dax':       '^GDAXI', # Germany (overnight)
+        'ftse':      '^FTSE',  # UK (overnight)
+    }
+    global_macro = {}
+    for name, sym in _GLOBAL.items():
+        try:
+            h = yf.Ticker(sym).history(period='5d')
+            if not h.empty and len(h) >= 2:
+                latest = round(float(h['Close'].iloc[-1]), 2)
+                prev   = float(h['Close'].iloc[-2])
+                chg    = round((latest - prev) / prev * 100, 2) if prev else 0.0
+                global_macro[name] = {'price': latest, 'chg_pct': chg}
+        except:
+            pass
+
     ctx = {
         'vix_level':        vix_l,
         'vix_percentile':   vix_pct,
@@ -1024,10 +1044,19 @@ def get_market_context():
         'qqq_price':        qp,
         'spy_return_today': spy_ret,
         'defensive_mode':   vix_pct > 90 and qt == 'BEARISH',
+        'global_macro':     global_macro,
+        'sector_1d':        {},   # filled after batch_download in run_screener
     }
     print(f'  VIX:  {vix_l} (p{vix_pct}) -> {vr} ({vm}x)')
     print(f'  QQQ:  ${qp} | {qt} ({qv:+.2f}% vs 50MA)')
     print(f'  SPY today: {spy_ret:+.2f}%')
+    if global_macro:
+        tnx = global_macro.get('yield_10y', {})
+        dxy = global_macro.get('dxy', {})
+        nk  = global_macro.get('nikkei', {})
+        print(f'  10Y yield: {tnx.get("price","?")}% ({tnx.get("chg_pct",0):+.2f}%)  '
+              f'DXY: {dxy.get("price","?")} ({dxy.get("chg_pct",0):+.2f}%)  '
+              f'Nikkei: {nk.get("chg_pct",0):+.2f}%')
     if ctx['defensive_mode']:
         print('  *** DEFENSIVE MODE ACTIVE ***')
     return ctx
@@ -1104,9 +1133,14 @@ def _fetch_fundamentals_single(ticker):
         'earnings_risk':      False,
         'analyst_rating':     None,
         'analyst_target':     None,
-        'analyst_actions':    [],   # recent upgrades/downgrades last 14 days
+        'analyst_actions':    [],
         'short_ratio':        None,
+        'short_pct_float':    None,  # % of float sold short (squeeze signal)
         'upside_pct':         None,
+        'revenue_growth':     None,  # YoY revenue growth %
+        'earnings_growth':    None,  # YoY earnings growth %
+        'open_gap_pct':       None,  # today's open vs yesterday's close
+        'premarket_gap_pct':  None,  # pre-market price vs yesterday's close
         'sector':             'Unknown',
         'mkt_cap_b':          0.0,
     }
@@ -1118,16 +1152,33 @@ def _fetch_fundamentals_single(ticker):
         tgt   = info.get('targetMeanPrice')
         price = info.get('currentPrice') or info.get('regularMarketPrice')
         sr    = info.get('shortRatio')
+        sf    = info.get('shortPercentOfFloat')
         sec   = info.get('sector', 'Unknown')
         mc    = info.get('marketCap', 0)
+        rg    = info.get('revenueGrowth')
+        eg    = info.get('earningsGrowth')
 
-        if rec:   result['analyst_rating'] = round(float(rec), 1)
-        if tgt:   result['analyst_target'] = round(float(tgt), 2)
+        if rec:   result['analyst_rating']  = round(float(rec), 1)
+        if tgt:   result['analyst_target']  = round(float(tgt), 2)
         if tgt and price and float(price) > 0:
             result['upside_pct'] = round(((float(tgt) - float(price)) / float(price)) * 100, 1)
-        if sr:    result['short_ratio'] = round(float(sr), 1)
+        if sr:    result['short_ratio']     = round(float(sr), 1)
+        if sf:    result['short_pct_float'] = round(float(sf) * 100, 1)
+        if rg:    result['revenue_growth']  = round(float(rg) * 100, 1)
+        if eg:    result['earnings_growth'] = round(float(eg) * 100, 1)
         result['sector']    = sec or 'Unknown'
         result['mkt_cap_b'] = round((mc or 0) / 1e9, 1)
+
+        # Gap: today's open vs yesterday's close
+        reg_open  = info.get('regularMarketOpen')
+        prev_close = info.get('regularMarketPreviousClose') or info.get('previousClose')
+        if reg_open and prev_close and float(prev_close) > 0:
+            result['open_gap_pct'] = round((float(reg_open) - float(prev_close)) / float(prev_close) * 100, 2)
+
+        # Pre-market price vs yesterday's close (only meaningful before market open)
+        pre_price = info.get('preMarketPrice')
+        if pre_price and prev_close and float(prev_close) > 0:
+            result['premarket_gap_pct'] = round((float(pre_price) - float(prev_close)) / float(prev_close) * 100, 2)
     except:
         pass
 
@@ -1542,6 +1593,11 @@ def merge_candidates(technical_passed, news_rescued, all_stock_news, fundamental
             'earnings_risk':      fund.get('earnings_risk', False),
             'stock_news':         news[:5],
             'analyst_actions':    fund.get('analyst_actions', []),
+            'short_pct_float':    fund.get('short_pct_float'),
+            'revenue_growth':     fund.get('revenue_growth'),
+            'earnings_growth':    fund.get('earnings_growth'),
+            'open_gap_pct':       fund.get('open_gap_pct'),
+            'premarket_gap_pct':  fund.get('premarket_gap_pct'),
             'rescue_keywords':    keyword_hits[:5] if keyword_hits else [],
         })
 
@@ -1562,6 +1618,11 @@ def merge_candidates(technical_passed, news_rescued, all_stock_news, fundamental
             'earnings_risk':      fund.get('earnings_risk', False),
             'stock_news':         news[:5],
             'analyst_actions':    fund.get('analyst_actions', []),
+            'short_pct_float':    fund.get('short_pct_float'),
+            'revenue_growth':     fund.get('revenue_growth'),
+            'earnings_growth':    fund.get('earnings_growth'),
+            'open_gap_pct':       fund.get('open_gap_pct'),
+            'premarket_gap_pct':  fund.get('premarket_gap_pct'),
             'rescue_keywords':    ind.get('rescue_keywords', []),
         })
 
@@ -1738,7 +1799,10 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
             'upside_pct':fund.get('upside_pct'),'short_ratio':fund.get('short_ratio'),
             'earnings_date':fund.get('earnings_date','Unknown'),'earnings_days_away':fund.get('earnings_days_away',-1),
             'earnings_risk':fund.get('earnings_risk',False),'stock_news':news[:5],
-            'analyst_actions':fund.get('analyst_actions',[]),'rescue_keywords':[],
+            'analyst_actions':fund.get('analyst_actions',[]),
+            'short_pct_float':fund.get('short_pct_float'),'revenue_growth':fund.get('revenue_growth'),
+            'earnings_growth':fund.get('earnings_growth'),'open_gap_pct':fund.get('open_gap_pct'),
+            'premarket_gap_pct':fund.get('premarket_gap_pct'),'rescue_keywords':[],
         })
         print(f'  Stream B added: {t} | ${ind["price"]} | RSI {ind["rsi"]}')
     return b_cands
@@ -2010,10 +2074,26 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
            'Earnings within 2 weeks = elevated risk. Earnings within 5 days = near-disqualifier. '
            'Respond ONLY with valid JSON. Start with { end with }. No markdown.')
 
+    gm   = ctx.get('global_macro', {})
+    tnx  = gm.get('yield_10y', {})
+    dxy  = gm.get('dxy', {})
+    nk   = gm.get('nikkei', {})
+    dax  = gm.get('dax', {})
+    s1d  = ctx.get('sector_1d', {})
+    top_s = sorted(s1d.items(), key=lambda x: x[1], reverse=True)
+    sector_flow_str = (
+        ' | '.join(f'{s}:{v:+.1f}%' for s, v in top_s[:3]) +
+        '  WORST: ' + ' | '.join(f'{s}:{v:+.1f}%' for s, v in top_s[-2:])
+    ) if top_s else 'N/A'
+
     market_ctx = (
         f'MARKET: VIX={ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]}) {ctx["vix_regime"]} | '
         f'VIX_mult={mult}x | QQQ={ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.2f}% vs 50MA | '
         f'SPY today={ctx["spy_return_today"]:+.2f}% | Defensive={"YES" if ctx["defensive_mode"] else "NO"}\n'
+        f'GLOBAL: 10Y={tnx.get("price","?")}% ({tnx.get("chg_pct",0):+.2f}%) | '
+        f'DXY={dxy.get("price","?")} ({dxy.get("chg_pct",0):+.2f}%) | '
+        f'Nikkei={nk.get("chg_pct",0):+.2f}% | DAX={dax.get("chg_pct",0):+.2f}%\n'
+        f'SECTOR FLOWS TODAY: {sector_flow_str}\n'
         f'MACRO: {nd.get("macro_summary","N/A")[:200]} | Sentiment={nd.get("market_sentiment","NEUTRAL")}\n'
         f'FED: {nd.get("fed_signal",{}).get("detail","none")} | '
         f'TRUMP: {nd.get("trump_signal",{}).get("detail","none")}'
@@ -2030,6 +2110,8 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         'rsi': round(c['rsi'], 1), 'adx': round(c['adx'], 1),
         'momentum_5d': round(c['momentum_5d'], 2),
         'vol_ratio': round(c['vol_ratio'], 2),
+        'open_gap_pct': c.get('open_gap_pct'),        # gap at today's open
+        'premarket_gap_pct': c.get('premarket_gap_pct'),  # pre-market move
         'earnings_days_away': c.get('earnings_days_away', 'N/A'),
         'insider': c.get('insider_label', 'NEUTRAL'),
         'options': c.get('options_label', 'NEUTRAL'),
@@ -2080,10 +2162,15 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         'macd_bull': c['macd_bullish'], 'hh_hl': c.get('hh_hl', False),
         'rs_vs_spy': round(c['rs_vs_spy'], 2), 'pct_from_52h': round(c['pct_from_52h'], 1),
         'cmf': round(c.get('cmf', 0), 3), 'stoch_rsi': round(c.get('stoch_rsi', 0.5), 2),
-        'short_ratio': c.get('short_ratio'), 'earnings_days_away': c.get('earnings_days_away', 'N/A'),
+        'short_ratio': c.get('short_ratio'), 'short_pct_float': c.get('short_pct_float'),
+        'earnings_days_away': c.get('earnings_days_away', 'N/A'),
+        'open_gap_pct': c.get('open_gap_pct'), 'premarket_gap_pct': c.get('premarket_gap_pct'),
+        'upside_pct': c.get('upside_pct'), 'analyst_rating': c.get('analyst_rating'),
+        'revenue_growth': c.get('revenue_growth'), 'earnings_growth': c.get('earnings_growth'),
+        'analyst_actions': c.get('analyst_actions', []),
         'insider': c.get('insider_label', 'NEUTRAL'), 'options': c.get('options_label', 'NEUTRAL'),
         'congress': c.get('congress_label', 'NEUTRAL'), 'congress_who': c.get('congress_notes', ''),
-        'analyst_rating': c.get('analyst_rating'), 'news_notes': c.get('news_notes', '')[:100],
+        'news_notes': c.get('news_notes', '')[:120],
     } for c in top10_candidates]
 
     r2_user = (
@@ -3411,7 +3498,24 @@ def run_screener():
     headlines        = fetch_macro_news()
     all_stock_news   = fetch_all_stock_news_parallel(STOCK_UNIVERSE)
     all_fundamentals = fetch_all_fundamentals_parallel(STOCK_UNIVERSE)
-    sector_ranks, _  = compute_sector_ranks(batch_data)
+    sector_ranks, sector_perf = compute_sector_ranks(batch_data)
+
+    # Compute sector 1-day returns from batch data and add to ctx
+    sector_1d = {}
+    for sector, etf in SECTOR_ETF_MAP.items():
+        df = batch_data.get(etf)
+        if df is not None and len(df) >= 2:
+            try:
+                r1d = round((float(df['Close'].iloc[-1]) - float(df['Close'].iloc[-2])) /
+                             float(df['Close'].iloc[-2]) * 100, 2)
+                sector_1d[sector] = r1d
+            except:
+                pass
+    ctx['sector_1d'] = sector_1d
+    top_sectors    = sorted(sector_1d.items(), key=lambda x: x[1], reverse=True)
+    if top_sectors:
+        print(f'  Sector flows: TOP {top_sectors[0][0]} {top_sectors[0][1]:+.1f}% | '
+              f'BOT {top_sectors[-1][0]} {top_sectors[-1][1]:+.1f}%')
 
     print('\nStep 4/8: Bidirectional screening...')
     technical_passed = screen_technical(batch_data, ctx)
