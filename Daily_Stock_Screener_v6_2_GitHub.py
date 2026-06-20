@@ -193,11 +193,20 @@ RSI_MAX          = 75    # maximum RSI (avoid overbought)
 MIN_PRICE        = 5.0   # minimum stock price in USD
 SAMPLE_SIZE      = 600   # increase to 500 for weekend full runs
 
-PICKS_CSV      = f'{DRIVE_FOLDER}/stock_picks.csv'
-WATCH_CSV      = f'{DRIVE_FOLDER}/watch_list.csv'
+PICKS_CSV        = f'{DRIVE_FOLDER}/stock_picks.csv'
+WATCH_CSV        = f'{DRIVE_FOLDER}/watch_list.csv'
 PORTFOLIO_JSON   = f'{DRIVE_FOLDER}/portfolio.json'
 STARTING_CAPITAL = 10_000.00
-BROKERAGE_FEE    = 0.00   # flat fee per trade — $0 for Robinhood/Fidelity/Schwab, set to your broker's rate
+
+# ── SHARESIES $15/MONTH PLAN (NZ broker — buys NYSE/NASDAQ in USD) ──────────
+# Plan:  $5,000 NZD free buys + $5,000 NZD free sells per month
+# Rate:  NZD/USD ≈ 0.59  →  $5,000 NZD ≈ $2,950 USD of free coverage per side
+# Fee when OVER coverage: 0.5% of order value, capped at $5.00 USD per trade
+# At $10K portfolio with ~20% positions (~$2K USD each): most trades = $0 fee
+# At larger positions (>$3K USD): worst case $5 USD per trade
+# Keep BROKERAGE_FEE = 0 — the LLM will size positions to stay within coverage.
+# If you go over, change to 5.00 (the USD cap) so the model accounts for it.
+BROKERAGE_FEE    = 0.00   # Sharesies: $0 within $5K NZD/month coverage, max $5 USD over
 
 # Optional: set to '1' to see why tickers fail compute_indicators
 # os.environ['SCREENER_DEBUG'] = '1'
