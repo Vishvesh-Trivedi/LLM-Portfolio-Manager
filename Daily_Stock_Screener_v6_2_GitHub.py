@@ -2779,8 +2779,88 @@ def _recent_picks_summary(days=10):
     return lines
 
 
+def _wa_send(text, label=''):
+    """Send one WhatsApp message via CallMeBot. Waits 3s between calls to avoid rate limits."""
+    if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
+        return False
+    import urllib.parse
+    try:
+        url = (f'https://api.callmebot.com/whatsapp.php'
+               f'?phone={WHATSAPP_PHONE}&text={urllib.parse.quote(text)}&apikey={CALLMEBOT_API_KEY}')
+        r = requests.get(url, timeout=15)
+        ok = r.status_code == 200
+        print(f'  WhatsApp {label}: {"sent" if ok else f"failed HTTP {r.status_code}"}')
+        time.sleep(3)
+        return ok
+    except Exception as e:
+        print(f'  WhatsApp {label} error: {e}')
+        return False
+
+
+def send_weekly_summary():
+    """Send portfolio weekly review — called on US Saturday (= Sunday NZT)."""
+    if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
+        return
+    pf = load_portfolio()
+    pf = update_portfolio_prices(pf)
+
+    total_val = round(pf['cash'] + sum(p.get('current_value', p['cost_basis']) for p in pf['positions']), 2)
+    total_pnl = round(total_val - pf['starting_capital'], 2)
+    total_pct = round(total_pnl / pf['starting_capital'] * 100, 2)
+
+    try:
+        qqq_h    = yf.Ticker('QQQ').history(period='7d')
+        qqq_week = round((float(qqq_h['Close'].iloc[-1]) - float(qqq_h['Close'].iloc[0])) /
+                          float(qqq_h['Close'].iloc[0]) * 100, 2)
+    except:
+        qqq_week = None
+
+    alpha = round(total_pct - qqq_week, 2) if qqq_week is not None else None
+
+    week_ago     = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    week_closed  = [t for t in pf.get('closed_trades', []) if t.get('exit_date','') >= week_ago]
+    week_wins    = sum(1 for t in week_closed if t.get('realized_pnl', 0) > 0)
+    week_pnl     = sum(t.get('realized_pnl', 0) for t in week_closed)
+
+    open_lines = '\n'.join(
+        f'  {p["ticker"]} {p["shares"]}sh | {p.get("unrealized_pnl_pct",0):+.1f}% | '
+        f'{p.get("hold_days",0)}d | Stop:{p.get("stop_price","?")} Tgt:{p.get("target_price","?")}'
+        for p in pf['positions']
+    ) or '  None'
+
+    closed_lines = '\n'.join(
+        f'  {t["ticker"]} {t.get("realized_pnl",0):+.0f} ({t.get("realized_pnl_pct",0):+.1f}%) [{t.get("reason","")}]'
+        for t in week_closed
+    ) or '  None closed this week'
+
+    history_lines = _recent_picks_summary(days=10)
+    hist_str = '\n'.join(history_lines) if history_lines else '  No picks yet'
+
+    qqq_str   = f'QQQ this week: {qqq_week:+.2f}%' if qqq_week is not None else 'QQQ: unavailable'
+    alpha_str = f'You vs QQQ: {alpha:+.2f}% alpha' if alpha is not None else ''
+    date_str  = datetime.now().strftime('%b %d %Y')
+
+    msg = (
+        f'WEEKLY SUMMARY - {date_str}\n'
+        f'{"="*30}\n'
+        f'PORTFOLIO: {total_pnl:+,.0f} ({total_pct:+.1f}%) | Cash: {pf["cash"]:,.0f}\n'
+        f'{qqq_str}\n'
+        f'{alpha_str}\n'
+        f'{"="*30}\n'
+        f'OPEN POSITIONS:\n{open_lines}\n'
+        f'{"="*30}\n'
+        f'THIS WEEK CLOSED ({len(week_closed)} trades | {week_wins}W/{len(week_closed)-week_wins}L | PnL: {week_pnl:+.0f}):\n'
+        f'{closed_lines}\n'
+        f'{"="*30}\n'
+        f'BUY HISTORY:\n{hist_str}\n'
+        f'{"="*30}\n'
+        f'Next run: Tuesday 9AM NZT'
+    )
+    _wa_send(msg, 'weekly-summary')
+
+
 def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None):
-    """Send daily pick to WhatsApp via CallMeBot (free, 10 msg/day limit)."""
+    """Send daily pick as 3 WhatsApp messages via CallMeBot (uses ~3 of 10 daily limit)."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
         return
     import urllib.parse
@@ -2894,59 +2974,87 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         wr_tag = f' RSI {wr_rsi:.0f} Mom {wr_mom:+.1f}%' if wr_rsi is not None and wr_mom is not None else ''
         watch_lines += f'  {w.get("ticker","")} {w.get("confidence",0)}/100{wr_tag} - {str(w.get("reasoning",""))[:60]}\n'
 
-    # ── Build message ─────────────────────────────────────────
+    # ── 3 messages ────────────────────────────────────────────
     if sig == 'BUY':
-        msg = (
-            f'SCREENER {date_str}\n'
-            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.1f}% vs 50MA | SPY {ctx["spy_return_today"]:+.2f}%\n'
+        # MSG 1: Market context + pick summary
+        stop_pct = round((stop_price - ep) / ep * 100, 1) if isinstance(stop_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
+        tgt_pct  = round((target_price - ep) / ep * 100, 1) if isinstance(target_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
+        stop_pct_str = f' ({stop_pct:+.1f}%)' if stop_pct != '' else ''
+        tgt_pct_str  = f' ({tgt_pct:+.1f}%)'  if tgt_pct  != '' else ''
+        msg1 = (
+            f'SCREENER {date_str} [1/3]\n'
+            f'{"="*28}\n'
+            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.1f}% | SPY {ctx["spy_return_today"]:+.2f}%\n'
             f'{fut_str}'
             f'{macro_str}'
-            f'Sectors TOP: {top_s_str}\n'
-            f'Sectors BOT: {bot_s_str}\n'
-            f'---\n'
+            f'TOP: {top_s_str}\n'
+            f'BOT: {bot_s_str}\n'
+            f'{"="*28}\n'
             f'{pf_block}'
-            f'BUY: {ticker} [{sector}] @ {ep} | {conf}/100{cg_tag}\n'
-            f'{shares_str}\n'
-            f'Stop: {stop_price} | Target: {target_price} | R:R {rr_str}\n'
+            f'BUY: {ticker} [{sector}]{cg_tag}\n'
+            f'Conf: {conf}/100\n'
+            f'Entry: {ep}\n'
+            f'Stop:  {stop_price}{stop_pct_str}\n'
+            f'Target:{target_price}{tgt_pct_str}\n'
+            f'R:R {rr_str} | {shares_str}'
+        )
+        # MSG 2: Full stock analysis
+        macd_str = 'Bull' if pick_match.get('macd_bullish') else 'Bear'
+        h52_str  = f'{pick_match.get("pct_from_52h",0):+.1f}% from 52W high' if pick_match.get('pct_from_52h') is not None else ''
+        rev_g    = pick_match.get('revenue_growth')
+        earn_g   = pick_match.get('earnings_growth')
+        gap_str  = f'Open gap: {pick_match.get("open_gap_pct",0):+.2f}%' if pick_match.get('open_gap_pct') is not None else ''
+        msg2 = (
+            f'{ticker} Deep Analysis [2/3]\n'
+            f'{"="*28}\n'
+            f'TECHNICALS:\n'
             f'{tech_line}\n'
+            f'MACD: {macd_str} | {h52_str}\n'
+            f'{gap_str}\n'
+            f'{"="*28}\n'
+            f'FUNDAMENTALS:\n'
             f'{analyst_line}'
             f'{earnings_line}'
             f'{short_line}'
+            f'Rev growth: {rev_g:+.1f}%\n' if rev_g is not None else ''
+            f'Earn growth: {earn_g:+.1f}%\n' if earn_g is not None else ''
+            f'{"="*28}\n'
+            f'FLOW:\n'
             f'{flow_line}'
             f'{sec_line}'
+            f'{"="*28}\n'
             f'Why: {why}\n'
-            f'Risk: {risk}\n'
-            f'---\n'
+            f'Risk: {risk}'
+        )
+        # MSG 3: Watch list + history
+        msg3 = (
+            f'WATCH LIST [3/3]\n'
+            f'{"="*28}\n'
+            f'{watch_lines or "  None"}'
             f'{congress_line}'
-            f'WATCH:\n{watch_lines or "  None"}'
-            f'---\n'
+            f'{"="*28}\n'
             f'{history_block}'
         )
+        _wa_send(msg1, '1/3 market+pick')
+        _wa_send(msg2, '2/3 analysis')
+        _wa_send(msg3, '3/3 watch+history')
     else:
+        # No pick: single message
         msg = (
-            f'SCREENER {date_str}\n'
+            f'SCREENER {date_str} - NO BUY\n'
+            f'{"="*28}\n'
             f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
             f'{fut_str}'
             f'{macro_str}'
-            f'Sectors TOP: {top_s_str}\n'
-            f'---\n'
+            f'TOP: {top_s_str}\n'
+            f'{"="*28}\n'
             f'{pf_block}'
-            f'No BUY today ({sig})\n\n'
+            f'Signal: {sig}\n\n'
             f'WATCH:\n{watch_lines or "  None"}\n'
-            f'---\n'
+            f'{"="*28}\n'
             f'{history_block}'
         )
-
-    try:
-        url = (f'https://api.callmebot.com/whatsapp.php'
-               f'?phone={WHATSAPP_PHONE}&text={urllib.parse.quote(msg)}&apikey={CALLMEBOT_API_KEY}')
-        r = requests.get(url, timeout=15)
-        if r.status_code == 200:
-            print('  WhatsApp sent')
-        else:
-            print(f'  WhatsApp failed: HTTP {r.status_code}')
-    except Exception as e:
-        print(f'  WhatsApp error: {e}')
+        _wa_send(msg, 'no-pick')
 
 
 # ============================================================
@@ -3608,8 +3716,11 @@ def run_screener():
         _et_now = datetime.now()  # last resort: local time
 
     if _et_now.weekday() >= 5:
-        _day = 'Saturday' if _et_now.weekday() == 5 else 'Sunday'
-        print(f'\nMarket closed (US {_day} {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — nothing to do. See you Monday.')
+        if _et_now.weekday() == 5:  # US Saturday = Sunday NZT → send weekly summary
+            print(f'\nMarket closed (US Saturday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending weekly summary...')
+            send_weekly_summary()
+        else:
+            print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — nothing to do. See you Monday.')
         return None
     print(f'   US ET:  {_et_now.strftime("%Y-%m-%d %H:%M %Z")} (weekday {_et_now.weekday()}, markets open)')
 
