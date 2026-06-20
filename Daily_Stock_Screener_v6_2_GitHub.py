@@ -200,13 +200,12 @@ STARTING_CAPITAL = 10_000.00
 
 # ── SHARESIES $15/MONTH PLAN (NZ broker — buys NYSE/NASDAQ in USD) ──────────
 # Plan:  $5,000 NZD free buys + $5,000 NZD free sells per month
-# Rate:  NZD/USD ≈ 0.59  →  $5,000 NZD ≈ $2,950 USD of free coverage per side
+# Rate:  fetched live via NZDUSD=X each run (stored in ctx['global_macro']['nzdusd'])
 # Fee when OVER coverage: 0.5% of order value, capped at $5.00 USD per trade
-# At $10K portfolio with ~20% positions (~$2K USD each): most trades = $0 fee
-# At larger positions (>$3K USD): worst case $5 USD per trade
-# Keep BROKERAGE_FEE = 0 — the LLM will size positions to stay within coverage.
-# If you go over, change to 5.00 (the USD cap) so the model accounts for it.
-BROKERAGE_FEE    = 0.00   # Sharesies: $0 within $5K NZD/month coverage, max $5 USD over
+# BROKERAGE_FEE = 0 while positions stay within monthly coverage.
+# Change to 5.00 if you regularly go over.
+SHARESIES_COVERAGE_NZD = 5_000.0   # NZD of free buys per month under $15 plan
+BROKERAGE_FEE          = 0.00      # $0 within coverage, max $5 USD over
 
 # Optional: set to '1' to see why tickers fail compute_indicators
 # os.environ['SCREENER_DEBUG'] = '1'
@@ -1079,6 +1078,7 @@ def get_market_context():
         'dxy':        'DX-Y.NYB',  # Dollar index
         'es_futures': 'ES=F',      # S&P 500 e-mini futures (pre-market direction)
         'nq_futures': 'NQ=F',      # Nasdaq 100 e-mini futures (pre-market direction)
+        'nzdusd':     'NZDUSD=X',  # NZD/USD live rate (Sharesies coverage calc)
         'nikkei':     '^N225',     # Japan (overnight)
         'dax':        '^GDAXI',    # Germany (overnight)
         'ftse':       '^FTSE',     # UK (overnight)
@@ -2139,13 +2139,15 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
            'Earnings within 2 weeks = elevated risk. Earnings within 5 days = near-disqualifier. '
            'Respond ONLY with valid JSON. Start with { end with }. No markdown.')
 
-    gm   = ctx.get('global_macro', {})
-    tnx  = gm.get('yield_10y', {})
-    dxy  = gm.get('dxy', {})
-    esf  = gm.get('es_futures', {})
-    nqf  = gm.get('nq_futures', {})
-    nk   = gm.get('nikkei', {})
-    dax  = gm.get('dax', {})
+    gm     = ctx.get('global_macro', {})
+    tnx    = gm.get('yield_10y', {})
+    dxy    = gm.get('dxy', {})
+    esf    = gm.get('es_futures', {})
+    nqf    = gm.get('nq_futures', {})
+    nk     = gm.get('nikkei', {})
+    dax    = gm.get('dax', {})
+    nzdusd_llm = gm.get('nzdusd', {})
+    nzd_rate_llm = nzdusd_llm.get('price')
     s1d  = ctx.get('sector_1d', {})
     top_s = sorted(s1d.items(), key=lambda x: x[1], reverse=True)
     sector_flow_str = (
@@ -2932,12 +2934,13 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     date_str = datetime.now().strftime('%b %d %Y')
 
     # ── Market context line ───────────────────────────────────
-    gm  = ctx.get('global_macro', {})
-    esf = gm.get('es_futures', {})
-    nqf = gm.get('nq_futures', {})
-    tnx = gm.get('yield_10y', {})
-    dxy = gm.get('dxy', {})
-    s1d = ctx.get('sector_1d', {})
+    gm     = ctx.get('global_macro', {})
+    esf    = gm.get('es_futures', {})
+    nqf    = gm.get('nq_futures', {})
+    tnx    = gm.get('yield_10y', {})
+    dxy    = gm.get('dxy', {})
+    nzdusd = gm.get('nzdusd', {})
+    s1d    = ctx.get('sector_1d', {})
     top_s  = sorted(s1d.items(), key=lambda x: x[1], reverse=True)
     top_s_str  = ' | '.join(f'{s} {v:+.1f}%' for s, v in top_s[:3])  if top_s else 'N/A'
     bot_s_str  = ' | '.join(f'{s} {v:+.1f}%' for s, v in top_s[-2:]) if top_s else 'N/A'
@@ -2948,6 +2951,11 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     macro_str = ''
     if tnx.get('price') or dxy.get('price'):
         macro_str = f'10Y: {tnx.get("price","?")}% ({tnx.get("chg_pct",0):+.2f}%) | DXY: {dxy.get("price","?")} ({dxy.get("chg_pct",0):+.2f}%)\n'
+    nzd_rate = nzdusd.get('price')
+    sharesies_str = ''
+    if nzd_rate:
+        coverage_usd = round(SHARESIES_COVERAGE_NZD * float(nzd_rate), 0)
+        sharesies_str = f'NZD/USD: {nzd_rate} | Sharesies free coverage: ~{coverage_usd:,.0f} USD/month\n'
 
     # ── Portfolio block ───────────────────────────────────────
     pf_block = ''
@@ -3045,6 +3053,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.1f}% | SPY {ctx["spy_return_today"]:+.2f}%\n'
             f'{fut_str}'
             f'{macro_str}'
+            f'{sharesies_str}'
             f'TOP: {top_s_str}\n'
             f'BOT: {bot_s_str}\n'
             f'{"="*28}\n'
