@@ -3363,10 +3363,6 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', 
     if any(p['ticker'] == ticker for p in pf['positions']):
         print(f'  Portfolio: already holding {ticker} — skipping')
         return pf
-    # Guard: max concurrent positions (LLM-configurable via _CFG_MAX_POSITIONS)
-    if len(pf['positions']) >= _CFG_MAX_POSITIONS:
-        print(f'  Portfolio: max positions ({_CFG_MAX_POSITIONS}) reached — skipping {ticker}')
-        return pf
     # Guard: not enough cash (floor is LLM-configurable via min_cash_floor)
     if pf['cash'] < amount_usd or amount_usd < _CFG_MIN_CASH_FLOOR:
         print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position')
