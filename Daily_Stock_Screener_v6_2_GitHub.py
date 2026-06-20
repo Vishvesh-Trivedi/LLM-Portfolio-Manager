@@ -300,7 +300,7 @@ _CFG_MAX_POSITIONS      = 5       # max simultaneous open positions (LLM configu
 #   'meta/llama-3.2-3b-instruct'             ← very fast, lower quality
 #   'microsoft/phi-3-mini-128k-instruct'     ← lightweight
 
-NVIDIA_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b'  # ← change this line to switch model
+NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct'  # ← change this line to switch model
 
 
 _LLM_CALL_COUNT = [0]
@@ -1019,8 +1019,8 @@ def get_market_context():
     _GLOBAL = {
         'yield_10y':  '^TNX',      # US 10-Year Treasury yield
         'dxy':        'DX-Y.NYB',  # Dollar index
-        'es_futures': '^ES=F',     # S&P 500 e-mini futures (pre-market direction)
-        'nq_futures': '^NQ=F',     # Nasdaq 100 e-mini futures (pre-market direction)
+        'es_futures': 'ES=F',      # S&P 500 e-mini futures (pre-market direction)
+        'nq_futures': 'NQ=F',      # Nasdaq 100 e-mini futures (pre-market direction)
         'nikkei':     '^N225',     # Japan (overnight)
         'dax':        '^GDAXI',    # Germany (overnight)
         'ftse':       '^FTSE',     # UK (overnight)
