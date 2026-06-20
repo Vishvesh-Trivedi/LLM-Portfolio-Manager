@@ -2876,19 +2876,41 @@ def send_weekly_summary():
     total_pnl = round(total_val - pf['starting_capital'], 2)
     total_pct = round(total_pnl / pf['starting_capital'] * 100, 2)
 
+    # QQQ comparison — only from portfolio creation date, not a fixed 7-day window.
+    # Avoids false alpha when portfolio started mid-week.
+    created_str = pf.get('created', '')
+    qqq_week = None
+    qqq_label = 'QQQ: unavailable'
+    alpha_str = ''
     try:
-        qqq_h    = yf.Ticker('QQQ').history(period='7d')
-        qqq_week = round((float(qqq_h['Close'].iloc[-1]) - float(qqq_h['Close'].iloc[0])) /
-                          float(qqq_h['Close'].iloc[0]) * 100, 2)
+        qqq_h = yf.Ticker('QQQ').history(period='14d')
+        if not qqq_h.empty:
+            if created_str:
+                # Find first QQQ close on or after portfolio creation date
+                qqq_h.index = pd.to_datetime(qqq_h.index).tz_localize(None) if qqq_h.index.tz else pd.to_datetime(qqq_h.index)
+                created_dt  = pd.to_datetime(created_str)
+                qqq_since   = qqq_h[qqq_h.index >= created_dt]
+                if len(qqq_since) >= 2:
+                    qqq_week = round((float(qqq_since['Close'].iloc[-1]) - float(qqq_since['Close'].iloc[0])) /
+                                      float(qqq_since['Close'].iloc[0]) * 100, 2)
+                    days_tracked = (qqq_since.index[-1] - qqq_since.index[0]).days
+                    qqq_label = f'QQQ since start ({days_tracked}d): {qqq_week:+.2f}%'
+                    alpha = round(total_pct - qqq_week, 2)
+                    alpha_str = f'You vs QQQ: {alpha:+.2f}% alpha'
+                else:
+                    qqq_label = 'QQQ: portfolio too new for comparison'
+            else:
+                # No creation date — use last 7 days but flag it
+                qqq_week = round((float(qqq_h['Close'].iloc[-1]) - float(qqq_h['Close'].iloc[-5])) /
+                                  float(qqq_h['Close'].iloc[-5]) * 100, 2)
+                qqq_label = f'QQQ this week: {qqq_week:+.2f}%'
     except:
-        qqq_week = None
+        pass
 
-    alpha = round(total_pct - qqq_week, 2) if qqq_week is not None else None
-
-    week_ago     = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-    week_closed  = [t for t in pf.get('closed_trades', []) if t.get('exit_date','') >= week_ago]
-    week_wins    = sum(1 for t in week_closed if t.get('realized_pnl', 0) > 0)
-    week_pnl     = sum(t.get('realized_pnl', 0) for t in week_closed)
+    week_ago    = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    week_closed = [t for t in pf.get('closed_trades', []) if t.get('exit_date', '') >= week_ago]
+    week_wins   = sum(1 for t in week_closed if t.get('realized_pnl', 0) > 0)
+    week_pnl    = sum(t.get('realized_pnl', 0) for t in week_closed)
 
     open_lines = '\n'.join(
         f'  {p["ticker"]} {p["shares"]}sh | {p.get("unrealized_pnl_pct",0):+.1f}% | '
@@ -2901,18 +2923,25 @@ def send_weekly_summary():
         for t in week_closed
     ) or '  None closed this week'
 
-    history_lines = _recent_picks_summary(days=10)
-    hist_str = '\n'.join(history_lines) if history_lines else '  No picks yet'
+    # Buy history — prefer CSV, fall back to open positions in portfolio.json
+    history_lines = _recent_picks_summary(days=14)
+    if history_lines:
+        hist_str = '\n'.join(history_lines)
+    elif pf['positions']:
+        hist_str = '\n'.join(
+            f'  {p["ticker"]} @ {p["entry_price"]} | entered {p["entry_date"]} | '
+            f'{p.get("unrealized_pnl_pct",0):+.1f}% | {p.get("hold_days",0)}d held'
+            for p in pf['positions']
+        )
+    else:
+        hist_str = '  No picks yet'
 
-    qqq_str   = f'QQQ this week: {qqq_week:+.2f}%' if qqq_week is not None else 'QQQ: unavailable'
-    alpha_str = f'You vs QQQ: {alpha:+.2f}% alpha' if alpha is not None else ''
-    date_str  = datetime.now().strftime('%b %d %Y')
-
+    date_str = datetime.now().strftime('%b %d %Y')
     msg = (
         f'WEEKLY SUMMARY - {date_str}\n'
         f'{"="*30}\n'
         f'PORTFOLIO: {total_pnl:+,.0f} ({total_pct:+.1f}%) | Cash: {pf["cash"]:,.0f}\n'
-        f'{qqq_str}\n'
+        f'{qqq_label}\n'
         f'{alpha_str}\n'
         f'{"="*30}\n'
         f'OPEN POSITIONS:\n{open_lines}\n'
@@ -2920,7 +2949,7 @@ def send_weekly_summary():
         f'THIS WEEK CLOSED ({len(week_closed)} trades | {week_wins}W/{len(week_closed)-week_wins}L | PnL: {week_pnl:+.0f}):\n'
         f'{closed_lines}\n'
         f'{"="*30}\n'
-        f'BUY HISTORY:\n{hist_str}\n'
+        f'POSITIONS / HISTORY:\n{hist_str}\n'
         f'{"="*30}\n'
         f'Next run: Tuesday 9AM NZT'
     )
