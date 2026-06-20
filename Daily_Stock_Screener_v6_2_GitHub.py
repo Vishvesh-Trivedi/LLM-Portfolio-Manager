@@ -3256,25 +3256,12 @@ def run_screener():
 
     load_config_overrides()
 
-    # Weekend / market-closed check
-    # Markets are closed Sat (5) and Sun (6). Prices from yfinance would be
-    # Friday's stale close — a position opened now can't execute until Monday open.
-    today_wd = datetime.now().weekday()  # 0=Mon … 6=Sun
-    if today_wd >= 5:
-        day_name = 'Saturday' if today_wd == 5 else 'Sunday'
-        print(f'\nMarket closed ({day_name}) — skipping screening and new trades.')
-        print('Running maintenance tasks only: update past results + config learning.')
-        # Still do the useful work
-        portfolio = load_portfolio()
-        portfolio = update_portfolio_prices(portfolio)
-        print(portfolio_summary_str(portfolio))
-        update_results(PICKS_CSV, PICK_COLS)
-        update_results(WATCH_CSV, WATCH_COLS)
-        portfolio = reconcile_closed_picks(portfolio)
-        save_portfolio(portfolio)
-        pick_history = load_performance_history(PICKS_CSV)
-        update_config_from_llm(pick_history)
-        print('\nWeekend run complete. Screener will pick stocks next trading day.')
+    # Weekend check — markets closed Sat (5) and Sun (6)
+    # No new prices, no news flow, nothing to screen. Monday's run handles
+    # result updates and config learning with fresh data anyway.
+    if datetime.now().weekday() >= 5:
+        day_name = 'Saturday' if datetime.now().weekday() == 5 else 'Sunday'
+        print(f'\nMarket closed ({day_name}) — nothing to do. See you Monday.')
         return None
 
     # Apply LLM-controlled universe expansions and sample size
