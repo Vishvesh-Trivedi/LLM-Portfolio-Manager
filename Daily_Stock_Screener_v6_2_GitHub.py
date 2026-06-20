@@ -270,6 +270,13 @@ _CFG_MIN_CASH_FLOOR     = 500.0   # cash below this = fully deployed, no new buy
 _CFG_DD_CAUTION_PCT     = -10.0   # portfolio drawdown % that triggers caution mode
 _CFG_DD_SEVERE_PCT      = -20.0   # portfolio drawdown % that triggers severe mode
 _CFG_DD_CRITICAL_PCT    = -30.0   # portfolio drawdown % that triggers capital preservation
+_CFG_WIN_THRESHOLD_PCT  = 2.0     # vs-QQQ % at 10d to count as Win
+_CFG_LOSS_THRESHOLD_PCT = -2.0    # vs-QQQ % at 10d to count as Loss
+_CFG_MIN_PICKS_TO_LEARN = 5       # closed picks required before LLM writes config
+_CFG_RSI_HARD_CAP       = 999     # RSI above this clamps confidence (999 = disabled)
+_CFG_RSI_CAP_CONF       = 70      # confidence ceiling when RSI_HARD_CAP is breached
+_CFG_UPSIDE_HARD_CAP    = -999    # analyst upside below this clamps confidence (-999 = disabled)
+_CFG_UPSIDE_CAP_CONF    = 65      # confidence ceiling when UPSIDE_HARD_CAP is breached
 
 # ── NVIDIA MODEL SELECTION ─────────────────────────────────
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
@@ -1792,10 +1799,14 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     filtered = []
     for c in candidates:
         rsi=c.get('rsi',50); upside=c.get('upside_pct'); t=c['ticker']; flags=[]
-        if rsi>80 and upside is not None and upside<-20:
-            print(f'  DISQUALIFIED: {t} | RSI={rsi}>80 AND analyst target {upside}% below price'); continue
-        if rsi>80:  flags.append(f'RSI_CAP(rsi={rsi}>80,max_conf=70)')
-        if upside is not None and upside<-20: flags.append(f'ANALYST_CAP(upside={upside}%<-20,max_conf=65)')
+        rsi_cap_on    = _CFG_RSI_HARD_CAP    < 999
+        upside_cap_on = _CFG_UPSIDE_HARD_CAP > -999
+        if rsi_cap_on and upside_cap_on and rsi > _CFG_RSI_HARD_CAP and upside is not None and upside < _CFG_UPSIDE_HARD_CAP:
+            print(f'  DISQUALIFIED: {t} | RSI={rsi}>{_CFG_RSI_HARD_CAP} AND analyst target {upside}% below {_CFG_UPSIDE_HARD_CAP}%'); continue
+        if rsi_cap_on and rsi > _CFG_RSI_HARD_CAP:
+            flags.append(f'RSI_CAP(rsi={rsi}>{_CFG_RSI_HARD_CAP},max_conf={_CFG_RSI_CAP_CONF})')
+        if upside_cap_on and upside is not None and upside < _CFG_UPSIDE_HARD_CAP:
+            flags.append(f'ANALYST_CAP(upside={upside}%<{_CFG_UPSIDE_HARD_CAP}%,max_conf={_CFG_UPSIDE_CAP_CONF})')
         if flags: hard_rule_flags[t]=flags
         filtered.append(c)
 
@@ -2169,22 +2180,27 @@ def update_results(fp, cols):
                     r10=round(((p10-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=hd))
                     vs10=round(r10-qr,2) if qr else ''
                     df.at[idx,'Price_10d']=p10; df.at[idx,'Return_10d_pct']=r10; df.at[idx,'vs_QQQ_10d']=vs10
-                    # Set final Win/Loss using QQQ-relative return
+                    # Set Win/Loss using LLM-configurable QQQ-relative thresholds
                     if vs10 != '' and str(row.get('Result','')).strip() in ('','nan','NaN','Pending'):
                         vs10f = float(vs10)
-                        if vs10f >= 2.0:   df.at[idx,'Result'] = 'Win'
-                        elif vs10f <= -2.0: df.at[idx,'Result'] = 'Loss'
-                        else:              df.at[idx,'Result'] = 'Neutral'
+                        if vs10f >= _CFG_WIN_THRESHOLD_PCT:   df.at[idx,'Result'] = 'Win'
+                        elif vs10f <= _CFG_LOSS_THRESHOLD_PCT: df.at[idx,'Result'] = 'Loss'
+                        else:                                  df.at[idx,'Result'] = 'Neutral'
                     updated=True
             if el>=30 and str(row.get('Price_30d','')).strip() in ['','nan','NaN']:
                 p30=gp(pd_+timedelta(days=30))
                 if p30:
                     r30=round(((p30-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=30)); vs30=round(r30-qr,2) if qr else ''
                     df.at[idx,'Price_30d']=p30; df.at[idx,'Return_30d_pct']=r30; df.at[idx,'vs_QQQ_30d']=vs30
-                    # Only set Result if 10-day evaluation hasn't already closed it
+                    # Only set Result if 10-day evaluation hasn't already closed it (use same configurable thresholds)
                     if str(df.at[idx,'Result']).strip() in ('','nan','NaN','Pending'):
-                        res='Win' if r30>3 and vs30!='' and float(str(vs30))>0 else 'Loss' if r30<-2 else 'Neutral'
-                        df.at[idx,'Result']=res
+                        if vs30 != '':
+                            vs30f = float(str(vs30))
+                            if vs30f >= _CFG_WIN_THRESHOLD_PCT:    df.at[idx,'Result'] = 'Win'
+                            elif vs30f <= _CFG_LOSS_THRESHOLD_PCT: df.at[idx,'Result'] = 'Loss'
+                            else:                                   df.at[idx,'Result'] = 'Neutral'
+                        else:
+                            df.at[idx,'Result'] = 'Win' if r30 > 3 else 'Loss' if r30 < -2 else 'Neutral'
                     updated=True
         except: continue
     if updated: df.to_csv(fp,index=False); print(f'  {os.path.basename(fp)} updated')
@@ -2687,6 +2703,8 @@ def load_config_overrides():
     global _CFG_REQUIRE_ABOVE_MA, _CFG_MIN_DOLLAR_VOL_M, _CFG_HOLD_DAYS
     global _CFG_SECTOR_CONC_MAX, _CFG_SAMPLE_SIZE, _CFG_ADDITIONAL_TICKERS, _CFG_BROKERAGE_FEE
     global _CFG_MIN_CASH_FLOOR, _CFG_DD_CAUTION_PCT, _CFG_DD_SEVERE_PCT, _CFG_DD_CRITICAL_PCT
+    global _CFG_WIN_THRESHOLD_PCT, _CFG_LOSS_THRESHOLD_PCT, _CFG_MIN_PICKS_TO_LEARN
+    global _CFG_RSI_HARD_CAP, _CFG_RSI_CAP_CONF, _CFG_UPSIDE_HARD_CAP, _CFG_UPSIDE_CAP_CONF
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -2725,10 +2743,17 @@ def load_config_overrides():
             _CFG_SAMPLE_SIZE        = int(ov.get('sample_size',          SAMPLE_SIZE))
             _CFG_ADDITIONAL_TICKERS = [t.strip().upper() for t in ov.get('additional_tickers', [])]
             _CFG_BROKERAGE_FEE      = float(ov.get('brokerage_fee',       BROKERAGE_FEE))
-            _CFG_MIN_CASH_FLOOR     = float(ov.get('min_cash_floor',       _CFG_MIN_CASH_FLOOR))
-            _CFG_DD_CAUTION_PCT     = float(ov.get('dd_caution_pct',       _CFG_DD_CAUTION_PCT))
-            _CFG_DD_SEVERE_PCT      = float(ov.get('dd_severe_pct',        _CFG_DD_SEVERE_PCT))
-            _CFG_DD_CRITICAL_PCT    = float(ov.get('dd_critical_pct',      _CFG_DD_CRITICAL_PCT))
+            _CFG_MIN_CASH_FLOOR     = float(ov.get('min_cash_floor',        _CFG_MIN_CASH_FLOOR))
+            _CFG_DD_CAUTION_PCT     = float(ov.get('dd_caution_pct',        _CFG_DD_CAUTION_PCT))
+            _CFG_DD_SEVERE_PCT      = float(ov.get('dd_severe_pct',         _CFG_DD_SEVERE_PCT))
+            _CFG_DD_CRITICAL_PCT    = float(ov.get('dd_critical_pct',       _CFG_DD_CRITICAL_PCT))
+            _CFG_WIN_THRESHOLD_PCT  = float(ov.get('win_threshold_pct',     _CFG_WIN_THRESHOLD_PCT))
+            _CFG_LOSS_THRESHOLD_PCT = float(ov.get('loss_threshold_pct',    _CFG_LOSS_THRESHOLD_PCT))
+            _CFG_MIN_PICKS_TO_LEARN = int(ov.get('min_picks_to_learn',      _CFG_MIN_PICKS_TO_LEARN))
+            _CFG_RSI_HARD_CAP       = float(ov.get('rsi_hard_cap',          _CFG_RSI_HARD_CAP))
+            _CFG_RSI_CAP_CONF       = float(ov.get('rsi_cap_conf',          _CFG_RSI_CAP_CONF))
+            _CFG_UPSIDE_HARD_CAP    = float(ov.get('upside_hard_cap',       _CFG_UPSIDE_HARD_CAP))
+            _CFG_UPSIDE_CAP_CONF    = float(ov.get('upside_cap_conf',       _CFG_UPSIDE_CAP_CONF))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -2848,8 +2873,8 @@ def update_config_from_llm(pick_history):
     Only runs when there are enough closed picks to learn from.
     """
     closed = [h for h in (pick_history or []) if h.get('result') in ('Win','Loss','Neutral')]
-    if len(closed) < 5:
-        print(f'  Config update skipped — need 5 closed picks, have {len(closed)}')
+    if len(closed) < _CFG_MIN_PICKS_TO_LEARN:
+        print(f'  Config update skipped — need {_CFG_MIN_PICKS_TO_LEARN} closed picks, have {len(closed)}')
         return
 
     wins = sum(1 for h in closed if h['result'] == 'Win')
@@ -2887,6 +2912,13 @@ def update_config_from_llm(pick_history):
         'dd_caution_pct': _CFG_DD_CAUTION_PCT,
         'dd_severe_pct': _CFG_DD_SEVERE_PCT,
         'dd_critical_pct': _CFG_DD_CRITICAL_PCT,
+        'win_threshold_pct': _CFG_WIN_THRESHOLD_PCT,
+        'loss_threshold_pct': _CFG_LOSS_THRESHOLD_PCT,
+        'min_picks_to_learn': _CFG_MIN_PICKS_TO_LEARN,
+        'rsi_hard_cap': _CFG_RSI_HARD_CAP,
+        'rsi_cap_conf': _CFG_RSI_CAP_CONF,
+        'upside_hard_cap': _CFG_UPSIDE_HARD_CAP,
+        'upside_cap_conf': _CFG_UPSIDE_CAP_CONF,
     }
 
     sys_msg = (
@@ -3150,22 +3182,21 @@ def portfolio_summary_str(pf):
     total_pnl   = round(total_value - pf['starting_capital'], 2)
     total_pct   = round(total_pnl / pf['starting_capital'] * 100, 2)
 
-    # Drawdown severity — escalating warnings to LLM (thresholds are LLM-configurable)
+    # Drawdown severity — inform the LLM; it decides how to respond (all thresholds LLM-configurable)
     if total_pct <= _CFG_DD_CRITICAL_PCT:
         dd_warn = (
-            f'CRITICAL DRAWDOWN ({total_pct:.1f}%, threshold {_CFG_DD_CRITICAL_PCT:.0f}%): '
-            f'Capital preservation mode. Output NO PICK unless confidence >= 92. '
-            f'Max position size 5%. Consider going fully to cash.'
+            f'CRITICAL DRAWDOWN: Portfolio is {total_pct:.1f}% from starting capital '
+            f'(your critical threshold is {_CFG_DD_CRITICAL_PCT:.0f}%). You decide how to respond.'
         )
     elif total_pct <= _CFG_DD_SEVERE_PCT:
         dd_warn = (
-            f'SEVERE DRAWDOWN ({total_pct:.1f}%, threshold {_CFG_DD_SEVERE_PCT:.0f}%): '
-            f'Only highest-conviction picks (score >= 88). Max position size 10%.'
+            f'SEVERE DRAWDOWN: Portfolio is {total_pct:.1f}% from starting capital '
+            f'(your severe threshold is {_CFG_DD_SEVERE_PCT:.0f}%). You decide how to respond.'
         )
     elif total_pct <= _CFG_DD_CAUTION_PCT:
         dd_warn = (
-            f'CAUTION — Portfolio down {abs(total_pct):.1f}% (threshold {_CFG_DD_CAUTION_PCT:.0f}%). '
-            f'Prefer smaller positions (5-15%) and tighter entry criteria.'
+            f'DRAWDOWN NOTICE: Portfolio is {total_pct:.1f}% from starting capital '
+            f'(your caution threshold is {_CFG_DD_CAUTION_PCT:.0f}%). You decide how to respond.'
         )
     else:
         dd_warn = ''
@@ -3173,8 +3204,8 @@ def portfolio_summary_str(pf):
     # Fully deployed — cash at or below LLM-configurable floor
     if pf['cash'] <= _CFG_MIN_CASH_FLOOR:
         cash_warn = (
-            f'FULLY DEPLOYED: Only ${pf["cash"]:,.2f} cash remaining (floor ${_CFG_MIN_CASH_FLOOR:,.0f}). '
-            f'Output NO PICK today. Focus on exit signals for open positions only.'
+            f'FULLY DEPLOYED: ${pf["cash"]:,.2f} cash remaining (your floor is ${_CFG_MIN_CASH_FLOOR:,.0f}). '
+            f'You decide whether to output a BUY or hold. open_position will reject if cash is truly insufficient.'
         )
     else:
         cash_warn = ''
@@ -3317,15 +3348,17 @@ def run_screener():
     if not result:
         print('NVIDIA analysis failed - no result returned'); return None
 
-    # Post-hoc hard cap enforcement
+    # Post-hoc cap enforcement — only active if LLM has enabled caps via config
     pick = result.get('top_pick',{})
     if pick and pick.get('ticker') not in (None,'','NONE'):
         match=next((c for c in candidates if c['ticker']==pick['ticker']),{})
         rsi=match.get('rsi',50); upside=match.get('upside_pct'); orig=pick.get('confidence',0)
-        if rsi>80 and pick.get('confidence',0)>70:
-            pick['confidence']=70; print(f'  Hard cap: RSI={rsi}>80, clamped {orig}->70')
-        if upside is not None and upside<-20 and pick.get('confidence',0)>65:
-            pick['confidence']=65; print(f'  Hard cap: analyst upside={upside}%<-20, clamped ->65')
+        if _CFG_RSI_HARD_CAP < 999 and rsi > _CFG_RSI_HARD_CAP and pick.get('confidence',0) > _CFG_RSI_CAP_CONF:
+            pick['confidence'] = _CFG_RSI_CAP_CONF
+            print(f'  Cap: RSI={rsi}>{_CFG_RSI_HARD_CAP}, confidence {orig}->{_CFG_RSI_CAP_CONF}')
+        if _CFG_UPSIDE_HARD_CAP > -999 and upside is not None and upside < _CFG_UPSIDE_HARD_CAP and pick.get('confidence',0) > _CFG_UPSIDE_CAP_CONF:
+            pick['confidence'] = _CFG_UPSIDE_CAP_CONF
+            print(f'  Cap: analyst upside={upside}%<{_CFG_UPSIDE_HARD_CAP}%, confidence {orig}->{_CFG_UPSIDE_CAP_CONF}')
         if pick['confidence']<BUY_THRESHOLD:
             pick['signal']='WATCH' if pick['confidence']>=WATCH_THRESHOLD else 'NO PICK'
 
@@ -3365,7 +3398,7 @@ def run_screener():
 
     # Open portfolio position — LLM chose position_size_pct
     if sig == 'BUY' and conf >= BUY_THRESHOLD and isinstance(ep, (int, float)) and ep > 0:
-        pct    = min(max(float(pick.get('position_size_pct', 20)), 1), 100)
+        pct    = min(float(pick.get('position_size_pct', 20)), 100)  # LLM sets this; 100% max is physics
         amount = round(portfolio['cash'] * pct / 100, 2)
         portfolio = open_position(portfolio, pick.get('ticker',''), ep, amount,
                                   _stop if isinstance(_stop, float) else 0,
