@@ -252,6 +252,14 @@ VIX_HIGH_PCTILE      = 75      # above this = risk-off regime
 SECTOR_CONC_LOOKBACK = 5       # look back N picks for sector concentration
 SECTOR_CONC_MAX      = 3       # max same-sector picks in lookback window
 SECTOR_CONC_PENALTY  = 10      # confidence penalty if concentrated
+
+# ── LLM-CONTROLLED TUNING CONSTANTS (override via config_overrides.json) ────
+_CFG_VIX_LOW_PCTILE      = VIX_LOW_PCTILE    # VIX below this = risk-on (1.1x multiplier)
+_CFG_VIX_HIGH_PCTILE     = VIX_HIGH_PCTILE   # VIX above this = risk-off (0.7x multiplier)
+_CFG_SECTOR_CONC_LOOKBACK= SECTOR_CONC_LOOKBACK  # rolling window for sector concentration
+_CFG_SECTOR_CONC_PENALTY = SECTOR_CONC_PENALTY   # confidence docked when over sector limit
+_CFG_CONGRESS_DAYS       = 60    # how many days back to fetch congress trades
+_CFG_SEC_8K_DAYS         = 7     # how many days back to fetch SEC 8-K filings
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
 # ── LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) ──────────
@@ -1049,10 +1057,10 @@ def get_market_context():
     except:
         vix_l, vix_pct = 20.0, 50.0
 
-    if   vix_pct < VIX_LOW_PCTILE:  vr, vm = f'LOW (p{vix_pct:.0f} risk-on)',       1.10
-    elif vix_pct < VIX_HIGH_PCTILE: vr, vm = f'MODERATE (p{vix_pct:.0f} neutral)',  1.00
-    elif vix_pct < 90:               vr, vm = f'ELEVATED (p{vix_pct:.0f} cautious)', 0.85
-    else:                            vr, vm = f'HIGH (p{vix_pct:.0f} risk-off)',      0.70
+    if   vix_pct < _CFG_VIX_LOW_PCTILE:  vr, vm = f'LOW (p{vix_pct:.0f} risk-on)',       1.10
+    elif vix_pct < _CFG_VIX_HIGH_PCTILE: vr, vm = f'MODERATE (p{vix_pct:.0f} neutral)',  1.00
+    elif vix_pct < 90:                    vr, vm = f'ELEVATED (p{vix_pct:.0f} cautious)', 0.85
+    else:                                 vr, vm = f'HIGH (p{vix_pct:.0f} risk-off)',      0.70
 
     try:
         qh  = yf.Ticker('QQQ').history(period='60d')
@@ -2364,10 +2372,10 @@ def check_sector_concentration(sector, picks_csv_path):
     try:
         df=pd.read_csv(picks_csv_path)
         if df.empty or 'Sector' not in df.columns: return False, 0, []
-        recent=df.tail(SECTOR_CONC_LOOKBACK)
+        recent=df.tail(_CFG_SECTOR_CONC_LOOKBACK)
         last_sects=recent['Sector'].tolist()
         same_count=sum(1 for s in last_sects if s==sector)
-        return same_count>=SECTOR_CONC_MAX, same_count, last_sects
+        return same_count>=_CFG_SECTOR_CONC_MAX, same_count, last_sects
     except:
         return False, 0, []
 
@@ -2384,8 +2392,8 @@ def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=
     if fp==PICKS_CSV:
         is_conc,cnt,recent=check_sector_concentration(sector,PICKS_CSV)
         if is_conc:
-            conc_str=f'{cnt}/{SECTOR_CONC_LOOKBACK} recent in {sector}'
-            pick_data['confidence']=max(0,pick_data['confidence']-SECTOR_CONC_PENALTY)
+            conc_str=f'{cnt}/{_CFG_SECTOR_CONC_LOOKBACK} recent in {sector}'
+            pick_data['confidence']=max(0,pick_data['confidence']-_CFG_SECTOR_CONC_PENALTY)
     row={
         'Date':today,'Ticker':ticker,'Confidence':pick_data['confidence'],'Signal':pick_data['signal'],
         'Source':pick_data.get('source','TECHNICAL'),'Sector':sector,
@@ -3145,6 +3153,9 @@ def load_config_overrides():
     global _CFG_WIN_THRESHOLD_PCT, _CFG_LOSS_THRESHOLD_PCT, _CFG_MIN_PICKS_TO_LEARN
     global _CFG_RSI_HARD_CAP, _CFG_RSI_CAP_CONF, _CFG_UPSIDE_HARD_CAP, _CFG_UPSIDE_CAP_CONF
     global _CFG_MAX_POSITIONS
+    global _CFG_VIX_LOW_PCTILE, _CFG_VIX_HIGH_PCTILE
+    global _CFG_SECTOR_CONC_LOOKBACK, _CFG_SECTOR_CONC_PENALTY
+    global _CFG_CONGRESS_DAYS, _CFG_SEC_8K_DAYS
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -3194,7 +3205,13 @@ def load_config_overrides():
             _CFG_RSI_CAP_CONF       = float(ov.get('rsi_cap_conf',          _CFG_RSI_CAP_CONF))
             _CFG_UPSIDE_HARD_CAP    = float(ov.get('upside_hard_cap',       _CFG_UPSIDE_HARD_CAP))
             _CFG_UPSIDE_CAP_CONF    = float(ov.get('upside_cap_conf',       _CFG_UPSIDE_CAP_CONF))
-            _CFG_MAX_POSITIONS      = int(ov.get('max_positions',            _CFG_MAX_POSITIONS))
+            _CFG_MAX_POSITIONS       = int(ov.get('max_positions',              _CFG_MAX_POSITIONS))
+            _CFG_VIX_LOW_PCTILE      = float(ov.get('vix_low_pctile',           _CFG_VIX_LOW_PCTILE))
+            _CFG_VIX_HIGH_PCTILE     = float(ov.get('vix_high_pctile',          _CFG_VIX_HIGH_PCTILE))
+            _CFG_SECTOR_CONC_LOOKBACK= int(ov.get('sector_conc_lookback',       _CFG_SECTOR_CONC_LOOKBACK))
+            _CFG_SECTOR_CONC_PENALTY = float(ov.get('sector_conc_penalty',      _CFG_SECTOR_CONC_PENALTY))
+            _CFG_CONGRESS_DAYS       = int(ov.get('congress_days',              _CFG_CONGRESS_DAYS))
+            _CFG_SEC_8K_DAYS         = int(ov.get('sec_8k_days',               _CFG_SEC_8K_DAYS))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -3361,6 +3378,12 @@ def update_config_from_llm(pick_history):
         'upside_hard_cap': _CFG_UPSIDE_HARD_CAP,
         'upside_cap_conf': _CFG_UPSIDE_CAP_CONF,
         'max_positions': _CFG_MAX_POSITIONS,
+        'vix_low_pctile': _CFG_VIX_LOW_PCTILE,
+        'vix_high_pctile': _CFG_VIX_HIGH_PCTILE,
+        'sector_conc_lookback': _CFG_SECTOR_CONC_LOOKBACK,
+        'sector_conc_penalty': _CFG_SECTOR_CONC_PENALTY,
+        'congress_days': _CFG_CONGRESS_DAYS,
+        'sec_8k_days': _CFG_SEC_8K_DAYS,
     }
 
     sys_msg = (
@@ -3439,6 +3462,12 @@ You can change ANY value. Keep unchanged values as-is.
   "upside_hard_cap": {_CFG_UPSIDE_HARD_CAP},
   "upside_cap_conf": {_CFG_UPSIDE_CAP_CONF},
   "max_positions": {_CFG_MAX_POSITIONS},
+  "vix_low_pctile": {_CFG_VIX_LOW_PCTILE},
+  "vix_high_pctile": {_CFG_VIX_HIGH_PCTILE},
+  "sector_conc_lookback": {_CFG_SECTOR_CONC_LOOKBACK},
+  "sector_conc_penalty": {_CFG_SECTOR_CONC_PENALTY},
+  "congress_days": {_CFG_CONGRESS_DAYS},
+  "sec_8k_days": {_CFG_SEC_8K_DAYS},
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
@@ -3880,9 +3909,9 @@ def run_screener():
 
     print('\nStep 4.6/8: Options P/C + insider + congress + SEC 8-K...')
     options_data, insider_data = fetch_options_and_insider_parallel(candidates)
-    congress_data = fetch_congress_trades(days=45)
+    congress_data = fetch_congress_trades(days=_CFG_CONGRESS_DAYS)
     candidate_tickers = [c['ticker'] for c in candidates]
-    sec_filings = fetch_sec_8k(candidate_tickers, days=7)
+    sec_filings = fetch_sec_8k(candidate_tickers, days=_CFG_SEC_8K_DAYS)
 
     print('\nStep 4.7/8: LLM catalyst scoring (every candidate)...')
     candidates = batch_catalyst_score(candidates, ctx, all_stock_news)
