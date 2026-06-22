@@ -2385,19 +2385,15 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'"top_pick":{{"ticker":"X","confidence":85,"signal":"BUY","tech_score":48,"news_score":32,'
         f'"pre_score":80,"catalyst_score":8,"catalyst_type":"BREAKOUT",'
         f'"score_breakdown":"Tech:48 | News:32 | Catalyst:8 | VIX:{mult}x = 85",'
-        f'"position_size_pct":25,'
+        f'"position_size_pct":0,'
         f'"reasoning":"2 sentences — specific 1-4 week thesis citing the bull case.",'
         f'"devils_advocate":"2 specific risks in the next 4 weeks.",'
         f'"key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}},'
         f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","reasoning":"1 sentence.","key_risk":"1 sentence.","sector":"X","source":"TECHNICAL"}}]}}\n'
         f'If no stock clears {BUY_THRESHOLD} confidence, signal=NO PICK.\n'
-        f'position_size_pct = % of available cash (${cash_avail:,.0f}) to deploy.\n'
-        f'Sizing guide (you decide — these are starting points, not rules):\n'
-        f'  conf 80-84 → 15-20% (moderate conviction)\n'
-        f'  conf 85-89 → 25-30% (high conviction)\n'
-        f'  conf 90+   → 30-40% (very high conviction)\n'
-        f'Scale DOWN if: earnings within 7 days, VIX > 25, already 3+ open positions.\n'
-        f'Scale UP if: strong catalyst + multiple confirming signals + cash > 60% idle.'
+        f'position_size_pct: you decide what % of ${cash_avail:,.0f} available cash to deploy.\n'
+        f'Context: {len(open_tickers)} positions currently open. VIX {mult}x regime.\n'
+        f'There are no rules — size based purely on your conviction and risk assessment.'
     )
 
     try:
