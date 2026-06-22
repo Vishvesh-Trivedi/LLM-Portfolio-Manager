@@ -1060,10 +1060,18 @@ def _fetch_dynamic_universe():
     tickers = []
     sources = []
 
+    import io as _io
+
+    def _wiki_table(url):
+        """Fetch Wikipedia page via requests (timeout-safe) then parse with read_html."""
+        r = requests.get(url, timeout=20, headers={'User-Agent': 'StockScreener/1.0'})
+        r.raise_for_status()
+        return pd.read_html(_io.StringIO(r.text))[0]
+
     # S&P 500 — large cap
     try:
-        df      = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies', timeout=20)[0]
-        sp500   = [str(t).replace('.', '-') for t in df['Symbol'].tolist()]  # BRK.B → BRK-B
+        df    = _wiki_table('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
+        sp500 = [str(t).replace('.', '-') for t in df['Symbol'].tolist()]  # BRK.B → BRK-B
         tickers.extend(sp500)
         sources.append(f'S&P 500 ({len(sp500)})')
     except Exception as e:
@@ -1073,7 +1081,7 @@ def _fetch_dynamic_universe():
 
     # S&P 400 MidCap — expands into mid-cap opportunities
     try:
-        df    = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_400_companies', timeout=20)[0]
+        df    = _wiki_table('https://en.wikipedia.org/wiki/List_of_S%26P_400_companies')
         col   = next((c for c in df.columns if 'ticker' in c.lower() or 'symbol' in c.lower()), df.columns[1])
         sp400 = [str(t).replace('.', '-') for t in df[col].tolist() if isinstance(t, str) and t.isascii()]
         tickers.extend(sp400)
