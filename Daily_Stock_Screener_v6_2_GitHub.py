@@ -191,7 +191,7 @@ VOLUME_MIN_RATIO = 1.2   # stock must trade at 1.2x its average volume
 RSI_MIN          = 35    # minimum RSI (avoid oversold)
 RSI_MAX          = 75    # maximum RSI (avoid overbought)
 MIN_PRICE        = 5.0   # minimum stock price in USD
-SAMPLE_SIZE      = 600   # increase to 500 for weekend full runs
+SAMPLE_SIZE      = 900   # full dynamic universe — LLM can lower via config_overrides.json
 
 PICKS_CSV        = f'{DRIVE_FOLDER}/stock_picks.csv'
 WATCH_CSV        = f'{DRIVE_FOLDER}/watch_list.csv'
@@ -1051,16 +1051,49 @@ MY_STOCKS = [
 ]
 # ──────────────────────────────────────────────────────────────────────────────
 
-TICKER_UNIVERSE = list(dict.fromkeys(NASDAQ_100 + SP500_STOCKS + KEY_ETFS + MY_STOCKS))
-UNIVERSE_SET    = set(TICKER_UNIVERSE)
-ETF_SET         = set(KEY_ETFS)
-STOCK_UNIVERSE  = [t for t in TICKER_UNIVERSE if t not in ETF_SET]
+def _fetch_dynamic_universe():
+    """
+    Fetch S&P 500 + S&P 400 MidCap from Wikipedia (~900 stocks, no API key needed).
+    Falls back to the hardcoded NASDAQ_100 + SP500_STOCKS if fetch fails.
+    """
+    tickers = []
+    sources = []
+
+    # S&P 500 — large cap
+    try:
+        df      = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies', timeout=20)[0]
+        sp500   = [str(t).replace('.', '-') for t in df['Symbol'].tolist()]  # BRK.B → BRK-B
+        tickers.extend(sp500)
+        sources.append(f'S&P 500 ({len(sp500)})')
+    except Exception as e:
+        print(f'  S&P 500 Wikipedia fetch failed ({e}) — using hardcoded fallback')
+        tickers.extend(NASDAQ_100 + SP500_STOCKS)
+        sources.append(f'hardcoded fallback ({len(set(NASDAQ_100 + SP500_STOCKS))})')
+
+    # S&P 400 MidCap — expands into mid-cap opportunities
+    try:
+        df    = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_400_companies', timeout=20)[0]
+        col   = next((c for c in df.columns if 'ticker' in c.lower() or 'symbol' in c.lower()), df.columns[1])
+        sp400 = [str(t).replace('.', '-') for t in df[col].tolist() if isinstance(t, str) and t.isascii()]
+        tickers.extend(sp400)
+        sources.append(f'S&P 400 MidCap ({len(sp400)})')
+    except Exception as e:
+        print(f'  S&P 400 Wikipedia fetch failed ({e}) — skipping midcap expansion')
+
+    unique = list(dict.fromkeys(tickers))
+    print(f'  Dynamic universe: {" + ".join(sources)} = {len(unique)} unique tickers')
+    return unique
+
+_dynamic_stocks  = _fetch_dynamic_universe()
+TICKER_UNIVERSE  = list(dict.fromkeys(_dynamic_stocks + KEY_ETFS + MY_STOCKS))
+UNIVERSE_SET     = set(TICKER_UNIVERSE)
+ETF_SET          = set(KEY_ETFS)
+STOCK_UNIVERSE   = [t for t in TICKER_UNIVERSE if t not in ETF_SET]
 
 print('✅ Universe loaded:')
-print(f'   NASDAQ 100:           {len(set(NASDAQ_100))}')
-print(f'   S&P 500 + custom:     {len(set(SP500_STOCKS))}')
-print(f'   Key ETFs:             {len(set(KEY_ETFS))}')
-print(f'   TOTAL UNIQUE:         {len(TICKER_UNIVERSE)} ({len(STOCK_UNIVERSE)} stocks)')
+print(f'   Stocks:    {len(STOCK_UNIVERSE)}')
+print(f'   ETFs:      {len(ETF_SET)}')
+print(f'   TOTAL:     {len(TICKER_UNIVERSE)}')
 
 
 def get_market_context():
