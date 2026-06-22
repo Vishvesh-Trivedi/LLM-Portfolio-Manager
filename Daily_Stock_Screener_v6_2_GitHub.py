@@ -760,9 +760,32 @@ def fetch_congress_trades(days=60):
         if len(loaded) == 2:
             break  # got both House and Senate, done
 
+    _cache_path = os.path.join(DRIVE_FOLDER, 'congress_cache.json')
+
     if not result:
-        print(f'  Congress trades: all sources unavailable')
+        # Try Drive cache from last successful fetch (survives Colab network blocks)
+        try:
+            if os.path.exists(_cache_path):
+                with open(_cache_path) as f:
+                    cached = json.load(f)
+                cache_age = (datetime.now() - datetime.fromisoformat(cached.get('fetched_at', '2000-01-01'))).days
+                if cache_age <= 7:  # use cache if < 7 days old
+                    print(f'  Congress trades: live sources unavailable — using Drive cache ({cache_age}d old)')
+                    return cached.get('data', {})
+                else:
+                    print(f'  Congress trades: all sources unavailable (cache is {cache_age}d old — too stale)')
+            else:
+                print(f'  Congress trades: all sources unavailable (no cache)')
+        except Exception as ce:
+            print(f'  Congress trades: all sources unavailable ({ce})')
         return {}
+
+    # Save successful fetch to Drive cache for future fallback
+    try:
+        with open(_cache_path, 'w') as f:
+            json.dump({'fetched_at': datetime.now().isoformat(), 'data': result}, f)
+    except Exception:
+        pass
 
     total = sum(v['count'] for v in result.values())
     print(f'  Congress buys (last {days}d): {total} purchases | {len(result)} stocks | sources: {", ".join(loaded)}')
@@ -3172,33 +3195,37 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             f'R:R {rr_str} | {shares_str}'
         )
         # MSG 2: Full stock analysis
-        macd_str = 'Bull' if pick_match.get('macd_bullish') else 'Bear'
-        h52_str  = f'{pick_match.get("pct_from_52h",0):+.1f}% from 52W high' if pick_match.get('pct_from_52h') is not None else ''
-        rev_g    = pick_match.get('revenue_growth')
-        earn_g   = pick_match.get('earnings_growth')
-        gap_str  = f'Open gap: {pick_match.get("open_gap_pct",0):+.2f}%' if pick_match.get('open_gap_pct') is not None else ''
-        msg2 = (
-            f'{ticker} Deep Analysis [2/3]\n'
-            f'{"="*28}\n'
-            f'TECHNICALS:\n'
-            f'{tech_line}\n'
-            f'MACD: {macd_str} | {h52_str}\n'
-            f'{gap_str}\n'
-            f'{"="*28}\n'
-            f'FUNDAMENTALS:\n'
-            f'{analyst_line}'
-            f'{earnings_line}'
-            f'{short_line}'
-            f'Rev growth: {rev_g:+.1f}%\n' if rev_g is not None else ''
-            f'Earn growth: {earn_g:+.1f}%\n' if earn_g is not None else ''
-            f'{"="*28}\n'
-            f'FLOW:\n'
-            f'{flow_line}'
-            f'{sec_line}'
-            f'{"="*28}\n'
-            f'Why: {why}\n'
-            f'Risk: {risk}'
-        )
+        macd_str   = 'Bull' if pick_match.get('macd_bullish') else 'Bear'
+        h52_str    = f'{pick_match.get("pct_from_52h",0):+.1f}% from 52W high' if pick_match.get('pct_from_52h') is not None else ''
+        rev_g      = pick_match.get('revenue_growth')
+        earn_g     = pick_match.get('earnings_growth')
+        gap_str    = f'Open gap: {pick_match.get("open_gap_pct",0):+.2f}%' if pick_match.get('open_gap_pct') is not None else ''
+        growth_str = ''
+        if rev_g is not None:
+            growth_str += f'Rev growth: {rev_g:+.1f}%\n'
+        if earn_g is not None:
+            growth_str += f'Earn growth: {earn_g:+.1f}%\n'
+        msg2 = '\n'.join(filter(None, [
+            f'{ticker} Deep Analysis [2/3]',
+            '=' * 28,
+            'TECHNICALS:',
+            tech_line,
+            f'MACD: {macd_str} | {h52_str}',
+            gap_str,
+            '=' * 28,
+            'FUNDAMENTALS:',
+            analyst_line.strip(),
+            earnings_line.strip(),
+            short_line.strip(),
+            growth_str.strip(),
+            '=' * 28,
+            'FLOW:',
+            flow_line.strip(),
+            sec_line.strip(),
+            '=' * 28,
+            f'Why: {why}',
+            f'Risk: {risk}',
+        ]))
         # MSG 3: Watch list + history
         msg3 = (
             f'WATCH LIST [3/3]\n'
