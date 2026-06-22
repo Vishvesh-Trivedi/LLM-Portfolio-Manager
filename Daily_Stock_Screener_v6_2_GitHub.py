@@ -3183,77 +3183,49 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         wr_tag = f' RSI {wr_rsi:.0f} Mom {wr_mom:+.1f}%' if wr_rsi is not None and wr_mom is not None else ''
         watch_lines += f'  {w.get("ticker","")} {w.get("confidence",0)}/100{wr_tag}\n'
 
-    # ── 3 messages ────────────────────────────────────────────
+    # ── 2 messages ────────────────────────────────────────────
+    stop_pct     = round((stop_price - ep) / ep * 100, 1) if isinstance(stop_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
+    tgt_pct      = round((target_price - ep) / ep * 100, 1) if isinstance(target_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
+    stop_pct_str = f' ({stop_pct:+.1f}%)' if stop_pct != '' else ''
+    tgt_pct_str  = f' ({tgt_pct:+.1f}%)'  if tgt_pct  != '' else ''
+
+    # All open positions (including today's new pick) formatted the same way
+    all_positions = (portfolio or {}).get('positions', [])
+    def _pos_line(p):
+        upc = p.get('unrealized_pnl_pct', 0)
+        return (f'{p["ticker"]}  {p["shares"]}sh @ ${p["entry_price"]} | '
+                f'{upc:+.1f}% | Stop ${p.get("stop_price","?")} | '
+                f'Target ${p.get("target_price","?")} | Day {p.get("hold_days",0)}')
+    positions_block = '\n'.join(_pos_line(p) for p in all_positions) if all_positions else '  None'
+
     if sig == 'BUY':
-        # MSG 1: Market context + today's pick (clean, no portfolio clutter)
-        stop_pct = round((stop_price - ep) / ep * 100, 1) if isinstance(stop_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
-        tgt_pct  = round((target_price - ep) / ep * 100, 1) if isinstance(target_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
-        stop_pct_str = f' ({stop_pct:+.1f}%)' if stop_pct != '' else ''
-        tgt_pct_str  = f' ({tgt_pct:+.1f}%)'  if tgt_pct  != '' else ''
+        # MSG 1: Today's pick
         msg1 = '\n'.join(filter(None, [
-            f'SCREENER {date_str}',
-            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%',
-            fut_str.strip() or None,
-            f'Top: {top_s_str} | Bot: {bot_s_str}',
-            '---',
-            f'BUY {ticker} [{sector}] {conf}/100{cg_tag}',
-            f'Entry  ${ep}',
+            f'SCREENER {date_str} | SPY {ctx["spy_return_today"]:+.2f}% | VIX {ctx["vix_level"]:.1f}',
+            '',
+            f'TODAY: {ticker} [{sector}] {conf}/100',
+            f'Buy    ${ep}',
             f'Stop   ${stop_price}{stop_pct_str}',
             f'Target ${target_price}{tgt_pct_str}',
             f'R:R {rr_str} | {shares_str}',
         ]))
-        # MSG 2: Full stock analysis
-        macd_str   = 'Bull' if pick_match.get('macd_bullish') else 'Bear'
-        h52_str    = f'{pick_match.get("pct_from_52h",0):+.1f}% from 52W high' if pick_match.get('pct_from_52h') is not None else ''
-        rev_g      = pick_match.get('revenue_growth')
-        earn_g     = pick_match.get('earnings_growth')
-        gap_str    = f'Open gap: {pick_match.get("open_gap_pct",0):+.2f}%' if pick_match.get('open_gap_pct') is not None else ''
-        growth_str = ''
-        if rev_g is not None:
-            growth_str += f'Rev growth: {rev_g:+.1f}%\n'
-        if earn_g is not None:
-            growth_str += f'Earn growth: {earn_g:+.1f}%\n'
+        # MSG 2: Portfolio snapshot — all positions same format
         msg2 = '\n'.join(filter(None, [
-            f'{ticker} Analysis',
-            '---',
-            tech_line,
-            f'MACD: {macd_str} | {h52_str}',
-            gap_str or None,
-            '---',
-            analyst_line.strip() or None,
-            earnings_line.strip() or None,
-            short_line.strip() or None,
-            growth_str.strip() or None,
-            flow_line.strip() or None,
-            sec_line.strip() or None,
-            '---',
-            f'Why: {why}',
-            f'Risk: {risk}',
+            f'PORTFOLIO | Cash ${portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)' if portfolio else 'PORTFOLIO',
+            '',
+            positions_block,
         ]))
-        # MSG 3: Watch + open positions (prior picks) + closed history
-        msg3 = '\n'.join(filter(None, [
-            'WATCH:',
-            watch_lines.strip() or '  None',
-            congress_line.strip() or None,
-            '---',
-            open_block or None,
-            history_block or None,
-            f'---\nCash ${portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)' if portfolio else None,
-        ]))
-        _wa_send(msg1, '1/3 market+pick')
-        _wa_send(msg2, '2/3 analysis')
-        _wa_send(msg3, '3/3 watch+positions')
+        _wa_send(msg1, '1/2 pick')
+        _wa_send(msg2, '2/2 portfolio')
     else:
-        # No pick: single message
+        # No pick: single message with portfolio state
         msg = '\n'.join(filter(None, [
-            f'SCREENER {date_str} - NO BUY',
-            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%',
-            fut_str.strip() or None,
-            '---',
-            open_block or None,
-            '---',
-            f'WATCH:\n{watch_lines.strip() or "  None"}',
-            history_block or None,
+            f'SCREENER {date_str} | SPY {ctx["spy_return_today"]:+.2f}% | VIX {ctx["vix_level"]:.1f}',
+            f'NO BUY today',
+            '',
+            f'PORTFOLIO | Cash ${portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)' if portfolio else '',
+            '',
+            positions_block,
         ]))
         _wa_send(msg, 'no-pick')
 
