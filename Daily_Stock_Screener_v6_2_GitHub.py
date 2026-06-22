@@ -3158,42 +3158,50 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     shares_str = f'{pos["shares"]} shares | Spent: {pos["cost_basis"]:,.0f}' if pos else ''
 
     # ── Watch list ────────────────────────────────────────────
-    history_lines = _recent_picks_summary(days=10)
-    history_block = ('-- BUY HISTORY --\n' + '\n'.join(history_lines)) if history_lines else ''
+    today_str_short = datetime.now().strftime('%b %d')
+    # History = prior picks only (exclude today's pick)
+    history_lines = [l for l in _recent_picks_summary(days=14)
+                     if ticker not in l or today_str_short not in l]
+    history_block = ('HISTORY:\n' + '\n'.join(history_lines)) if history_lines else ''
+
+    # Open positions excluding today's new pick
+    other_positions = [p for p in (portfolio or {}).get('positions', []) if p['ticker'] != ticker]
+    if other_positions:
+        open_block = 'OPEN:\n' + '\n'.join(
+            f'  {p["ticker"]} {p["shares"]}sh {p.get("unrealized_pnl_pct",0):+.1f}% | '
+            f'Stop {p.get("stop_price","?")} | {p.get("hold_days",0)}d'
+            for p in other_positions
+        )
+    else:
+        open_block = ''
 
     watch_lines = ''
-    for w in wl[:3]:
+    for w in wl[:2]:
         wc = next((c for c in (candidates or []) if c['ticker'] == w.get('ticker','')), {})
         wr_rsi = wc.get('rsi')
         wr_mom = wc.get('momentum_5d')
         wr_tag = f' RSI {wr_rsi:.0f} Mom {wr_mom:+.1f}%' if wr_rsi is not None and wr_mom is not None else ''
-        watch_lines += f'  {w.get("ticker","")} {w.get("confidence",0)}/100{wr_tag} - {str(w.get("reasoning",""))[:60]}\n'
+        watch_lines += f'  {w.get("ticker","")} {w.get("confidence",0)}/100{wr_tag}\n'
 
     # ── 3 messages ────────────────────────────────────────────
     if sig == 'BUY':
-        # MSG 1: Market context + pick summary
+        # MSG 1: Market context + today's pick (clean, no portfolio clutter)
         stop_pct = round((stop_price - ep) / ep * 100, 1) if isinstance(stop_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
         tgt_pct  = round((target_price - ep) / ep * 100, 1) if isinstance(target_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
         stop_pct_str = f' ({stop_pct:+.1f}%)' if stop_pct != '' else ''
         tgt_pct_str  = f' ({tgt_pct:+.1f}%)'  if tgt_pct  != '' else ''
-        msg1 = (
-            f'SCREENER {date_str} [1/3]\n'
-            f'{"="*28}\n'
-            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} {ctx["qqq_vs_ma50"]:+.1f}% | SPY {ctx["spy_return_today"]:+.2f}%\n'
-            f'{fut_str}'
-            f'{macro_str}'
-            f'{sharesies_str}'
-            f'TOP: {top_s_str}\n'
-            f'BOT: {bot_s_str}\n'
-            f'{"="*28}\n'
-            f'{pf_block}'
-            f'BUY: {ticker} [{sector}]{cg_tag}\n'
-            f'Conf: {conf}/100\n'
-            f'Entry: {ep}\n'
-            f'Stop:  {stop_price}{stop_pct_str}\n'
-            f'Target:{target_price}{tgt_pct_str}\n'
-            f'R:R {rr_str} | {shares_str}'
-        )
+        msg1 = '\n'.join(filter(None, [
+            f'SCREENER {date_str}',
+            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%',
+            fut_str.strip() or None,
+            f'Top: {top_s_str} | Bot: {bot_s_str}',
+            '---',
+            f'BUY {ticker} [{sector}] {conf}/100{cg_tag}',
+            f'Entry  ${ep}',
+            f'Stop   ${stop_price}{stop_pct_str}',
+            f'Target ${target_price}{tgt_pct_str}',
+            f'R:R {rr_str} | {shares_str}',
+        ]))
         # MSG 2: Full stock analysis
         macd_str   = 'Bull' if pick_match.get('macd_bullish') else 'Bear'
         h52_str    = f'{pick_match.get("pct_from_52h",0):+.1f}% from 52W high' if pick_match.get('pct_from_52h') is not None else ''
@@ -3206,54 +3214,47 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         if earn_g is not None:
             growth_str += f'Earn growth: {earn_g:+.1f}%\n'
         msg2 = '\n'.join(filter(None, [
-            f'{ticker} Deep Analysis [2/3]',
-            '=' * 28,
-            'TECHNICALS:',
+            f'{ticker} Analysis',
+            '---',
             tech_line,
             f'MACD: {macd_str} | {h52_str}',
-            gap_str,
-            '=' * 28,
-            'FUNDAMENTALS:',
-            analyst_line.strip(),
-            earnings_line.strip(),
-            short_line.strip(),
-            growth_str.strip(),
-            '=' * 28,
-            'FLOW:',
-            flow_line.strip(),
-            sec_line.strip(),
-            '=' * 28,
+            gap_str or None,
+            '---',
+            analyst_line.strip() or None,
+            earnings_line.strip() or None,
+            short_line.strip() or None,
+            growth_str.strip() or None,
+            flow_line.strip() or None,
+            sec_line.strip() or None,
+            '---',
             f'Why: {why}',
             f'Risk: {risk}',
         ]))
-        # MSG 3: Watch list + history
-        msg3 = (
-            f'WATCH LIST [3/3]\n'
-            f'{"="*28}\n'
-            f'{watch_lines or "  None"}'
-            f'{congress_line}'
-            f'{"="*28}\n'
-            f'{history_block}'
-        )
+        # MSG 3: Watch + open positions (prior picks) + closed history
+        msg3 = '\n'.join(filter(None, [
+            'WATCH:',
+            watch_lines.strip() or '  None',
+            congress_line.strip() or None,
+            '---',
+            open_block or None,
+            history_block or None,
+            f'---\nCash ${portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)' if portfolio else None,
+        ]))
         _wa_send(msg1, '1/3 market+pick')
         _wa_send(msg2, '2/3 analysis')
-        _wa_send(msg3, '3/3 watch+history')
+        _wa_send(msg3, '3/3 watch+positions')
     else:
         # No pick: single message
-        msg = (
-            f'SCREENER {date_str} - NO BUY\n'
-            f'{"="*28}\n'
-            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%\n'
-            f'{fut_str}'
-            f'{macro_str}'
-            f'TOP: {top_s_str}\n'
-            f'{"="*28}\n'
-            f'{pf_block}'
-            f'Signal: {sig}\n\n'
-            f'WATCH:\n{watch_lines or "  None"}\n'
-            f'{"="*28}\n'
-            f'{history_block}'
-        )
+        msg = '\n'.join(filter(None, [
+            f'SCREENER {date_str} - NO BUY',
+            f'VIX {ctx["vix_level"]:.1f} (p{ctx["vix_percentile"]:.0f}) | QQQ {ctx["qqq_trend"]} | SPY {ctx["spy_return_today"]:+.2f}%',
+            fut_str.strip() or None,
+            '---',
+            open_block or None,
+            '---',
+            f'WATCH:\n{watch_lines.strip() or "  None"}',
+            history_block or None,
+        ]))
         _wa_send(msg, 'no-pick')
 
 
