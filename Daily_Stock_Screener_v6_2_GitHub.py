@@ -260,6 +260,9 @@ _CFG_SECTOR_CONC_LOOKBACK= SECTOR_CONC_LOOKBACK  # rolling window for sector con
 _CFG_SECTOR_CONC_PENALTY = SECTOR_CONC_PENALTY   # confidence docked when over sector limit
 _CFG_CONGRESS_DAYS       = 60    # how many days back to fetch congress trades
 _CFG_SEC_8K_DAYS         = 7     # how many days back to fetch SEC 8-K filings
+_CFG_RSI_EXIT            = 78.0  # RSI level that triggers overbought exit (when profitable)
+_CFG_RSI_EXIT_MIN_PROFIT = 8.0   # min unrealized % profit before RSI exit fires
+_CFG_MACD_EXIT_MIN_PROFIT= 5.0   # min unrealized % profit before MACD bearish cross exit fires
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
 # ── LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) ──────────
@@ -588,25 +591,36 @@ def compute_news_score(news_titles, rescue_keywords, analyst_rating,
 
 
 def _fetch_options_single(ticker):
-    """Fetch put/call ratio from nearest expiry options chain."""
+    """Fetch put/call ratio + unusual call activity from nearest expiry options chain."""
     try:
         tk   = yf.Ticker(ticker)
         exps = tk.options
         if not exps:
-            return ticker, None, 'NEUTRAL'
+            return ticker, None, 'NEUTRAL', False
         opt        = tk.option_chain(exps[0])
         calls_vol  = float(opt.calls['volume'].fillna(0).sum())
         puts_vol   = float(opt.puts['volume'].fillna(0).sum())
         if calls_vol + puts_vol < 200:
-            return ticker, None, 'NEUTRAL'
+            return ticker, None, 'NEUTRAL', False
         pc = round(puts_vol / calls_vol, 2) if calls_vol > 0 else None
         if   pc is None:  label = 'NEUTRAL'
         elif pc < 0.7:    label = 'BULLISH'
         elif pc > 1.3:    label = 'BEARISH'
         else:             label = 'NEUTRAL'
-        return ticker, pc, label
+        # Unusual call activity: any strike where volume > 3× open interest (smart money positioning)
+        unusual_calls = False
+        try:
+            calls = opt.calls.copy()
+            calls = calls[(calls['openInterest'] > 50) & (calls['volume'].fillna(0) > 0)]
+            if not calls.empty:
+                calls['vol_oi'] = calls['volume'].fillna(0) / calls['openInterest']
+                if calls['vol_oi'].max() > 3:
+                    unusual_calls = True
+        except:
+            pass
+        return ticker, pc, label, unusual_calls
     except:
-        return ticker, None, 'NEUTRAL'
+        return ticker, None, 'NEUTRAL', False
 
 
 _SEC_CIK_CACHE = {}
@@ -764,8 +778,8 @@ def fetch_options_and_insider_parallel(candidates):
         opt_futures = {ex.submit(_fetch_options_single, t): t for t in tickers}
         ins_futures = {ex.submit(_fetch_insider_single, t): t for t in tickers}
         for f in as_completed(opt_futures):
-            t, pc, lbl = f.result()
-            options_data[t] = {'pc_ratio': pc, 'label': lbl}
+            t, pc, lbl, unusual = f.result()
+            options_data[t] = {'pc_ratio': pc, 'label': lbl, 'unusual_calls': unusual}
         for f in as_completed(ins_futures):
             t, net, lbl = f.result()
             insider_data[t] = {'net_shares': net, 'label': lbl}
@@ -823,8 +837,9 @@ def enrich_with_scores(candidates, ctx, market_sentiment,
         c['news_score']           = ns
         c['news_score_breakdown'] = ns_bd
         c['vader_label']          = vader_lbl
-        c['options_pc']           = opt.get('pc_ratio')
-        c['options_label']        = opt.get('label', 'NEUTRAL')
+        c['options_pc']             = opt.get('pc_ratio')
+        c['options_label']          = opt.get('label', 'NEUTRAL')
+        c['unusual_call_activity']  = opt.get('unusual_calls', False)
         c['insider_label']        = ins.get('label', 'NEUTRAL')
         cg = (congress_data or {}).get(t, {})
         c['congress_count']   = cg.get('count', 0)
@@ -1237,6 +1252,13 @@ def _fetch_fundamentals_single(ticker):
             result['upside_pct'] = round(((float(tgt) - float(price)) / float(price)) * 100, 1)
         if sr:    result['short_ratio']     = round(float(sr), 1)
         if sf:    result['short_pct_float'] = round(float(sf) * 100, 1)
+        # Short squeeze setup: heavy short load + high days-to-cover = rocket fuel if catalyst hits
+        if sf and sr:
+            sf_val = float(sf) * 100
+            sr_val = float(sr)
+            if sf_val > 20 and sr_val > 5:
+                result['short_squeeze_setup'] = True
+                result['short_squeeze_label'] = f'SQUEEZE SETUP: {sf_val:.0f}% float short, {sr_val:.1f}d to cover'
         if rg:    result['revenue_growth']  = round(float(rg) * 100, 1)
         if eg:    result['earnings_growth'] = round(float(eg) * 100, 1)
         result['sector']    = sec or 'Unknown'
@@ -2061,7 +2083,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         'insider_label':c.get('insider_label','NEUTRAL'),'news_adjustment':c.get('news_adjustment',0),
         'congress_label':c.get('congress_label','NEUTRAL'),'congress_notes':c.get('congress_notes',''),
         'news_notes':c.get('news_notes',''),'mkt_cap_b':c['mkt_cap_b'],
-        **({k:c[k] for k in ['analyst_rating','upside_pct','short_ratio','earnings_risk','rescue_keywords','options_pc'] if c.get(k) is not None})
+        **({k:c[k] for k in ['analyst_rating','upside_pct','short_ratio','short_pct_float','short_squeeze_label','earnings_risk','rescue_keywords','options_pc','unusual_call_activity'] if c.get(k) is not None})
     } for c in candidates]
 
     hist_block = ''
@@ -2145,6 +2167,10 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
            'NOT a long-term investor. Momentum, catalysts, and near-term price action matter most. '
            'Analyst 12-month targets are nearly irrelevant — focus on what moves in 1-4 weeks. '
            'Earnings within 2 weeks = elevated risk. Earnings within 5 days = near-disqualifier. '
+           'CRITICAL RULE: Before committing to any BUY, you MUST articulate a credible bear case — '
+           'specific reasons the trade could fail in the next 10 days. '
+           'If you cannot name at least 2 concrete failure scenarios, the pick is not ready. '
+           'High conviction with a weak bear case is overconfidence, not edge. '
            'Respond ONLY with valid JSON. Start with { end with }. No markdown.')
 
     gm     = ctx.get('global_macro', {})
@@ -2249,6 +2275,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         'analyst_actions': c.get('analyst_actions', []),
         'insider': c.get('insider_label', 'NEUTRAL'), 'options': c.get('options_label', 'NEUTRAL'),
         'congress': c.get('congress_label', 'NEUTRAL'), 'congress_who': c.get('congress_notes', ''),
+        'short_squeeze': c.get('short_squeeze_label', ''), 'unusual_calls': c.get('unusual_call_activity', False),
         'news_notes': c.get('news_notes', '')[:120],
     } for c in top10_candidates]
 
@@ -3185,6 +3212,7 @@ def load_config_overrides():
     global _CFG_VIX_LOW_PCTILE, _CFG_VIX_HIGH_PCTILE
     global _CFG_SECTOR_CONC_LOOKBACK, _CFG_SECTOR_CONC_PENALTY
     global _CFG_CONGRESS_DAYS, _CFG_SEC_8K_DAYS
+    global _CFG_RSI_EXIT, _CFG_RSI_EXIT_MIN_PROFIT, _CFG_MACD_EXIT_MIN_PROFIT
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -3241,6 +3269,9 @@ def load_config_overrides():
             _CFG_SECTOR_CONC_PENALTY = float(ov.get('sector_conc_penalty',      _CFG_SECTOR_CONC_PENALTY))
             _CFG_CONGRESS_DAYS       = int(ov.get('congress_days',              _CFG_CONGRESS_DAYS))
             _CFG_SEC_8K_DAYS         = int(ov.get('sec_8k_days',               _CFG_SEC_8K_DAYS))
+            _CFG_RSI_EXIT            = float(ov.get('rsi_exit',                _CFG_RSI_EXIT))
+            _CFG_RSI_EXIT_MIN_PROFIT = float(ov.get('rsi_exit_min_profit',     _CFG_RSI_EXIT_MIN_PROFIT))
+            _CFG_MACD_EXIT_MIN_PROFIT= float(ov.get('macd_exit_min_profit',    _CFG_MACD_EXIT_MIN_PROFIT))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -3413,6 +3444,9 @@ def update_config_from_llm(pick_history):
         'sector_conc_penalty': _CFG_SECTOR_CONC_PENALTY,
         'congress_days': _CFG_CONGRESS_DAYS,
         'sec_8k_days': _CFG_SEC_8K_DAYS,
+        'rsi_exit': _CFG_RSI_EXIT,
+        'rsi_exit_min_profit': _CFG_RSI_EXIT_MIN_PROFIT,
+        'macd_exit_min_profit': _CFG_MACD_EXIT_MIN_PROFIT,
     }
 
     sys_msg = (
@@ -3448,6 +3482,8 @@ YOUR JOB:
    - Change hold_days to 7 or 14 if 10-day results are inconsistent
    - Add additional_tickers (e.g. ["PLTR","ARM","RDDT"]) to expand the universe
    - Raise sector_conc_max if diversification is hurting returns, lower it to force diversity
+   - Lower rsi_exit (e.g. 75) to take profits earlier; raise it (e.g. 82) to let winners run further
+   - Lower rsi_exit_min_profit / macd_exit_min_profit if momentum reversals are costing unrealised gains
 4. When win rate >65%: fine-tune only. When win rate <50%: make meaningful changes.
 5. If no clear pattern: keep current config unchanged.
 
@@ -3497,6 +3533,9 @@ You can change ANY value. Keep unchanged values as-is.
   "sector_conc_penalty": {_CFG_SECTOR_CONC_PENALTY},
   "congress_days": {_CFG_CONGRESS_DAYS},
   "sec_8k_days": {_CFG_SEC_8K_DAYS},
+  "rsi_exit": {_CFG_RSI_EXIT},
+  "rsi_exit_min_profit": {_CFG_RSI_EXIT_MIN_PROFIT},
+  "macd_exit_min_profit": {_CFG_MACD_EXIT_MIN_PROFIT},
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
@@ -3649,6 +3688,37 @@ def update_portfolio_prices(pf):
         except:
             pass
 
+        # Rule 4 — RSI overbought exit: price extended, lock in gains
+        # Only fires when position is already profitable past LLM-set threshold
+        pnl_pct = pos.get('unrealized_pnl_pct', 0)
+        try:
+            _h = yf.Ticker(t).history(period='21d')
+            if len(_h) >= 14:
+                _delta = _h['Close'].diff()
+                _gain  = _delta.clip(lower=0).ewm(com=13, adjust=False).mean()
+                _loss  = (-_delta.clip(upper=0)).ewm(com=13, adjust=False).mean()
+                _rs    = _gain / _loss.replace(0, float('nan'))
+                _rsi   = (100 - (100 / (1 + _rs))).iloc[-1]
+                if _rsi > _CFG_RSI_EXIT and pnl_pct >= _CFG_RSI_EXIT_MIN_PROFIT:
+                    to_close.append((t, f'rsi_overbought (RSI={_rsi:.0f} > {_CFG_RSI_EXIT}, up {pnl_pct:.1f}%)'))
+        except:
+            pass
+
+        # Rule 5 — MACD bearish cross after a profitable run: momentum has turned
+        try:
+            if pnl_pct >= _CFG_MACD_EXIT_MIN_PROFIT and t not in [x[0] for x in to_close]:
+                _h2   = yf.Ticker(t).history(period='40d') if '_h' not in dir() or len(_h) < 26 else _h
+                if len(_h2) >= 26:
+                    _close      = _h2['Close']
+                    _macd       = _close.ewm(span=12).mean() - _close.ewm(span=26).mean()
+                    _signal     = _macd.ewm(span=9).mean()
+                    _cross_now  = _macd.iloc[-1] < _signal.iloc[-1]
+                    _cross_prev = _macd.iloc[-2] >= _signal.iloc[-2]
+                    if _cross_now and _cross_prev:
+                        to_close.append((t, f'macd_bearish_cross (up {pnl_pct:.1f}%, momentum turned)'))
+        except:
+            pass
+
     for ticker, reason in to_close:
         pos = next((p for p in pf['positions'] if p['ticker'] == ticker), None)
         if pos:
@@ -3792,9 +3862,15 @@ def portfolio_summary_str(pf):
     else:
         cash_warn = ''
 
+    invested   = total_value - pf['cash']
+    deploy_pct = round(invested / total_value * 100, 0) if total_value > 0 else 0
+    idle_pct   = 100 - deploy_pct
+
     lines = [
         f'PORTFOLIO: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs ${pf["starting_capital"]:,.0f} starting)',
         f'Cash available: ${pf["cash"]:,.2f}  |  Open positions: {len(pf["positions"])}/{_CFG_MAX_POSITIONS}',
+        f'Capital deployment: {deploy_pct:.0f}% invested / {idle_pct:.0f}% idle'
+        + (f' — consider adding a position if conviction exists' if idle_pct > 50 else ''),
     ]
     for p in pf['positions']:
         upl = p.get("unrealized_pnl", 0)
