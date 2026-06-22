@@ -264,6 +264,10 @@ _CFG_RSI_EXIT            = 78.0  # RSI level that triggers overbought exit (when
 _CFG_RSI_EXIT_MIN_PROFIT = 8.0   # min unrealized % profit before RSI exit fires
 _CFG_MACD_EXIT_MIN_PROFIT= 5.0   # min unrealized % profit before MACD bearish cross exit fires
 _CFG_ENTRY_SLIPPAGE_PCT  = 0.3   # estimated gap from last close to next-day open (buy at open, not close)
+_CFG_FINAL_CANDIDATES    = 30    # how many top candidates pass to LLM final round
+_CFG_PRE_EARNINGS_DAYS   = 1     # days before earnings to auto-exit (0 = only on earnings day)
+_CFG_SQUEEZE_FLOAT_PCT   = 20.0  # min short % of float to flag a squeeze setup
+_CFG_SQUEEZE_DAYS_COVER  = 5.0   # min days-to-cover to flag a squeeze setup
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
 # ── LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) ──────────
@@ -1321,7 +1325,7 @@ def _fetch_fundamentals_single(ticker):
         if sf and sr:
             sf_val = float(sf) * 100
             sr_val = float(sr)
-            if sf_val > 20 and sr_val > 5:
+            if sf_val > _CFG_SQUEEZE_FLOAT_PCT and sr_val > _CFG_SQUEEZE_DAYS_COVER:
                 result['short_squeeze_setup'] = True
                 result['short_squeeze_label'] = f'SQUEEZE SETUP: {sf_val:.0f}% float short, {sr_val:.1f}d to cover'
         if rg:    result['revenue_growth']  = round(float(rg) * 100, 1)
@@ -2103,18 +2107,17 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     if not candidates: return None
     print(f'\nPhase 6 - NVIDIA final scoring ({len(candidates)} candidates)...')
 
-    if len(candidates) > 30:
+    if len(candidates) > _CFG_FINAL_CANDIDATES:
         my_set = set(t.upper() for t in MY_STOCKS)
         priority = [c for c in candidates if c['ticker'].upper() in my_set]
         rest     = [c for c in candidates if c['ticker'].upper() not in my_set]
         rest_sorted = sorted(rest, key=lambda x: x.get('pre_score',0), reverse=True)
-        # Reserve up to 10 slots for priority stocks, fill rest with top pre_score
-        slots = max(0, 30 - len(priority))
+        slots = max(0, _CFG_FINAL_CANDIDATES - len(priority))
         candidates = priority + rest_sorted[:slots]
         if my_set:
-            print(f'  Trimmed to top 30: {len(priority)} priority + {len(candidates)-len(priority)} broad scan')
+            print(f'  Trimmed to top {_CFG_FINAL_CANDIDATES}: {len(priority)} priority + {len(candidates)-len(priority)} broad scan')
         else:
-            print(f'  Trimmed to top 30 by pre_score')
+            print(f'  Trimmed to top {_CFG_FINAL_CANDIDATES} by pre_score')
 
     mult   = ctx['vix_multiplier']
 
@@ -3256,6 +3259,7 @@ def load_config_overrides():
     global _CFG_SECTOR_CONC_LOOKBACK, _CFG_SECTOR_CONC_PENALTY
     global _CFG_CONGRESS_DAYS, _CFG_SEC_8K_DAYS
     global _CFG_RSI_EXIT, _CFG_RSI_EXIT_MIN_PROFIT, _CFG_MACD_EXIT_MIN_PROFIT, _CFG_ENTRY_SLIPPAGE_PCT
+    global _CFG_FINAL_CANDIDATES, _CFG_PRE_EARNINGS_DAYS, _CFG_SQUEEZE_FLOAT_PCT, _CFG_SQUEEZE_DAYS_COVER
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -3316,6 +3320,10 @@ def load_config_overrides():
             _CFG_RSI_EXIT_MIN_PROFIT = float(ov.get('rsi_exit_min_profit',     _CFG_RSI_EXIT_MIN_PROFIT))
             _CFG_MACD_EXIT_MIN_PROFIT= float(ov.get('macd_exit_min_profit',    _CFG_MACD_EXIT_MIN_PROFIT))
             _CFG_ENTRY_SLIPPAGE_PCT  = float(ov.get('entry_slippage_pct',      _CFG_ENTRY_SLIPPAGE_PCT))
+            _CFG_FINAL_CANDIDATES    = int(ov.get('final_candidates',          _CFG_FINAL_CANDIDATES))
+            _CFG_PRE_EARNINGS_DAYS   = int(ov.get('pre_earnings_exit_days',    _CFG_PRE_EARNINGS_DAYS))
+            _CFG_SQUEEZE_FLOAT_PCT   = float(ov.get('squeeze_float_pct',       _CFG_SQUEEZE_FLOAT_PCT))
+            _CFG_SQUEEZE_DAYS_COVER  = float(ov.get('squeeze_days_to_cover',   _CFG_SQUEEZE_DAYS_COVER))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -3492,6 +3500,10 @@ def update_config_from_llm(pick_history):
         'rsi_exit_min_profit': _CFG_RSI_EXIT_MIN_PROFIT,
         'macd_exit_min_profit': _CFG_MACD_EXIT_MIN_PROFIT,
         'entry_slippage_pct': _CFG_ENTRY_SLIPPAGE_PCT,
+        'final_candidates': _CFG_FINAL_CANDIDATES,
+        'pre_earnings_exit_days': _CFG_PRE_EARNINGS_DAYS,
+        'squeeze_float_pct': _CFG_SQUEEZE_FLOAT_PCT,
+        'squeeze_days_to_cover': _CFG_SQUEEZE_DAYS_COVER,
     }
 
     sys_msg = (
@@ -3582,6 +3594,10 @@ You can change ANY value. Keep unchanged values as-is.
   "rsi_exit_min_profit": {_CFG_RSI_EXIT_MIN_PROFIT},
   "macd_exit_min_profit": {_CFG_MACD_EXIT_MIN_PROFIT},
   "entry_slippage_pct": {_CFG_ENTRY_SLIPPAGE_PCT},
+  "final_candidates": {_CFG_FINAL_CANDIDATES},
+  "pre_earnings_exit_days": {_CFG_PRE_EARNINGS_DAYS},
+  "squeeze_float_pct": {_CFG_SQUEEZE_FLOAT_PCT},
+  "squeeze_days_to_cover": {_CFG_SQUEEZE_DAYS_COVER},
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
@@ -3729,7 +3745,7 @@ def update_portfolio_prices(pf):
                         ed_raw = vals[0]
             if ed_raw is not None:
                 days_to_earnings = (pd.to_datetime(ed_raw).date() - datetime.now().date()).days
-                if 0 <= days_to_earnings <= 1:
+                if 0 <= days_to_earnings <= _CFG_PRE_EARNINGS_DAYS:
                     to_close.append((t, f'pre_earnings (earnings in {days_to_earnings}d)'))
         except:
             pass
