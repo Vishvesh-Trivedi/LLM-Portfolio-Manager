@@ -263,6 +263,7 @@ _CFG_SEC_8K_DAYS         = 7     # how many days back to fetch SEC 8-K filings
 _CFG_RSI_EXIT            = 78.0  # RSI level that triggers overbought exit (when profitable)
 _CFG_RSI_EXIT_MIN_PROFIT = 8.0   # min unrealized % profit before RSI exit fires
 _CFG_MACD_EXIT_MIN_PROFIT= 5.0   # min unrealized % profit before MACD bearish cross exit fires
+_CFG_ENTRY_SLIPPAGE_PCT  = 0.3   # estimated gap from last close to next-day open (buy at open, not close)
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
 # ── LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) ──────────
@@ -3245,7 +3246,7 @@ def load_config_overrides():
     global _CFG_VIX_LOW_PCTILE, _CFG_VIX_HIGH_PCTILE
     global _CFG_SECTOR_CONC_LOOKBACK, _CFG_SECTOR_CONC_PENALTY
     global _CFG_CONGRESS_DAYS, _CFG_SEC_8K_DAYS
-    global _CFG_RSI_EXIT, _CFG_RSI_EXIT_MIN_PROFIT, _CFG_MACD_EXIT_MIN_PROFIT
+    global _CFG_RSI_EXIT, _CFG_RSI_EXIT_MIN_PROFIT, _CFG_MACD_EXIT_MIN_PROFIT, _CFG_ENTRY_SLIPPAGE_PCT
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -3305,6 +3306,7 @@ def load_config_overrides():
             _CFG_RSI_EXIT            = float(ov.get('rsi_exit',                _CFG_RSI_EXIT))
             _CFG_RSI_EXIT_MIN_PROFIT = float(ov.get('rsi_exit_min_profit',     _CFG_RSI_EXIT_MIN_PROFIT))
             _CFG_MACD_EXIT_MIN_PROFIT= float(ov.get('macd_exit_min_profit',    _CFG_MACD_EXIT_MIN_PROFIT))
+            _CFG_ENTRY_SLIPPAGE_PCT  = float(ov.get('entry_slippage_pct',      _CFG_ENTRY_SLIPPAGE_PCT))
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -3480,6 +3482,7 @@ def update_config_from_llm(pick_history):
         'rsi_exit': _CFG_RSI_EXIT,
         'rsi_exit_min_profit': _CFG_RSI_EXIT_MIN_PROFIT,
         'macd_exit_min_profit': _CFG_MACD_EXIT_MIN_PROFIT,
+        'entry_slippage_pct': _CFG_ENTRY_SLIPPAGE_PCT,
     }
 
     sys_msg = (
@@ -3569,6 +3572,7 @@ You can change ANY value. Keep unchanged values as-is.
   "rsi_exit": {_CFG_RSI_EXIT},
   "rsi_exit_min_profit": {_CFG_RSI_EXIT_MIN_PROFIT},
   "macd_exit_min_profit": {_CFG_MACD_EXIT_MIN_PROFIT},
+  "entry_slippage_pct": {_CFG_ENTRY_SLIPPAGE_PCT},
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
@@ -3760,7 +3764,41 @@ def update_portfolio_prices(pf):
     return pf
 
 
-def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', atr=0):
+def _sharesies_fee(amount_usd, pf, nzdusd_rate=None, side='buy'):
+    """
+    Calculate actual Sharesies brokerage fee for this trade.
+    $15/month plan: $5,000 NZD free buys + $5,000 NZD free sells per month.
+    Over the limit: 0.5% of trade value, capped at $5 USD.
+    Tracks usage in portfolio.json so the free tier is consumed correctly.
+    nzdusd_rate falls back to pf['last_nzdusd_rate'] if not supplied.
+    """
+    if not nzdusd_rate:
+        nzdusd_rate = pf.get('last_nzdusd_rate', 0)
+    if not nzdusd_rate or float(nzdusd_rate) <= 0:
+        return 0.0  # rate unavailable — assume free
+
+    month_key = datetime.now().strftime('%Y-%m')
+    if pf.get('sharesies_month') != month_key:
+        pf['sharesies_month']      = month_key
+        pf['sharesies_bought_usd'] = 0.0
+        pf['sharesies_sold_usd']   = 0.0
+
+    coverage_usd  = SHARESIES_COVERAGE_NZD * float(nzdusd_rate)
+    used_key      = 'sharesies_bought_usd' if side == 'buy' else 'sharesies_sold_usd'
+    already_used  = float(pf.get(used_key, 0.0))
+    remaining_free = max(0.0, coverage_usd - already_used)
+
+    if amount_usd <= remaining_free:
+        fee = 0.0
+    else:
+        over_amount = amount_usd - remaining_free
+        fee = min(over_amount * 0.005, 5.0)  # 0.5%, max $5 USD
+
+    pf[used_key] = round(already_used + amount_usd, 2)
+    return round(fee, 2)
+
+
+def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', atr=0, nzdusd_rate=None):
     """Deploy cash into a new position. LLM controls amount_usd."""
     # Guard: already holding this ticker
     if any(p['ticker'] == ticker for p in pf['positions']):
@@ -3775,39 +3813,41 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', 
         print(f'  Portfolio: cannot afford even 1 share of {ticker} @ ${entry_price} with ${amount_usd:,.0f}')
         return pf
     stock_cost = round(shares * entry_price, 2)         # actual dollars spent on shares
-    total_cost = round(stock_cost + BROKERAGE_FEE, 2)  # + brokerage fee
+    brokerage  = _sharesies_fee(stock_cost, pf, nzdusd_rate, side='buy')
+    total_cost = round(stock_cost + brokerage, 2)
     pf['positions'].append({
         'ticker':              ticker,
         'shares':              shares,
         'entry_price':         round(entry_price, 2),
         'cost_basis':          total_cost,   # actual shares cost + brokerage
-        'brokerage_in':        BROKERAGE_FEE,
+        'brokerage_in':        brokerage,
         'entry_date':          datetime.now().strftime('%Y-%m-%d'),
         'stop_price':          round(stop, 2) if isinstance(stop, (int, float)) else None,
         'target_price':        round(target, 2) if isinstance(target, (int, float)) else None,
         'sector':              sector,
         'current_price':       round(entry_price, 2),
         'current_value':       round(stock_cost, 2),
-        'unrealized_pnl':      round(-BROKERAGE_FEE, 2),
-        'unrealized_pnl_pct':  round(-BROKERAGE_FEE / total_cost * 100, 2) if total_cost else 0.0,
+        'unrealized_pnl':      round(-brokerage, 2),
+        'unrealized_pnl_pct':  round(-brokerage / total_cost * 100, 2) if total_cost else 0.0,
         'hold_days':           0,
         'high_watermark':      round(entry_price, 2),   # trailing stop pivot
         'atr_at_entry':        round(float(atr), 4) if atr else 0.0,
     })
     pf['cash'] = round(pf['cash'] - total_cost, 2)
     leftover   = round(amount_usd - total_cost, 2)
-    fee_note   = f' + ${BROKERAGE_FEE:.2f} fee' if BROKERAGE_FEE else ''
+    fee_note   = f' + ${brokerage:.2f} brokerage' if brokerage else ' (free — within Sharesies coverage)'
     print(f'  Portfolio: OPENED {ticker}  {shares} shares @ ${entry_price}  spent ${total_cost:,.2f}{fee_note}  leftover ${leftover:,.2f}  cash ${pf["cash"]:,.2f}')
     return pf
 
 
-def close_position(pf, ticker, exit_price, reason='hold_period'):
+def close_position(pf, ticker, exit_price, reason='hold_period', nzdusd_rate=None):
     """Close an open position and return cash + P&L to portfolio."""
     pos = next((p for p in pf['positions'] if p['ticker'] == ticker), None)
     if not pos:
         return pf
-    gross_proceeds = round(exit_price * pos['shares'], 2)
-    exit_value     = round(gross_proceeds - BROKERAGE_FEE, 2)   # net after sell-side fee
+    gross_proceeds  = round(exit_price * pos['shares'], 2)
+    sell_brokerage  = _sharesies_fee(gross_proceeds, pf, nzdusd_rate, side='sell')
+    exit_value      = round(gross_proceeds - sell_brokerage, 2)  # net after sell-side fee
     realized_pnl   = round(exit_value - pos['cost_basis'], 2)   # cost_basis already includes buy-side fee
     realized_pct   = round((exit_value / pos['cost_basis'] - 1) * 100, 2)
     pf['closed_trades'].append({
@@ -3997,6 +4037,12 @@ def run_screener():
     print('\nStep 2/8: Market context...')
     ctx = get_market_context()
 
+    # Store live NZD/USD in portfolio so _sharesies_fee() can use it without re-fetching
+    _nzdusd = ctx.get('global_macro', {}).get('nzdusd', {}).get('price')
+    if _nzdusd:
+        portfolio['last_nzdusd_rate'] = float(_nzdusd)
+        save_portfolio(portfolio)
+
     print('\nStep 3/8: Fetching all data (parallel)...')
     batch_data = batch_download(scan_universe + KEY_ETFS)
     if not batch_data:
@@ -4098,14 +4144,21 @@ def run_screener():
 
     wl=result.get('watch_candidates',[]); conf=pick.get('confidence',0); sig=pick.get('signal','NO PICK')
     ep='N/A'
+    ep_close='N/A'   # last close — used for CSV display reference
     if sig=='BUY' and conf>=BUY_THRESHOLD:
         match=next((c for c in candidates if c['ticker']==pick['ticker']),{})
         _p = match.get('price')
         if _p is not None and float(_p) > 0:
-            ep=round(float(_p),2)
+            ep_close=round(float(_p),2)
         else:
-            try: ep=round(float(yf.Ticker(pick['ticker']).history(period='2d')['Close'].dropna().iloc[-1]),2)
-            except: ep='N/A'
+            try: ep_close=round(float(yf.Ticker(pick['ticker']).history(period='2d')['Close'].dropna().iloc[-1]),2)
+            except: ep_close='N/A'
+        # Realistic entry = estimated next-day open (screener runs after close; actual buy is at next open)
+        if isinstance(ep_close, float):
+            ep = round(ep_close * (1 + _CFG_ENTRY_SLIPPAGE_PCT / 100), 2)
+            print(f'  Entry estimate: close=${ep_close} + {_CFG_ENTRY_SLIPPAGE_PCT}% slippage = ${ep} (stop/target anchored here)')
+        else:
+            ep = ep_close
 
     display_result(result, ctx, nd, ep, wl, all_candidates=candidates)
 
@@ -4137,7 +4190,8 @@ def run_screener():
         portfolio = open_position(portfolio, pick.get('ticker',''), ep, amount,
                                   _stop if isinstance(_stop, float) else 0,
                                   _tgt  if isinstance(_tgt,  float) else 0,
-                                  pick.get('sector',''), atr=_atr or 0)
+                                  pick.get('sector',''), atr=_atr or 0,
+                                  nzdusd_rate=portfolio.get('last_nzdusd_rate'))
         save_portfolio(portfolio)
 
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
