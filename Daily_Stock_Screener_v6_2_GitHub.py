@@ -268,6 +268,8 @@ _CFG_FINAL_CANDIDATES    = 30    # how many top candidates pass to LLM final rou
 _CFG_PRE_EARNINGS_DAYS   = 0     # days before earnings to auto-exit (0 = only on earnings day; LLM sees warning via portfolio_summary_str)
 _CFG_SQUEEZE_FLOAT_PCT   = 20.0  # min short % of float to flag a squeeze setup
 _CFG_SQUEEZE_DAYS_COVER  = 5.0   # min days-to-cover to flag a squeeze setup
+_CFG_TRAIL_ATR_MULT      = 1.5   # trailing stop ratchet multiplier (can differ from ATR_STOP_MULT)
+_CFG_VOLUME_MIN_RATIO    = VOLUME_MIN_RATIO  # min volume vs average to pass universe screen
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
 # ── LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) ──────────
@@ -1683,7 +1685,7 @@ def compute_indicators(df, spy_return_today=0.0):
 def screen_technical(batch_data, ctx):
     """Screen ALL tickers using batch data."""
     is_weekend    = datetime.now().weekday() >= 5
-    vol_threshold = 1.0 if is_weekend else VOLUME_MIN_RATIO
+    vol_threshold = 1.0 if is_weekend else _CFG_VOLUME_MIN_RATIO
 
     print(f'\nPhase 2 - Technical screening ({len(batch_data)} tickers)...')
     passed   = {}
@@ -3290,6 +3292,7 @@ def load_config_overrides():
     global _CFG_CONGRESS_DAYS, _CFG_SEC_8K_DAYS
     global _CFG_RSI_EXIT, _CFG_RSI_EXIT_MIN_PROFIT, _CFG_MACD_EXIT_MIN_PROFIT, _CFG_ENTRY_SLIPPAGE_PCT
     global _CFG_FINAL_CANDIDATES, _CFG_PRE_EARNINGS_DAYS, _CFG_SQUEEZE_FLOAT_PCT, _CFG_SQUEEZE_DAYS_COVER
+    global _CFG_TRAIL_ATR_MULT, _CFG_VOLUME_MIN_RATIO
     global BROKERAGE_FEE
 
     paths = [_CFG_PATH, 'config_overrides.json']
@@ -3354,6 +3357,9 @@ def load_config_overrides():
             _CFG_PRE_EARNINGS_DAYS   = int(ov.get('pre_earnings_exit_days',    _CFG_PRE_EARNINGS_DAYS))
             _CFG_SQUEEZE_FLOAT_PCT   = float(ov.get('squeeze_float_pct',       _CFG_SQUEEZE_FLOAT_PCT))
             _CFG_SQUEEZE_DAYS_COVER  = float(ov.get('squeeze_days_to_cover',   _CFG_SQUEEZE_DAYS_COVER))
+            _CFG_TRAIL_ATR_MULT      = float(ov.get('trail_atr_mult',          _CFG_TRAIL_ATR_MULT))
+            _CFG_VOLUME_MIN_RATIO    = float(ov.get('volume_min_ratio',        _CFG_VOLUME_MIN_RATIO))
+            VOLUME_MIN_RATIO         = _CFG_VOLUME_MIN_RATIO
 
             # Sync module-level globals so existing code picks up the new values
             MIN_PRICE           = _CFG_MIN_PRICE
@@ -3534,6 +3540,8 @@ def update_config_from_llm(pick_history):
         'pre_earnings_exit_days': _CFG_PRE_EARNINGS_DAYS,
         'squeeze_float_pct': _CFG_SQUEEZE_FLOAT_PCT,
         'squeeze_days_to_cover': _CFG_SQUEEZE_DAYS_COVER,
+        'trail_atr_mult': _CFG_TRAIL_ATR_MULT,
+        'volume_min_ratio': _CFG_VOLUME_MIN_RATIO,
     }
 
     sys_msg = (
@@ -3628,6 +3636,8 @@ You can change ANY value. Keep unchanged values as-is.
   "pre_earnings_exit_days": {_CFG_PRE_EARNINGS_DAYS},
   "squeeze_float_pct": {_CFG_SQUEEZE_FLOAT_PCT},
   "squeeze_days_to_cover": {_CFG_SQUEEZE_DAYS_COVER},
+  "trail_atr_mult": {_CFG_TRAIL_ATR_MULT},
+  "volume_min_ratio": {_CFG_VOLUME_MIN_RATIO},
   "reasoning": "one clear sentence: what changed and why the data supports it"
 }}"""
 
@@ -3734,10 +3744,11 @@ def update_portfolio_prices(pf):
             pos['high_watermark'] = round(float(curr), 2)
             atr = float(pos.get('atr_at_entry', 0))
             if atr > 0:
-                new_stop = round(float(curr) - ATR_STOP_MULT * atr, 2)
+                new_stop = round(float(curr) - _CFG_TRAIL_ATR_MULT * atr, 2)
                 old_stop = float(pos.get('stop_price') or 0)
                 if new_stop > old_stop:
                     pos['stop_price'] = new_stop
+                    print(f'  Trailing stop ratcheted: {pos["ticker"]} stop {old_stop} → {new_stop} (new high {curr})')
 
     # ── Mechanical exit rules (run after prices are updated) ─────────────────
     to_close = []   # (ticker, reason)
