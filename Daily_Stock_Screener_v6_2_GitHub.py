@@ -261,11 +261,11 @@ _CFG_SECTOR_CONC_PENALTY = SECTOR_CONC_PENALTY   # confidence docked when over s
 _CFG_CONGRESS_DAYS       = 60    # how many days back to fetch congress trades
 _CFG_SEC_8K_DAYS         = 7     # how many days back to fetch SEC 8-K filings
 _CFG_RSI_EXIT            = 78.0  # RSI level that triggers overbought exit (when profitable)
-_CFG_RSI_EXIT_MIN_PROFIT = 8.0   # min unrealized % profit before RSI exit fires
-_CFG_MACD_EXIT_MIN_PROFIT= 5.0   # min unrealized % profit before MACD bearish cross exit fires
+_CFG_RSI_EXIT_MIN_PROFIT = 0.0   # min unrealized % profit before RSI exit fires (0 = no gate, LLM controls)
+_CFG_MACD_EXIT_MIN_PROFIT= 0.0   # min unrealized % profit before MACD bearish cross exit fires (0 = no gate)
 _CFG_ENTRY_SLIPPAGE_PCT  = 0.3   # estimated gap from last close to next-day open (buy at open, not close)
 _CFG_FINAL_CANDIDATES    = 30    # how many top candidates pass to LLM final round
-_CFG_PRE_EARNINGS_DAYS   = 1     # days before earnings to auto-exit (0 = only on earnings day)
+_CFG_PRE_EARNINGS_DAYS   = 0     # days before earnings to auto-exit (0 = only on earnings day; LLM sees warning via portfolio_summary_str)
 _CFG_SQUEEZE_FLOAT_PCT   = 20.0  # min short % of float to flag a squeeze setup
 _CFG_SQUEEZE_DAYS_COVER  = 5.0   # min days-to-cover to flag a squeeze setup
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
@@ -754,12 +754,14 @@ def fetch_congress_trades(days=60):
             name_tag    = f'{last_name}{party_state} {amount_str} [{chamber[0]}]'
 
             if raw_ticker not in result:
-                result[raw_ticker] = {'count': 0, 'names': [], 'chamber': []}
+                result[raw_ticker] = {'count': 0, 'names': [], 'chamber': [], 'dates': []}
             result[raw_ticker]['count'] += 1
             if name_tag not in result[raw_ticker]['names']:
                 result[raw_ticker]['names'].append(name_tag)
             if chamber not in result[raw_ticker]['chamber']:
                 result[raw_ticker]['chamber'].append(chamber)
+            if date_str and date_str not in result[raw_ticker]['dates']:
+                result[raw_ticker]['dates'].append(date_str)
 
         if len(loaded) == 2:
             break  # got both House and Senate, done
@@ -874,6 +876,13 @@ def enrich_with_scores(candidates, ctx, market_sentiment,
         c['congress_label']   = 'BUYING' if cg.get('count', 0) >= 1 else 'NEUTRAL'
         c['congress_notes']   = ', '.join(cg.get('names', [])[:4])   # e.g. "Smith (R-TX) $15K-50K [H], Tuberville (R-AL) $100K-250K [S]"
         c['congress_chamber'] = ', '.join(cg.get('chamber', []))
+        cg_dates = cg.get('dates', [])
+        try:
+            c['congress_days_ago'] = min(
+                (datetime.now() - datetime.strptime(d, '%Y-%m-%d')).days for d in cg_dates if d
+            ) if cg_dates else None
+        except Exception:
+            c['congress_days_ago'] = None
         c['pre_score']            = ts + ns
 
     cg_hits = [c['ticker'] for c in candidates if c.get('congress_label') == 'BUYING']
@@ -2150,6 +2159,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         'vader_label':c.get('vader_label','NEUTRAL'),'options_label':c.get('options_label','NEUTRAL'),
         'insider_label':c.get('insider_label','NEUTRAL'),'news_adjustment':c.get('news_adjustment',0),
         'congress_label':c.get('congress_label','NEUTRAL'),'congress_notes':c.get('congress_notes',''),
+        'congress_days_ago':c.get('congress_days_ago'),
         'news_notes':c.get('news_notes',''),'mkt_cap_b':c['mkt_cap_b'],
         **({k:c[k] for k in ['analyst_rating','upside_pct','short_ratio','short_pct_float','short_squeeze_label','earnings_risk','rescue_keywords','options_pc','unusual_call_activity'] if c.get(k) is not None})
     } for c in candidates]
@@ -2294,6 +2304,23 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     open_tickers = {p['ticker'] for p in (portfolio or {}).get('positions', [])}
     cash_avail   = (portfolio or {}).get('cash', STARTING_CAPITAL)
 
+    # Pre-compute sector exposure + week P&L for Round 3 sizing context
+    _pf_positions = (portfolio or {}).get('positions', [])
+    _pf_total_val = (portfolio or {}).get('cash', STARTING_CAPITAL) + sum(
+        p.get('current_value', p.get('cost_basis', 0)) for p in _pf_positions)
+    _sec_exp = {}
+    for _p in _pf_positions:
+        _s = _p.get('sector', 'Unknown')
+        _sec_exp[_s] = _sec_exp.get(_s, 0) + _p.get('current_value', _p.get('cost_basis', 0))
+    sector_str = '  '.join(
+        f'{s}: {round(v/_pf_total_val*100)}%' for s, v in sorted(_sec_exp.items(), key=lambda x: -x[1])
+    ) if _sec_exp else 'none (no open positions)'
+    _week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    _week_trades = [t for t in (portfolio or {}).get('closed_trades', [])
+                    if str(t.get('close_date', ''))[:10] >= _week_ago]
+    week_str = (f'${sum(t.get("realized_pnl",0) for t in _week_trades):+,.2f} from {len(_week_trades)} trades'
+                if _week_trades else 'no closed trades this week')
+
     r1_user = (
         f'{market_ctx}\n{hard_note}{priority_note}{portfolio_block}\n'
         f'CANDIDATES:\n{json.dumps(compact_brief, indent=1)}\n\n'
@@ -2343,6 +2370,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         'analyst_actions': c.get('analyst_actions', []),
         'insider': c.get('insider_label', 'NEUTRAL'), 'options': c.get('options_label', 'NEUTRAL'),
         'congress': c.get('congress_label', 'NEUTRAL'), 'congress_who': c.get('congress_notes', ''),
+        'congress_days_ago': c.get('congress_days_ago'),
         'short_squeeze': c.get('short_squeeze_label', ''), 'unusual_calls': c.get('unusual_call_activity', False),
         'news_notes': c.get('news_notes', '')[:120],
     } for c in top10_candidates]
@@ -2396,7 +2424,9 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'If no stock clears {BUY_THRESHOLD} confidence, signal=NO PICK.\n'
         f'position_size_pct: you decide what % of ${cash_avail:,.0f} available cash to deploy.\n'
         f'Context: {len(open_tickers)} positions currently open. VIX {mult}x regime.\n'
-        f'There are no rules — size based purely on your conviction and risk assessment.'
+        f'Sector exposure in current portfolio: {sector_str}\n'
+        f'Realized P&L this week: {week_str}\n'
+        f'There are no rules — size based purely on your conviction, portfolio heat, and risk assessment.'
     )
 
     try:
@@ -3745,6 +3775,7 @@ def update_portfolio_prices(pf):
                         ed_raw = vals[0]
             if ed_raw is not None:
                 days_to_earnings = (pd.to_datetime(ed_raw).date() - datetime.now().date()).days
+                pos['earnings_days_away'] = days_to_earnings  # keep fresh for portfolio_summary_str
                 if 0 <= days_to_earnings <= _CFG_PRE_EARNINGS_DAYS:
                     to_close.append((t, f'pre_earnings (earnings in {days_to_earnings}d)'))
         except:
@@ -3932,31 +3963,22 @@ def portfolio_summary_str(pf):
     total_pnl   = round(total_value - pf['starting_capital'], 2)
     total_pct   = round(total_pnl / pf['starting_capital'] * 100, 2)
 
-    # Drawdown severity — inform the LLM; it decides how to respond (all thresholds LLM-configurable)
+    # Drawdown severity — inform the LLM; it decides how to respond
     if total_pct <= _CFG_DD_CRITICAL_PCT:
-        dd_warn = (
-            f'CRITICAL DRAWDOWN: Portfolio is {total_pct:.1f}% from starting capital '
-            f'(your critical threshold is {_CFG_DD_CRITICAL_PCT:.0f}%). You decide how to respond.'
-        )
+        dd_warn = (f'CRITICAL DRAWDOWN: Portfolio is {total_pct:.1f}% from starting capital '
+                   f'(your critical threshold is {_CFG_DD_CRITICAL_PCT:.0f}%). You decide how to respond.')
     elif total_pct <= _CFG_DD_SEVERE_PCT:
-        dd_warn = (
-            f'SEVERE DRAWDOWN: Portfolio is {total_pct:.1f}% from starting capital '
-            f'(your severe threshold is {_CFG_DD_SEVERE_PCT:.0f}%). You decide how to respond.'
-        )
+        dd_warn = (f'SEVERE DRAWDOWN: Portfolio is {total_pct:.1f}% from starting capital '
+                   f'(your severe threshold is {_CFG_DD_SEVERE_PCT:.0f}%). You decide how to respond.')
     elif total_pct <= _CFG_DD_CAUTION_PCT:
-        dd_warn = (
-            f'DRAWDOWN NOTICE: Portfolio is {total_pct:.1f}% from starting capital '
-            f'(your caution threshold is {_CFG_DD_CAUTION_PCT:.0f}%). You decide how to respond.'
-        )
+        dd_warn = (f'DRAWDOWN NOTICE: Portfolio is {total_pct:.1f}% from starting capital '
+                   f'(your caution threshold is {_CFG_DD_CAUTION_PCT:.0f}%). You decide how to respond.')
     else:
         dd_warn = ''
 
-    # Fully deployed — cash at or below LLM-configurable floor
     if pf['cash'] <= _CFG_MIN_CASH_FLOOR:
-        cash_warn = (
-            f'FULLY DEPLOYED: ${pf["cash"]:,.2f} cash remaining (your floor is ${_CFG_MIN_CASH_FLOOR:,.0f}). '
-            f'You decide whether to output a BUY or hold. open_position will reject if cash is truly insufficient.'
-        )
+        cash_warn = (f'FULLY DEPLOYED: ${pf["cash"]:,.2f} cash remaining (your floor is ${_CFG_MIN_CASH_FLOOR:,.0f}). '
+                     f'You decide whether to output a BUY or hold.')
     else:
         cash_warn = ''
 
@@ -3964,21 +3986,46 @@ def portfolio_summary_str(pf):
     deploy_pct = round(invested / total_value * 100, 0) if total_value > 0 else 0
     idle_pct   = 100 - deploy_pct
 
+    # ── Sector exposure breakdown ─────────────────────────────────────────────
+    sector_exposure = {}
+    for p in pf['positions']:
+        sec = p.get('sector', 'Unknown')
+        val = p.get('current_value', p.get('cost_basis', 0))
+        sector_exposure[sec] = sector_exposure.get(sec, 0) + val
+    sector_str = '  '.join(
+        f'{sec}: {round(val/total_value*100)}%'
+        for sec, val in sorted(sector_exposure.items(), key=lambda x: -x[1])
+    ) if sector_exposure else 'none'
+
+    # ── Realized P&L this week ────────────────────────────────────────────────
+    week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    week_trades = [t for t in pf.get('closed_trades', [])
+                   if str(t.get('close_date', ''))[:10] >= week_ago]
+    week_pnl = sum(t.get('realized_pnl', 0) for t in week_trades)
+    week_str = f'${week_pnl:+,.2f} from {len(week_trades)} trades this week' if week_trades else 'no closed trades this week'
+
     lines = [
         f'PORTFOLIO: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs ${pf["starting_capital"]:,.0f} starting)',
-        f'Cash available: ${pf["cash"]:,.2f}  |  Open positions: {len(pf["positions"])}/{_CFG_MAX_POSITIONS}',
-        f'Capital deployment: {deploy_pct:.0f}% invested / {idle_pct:.0f}% idle'
-        + (f' — consider adding a position if conviction exists' if idle_pct > 50 else ''),
+        f'Cash: ${pf["cash"]:,.2f}  |  Positions: {len(pf["positions"])}/{_CFG_MAX_POSITIONS}  |  Deployed: {deploy_pct:.0f}%  |  Idle: {idle_pct:.0f}%',
+        f'Sector exposure: {sector_str}',
+        f'Realized P&L: ${pf.get("total_realized_pnl", 0):+,.2f} all-time  |  {week_str}',
     ]
+
+    # ── Open positions — full detail ──────────────────────────────────────────
     for p in pf['positions']:
-        upl = p.get("unrealized_pnl", 0)
-        upc = p.get("unrealized_pnl_pct", 0)
+        upl = p.get('unrealized_pnl', 0)
+        upc = p.get('unrealized_pnl_pct', 0)
+        stop  = p.get('stop_price', '?')
+        tgt   = p.get('target_price', '?')
+        earn  = p.get('earnings_days_away')
+        earn_str = f' | EARNINGS IN {earn}d ⚠' if earn is not None and isinstance(earn, (int,float)) and earn <= 10 else ''
+        gap   = p.get('open_gap_pct')
+        gap_str = f' | gap {gap:+.1f}% at entry' if gap is not None else ''
         lines.append(
-            f'  {p["ticker"]}: {p["shares"]} shares @ ${p["entry_price"]} → ${p.get("current_price", "?")} '
-            f'({upl:+.0f} / {upc:+.1f}%) | {p.get("hold_days",0)}d held | sector: {p.get("sector","?")}'
+            f'  {p["ticker"]} [{p.get("sector","?")}]: {p["shares"]}sh @ ${p["entry_price"]} → ${p.get("current_price","?")} '
+            f'({upl:+.0f} / {upc:+.1f}%) | {p.get("hold_days",0)}d | Stop ${stop} | Target ${tgt}{earn_str}{gap_str}'
         )
-    if pf.get('total_realized_pnl'):
-        lines.append(f'Realised P&L from {len(pf["closed_trades"])} closed trades: ${pf["total_realized_pnl"]:+,.2f}')
+
     if dd_warn:
         lines.append(f'*** {dd_warn} ***')
     if cash_warn:
