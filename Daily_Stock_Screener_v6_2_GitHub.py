@@ -3234,9 +3234,11 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
                 f'Target {p.get("target_price","?")} | Day {p.get("hold_days",0)}')
     positions_block = '\n'.join(_pos_line(p) for p in all_positions) if all_positions else '  None'
 
+    pf_header = (f'PORTFOLIO | Cash {portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)'
+                 if portfolio else 'PORTFOLIO')
+
     if sig == 'BUY':
-        # MSG 1: Today's pick
-        msg1 = '\n'.join(filter(None, [
+        msg = '\n'.join(filter(None, [
             f'SCREENER {date_str} | SPY {ctx["spy_return_today"]:+.2f}% | VIX {ctx["vix_level"]:.1f}',
             '',
             f'TODAY: {ticker} [{sector}] {conf}/100',
@@ -3244,26 +3246,23 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             f'Stop   {stop_price}{stop_pct_str}',
             f'Target {target_price}{tgt_pct_str}',
             f'R:R {rr_str} | {shares_str}',
-        ]))
-        # MSG 2: Portfolio snapshot — all positions same format
-        msg2 = '\n'.join(filter(None, [
-            f'PORTFOLIO | Cash {portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)' if portfolio else 'PORTFOLIO',
+            '',
+            '---',
+            pf_header,
             '',
             positions_block,
         ]))
-        _wa_send(msg1, '1/2 pick')
-        _wa_send(msg2, '2/2 portfolio')
     else:
-        # No pick: single message with portfolio state
         msg = '\n'.join(filter(None, [
             f'SCREENER {date_str} | SPY {ctx["spy_return_today"]:+.2f}% | VIX {ctx["vix_level"]:.1f}',
             f'NO BUY today',
             '',
-            f'PORTFOLIO | Cash {portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)' if portfolio else '',
+            '---',
+            pf_header,
             '',
             positions_block,
         ]))
-        _wa_send(msg, 'no-pick')
+    _wa_send(msg, 'daily update')
 
 
 # ============================================================
