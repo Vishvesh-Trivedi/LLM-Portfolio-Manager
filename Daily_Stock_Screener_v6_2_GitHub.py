@@ -3238,48 +3238,57 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         wr_tag = f' RSI {wr_rsi:.0f} Mom {wr_mom:+.1f}%' if wr_rsi is not None and wr_mom is not None else ''
         watch_lines += f'  {w.get("ticker","")} {w.get("confidence",0)}/100{wr_tag}\n'
 
-    # ── 2 messages ────────────────────────────────────────────
-    stop_pct     = round((stop_price - ep) / ep * 100, 1) if isinstance(stop_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
-    tgt_pct      = round((target_price - ep) / ep * 100, 1) if isinstance(target_price,(int,float)) and isinstance(ep,(int,float)) and ep>0 else ''
-    stop_pct_str = f' ({stop_pct:+.1f}%)' if stop_pct != '' else ''
-    tgt_pct_str  = f' ({tgt_pct:+.1f}%)'  if tgt_pct  != '' else ''
+    # ── Build message ─────────────────────────────────────────
+    all_positions = sorted(
+        (portfolio or {}).get('positions', []),
+        key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True
+    )
+    pf_total_val = round((portfolio or {}).get('cash', 0) +
+        sum(p.get('current_value', p.get('cost_basis', 0)) for p in all_positions), 0) if portfolio else 0
+    pf_cash      = (portfolio or {}).get('cash', 0)
+    slots_used   = len(all_positions)
 
-    # All open positions (including today's new pick) formatted the same way
-    all_positions = (portfolio or {}).get('positions', [])
     def _pos_line(p):
         upc = p.get('unrealized_pnl_pct', 0)
-        return (f'{p["ticker"]}  {p["shares"]}sh @ {p["entry_price"]} | '
-                f'{upc:+.1f}% | Stop {p.get("stop_price","?")} | '
-                f'Target {p.get("target_price","?")} | Day {p.get("hold_days",0)}')
-    positions_block = '\n'.join(_pos_line(p) for p in all_positions) if all_positions else '  None'
+        cur_val = round(p.get('current_value', p.get('cost_basis', 0)), 0)
+        arrow = '▲' if upc >= 0 else '▼'
+        return f'{arrow} {p["ticker"]}  {upc:+.1f}%  USD {cur_val:,.0f}  Day {p.get("hold_days",0)}'
 
-    pf_header = (f'PORTFOLIO | Cash {portfolio["cash"]:,.0f} | P&L {total_pnl:+,.0f} ({total_pct:+.1f}%)'
-                 if portfolio else 'PORTFOLIO')
+    positions_block = '\n'.join(_pos_line(p) for p in all_positions) if all_positions else '  No open positions'
+
+    sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
     if sig == 'BUY':
+        # Trim reasoning to 2 lines
+        thesis = str(pick.get('reasoning', ''))[:120].strip()
+        risk   = str(pick.get('key_risk', ''))[:80].strip()
         msg = '\n'.join(filter(None, [
-            f'SCREENER {date_str} | SPY {ctx["spy_return_today"]:+.2f}% | VIX {ctx["vix_level"]:.1f}',
+            f'◆ {ticker} · {sector} · {conf}/100',
+            f'Entry {ep} · Stop {stop_price} · Tgt {target_price}',
+            f'{shares_str} · R:R {rr_str}',
             '',
-            f'TODAY: {ticker} [{sector}] {conf}/100',
-            f'Buy    {ep}',
-            f'Stop   {stop_price}{stop_pct_str}',
-            f'Target {target_price}{tgt_pct_str}',
-            f'R:R {rr_str} | {shares_str}',
+            thesis,
+            f'Risk: {risk}' if risk else '',
             '',
-            '---',
-            pf_header,
-            '',
+            sep,
+            f'Portfolio  USD {pf_total_val:,.0f}  {total_pct:+.1f}%',
+            f'Cash  USD {pf_cash:,.0f}  ·  {slots_used} of {_CFG_MAX_POSITIONS} slots used',
+            sep,
             positions_block,
+            sep,
+            f'SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
         ]))
     else:
         msg = '\n'.join(filter(None, [
-            f'SCREENER {date_str} | SPY {ctx["spy_return_today"]:+.2f}% | VIX {ctx["vix_level"]:.1f}',
-            f'NO BUY today',
+            f'◆ NO PICK TODAY',
             '',
-            '---',
-            pf_header,
-            '',
+            sep,
+            f'Portfolio  USD {pf_total_val:,.0f}  {total_pct:+.1f}%',
+            f'Cash  USD {pf_cash:,.0f}  ·  {slots_used} of {_CFG_MAX_POSITIONS} slots used',
+            sep,
             positions_block,
+            sep,
+            f'SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
         ]))
     _wa_send(msg, 'daily update')
 
