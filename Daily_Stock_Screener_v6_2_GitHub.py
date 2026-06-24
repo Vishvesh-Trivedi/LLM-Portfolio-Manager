@@ -2513,7 +2513,7 @@ def check_sector_concentration(sector, picks_csv_path):
         return False, 0, []
 
 
-def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=None, portfolio=None):
+def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=None, portfolio=None, stop_price=None, target_price=None):
     df=load_csv(fp,cols); today=datetime.now().strftime('%Y-%m-%d'); ticker=pick_data['ticker']
     if ((df['Date']==today)&(df['Ticker']==ticker)).any():
         print(f'  Already have {ticker} on {today} - skipping'); return
@@ -2531,8 +2531,9 @@ def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=
     pos_match    = next((p for p in pf_positions if p['ticker'] == ticker), {})
     shares       = pos_match.get('shares', '')
     cost_basis   = pos_match.get('cost_basis', '')
-    stop_p       = pos_match.get('stop_price', '')
-    tgt_p        = pos_match.get('target_price', '')
+    # Use explicitly passed stop/target (computed before open_position), fall back to portfolio position
+    stop_p = stop_price if stop_price is not None else pos_match.get('stop_price', '')
+    tgt_p  = target_price if target_price is not None else pos_match.get('target_price', '')
     rr = ''
     if isinstance(stop_p,(int,float)) and isinstance(tgt_p,(int,float)) and isinstance(price,(int,float)) and price-stop_p>0:
         rr = round((tgt_p-price)/(price-stop_p), 1)
@@ -4262,20 +4263,6 @@ def run_screener():
 
     display_result(result, ctx, nd, ep, wl, all_candidates=candidates)
 
-    print('\nStep 8/8: Saving results...')
-    if sig=='BUY' and conf>=BUY_THRESHOLD:
-        save_pick(pick, ctx, ep, PICKS_CSV, PICK_COLS, all_candidates=candidates, portfolio=portfolio)
-    for w in wl:
-        if w.get('confidence',0)>=WATCH_THRESHOLD:
-            wmatch = next((c for c in candidates if c['ticker']==w['ticker']),{})
-            _wp = wmatch.get('price')
-            if _wp is not None and float(_wp) > 0:
-                wp = round(float(_wp),2)
-            else:
-                try: wp=round(float(yf.Ticker(w['ticker']).history(period='2d')['Close'].dropna().iloc[-1]),2)
-                except: wp='N/A'
-            save_pick(w, ctx, wp, WATCH_CSV, WATCH_COLS, all_candidates=candidates, watch_score=w.get('confidence'), portfolio=portfolio)
-
     _rules = (result or {}).get('derived_rules', [])
     _summary = (result or {}).get('learning_summary', '')
     _fund = next((c for c in candidates if c['ticker'] == pick.get('ticker', '')), {})
@@ -4293,6 +4280,26 @@ def run_screener():
                                   pick.get('sector',''), atr=_atr or 0,
                                   nzdusd_rate=portfolio.get('last_nzdusd_rate'))
         save_portfolio(portfolio)
+
+    print('\nStep 8/8: Saving results...')
+    if sig=='BUY' and conf>=BUY_THRESHOLD:
+        save_pick(pick, ctx, ep, PICKS_CSV, PICK_COLS, all_candidates=candidates,
+                  portfolio=portfolio, stop_price=_stop, target_price=_tgt)
+    for w in wl:
+        if w.get('confidence',0)>=WATCH_THRESHOLD:
+            wmatch = next((c for c in candidates if c['ticker']==w['ticker']),{})
+            _wp = wmatch.get('price')
+            if _wp is not None and float(_wp) > 0:
+                wp = round(float(_wp),2)
+            else:
+                try: wp=round(float(yf.Ticker(w['ticker']).history(period='2d')['Close'].dropna().iloc[-1]),2)
+                except: wp='N/A'
+            wfund = next((c for c in candidates if c['ticker']==w['ticker']),{})
+            watr  = wfund.get('atr',0)
+            wstop = round(wp - ATR_STOP_MULT * watr, 2) if watr and isinstance(wp,(int,float)) else None
+            wtgt  = round(wp + ATR_TARGET_MULT * watr, 2) if watr and isinstance(wp,(int,float)) else None
+            save_pick(w, ctx, wp, WATCH_CSV, WATCH_COLS, all_candidates=candidates,
+                      watch_score=w.get('confidence'), portfolio=portfolio, stop_price=wstop, target_price=wtgt)
 
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
                      stop_price=_stop, target_price=_tgt)
