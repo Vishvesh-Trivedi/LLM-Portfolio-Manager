@@ -910,24 +910,25 @@ def load_performance_history(fp):
         hist = []
         for _, row in done.iterrows():
             hist.append({
-                'ticker':     str(row.get('Ticker', '')),
-                'date':       str(row.get('Date', '')),
-                'confidence': str(row.get('Confidence', '')),
-                'source':     str(row.get('Source', '')),
-                'sector':     str(row.get('Sector', '')),
-                'result':     str(row.get('Result', '')),
-                'return_10d': str(row.get('Return_10d_pct', '')),
-                'vs_qqq_10d': str(row.get('vs_QQQ_10d', '')),
-                'return_30d': str(row.get('Return_30d_pct', '')),
-                'vs_qqq_30d': str(row.get('vs_QQQ_30d', '')),
-                'tech_score': str(row.get('Tech_Score', '')),
-                'news_score': str(row.get('News_Score', '')),
-                'rsi':        str(row.get('RSI', '')),
-                'adx':        str(row.get('ADX', '')),
-                'vix':        str(row.get('VIX', '')),
-                'qqq_trend':  str(row.get('QQQ_Trend', '')),
-                'vader':      str(row.get('Vader_Label', '')),
-                'reasoning':  str(row.get('Reasoning', ''))[:120],
+                'ticker':           str(row.get('Ticker', '')),
+                'date':             str(row.get('Date', '')),
+                'confidence':       str(row.get('Confidence', '')),
+                'source':           str(row.get('Source', '')),
+                'sector':           str(row.get('Sector', '')),
+                'result':           str(row.get('Result', '')),
+                'return_pct':       str(row.get('Return_Pct', '')),
+                'vs_qqq_10d':       str(row.get('vs_QQQ_10d', '')),
+                'close_reason':     str(row.get('Close_Reason', '')),
+                'rsi':              str(row.get('RSI', '')),
+                'vix':              str(row.get('VIX', '')),
+                'vix_regime':       str(row.get('VIX_Regime', '')),
+                'qqq_trend':        str(row.get('QQQ_Trend', '')),
+                'earnings_days':    str(row.get('Earnings_Days_Away', '')),
+                'congress':         str(row.get('Congress', '')),
+                'insider':          str(row.get('Insider', '')),
+                'position_size_pct':str(row.get('Position_Size_Pct', '')),
+                'rr':               str(row.get('RR', '')),
+                'reasoning':        str(row.get('Reasoning', ''))[:120],
             })
         return hist
     except:
@@ -2470,18 +2471,22 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
 
 
 PICK_COLS = [
-    'Date','Ticker','Confidence','Signal','Source','Sector',
-    'Reasoning','Key_Risk','Devils_Advocate',
-    'Entry_Price','Realistic_Entry','Stop_Zone','Target_Zone',
-    'ATR','ATR_Pct','RSI','ADX','MACD_Bull','BB_PctB','OBV_Rising',
-    'RS_vs_SPY','Pct_From_52H','Dollar_Vol_M',
-    'VIX','VIX_Pct','QQQ_Trend',
-    'Analyst_Rating','Upside_Pct','Short_Ratio','Earnings_Risk',
-    'Sector_Concentration',
-    'Tech_Score','News_Score','Pre_Score','Score_Breakdown',
-    'Vader_Label','Options_Label','Insider_Label',
-    'Price_10d','Return_10d_pct','vs_QQQ_10d',
-    'Price_30d','Return_30d_pct','vs_QQQ_30d','Result'
+    # Identity
+    'Date','Ticker','Signal','Confidence','Sector','Source',
+    # Entry details
+    'Entry_Price','Stop_Price','Target_Price','Shares','Cost_Basis','RR',
+    # Portfolio context at entry
+    'Portfolio_Value','Cash_At_Entry','Position_Size_Pct','Open_Positions',
+    # Market context at entry
+    'VIX','VIX_Regime','QQQ_Trend','SPY_Day_Pct',
+    # Key signals
+    'RSI','Earnings_Days_Away','Congress','Congress_Days_Ago','Insider','Options',
+    'Analyst_Rating','Upside_Pct','Short_Pct_Float',
+    # LLM reasoning
+    'Reasoning','Key_Risk','Bear_Case',
+    # Outcome
+    'Close_Date','Close_Price','Close_Reason',
+    'Return_Pct','vs_QQQ_10d','Result'
 ]
 WATCH_COLS = PICK_COLS + ['Watch_Score']
 
@@ -2508,41 +2513,64 @@ def check_sector_concentration(sector, picks_csv_path):
         return False, 0, []
 
 
-def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=None):
+def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=None, portfolio=None):
     df=load_csv(fp,cols); today=datetime.now().strftime('%Y-%m-%d'); ticker=pick_data['ticker']
     if ((df['Date']==today)&(df['Ticker']==ticker)).any():
         print(f'  Already have {ticker} on {today} - skipping'); return
-    match=next((c for c in (all_candidates or []) if c['ticker']==ticker),{})
-    atr=match.get('atr',0.0)
-    stop_zone   = f'${round(price-ATR_STOP_MULT*atr,2)}'   if atr and isinstance(price,(int,float)) else 'N/A'
-    target_zone = f'${round(price+ATR_TARGET_MULT*atr,2)}' if atr and isinstance(price,(int,float)) else 'N/A'
-    sector=pick_data.get('sector','Unknown'); conc_str=''
+    match   = next((c for c in (all_candidates or []) if c['ticker']==ticker), {})
+    sector  = pick_data.get('sector', 'Unknown')
     if fp==PICKS_CSV:
-        is_conc,cnt,recent=check_sector_concentration(sector,PICKS_CSV)
+        is_conc,cnt,_ = check_sector_concentration(sector, PICKS_CSV)
         if is_conc:
-            conc_str=f'{cnt}/{_CFG_SECTOR_CONC_LOOKBACK} recent in {sector}'
-            pick_data['confidence']=max(0,pick_data['confidence']-_CFG_SECTOR_CONC_PENALTY)
-    row={
-        'Date':today,'Ticker':ticker,'Confidence':pick_data['confidence'],'Signal':pick_data['signal'],
-        'Source':pick_data.get('source','TECHNICAL'),'Sector':sector,
-        'Reasoning':pick_data.get('reasoning',''),'Key_Risk':pick_data.get('key_risk',''),
-        'Devils_Advocate':pick_data.get('devils_advocate',''),
-        'Entry_Price':price,'Realistic_Entry':'','Stop_Zone':stop_zone,'Target_Zone':target_zone,
-        'ATR':match.get('atr',''),'ATR_Pct':match.get('atr_pct',''),'RSI':match.get('rsi',''),'ADX':match.get('adx',''),
-        'MACD_Bull':match.get('macd_bullish',''),'BB_PctB':match.get('bb_pct_b',''),
-        'OBV_Rising':match.get('obv_rising',''),'RS_vs_SPY':match.get('rs_vs_spy',''),
-        'Pct_From_52H':match.get('pct_from_52h',''),'Dollar_Vol_M':match.get('dollar_vol_m',''),
-        'VIX':ctx['vix_level'],'VIX_Pct':ctx.get('vix_percentile',''),'QQQ_Trend':ctx['qqq_trend'],
-        'Analyst_Rating':match.get('analyst_rating',''),'Upside_Pct':match.get('upside_pct',''),
-        'Short_Ratio':match.get('short_ratio',''),'Earnings_Risk':match.get('earnings_risk',False),
-        'Sector_Concentration':conc_str,
-        'Tech_Score':pick_data.get('tech_score',match.get('tech_score','')),'News_Score':pick_data.get('news_score',match.get('news_score','')),'Pre_Score':pick_data.get('pre_score',match.get('pre_score','')),'Score_Breakdown':pick_data.get('score_breakdown',''),
-        'Vader_Label':match.get('vader_label',''),'Options_Label':match.get('options_label',''),'Insider_Label':match.get('insider_label',''),
-        'Price_10d':'','Return_10d_pct':'','vs_QQQ_10d':'','Price_30d':'','Return_30d_pct':'','vs_QQQ_30d':'','Result':'Pending'
+            pick_data['confidence'] = max(0, pick_data['confidence'] - _CFG_SECTOR_CONC_PENALTY)
+
+    # Portfolio context at entry
+    pf_positions = (portfolio or {}).get('positions', [])
+    pf_cash      = (portfolio or {}).get('cash', STARTING_CAPITAL)
+    pf_total_val = pf_cash + sum(p.get('current_value', p.get('cost_basis', 0)) for p in pf_positions)
+    pos_match    = next((p for p in pf_positions if p['ticker'] == ticker), {})
+    shares       = pos_match.get('shares', '')
+    cost_basis   = pos_match.get('cost_basis', '')
+    stop_p       = pos_match.get('stop_price', '')
+    tgt_p        = pos_match.get('target_price', '')
+    rr = ''
+    if isinstance(stop_p,(int,float)) and isinstance(tgt_p,(int,float)) and isinstance(price,(int,float)) and price-stop_p>0:
+        rr = round((tgt_p-price)/(price-stop_p), 1)
+    size_pct = round(float(cost_basis)/pf_total_val*100, 1) if cost_basis and pf_total_val else ''
+
+    # Congress signal
+    cg_label    = match.get('congress_label', 'NEUTRAL')
+    cg_days_ago = match.get('congress_days_ago')
+    cg_str = f'{cg_label} ({cg_days_ago}d ago)' if cg_label == 'BUYING' and cg_days_ago is not None else cg_label
+
+    row = {
+        'Date': today, 'Ticker': ticker, 'Signal': pick_data['signal'],
+        'Confidence': pick_data['confidence'], 'Sector': sector,
+        'Source': pick_data.get('source', 'TECHNICAL'),
+        'Entry_Price': price, 'Stop_Price': stop_p, 'Target_Price': tgt_p,
+        'Shares': shares, 'Cost_Basis': cost_basis, 'RR': rr,
+        'Portfolio_Value': round(pf_total_val, 2), 'Cash_At_Entry': round(pf_cash, 2),
+        'Position_Size_Pct': size_pct, 'Open_Positions': len(pf_positions),
+        'VIX': ctx['vix_level'], 'VIX_Regime': ctx.get('vix_regime', ''),
+        'QQQ_Trend': ctx['qqq_trend'], 'SPY_Day_Pct': ctx.get('spy_return_today', ''),
+        'RSI': match.get('rsi', ''),
+        'Earnings_Days_Away': match.get('earnings_days_away', ''),
+        'Congress': cg_str,
+        'Congress_Days_Ago': cg_days_ago,
+        'Insider': match.get('insider_label', ''),
+        'Options': match.get('options_label', ''),
+        'Analyst_Rating': match.get('analyst_rating', ''),
+        'Upside_Pct': match.get('upside_pct', ''),
+        'Short_Pct_Float': match.get('short_pct_float', ''),
+        'Reasoning': pick_data.get('reasoning', ''),
+        'Key_Risk': pick_data.get('key_risk', ''),
+        'Bear_Case': pick_data.get('bear_case', pick_data.get('devils_advocate', '')),
+        'Close_Date': '', 'Close_Price': '', 'Close_Reason': '',
+        'Return_Pct': '', 'vs_QQQ_10d': '', 'Result': 'Pending',
     }
-    if watch_score is not None: row['Watch_Score']=watch_score
-    pd.concat([df,pd.DataFrame([row])],ignore_index=True).to_csv(fp,index=False)
-    print(f'  ✅ Saved {ticker} | Stop:{stop_zone} Target:{target_zone}')
+    if watch_score is not None: row['Watch_Score'] = watch_score
+    pd.concat([df, pd.DataFrame([row])], ignore_index=True).to_csv(fp, index=False)
+    print(f'  ✅ Saved {ticker} | Stop:{stop_p} Target:{tgt_p}')
 
 
 def update_results(fp, cols):
@@ -2567,33 +2595,23 @@ def update_results(fp, cols):
                 if h.empty or len(h)<2: return None
                 return ((float(h['Close'].iloc[-1])-float(h['Close'].iloc[0]))/float(h['Close'].iloc[0]))*100
             hd = _CFG_HOLD_DAYS  # LLM-controlled hold period (default 10)
-            if el>=hd and str(row.get('Price_10d','')).strip() in ['','nan','NaN']:
+            if el>=hd and str(row.get('Return_Pct','')).strip() in ['','nan','NaN']:
                 p10=gp(pd_+timedelta(days=hd))
                 if p10:
                     r10=round(((p10-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=hd))
                     vs10=round(r10-qr,2) if qr else ''
-                    df.at[idx,'Price_10d']=p10; df.at[idx,'Return_10d_pct']=r10; df.at[idx,'vs_QQQ_10d']=vs10
+                    df.at[idx,'Close_Price']=p10
+                    df.at[idx,'Return_Pct']=r10
+                    df.at[idx,'vs_QQQ_10d']=vs10
+                    if not str(row.get('Close_Date','')).strip() or str(row.get('Close_Date','')).strip() in ('','nan','NaN'):
+                        df.at[idx,'Close_Date']=(pd_+timedelta(days=hd)).strftime('%Y-%m-%d')
+                        df.at[idx,'Close_Reason']='hold_days'
                     # Set Win/Loss using LLM-configurable QQQ-relative thresholds
                     if vs10 != '' and str(row.get('Result','')).strip() in ('','nan','NaN','Pending'):
                         vs10f = float(vs10)
-                        if vs10f >= _CFG_WIN_THRESHOLD_PCT:   df.at[idx,'Result'] = 'Win'
+                        if vs10f >= _CFG_WIN_THRESHOLD_PCT:    df.at[idx,'Result'] = 'Win'
                         elif vs10f <= _CFG_LOSS_THRESHOLD_PCT: df.at[idx,'Result'] = 'Loss'
-                        else:                                  df.at[idx,'Result'] = 'Neutral'
-                    updated=True
-            if el>=30 and str(row.get('Price_30d','')).strip() in ['','nan','NaN']:
-                p30=gp(pd_+timedelta(days=30))
-                if p30:
-                    r30=round(((p30-ep)/ep)*100,2); qr=gq(pd_,pd_+timedelta(days=30)); vs30=round(r30-qr,2) if qr else ''
-                    df.at[idx,'Price_30d']=p30; df.at[idx,'Return_30d_pct']=r30; df.at[idx,'vs_QQQ_30d']=vs30
-                    # Only set Result if 10-day evaluation hasn't already closed it (use same configurable thresholds)
-                    if str(df.at[idx,'Result']).strip() in ('','nan','NaN','Pending'):
-                        if vs30 != '':
-                            vs30f = float(str(vs30))
-                            if vs30f >= _CFG_WIN_THRESHOLD_PCT:    df.at[idx,'Result'] = 'Win'
-                            elif vs30f <= _CFG_LOSS_THRESHOLD_PCT: df.at[idx,'Result'] = 'Loss'
-                            else:                                   df.at[idx,'Result'] = 'Neutral'
-                        else:
-                            df.at[idx,'Result'] = 'Neutral'  # no QQQ data — can't compute relative return
+                        else:                                   df.at[idx,'Result'] = 'Neutral'
                     updated=True
         except: continue
     if updated: df.to_csv(fp,index=False); print(f'  {os.path.basename(fp)} updated')
@@ -4246,7 +4264,7 @@ def run_screener():
 
     print('\nStep 8/8: Saving results...')
     if sig=='BUY' and conf>=BUY_THRESHOLD:
-        save_pick(pick, ctx, ep, PICKS_CSV, PICK_COLS, all_candidates=candidates)
+        save_pick(pick, ctx, ep, PICKS_CSV, PICK_COLS, all_candidates=candidates, portfolio=portfolio)
     for w in wl:
         if w.get('confidence',0)>=WATCH_THRESHOLD:
             wmatch = next((c for c in candidates if c['ticker']==w['ticker']),{})
@@ -4256,7 +4274,7 @@ def run_screener():
             else:
                 try: wp=round(float(yf.Ticker(w['ticker']).history(period='2d')['Close'].dropna().iloc[-1]),2)
                 except: wp='N/A'
-            save_pick(w, ctx, wp, WATCH_CSV, WATCH_COLS, all_candidates=candidates, watch_score=w.get('confidence'))
+            save_pick(w, ctx, wp, WATCH_CSV, WATCH_COLS, all_candidates=candidates, watch_score=w.get('confidence'), portfolio=portfolio)
 
     _rules = (result or {}).get('derived_rules', [])
     _summary = (result or {}).get('learning_summary', '')
