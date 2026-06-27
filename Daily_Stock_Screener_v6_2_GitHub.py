@@ -3332,83 +3332,111 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     thesis = str(pick.get('reasoning', ''))[:120].strip()
     risk   = str(pick.get('key_risk', ''))[:80].strip()
 
-    # ── R:R ──────────────────────────────────────────────────
-    rr_str = 'N/A'
-    if (isinstance(stop_price, (int, float)) and isinstance(target_price, (int, float))
-            and isinstance(ep, (int, float)) and ep - stop_price > 0):
-        rr_str = f'1:{round((target_price - ep) / (ep - stop_price), 1)}'
-
     # ── Portfolio numbers ─────────────────────────────────────
-    pf           = portfolio or {}
-    all_positions = sorted(pf.get('positions', []),
-                           key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True)
-    pf_total_val = round(pf.get('cash', 0) +
-                         sum(p.get('current_value', p.get('cost_basis', 0)) for p in all_positions), 0)
-    pf_cash      = pf.get('cash', 0)
-    start_cap    = pf.get('starting_capital', STARTING_CAPITAL)
-    total_pct    = round((pf_total_val - start_cap) / start_cap * 100, 2) if start_cap else 0
-    slots_used   = len(all_positions)
+    pf        = portfolio or {}
+    positions = pf.get('positions', [])
+    cash      = round(pf.get('cash', 0), 0)
+    start_cap = pf.get('starting_capital', STARTING_CAPITAL)
+    total_val = round(cash + sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions), 0)
+    total_pct = round((total_val - start_cap) / start_cap * 100, 1) if start_cap else 0
+    total_pnl = round(total_val - start_cap, 0)
 
-    # ── Shares/cost of today's new position ──────────────────
-    pos = next((p for p in pf.get('positions', []) if p['ticker'] == ticker), None)
-    shares_str = f'{pos["shares"]} shares · Spent: {pos["cost_basis"]:,.0f}' if pos else ''
+    # ── Today's new position (if opened) ─────────────────────
+    pos = next((p for p in positions if p['ticker'] == ticker), None)
 
-    # ── Action label ──────────────────────────────────────────
-    if sig == 'BUY' and position_opened:
-        action_line = f'BOUGHT {ticker} · {sector} · {conf}/100'
-    elif sig == 'BUY' and not position_opened:
-        action_line = f'PICKED {ticker} · {sector} · {conf}/100 (not opened — check cash/slots)'
-    else:
-        action_line = 'NO PICK TODAY'
+    # ── Human-readable exit reason ────────────────────────────
+    _reason_map = {
+        'stop_loss':         'stop loss hit',
+        'profit_target':     'profit target hit',
+        'rsi_overbought':    'RSI exit (overbought)',
+        'macd_bearish_cross':'momentum turned',
+        'hold_period':       '10-day hold complete',
+        'pre_earnings':      'exited before earnings',
+    }
+    def _clean_reason(raw):
+        key = raw.split(' ')[0].lower().replace('(', '').strip()
+        return _reason_map.get(key, raw.split(' ')[0].replace('_', ' '))
 
-    # ── Sold today block ──────────────────────────────────────
-    sold_block_lines = []
+    # ── SOLD TODAY lines ──────────────────────────────────────
+    sold_lines = []
     for ct in (closed_today or []):
         pnl     = ct.get('realized_pnl', 0)
         pnl_pct = ct.get('realized_pnl_pct', 0)
-        reason  = ct.get('reason', '').split(' ')[0]
         arrow   = '▲' if pnl >= 0 else '▼'
-        sold_block_lines.append(f'{arrow} {ct["ticker"]}  {pnl:+,.0f} USD  {pnl_pct:+.1f}%  [{reason}]')
+        word    = 'profit' if pnl >= 0 else 'loss'
+        reason  = _clean_reason(ct.get('reason', ''))
+        sold_lines.append(
+            f'{arrow} {ct["ticker"]}  {word} USD {abs(pnl):,.0f}  ({pnl_pct:+.1f}%)  — {reason}'
+        )
 
-    # ── Open positions block ──────────────────────────────────
+    # ── Winning / Losing positions ────────────────────────────
+    winning = [p for p in positions if p.get('unrealized_pnl_pct', 0) >= 0]
+    losing  = [p for p in positions if p.get('unrealized_pnl_pct', 0) <  0]
+    winning.sort(key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True)
+    losing.sort(key=lambda p:  p.get('unrealized_pnl_pct', 0))
+
     def _pos_line(p):
         upc     = p.get('unrealized_pnl_pct', 0)
-        cur_val = round(p.get('current_value', p.get('cost_basis', 0)), 0)
+        upl     = round(p.get('unrealized_pnl', 0), 0)
+        hdays   = p.get('hold_days', 0)
         arrow   = '▲' if upc >= 0 else '▼'
-        return f'{arrow} {p["ticker"]}  {upc:+.1f}%  USD {cur_val:,.0f}  Day {p.get("hold_days", 0)}'
+        word    = 'up' if upc >= 0 else 'down'
+        return f'{arrow} {p["ticker"]}  {word} {abs(upc):.1f}%  (USD {abs(upl):,.0f})  Day {hdays}/{_CFG_HOLD_DAYS}'
 
-    positions_block = ('\n'.join(_pos_line(p) for p in all_positions)
-                       if all_positions else '  No open positions')
-
-    # ── Assemble ──────────────────────────────────────────────
     sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
-    msg_parts = [f'◆ {action_line}']
+    # ── Action headline ───────────────────────────────────────
+    if sig == 'BUY' and position_opened:
+        headline = f'BOUGHT {ticker}  ({sector})  {conf}/100 confidence'
+    elif sig == 'BUY' and not position_opened:
+        headline = f'PICKED {ticker} but could not open — not enough cash or slots full'
+    else:
+        headline = 'NO TRADE TODAY'
 
-    if sig == 'BUY':
-        msg_parts += [
-            f'Entry {ep} · Stop {stop_price} · Tgt {target_price}',
-            f'{shares_str} · R:R {rr_str}' if shares_str else f'R:R {rr_str}',
+    # ── Build message ─────────────────────────────────────────
+    lines = [f'◆ {headline}']
+
+    if sig == 'BUY' and pos:
+        lines += [
+            f'Bought at {ep}  ·  Stop {stop_price}  ·  Target {target_price}',
+            f'{pos["shares"]} shares  ·  spent USD {pos["cost_basis"]:,.0f}',
             '',
             thesis,
             f'Risk: {risk}' if risk else '',
         ]
+    elif sig == 'BUY' and not position_opened:
+        lines += [
+            f'Would have bought at {ep}  ·  Stop {stop_price}  ·  Target {target_price}',
+            thesis,
+        ]
 
-    if sold_block_lines:
-        msg_parts += ['', sep, 'SOLD TODAY'] + sold_block_lines
+    if sold_lines:
+        lines += [sep, 'SOLD TODAY']
+        lines += sold_lines
 
-    msg_parts += [
-        '',
+    lines += [
         sep,
-        f'Portfolio  USD {pf_total_val:,.0f}  {total_pct:+.1f}%',
-        f'Cash  USD {pf_cash:,.0f}  ·  {slots_used} of {_CFG_MAX_POSITIONS} slots used',
+        'YOUR PORTFOLIO',
+        f'Total value:  USD {total_val:,.0f}  ({total_pct:+.1f}% since start)',
+        f'Cash left:    USD {cash:,.0f}',
         sep,
-        positions_block,
-        sep,
-        f'SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
     ]
 
-    msg = '\n'.join(filter(None, msg_parts))
+    if winning:
+        lines.append('MAKING MONEY')
+        lines += [_pos_line(p) for p in winning]
+    if losing:
+        lines.append('IN THE RED')
+        lines += [_pos_line(p) for p in losing]
+    if not positions:
+        lines.append('No open positions')
+
+    lines += [
+        sep,
+        f'Market:  SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
+    ]
+
+    msg = '\n'.join(l for l in lines if l is not None)
     print(f'  WhatsApp preview ({len(msg)} chars):\n{msg}\n')
     _wa_send(msg, 'daily update')
 
