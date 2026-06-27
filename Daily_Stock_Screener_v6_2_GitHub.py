@@ -2699,204 +2699,322 @@ def _build_rules_html(rules, summary):
 
 
 def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summary='',
-                     stop_price='N/A', target_price='N/A'):
-    """Save a formatted HTML report to Google Drive after each run."""
-    pk   = result.get('top_pick', {}) if result else {}
-    sig  = pk.get('signal', 'NO PICK')
-    conf = pk.get('confidence', 0)
+                     stop_price='N/A', target_price='N/A', portfolio=None, position_opened=False):
+    """Save a 3-tab HTML dashboard (BUY / SEE / HOLD) to Drive after each run."""
+    pk     = result.get('top_pick', {}) if result else {}
+    sig    = pk.get('signal', 'NO PICK')
+    conf   = pk.get('confidence', 0)
     ticker = pk.get('ticker', 'N/A')
     today  = datetime.now().strftime('%Y-%m-%d')
-    stop = f'${stop_price}' if isinstance(stop_price, (int, float)) else stop_price
-    tgt  = f'${target_price}' if isinstance(target_price, (int, float)) else target_price
 
-    pick_color  = '#00c853' if sig == 'BUY' else '#ff1744'
-    pick_label  = f'BUY {ticker}' if sig == 'BUY' else 'NO PICK TODAY'
-    conf_bar    = int(conf / 100 * 200)
+    stop_str = str(stop_price) if isinstance(stop_price, (int, float)) else stop_price
+    tgt_str  = str(target_price) if isinstance(target_price, (int, float)) else target_price
 
-    # Load CSVs
-    def load(fp):
-        if not os.path.exists(fp): return pd.DataFrame()
-        df = pd.read_csv(fp)
-        for c in ['Return_10d_pct','Return_30d_pct','vs_QQQ_30d','Confidence']:
-            if c in df.columns: df[c] = pd.to_numeric(df[c], errors='coerce')
-        return df
+    # ── Action label ──────────────────────────────────────────────────────────
+    if sig == 'BUY' and position_opened:
+        action_label = f'BOUGHT {ticker}'
+        action_color = '#00c853'
+    elif sig == 'BUY' and not position_opened:
+        action_label = f'PICKED {ticker} (not opened)'
+        action_color = '#ff9800'
+    else:
+        action_label = 'NO PICK TODAY'
+        action_color = '#546e7a'
 
-    picks_df = load(PICKS_CSV)
-    watch_df = load(WATCH_CSV)
+    # ── R:R ──────────────────────────────────────────────────────────────────
+    rr_str = 'N/A'
+    if (isinstance(stop_price, (int, float)) and isinstance(target_price, (int, float))
+            and isinstance(ep, (int, float)) and ep - stop_price > 0):
+        rr = round((target_price - ep) / (ep - stop_price), 1)
+        rr_str = f'1:{rr}'
 
-    def stats(df):
-        done = df[df['Result'].isin(['Win','Loss','Neutral'])] if 'Result' in df.columns else pd.DataFrame()
-        if done.empty: return {'total':0,'wins':0,'losses':0,'neutral':0,'wr':0,'avg30':0}
-        w=len(done[done['Result']=='Win']); l=len(done[done['Result']=='Loss']); n=len(done[done['Result']=='Neutral'])
-        return {'total':len(done),'wins':w,'losses':l,'neutral':n,
-                'wr':round(w/len(done)*100,1) if len(done) else 0,
-                'avg30':round(done['Return_30d_pct'].mean(),2)}
+    # ── Portfolio data ────────────────────────────────────────────────────────
+    pf        = portfolio or {}
+    positions = pf.get('positions', [])
+    closed    = pf.get('closed_trades', [])
+    cash      = pf.get('cash', 0)
+    start_cap = pf.get('starting_capital', STARTING_CAPITAL)
+    total_val = round(cash + sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions), 2)
+    total_pnl = round(total_val - start_cap, 2)
+    total_pct = round(total_pnl / start_cap * 100, 2) if start_cap else 0
+    realized  = pf.get('total_realized_pnl', 0)
+    wins_ct   = sum(1 for t in closed if t.get('realized_pnl', 0) > 0)
+    wr        = round(wins_ct / len(closed) * 100, 1) if closed else 0
+    pf_color  = '#00c853' if total_pct >= 0 else '#f44336'
 
-    ps = stats(picks_df)
-    ws = stats(watch_df)
+    # ── BUY tab — pick details ────────────────────────────────────────────────
+    if sig == 'BUY':
+        buy_details_html = f'''
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Confidence</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">{conf}/100</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
+            <div style="background:{action_color};border-radius:99px;height:6px;width:{conf}%"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Entry</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">{ep if isinstance(ep,(int,float)) else "N/A"}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">{stop_str} / {tgt_str}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">{rr_str}</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
+                  font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
+          {pk.get("reasoning","")}
+      </div>
+      <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
+                  border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
+          Risk: {pk.get("key_risk","")}
+      </div>'''
+    else:
+        buy_details_html = '<div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div>'
 
-    def result_badge(r):
-        if r == 'Win':     return '<span style="color:#00c853;font-weight:bold">✅ Win</span>'
-        if r == 'Loss':    return '<span style="color:#ff1744;font-weight:bold">❌ Loss</span>'
-        if r == 'Neutral': return '<span style="color:#ff9800;font-weight:bold">➖ Neutral</span>'
-        return '<span style="color:#999">⏳ Pending</span>'
+    # ── BUY tab — watch list ──────────────────────────────────────────────────
+    watch_html = ''
+    for w in (wl or [])[:5]:
+        wc  = w.get('confidence', 0)
+        watch_html += f'''
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">{w.get("ticker","")}</span>
+          <span style="color:#888;font-size:13px">{wc}/100 &nbsp;·&nbsp; {w.get("sector","")}</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:{wc}%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">{str(w.get("reasoning",""))[:120]}</div>
+      </div>'''
+    if not watch_html:
+        watch_html = '<p style="color:#aaa;padding:8px 0">No watch picks today.</p>'
 
-    def pct(v):
-        try:
-            f = float(v)
-            c = '#00c853' if f > 0 else '#ff1744' if f < 0 else '#999'
-            return f'<span style="color:{c}">{f:+.1f}%</span>'
-        except: return '<span style="color:#999">—</span>'
+    # ── SEE tab — open position cards ─────────────────────────────────────────
+    def pos_card(p):
+        upc   = p.get('unrealized_pnl_pct', 0)
+        upl   = p.get('unrealized_pnl', 0)
+        curr  = p.get('current_price', p.get('entry_price', 0))
+        ep_   = p.get('entry_price', 0)
+        stop_ = p.get('stop_price')
+        tgt_  = p.get('target_price')
+        hdays = p.get('hold_days', 0)
+        col   = '#00c853' if upc >= 0 else '#f44336'
+        arrow = '▲' if upc >= 0 else '▼'
+        hold_pct = min(100, round(hdays / max(_CFG_HOLD_DAYS, 1) * 100))
 
-    def table_rows(df, max_rows=50):
-        if df.empty: return '<tr><td colspan="9">No data yet</td></tr>'
-        rows = ''
-        for _, r in df.sort_values('Date', ascending=False).head(max_rows).iterrows():
-            res = str(r.get('Result','Pending'))
-            bg  = '#f1fff6' if res=='Win' else '#fff1f1' if res=='Loss' else ''
-            rows += f'''<tr style="background:{bg}">
-                <td>{r.get("Date","")}</td>
-                <td><b>{r.get("Ticker","")}</b></td>
-                <td>{r.get("Confidence","")}</td>
-                <td>{r.get("Source","")}</td>
-                <td>{r.get("Sector","")}</td>
-                <td>{pct(r.get("Return_10d_pct",""))}</td>
-                <td>{pct(r.get("Return_30d_pct",""))}</td>
-                <td>{pct(r.get("vs_QQQ_30d",""))}</td>
-                <td>{result_badge(res)}</td>
-                <td style="font-size:11px;color:#555;max-width:200px">{str(r.get("Reasoning",""))[:80]}</td>
-            </tr>'''
-        return rows
+        ladder = ''
+        if stop_ and tgt_ and curr:
+            rng = float(tgt_) - float(stop_)
+            if rng > 0:
+                curr_pos  = max(2, min(98, round((float(curr)  - float(stop_)) / rng * 100)))
+                entry_pos = max(2, min(98, round((float(ep_)   - float(stop_)) / rng * 100)))
+                ladder = f'''
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop {stop_}</span><span>Target {tgt_}</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:{curr_pos}%;background:{col};
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:{entry_pos}%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:{curr_pos}%;width:4px;height:16px;top:-4px;
+                        background:{col};border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry {ep_} &nbsp;·&nbsp; Current {curr}</div>'''
 
-    watch_list_html = ''
-    for w in (wl or []):
-        watch_list_html += f'''
-        <div style="background:#fff8e1;border-left:4px solid #ffc107;padding:12px;margin:8px 0;border-radius:4px">
-            <b>{w.get("ticker")}</b> &nbsp;{w.get("confidence")}/100 &nbsp;·&nbsp;
-            {w.get("sector","")} &nbsp;·&nbsp;
-            <span style="color:#555">{w.get("reasoning","")[:120]}</span>
-        </div>'''
+        return f'''
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid {col}">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">{p["ticker"]}</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">{p.get("sector","")}</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:{col}">{arrow} {upc:+.1f}%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          {p.get("shares",0)} shares &nbsp;·&nbsp; Value USD {p.get("current_value",0):,.0f}
+          &nbsp;·&nbsp; P&amp;L <span style="color:{col};font-weight:600">{upl:+,.0f}</span>
+        </div>
+        {ladder}
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:{hold_pct}%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day {hdays} of {_CFG_HOLD_DAYS}</div>
+      </div>'''
+
+    positions_html = ''.join(
+        pos_card(p) for p in sorted(positions, key=lambda x: x.get('unrealized_pnl_pct', 0), reverse=True)
+    ) or '<p style="color:#aaa;padding:12px 0">No open positions.</p>'
+
+    # ── HOLD tab — closed trades table ────────────────────────────────────────
+    def ct_row(t):
+        pnl     = t.get('realized_pnl', 0)
+        pnl_pct = t.get('realized_pnl_pct', 0)
+        col     = '#00c853' if pnl >= 0 else '#f44336'
+        bg      = '#f1fff6' if pnl > 0 else '#fff1f1' if pnl < 0 else ''
+        reason  = t.get('reason', '').split(' ')[0]
+        return (f'<tr style="background:{bg}">'
+                f'<td>{str(t.get("exit_date",""))[:10]}</td>'
+                f'<td><b>{t["ticker"]}</b></td>'
+                f'<td>{t.get("entry_price","")}</td>'
+                f'<td>{t.get("exit_price","")}</td>'
+                f'<td style="color:{col};font-weight:600">{pnl:+,.0f}</td>'
+                f'<td style="color:{col}">{pnl_pct:+.1f}%</td>'
+                f'<td>{t.get("hold_days",0)}d</td>'
+                f'<td style="font-size:11px;color:#666">{reason}</td>'
+                f'</tr>')
+
+    closed_rows = ''.join(
+        ct_row(t) for t in sorted(closed, key=lambda x: x.get('exit_date', ''), reverse=True)
+    ) or '<tr><td colspan="8" style="color:#aaa;text-align:center;padding:16px">No closed trades yet.</td></tr>'
+
+    # ── Market context strip ──────────────────────────────────────────────────
+    vix      = ctx.get('vix_level', 0)
+    vix_r    = ctx.get('vix_regime', '')[:14]
+    spy      = ctx.get('spy_return_today', 0)
+    qqq_t    = ctx.get('qqq_trend', '')
+    spy_col  = '#00c853' if spy >= 0 else '#f44336'
+    macro_txt = (nd.get('macro_summary', '') if nd else '')[:160]
+
+    # ── LLM rules block (kept for BUY tab) ───────────────────────────────────
+    rules_html = _build_rules_html(derived_rules, learning_summary)
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stock Screener — {today}</title>
+<title>LLM Portfolio Manager — {today}</title>
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-         background: #f0f2f5; color: #1a1a2e; padding: 20px; }}
-  .container {{ max-width: 1100px; margin: 0 auto; }}
-  h1 {{ font-size: 22px; color: #444; margin-bottom: 4px; }}
-  .subtitle {{ color: #888; font-size: 13px; margin-bottom: 24px; }}
-  .pick-card {{ background: #1a1a2e; color: white; border-radius: 14px;
-                padding: 28px; margin-bottom: 24px; border-left: 8px solid {pick_color}; }}
-  .pick-title {{ font-size: 32px; font-weight: 800; color: {pick_color}; margin-bottom: 8px; }}
-  .pick-meta {{ font-size: 13px; color: #aaa; margin-bottom: 20px; }}
-  .pick-grid {{ display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 20px 0; }}
-  .pick-metric {{ background: rgba(255,255,255,0.07); border-radius: 8px; padding: 14px; }}
-  .pick-metric .label {{ font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }}
-  .pick-metric .value {{ font-size: 22px; font-weight: 700; color: white; margin-top: 4px; }}
-  .conf-bar {{ background: rgba(255,255,255,0.1); border-radius: 99px; height: 8px; margin-top: 8px; }}
-  .conf-fill {{ background: {pick_color}; border-radius: 99px; height: 8px; width: {conf_bar}px; max-width:200px; }}
-  .reasoning-box {{ background: rgba(255,255,255,0.05); border-radius: 8px; padding: 14px; margin-top: 16px; font-size: 14px; line-height: 1.6; }}
-  .risk-box {{ background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3);
-              border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 13px; color: #ffaaaa; }}
-  .grid4 {{ display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }}
-  .stat-card {{ background: white; border-radius: 10px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }}
-  .stat-card .val {{ font-size: 28px; font-weight: 700; }}
-  .stat-card .lbl {{ font-size: 12px; color: #888; margin-top: 4px; }}
-  .section {{ background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px;
-              box-shadow: 0 1px 4px rgba(0,0,0,0.08); }}
-  .section h2 {{ font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #333;
-                 border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }}
-  table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
-  th {{ background: #f8f9fa; padding: 10px 8px; text-align: left; font-weight: 600;
-        color: #555; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }}
-  td {{ padding: 9px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }}
-  tr:last-child td {{ border-bottom: none; }}
-  .market-strip {{ background: white; border-radius: 10px; padding: 14px 20px;
-                   margin-bottom: 20px; display: flex; gap: 24px; align-items: center;
-                   box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 13px; }}
-  .market-item .ml {{ color: #888; font-size: 11px; }}
-  .market-item .mv {{ font-weight: 600; }}
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+     background:#f0f2f5;color:#1a1a2e;padding:20px}}
+.wrap{{max-width:960px;margin:0 auto}}
+h1{{font-size:20px;font-weight:700;color:#333}}
+.sub{{color:#888;font-size:12px;margin-bottom:18px;margin-top:3px}}
+.mkt{{display:flex;gap:20px;background:white;border-radius:10px;padding:12px 20px;
+      margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-wrap:wrap;font-size:13px}}
+.mi .ml{{color:#888;font-size:11px}} .mi .mv{{font-weight:600}}
+.tabs{{display:flex;gap:4px;margin-bottom:18px}}
+.tb{{flex:1;padding:12px;text-align:center;font-size:15px;font-weight:600;
+     border:none;border-radius:8px;cursor:pointer;background:#e0e0e0;color:#666;transition:.15s}}
+.tb.on{{background:#1a1a2e;color:white}}
+.tp{{display:none}} .tp.on{{display:block}}
+.sec{{background:white;border-radius:10px;padding:20px;margin-bottom:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08)}}
+.sh{{font-size:14px;font-weight:700;color:#333;margin-bottom:12px;
+     border-bottom:2px solid #f0f0f0;padding-bottom:8px}}
+table{{width:100%;border-collapse:collapse;font-size:13px}}
+th{{background:#f8f9fa;padding:9px 8px;text-align:left;font-weight:600;
+    color:#555;font-size:11px;text-transform:uppercase;letter-spacing:.5px}}
+td{{padding:8px;border-bottom:1px solid #f0f0f0;vertical-align:middle}}
+tr:last-child td{{border-bottom:none}}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>📈 Daily Stock Screener</h1>
-  <p class="subtitle">{datetime.now().strftime("%A, %B %d %Y  %H:%M")} &nbsp;·&nbsp; Powered by NVIDIA {NVIDIA_MODEL}</p>
+<div class="wrap">
+  <h1>LLM Portfolio Manager</h1>
+  <p class="sub">{datetime.now().strftime("%A %B %d %Y  %H:%M")} &nbsp;·&nbsp; {NVIDIA_MODEL}</p>
 
-  <div class="market-strip">
-    <div class="market-item"><div class="ml">VIX</div><div class="mv">{ctx.get("vix_level","-"):.1f} ({ctx.get("vix_regime","")[:12]})</div></div>
-    <div class="market-item"><div class="ml">QQQ</div><div class="mv">{ctx.get("qqq_trend","")} (+{ctx.get("qqq_vs_ma50",0):.1f}% vs 50MA)</div></div>
-    <div class="market-item"><div class="ml">SPY Today</div><div class="mv">{ctx.get("spy_return_today",0):+.2f}%</div></div>
-    <div class="market-item"><div class="ml">Sentiment</div><div class="mv">{nd.get("market_sentiment","NEUTRAL") if nd else "N/A"}</div></div>
-    <div style="flex:1;color:#666;font-size:12px">{(nd.get("macro_summary","") if nd else "")[:120]}</div>
+  <div class="mkt">
+    <div class="mi"><div class="ml">VIX</div><div class="mv">{vix:.1f} &nbsp;{vix_r}</div></div>
+    <div class="mi"><div class="ml">SPY Today</div>
+        <div class="mv" style="color:{spy_col}">{spy:+.2f}%</div></div>
+    <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">{qqq_t}</div></div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">{macro_txt}</div>
   </div>
 
-  <!-- LEARNING RULES -->
-  {_build_rules_html(derived_rules, learning_summary)}
+  <div class="tabs">
+    <button class="tb on" onclick="sw('buy',this)">BUY</button>
+    <button class="tb"    onclick="sw('see',this)">SEE</button>
+    <button class="tb"    onclick="sw('hold',this)">HOLD</button>
+  </div>
 
-  <!-- TODAY'S PICK -->
-  <div class="pick-card">
-    <div class="pick-title">{pick_label}</div>
-    <div class="pick-meta">{today} &nbsp;·&nbsp; Source: {pk.get("source","")} &nbsp;·&nbsp; Sector: {pk.get("sector","")}</div>
-    <div class="pick-grid">
-      <div class="pick-metric">
-        <div class="label">Confidence</div>
-        <div class="value">{conf}/100</div>
-        <div class="conf-bar"><div class="conf-fill"></div></div>
+  <!-- ═══ BUY ═══ -->
+  <div id="t-buy" class="tp on">
+    {rules_html}
+    <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
+                margin-bottom:14px;border-left:8px solid {action_color}">
+      <div style="font-size:28px;font-weight:800;color:{action_color};margin-bottom:6px">
+        {action_label}
       </div>
-      <div class="pick-metric">
-        <div class="label">Entry Price</div>
-        <div class="value">${ep if isinstance(ep,(int,float)) else "N/A"}</div>
+      <div style="color:#aaa;font-size:13px">
+        {today} &nbsp;·&nbsp; {pk.get("sector","")} &nbsp;·&nbsp; {pk.get("source","")}
       </div>
-      <div class="pick-metric">
-        <div class="label">Stop → Target</div>
-        <div class="value" style="font-size:15px">{stop} → {tgt}</div>
+      {buy_details_html}
+    </div>
+    <div class="sec">
+      <div class="sh">Watch List</div>
+      {watch_html}
+    </div>
+  </div>
+
+  <!-- ═══ SEE ═══ -->
+  <div id="t-see" class="tp">
+    <div style="background:#1a1a2e;color:white;border-radius:12px;padding:20px;
+                margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
+        <div style="font-size:28px;font-weight:700">USD {total_val:,.0f}</div>
+        <div style="color:{pf_color};font-size:15px;margin-top:2px">{total_pct:+.1f}% vs starting capital</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
+        <div style="font-size:22px;font-weight:600">USD {cash:,.0f}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Slots Used</div>
+        <div style="font-size:22px;font-weight:600">{len(positions)} / {_CFG_MAX_POSITIONS}</div>
       </div>
     </div>
-    <div class="reasoning-box">{pk.get("reasoning","")}</div>
-    <div class="risk-box">⚠️ Key Risk: {pk.get("key_risk","")}</div>
-    {"<div class='risk-box' style='margin-top:8px;color:#aaa'>🐻 Bear case: "+pk.get("devils_advocate","")+"</div>" if pk.get("devils_advocate") else ""}
+    {positions_html}
   </div>
 
-  {"<div class='section'><h2>👀 Watch List</h2>" + watch_list_html + "</div>" if wl else ""}
-
-  <!-- SUMMARY STATS -->
-  <div class="grid4">
-    <div class="stat-card"><div class="val" style="color:#00c853">{ps["wins"]}</div><div class="lbl">BUY Wins</div></div>
-    <div class="stat-card"><div class="val" style="color:#ff1744">{ps["losses"]}</div><div class="lbl">BUY Losses</div></div>
-    <div class="stat-card"><div class="val">{ps["wr"]}%</div><div class="lbl">BUY Win Rate</div></div>
-    <div class="stat-card"><div class="val" style="color:{"#00c853" if ps["avg30"]>=0 else "#ff1744"}">{ps["avg30"]:+.1f}%</div><div class="lbl">Avg 30d Return</div></div>
+  <!-- ═══ HOLD ═══ -->
+  <div id="t-hold" class="tp">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700;color:{"#00c853" if realized>=0 else "#f44336"}">{realized:+,.0f}</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Realized P&amp;L (USD)</div>
+      </div>
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700">{wr:.0f}%</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Win Rate &nbsp;({wins_ct}W / {len(closed)-wins_ct}L)</div>
+      </div>
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700">{len(closed)}</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Trades Closed</div>
+      </div>
+    </div>
+    <div class="sec">
+      <table>
+        <tr><th>Closed</th><th>Ticker</th><th>Entry</th><th>Exit</th>
+            <th>P&amp;L USD</th><th>Return</th><th>Days</th><th>Reason</th></tr>
+        {closed_rows}
+      </table>
+    </div>
   </div>
 
-  <!-- CONFIRMED PICKS TABLE -->
-  <div class="section">
-    <h2>✅ Confirmed BUY History</h2>
-    <table>
-      <tr><th>Date</th><th>Ticker</th><th>Conf</th><th>Source</th><th>Sector</th>
-          <th>10d</th><th>30d</th><th>vs QQQ</th><th>Result</th><th>Reasoning</th></tr>
-      {table_rows(picks_df)}
-    </table>
-  </div>
-
-  <!-- WATCH LIST TABLE -->
-  <div class="section">
-    <h2>👀 Watch List History</h2>
-    <table>
-      <tr><th>Date</th><th>Ticker</th><th>Conf</th><th>Source</th><th>Sector</th>
-          <th>10d</th><th>30d</th><th>vs QQQ</th><th>Result</th><th>Reasoning</th></tr>
-      {table_rows(watch_df)}
-    </table>
-  </div>
-
-  <p style="text-align:center;color:#aaa;font-size:11px;margin-top:20px">
-    Not financial advice. Personal learning project. Always do your own research.
+  <p style="text-align:center;color:#ccc;font-size:11px;margin-top:18px">
+    Not financial advice &nbsp;·&nbsp; Personal project &nbsp;·&nbsp; DYOR
   </p>
 </div>
+<script>
+function sw(id,btn){{
+  document.querySelectorAll('.tp').forEach(function(p){{p.classList.remove('on')}});
+  document.querySelectorAll('.tb').forEach(function(b){{b.classList.remove('on')}});
+  document.getElementById('t-'+id).classList.add('on');
+  btn.classList.add('on');
+}}
+</script>
 </body>
 </html>'''
 
@@ -2919,7 +3037,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         )
         _ipy_display(_IPyHTML(iframe))
     except Exception:
-        print(f'📊 Report saved → {latest_path}')
+        print(f'Report saved → {latest_path}')
 
 
 def display_scorecard():
@@ -4332,7 +4450,7 @@ def run_screener():
                       watch_score=w.get('confidence'), portfolio=portfolio, stop_price=wstop, target_price=wtgt)
 
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
-                     stop_price=_stop, target_price=_tgt)
+                     stop_price=_stop, target_price=_tgt, portfolio=portfolio, position_opened=_position_opened)
     display_scorecard()
     send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates, portfolio=portfolio, position_opened=_position_opened, closed_today=_closed_today)
 
