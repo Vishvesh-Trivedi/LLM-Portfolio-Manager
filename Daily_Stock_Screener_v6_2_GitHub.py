@@ -2700,7 +2700,7 @@ def _build_rules_html(rules, summary):
 
 def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summary='',
                      stop_price='N/A', target_price='N/A', portfolio=None, position_opened=False):
-    """Save a 3-tab HTML dashboard (BUY / SEE / HOLD) to Drive after each run."""
+    """Save a 4-tab HTML dashboard (BUY / SEE / HOLD / STOP) to Drive after each run."""
     pk     = result.get('top_pick', {}) if result else {}
     sig    = pk.get('signal', 'NO PICK')
     conf   = pk.get('confidence', 0)
@@ -2876,6 +2876,88 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         ct_row(t) for t in sorted(closed, key=lambda x: x.get('exit_date', ''), reverse=True)
     ) or '<tr><td colspan="8" style="color:#aaa;text-align:center;padding:16px">No closed trades yet.</td></tr>'
 
+    # ── STOP tab data ─────────────────────────────────────────────────────────
+    today_stops   = [t for t in closed
+                     if str(t.get('exit_date', ''))[:10] == today
+                     and 'stop' in t.get('reason', '').lower()]
+    all_stops     = [t for t in sorted(closed, key=lambda x: x.get('exit_date', ''), reverse=True)
+                     if 'stop' in t.get('reason', '').lower()]
+    danger_pos    = [p for p in positions
+                     if p.get('stop_price') and p.get('current_price')
+                     and float(p['current_price']) > 0
+                     and (float(p['current_price']) - float(p['stop_price'])) / float(p['current_price']) <= 0.05]
+
+    if today_stops:
+        today_stop_html = ''
+        for t in today_stops:
+            pnl     = t.get('realized_pnl', 0)
+            pnl_pct = t.get('realized_pnl_pct', 0)
+            today_stop_html += f'''
+      <div style="background:#fff1f1;border-left:5px solid #f44336;border-radius:8px;
+                  padding:14px 18px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="font-size:20px;font-weight:700">{t["ticker"]}</span>
+          <span style="font-size:20px;font-weight:700;color:#f44336">{pnl:+,.0f} USD &nbsp;({pnl_pct:+.1f}%)</span>
+        </div>
+        <div style="color:#888;font-size:13px;margin-top:4px">
+          Entry {t.get("entry_price","")} &nbsp;·&nbsp; Exited @ {t.get("exit_price","")}
+          &nbsp;·&nbsp; Held {t.get("hold_days",0)} days
+        </div>
+      </div>'''
+        today_stop_banner = f'''
+    <div class="sec">
+      <div class="sh" style="color:#f44336">Stop Loss Hit Today</div>
+      {today_stop_html}
+    </div>'''
+    else:
+        today_stop_banner = '''
+    <div style="background:#f1fff6;border-left:5px solid #00c853;border-radius:8px;
+                padding:14px 18px;margin-bottom:14px;font-size:15px;font-weight:600;color:#00a040">
+      No stop losses hit today
+    </div>'''
+
+    if danger_pos:
+        danger_html = ''
+        for p in sorted(danger_pos, key=lambda x: (float(x['current_price']) - float(x['stop_price'])) / float(x['current_price'])):
+            curr_  = float(p['current_price'])
+            stop_  = float(p['stop_price'])
+            gap_pct = round((curr_ - stop_) / curr_ * 100, 1)
+            danger_html += f'''
+      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
+                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:17px;font-weight:700">{p["ticker"]}</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">{p.get("sector","")}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:600;color:#e65100">{gap_pct:.1f}% above stop</div>
+          <div style="font-size:12px;color:#888">Current {curr_} &nbsp;·&nbsp; Stop {stop_}</div>
+        </div>
+      </div>'''
+        danger_section = f'''
+    <div class="sec">
+      <div class="sh" style="color:#e65100">Approaching Stop (&lt;5%)</div>
+      {danger_html}
+    </div>'''
+    else:
+        danger_section = ''
+
+    def stop_row(t):
+        pnl     = t.get('realized_pnl', 0)
+        pnl_pct = t.get('realized_pnl_pct', 0)
+        return (f'<tr style="background:#fff1f1">'
+                f'<td>{str(t.get("exit_date",""))[:10]}</td>'
+                f'<td><b>{t["ticker"]}</b></td>'
+                f'<td>{t.get("entry_price","")}</td>'
+                f'<td>{t.get("exit_price","")}</td>'
+                f'<td style="color:#f44336;font-weight:600">{pnl:+,.0f}</td>'
+                f'<td style="color:#f44336">{pnl_pct:+.1f}%</td>'
+                f'<td>{t.get("hold_days",0)}d</td>'
+                f'</tr>')
+
+    stop_history_rows = ''.join(stop_row(t) for t in all_stops) or \
+        '<tr><td colspan="7" style="color:#aaa;text-align:center;padding:16px">No stop losses in history.</td></tr>'
+
     # ── Market context strip ──────────────────────────────────────────────────
     vix      = ctx.get('vix_level', 0)
     vix_r    = ctx.get('vix_regime', '')[:14]
@@ -2936,6 +3018,7 @@ tr:last-child td{{border-bottom:none}}
     <button class="tb on" onclick="sw('buy',this)">BUY</button>
     <button class="tb"    onclick="sw('see',this)">SEE</button>
     <button class="tb"    onclick="sw('hold',this)">HOLD</button>
+    <button class="tb"    onclick="sw('stop',this)" style="{"color:#f44336;font-weight:700" if today_stops else ""}">STOP{"  !" if today_stops else ""}</button>
   </div>
 
   <!-- ═══ BUY ═══ -->
@@ -2999,6 +3082,20 @@ tr:last-child td{{border-bottom:none}}
         <tr><th>Closed</th><th>Ticker</th><th>Entry</th><th>Exit</th>
             <th>P&amp;L USD</th><th>Return</th><th>Days</th><th>Reason</th></tr>
         {closed_rows}
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ STOP ═══ -->
+  <div id="t-stop" class="tp">
+    {today_stop_banner}
+    {danger_section}
+    <div class="sec">
+      <div class="sh" style="color:#c62828">Stop Loss History</div>
+      <table>
+        <tr><th>Date</th><th>Ticker</th><th>Entry</th><th>Exit</th>
+            <th>Loss USD</th><th>Return</th><th>Days</th></tr>
+        {stop_history_rows}
       </table>
     </div>
   </div>
