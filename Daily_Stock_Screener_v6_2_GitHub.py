@@ -3103,7 +3103,7 @@ def send_weekly_summary():
     _wa_send(msg, 'weekly-summary')
 
 
-def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None):
+def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None, position_opened=False):
     """Send daily pick as 3 WhatsApp messages via CallMeBot (uses ~3 of 10 daily limit)."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
         return
@@ -3258,38 +3258,38 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
 
     sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
+    thesis = str(pick.get('reasoning', ''))[:120].strip()
+    risk   = str(pick.get('key_risk', ''))[:80].strip()
+
+    if sig == 'BUY' and position_opened:
+        action_line = f'BOUGHT {ticker} · {sector} · {conf}/100'
+    elif sig == 'BUY' and not position_opened:
+        action_line = f'PICKED {ticker} · {sector} · {conf}/100 (not opened — check cash/slots)'
+    else:
+        action_line = 'NO PICK TODAY'
+
+    msg_parts = [
+        f'◆ {action_line}',
+    ]
     if sig == 'BUY':
-        # Trim reasoning to 2 lines
-        thesis = str(pick.get('reasoning', ''))[:120].strip()
-        risk   = str(pick.get('key_risk', ''))[:80].strip()
-        msg = '\n'.join(filter(None, [
-            f'◆ {ticker} · {sector} · {conf}/100',
+        msg_parts += [
             f'Entry {ep} · Stop {stop_price} · Tgt {target_price}',
-            f'{shares_str} · R:R {rr_str}',
+            f'{shares_str} · R:R {rr_str}' if shares_str else f'R:R {rr_str}',
             '',
             thesis,
             f'Risk: {risk}' if risk else '',
-            '',
-            sep,
-            f'Portfolio  USD {pf_total_val:,.0f}  {total_pct:+.1f}%',
-            f'Cash  USD {pf_cash:,.0f}  ·  {slots_used} of {_CFG_MAX_POSITIONS} slots used',
-            sep,
-            positions_block,
-            sep,
-            f'SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
-        ]))
-    else:
-        msg = '\n'.join(filter(None, [
-            f'◆ NO PICK TODAY',
-            '',
-            sep,
-            f'Portfolio  USD {pf_total_val:,.0f}  {total_pct:+.1f}%',
-            f'Cash  USD {pf_cash:,.0f}  ·  {slots_used} of {_CFG_MAX_POSITIONS} slots used',
-            sep,
-            positions_block,
-            sep,
-            f'SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
-        ]))
+        ]
+    msg_parts += [
+        '',
+        sep,
+        f'Portfolio  USD {pf_total_val:,.0f}  {total_pct:+.1f}%',
+        f'Cash  USD {pf_cash:,.0f}  ·  {slots_used} of {_CFG_MAX_POSITIONS} slots used',
+        sep,
+        positions_block,
+        sep,
+        f'SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
+    ]
+    msg = '\n'.join(filter(None, msg_parts))
     _wa_send(msg, 'daily update')
 
 
@@ -3898,9 +3898,9 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', 
     if any(p['ticker'] == ticker for p in pf['positions']):
         print(f'  Portfolio: already holding {ticker} — skipping')
         return pf
-    # Guard: not enough cash (floor is LLM-configurable via min_cash_floor)
-    if pf['cash'] < amount_usd or amount_usd < _CFG_MIN_CASH_FLOOR:
-        print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position')
+    # Guard: not enough cash, or buying would leave less than the LLM-set cash floor
+    if pf['cash'] < amount_usd or (pf['cash'] - amount_usd) < _CFG_MIN_CASH_FLOOR:
+        print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position — would breach cash floor ${_CFG_MIN_CASH_FLOOR:,.0f}')
         return pf
     shares     = int(amount_usd / entry_price)          # whole shares only — remainder stays as cash
     if shares < 1:
@@ -4280,14 +4280,17 @@ def run_screener():
     _tgt  = round(ep + ATR_TARGET_MULT * _atr, 2) if _atr and isinstance(ep, (int, float)) else 'N/A'
 
     # Open portfolio position — LLM chose position_size_pct
+    _position_opened = False
     if sig == 'BUY' and conf >= BUY_THRESHOLD and isinstance(ep, (int, float)) and ep > 0:
         pct    = min(float(pick.get('position_size_pct', 20)), 100)  # LLM sets this; 100% max is physics
         amount = round(portfolio['cash'] * pct / 100, 2)
+        positions_before = len(portfolio['positions'])
         portfolio = open_position(portfolio, pick.get('ticker',''), ep, amount,
                                   _stop if isinstance(_stop, float) else 0,
                                   _tgt  if isinstance(_tgt,  float) else 0,
                                   pick.get('sector',''), atr=_atr or 0,
                                   nzdusd_rate=portfolio.get('last_nzdusd_rate'))
+        _position_opened = len(portfolio['positions']) > positions_before
         save_portfolio(portfolio)
 
     print('\nStep 8/8: Saving results...')
@@ -4313,7 +4316,7 @@ def run_screener():
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
                      stop_price=_stop, target_price=_tgt)
     display_scorecard()
-    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates, portfolio=portfolio)
+    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates, portfolio=portfolio, position_opened=_position_opened)
 
     print('\nStep 9/8: LLM self-adaptation (updating config for next run)...')
     update_config_from_llm(pick_history)
