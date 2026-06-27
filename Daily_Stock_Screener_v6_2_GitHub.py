@@ -3271,51 +3271,77 @@ def send_weekly_summary():
         pass
 
     week_ago    = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-    week_closed = [t for t in pf.get('closed_trades', []) if t.get('exit_date', '') >= week_ago]
+    week_closed = [t for t in pf.get('closed_trades', []) if str(t.get('exit_date', ''))[:10] >= week_ago]
     week_wins   = sum(1 for t in week_closed if t.get('realized_pnl', 0) > 0)
-    week_pnl    = sum(t.get('realized_pnl', 0) for t in week_closed)
+    week_losses = len(week_closed) - week_wins
+    week_pnl    = round(sum(t.get('realized_pnl', 0) for t in week_closed), 0)
 
-    open_lines = '\n'.join(
-        f'  {p["ticker"]} {p["shares"]}sh | {p.get("unrealized_pnl_pct",0):+.1f}% | '
-        f'{p.get("hold_days",0)}d | Stop:{p.get("stop_price","?")} Tgt:{p.get("target_price","?")}'
-        for p in pf['positions']
-    ) or '  None'
+    _reason_map = {
+        'stop_loss':         'stop loss hit',
+        'profit_target':     'profit target hit',
+        'rsi_overbought':    'RSI exit',
+        'macd_bearish_cross':'momentum exit',
+        'hold_period':       '10-day hold done',
+        'pre_earnings':      'exited before earnings',
+    }
+    def _clean(raw):
+        key = raw.split(' ')[0].lower()
+        return _reason_map.get(key, raw.split(' ')[0].replace('_', ' '))
 
-    closed_lines = '\n'.join(
-        f'  {t["ticker"]} {t.get("realized_pnl",0):+.0f} ({t.get("realized_pnl_pct",0):+.1f}%) [{t.get("reason","")}]'
-        for t in week_closed
-    ) or '  None closed this week'
-
-    # Buy history — prefer CSV, fall back to open positions in portfolio.json
-    history_lines = _recent_picks_summary(days=14)
-    if history_lines:
-        hist_str = '\n'.join(history_lines)
-    elif pf['positions']:
-        hist_str = '\n'.join(
-            f'  {p["ticker"]} @ {p["entry_price"]} | entered {p["entry_date"]} | '
-            f'{p.get("unrealized_pnl_pct",0):+.1f}% | {p.get("hold_days",0)}d held'
-            for p in pf['positions']
-        )
-    else:
-        hist_str = '  No picks yet'
-
+    sep      = '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
     date_str = datetime.now().strftime('%b %d %Y')
-    msg = (
-        f'WEEKLY SUMMARY - {date_str}\n'
-        f'{"="*30}\n'
-        f'PORTFOLIO: {total_pnl:+,.0f} ({total_pct:+.1f}%) | Cash: {pf["cash"]:,.0f}\n'
-        f'{qqq_label}\n'
-        f'{alpha_str}\n'
-        f'{"="*30}\n'
-        f'OPEN POSITIONS:\n{open_lines}\n'
-        f'{"="*30}\n'
-        f'THIS WEEK CLOSED ({len(week_closed)} trades | {week_wins}W/{len(week_closed)-week_wins}L | PnL: {week_pnl:+.0f}):\n'
-        f'{closed_lines}\n'
-        f'{"="*30}\n'
-        f'POSITIONS / HISTORY:\n{hist_str}\n'
-        f'{"="*30}\n'
-        f'Next run: Tuesday 9AM NZT'
-    )
+    cash     = round(pf['cash'], 0)
+
+    winning = sorted([p for p in pf['positions'] if p.get('unrealized_pnl_pct', 0) >= 0],
+                     key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True)
+    losing  = sorted([p for p in pf['positions'] if p.get('unrealized_pnl_pct', 0) < 0],
+                     key=lambda p: p.get('unrealized_pnl_pct', 0))
+
+    def _pos(p):
+        upc  = p.get('unrealized_pnl_pct', 0)
+        upl  = round(p.get('unrealized_pnl', 0), 0)
+        word = 'up' if upc >= 0 else 'down'
+        arrow = '▲' if upc >= 0 else '▼'
+        return f'{arrow} {p["ticker"]}  {word} {abs(upc):.1f}%  (USD {abs(upl):,.0f})  Day {p.get("hold_days",0)}/{_CFG_HOLD_DAYS}'
+
+    lines = [
+        f'WEEKLY SUMMARY  {date_str}',
+        sep,
+        'YOUR PORTFOLIO',
+        f'Total value:  USD {total_val:,.0f}  ({total_pct:+.1f}% since start)',
+        f'Cash left:    USD {cash:,.0f}',
+        qqq_label,
+        alpha_str if alpha_str else None,
+        sep,
+    ]
+
+    if winning:
+        lines.append('MAKING MONEY')
+        lines += [_pos(p) for p in winning]
+    if losing:
+        lines.append('IN THE RED')
+        lines += [_pos(p) for p in losing]
+    if not pf['positions']:
+        lines.append('No open positions')
+
+    lines.append(sep)
+
+    if week_closed:
+        lines.append(f'CLOSED THIS WEEK  ({week_wins} profit  /  {week_losses} loss)')
+        for t in week_closed:
+            pnl     = t.get('realized_pnl', 0)
+            pnl_pct = t.get('realized_pnl_pct', 0)
+            word    = 'profit' if pnl >= 0 else 'loss'
+            arrow   = '▲' if pnl >= 0 else '▼'
+            reason  = _clean(t.get('reason', ''))
+            lines.append(f'{arrow} {t["ticker"]}  {word} USD {abs(pnl):,.0f}  ({pnl_pct:+.1f}%)  — {reason}')
+    else:
+        lines.append('No trades closed this week')
+
+    lines += [sep, 'Next run: Tuesday 9AM NZT']
+
+    msg = '\n'.join(l for l in lines if l is not None)
+    print(f'  Weekly summary preview ({len(msg)} chars):\n{msg}\n')
     _wa_send(msg, 'weekly-summary')
 
 
