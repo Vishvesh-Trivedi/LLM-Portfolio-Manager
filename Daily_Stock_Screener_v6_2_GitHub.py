@@ -3320,163 +3320,40 @@ def send_weekly_summary():
 
 
 def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None, position_opened=False, closed_today=None):
-    """Send daily pick as 3 WhatsApp messages via CallMeBot (uses ~3 of 10 daily limit)."""
+    """Send 1 WhatsApp message per daily run via CallMeBot."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
+        print('  WhatsApp skipped — WHATSAPP_PHONE or CALLMEBOT_API_KEY not set')
         return
-    import urllib.parse
 
-    ticker   = pick.get('ticker', 'NONE')
-    sig      = pick.get('signal', 'NO PICK')
-    conf     = pick.get('confidence', 0)
-    sector   = pick.get('sector', '')
-    why      = str(pick.get('reasoning', ''))[:120]
-    risk     = str(pick.get('key_risk', ''))[:100]
-    date_str = datetime.now().strftime('%b %d %Y')
-
-    # ── Market context line ───────────────────────────────────
-    gm     = ctx.get('global_macro', {})
-    esf    = gm.get('es_futures', {})
-    nqf    = gm.get('nq_futures', {})
-    tnx    = gm.get('yield_10y', {})
-    dxy    = gm.get('dxy', {})
-    nzdusd = gm.get('nzdusd', {})
-    s1d    = ctx.get('sector_1d', {})
-    top_s  = sorted(s1d.items(), key=lambda x: x[1], reverse=True)
-    top_s_str  = ' | '.join(f'{s} {v:+.1f}%' for s, v in top_s[:3])  if top_s else 'N/A'
-    bot_s_str  = ' | '.join(f'{s} {v:+.1f}%' for s, v in top_s[-2:]) if top_s else 'N/A'
-
-    fut_str = ''
-    if esf or nqf:
-        fut_str = f'Futures: ES {esf.get("chg_pct",0):+.2f}% | NQ {nqf.get("chg_pct",0):+.2f}%\n'
-    macro_str = ''
-    if tnx.get('price') or dxy.get('price'):
-        macro_str = f'10Y: {tnx.get("price","?")}% ({tnx.get("chg_pct",0):+.2f}%) | DXY: {dxy.get("price","?")} ({dxy.get("chg_pct",0):+.2f}%)\n'
-    nzd_rate = nzdusd.get('price')
-    sharesies_str = ''
-    if nzd_rate:
-        coverage_usd = round(SHARESIES_COVERAGE_NZD * float(nzd_rate), 0)
-        sharesies_str = f'NZD/USD: {nzd_rate} | Sharesies free coverage: ~{coverage_usd:,.0f} USD/month\n'
-
-    # ── Portfolio block ───────────────────────────────────────
-    pf_block = ''
-    if portfolio:
-        total_val = round(portfolio['cash'] + sum(p.get('current_value', p['cost_basis']) for p in portfolio['positions']), 2)
-        total_pnl = round(total_val - portfolio['starting_capital'], 2)
-        total_pct = round(total_pnl / portfolio['starting_capital'] * 100, 2)
-        pos_lines = '\n'.join(
-            f'  {p["ticker"]} {p["shares"]}sh @ {p["entry_price"]} '
-            f'({p.get("unrealized_pnl_pct",0):+.1f}%) | '
-            f'Stop: {p.get("stop_price","?")} | Target: {p.get("target_price","?")} | '
-            f'{p.get("hold_days",0)}d held'
-            for p in portfolio['positions']
-        ) if portfolio['positions'] else '  No open positions'
-        pf_block = (
-            f'PORTFOLIO: {total_pnl:+,.0f} ({total_pct:+.1f}%) | Cash: {portfolio["cash"]:,.0f}\n'
-            f'{pos_lines}\n'
-            f'---\n'
-        )
-
-    # ── Congress + candidate detail ───────────────────────────
-    pick_match = next((c for c in (candidates or []) if c['ticker'] == ticker), {})
-    cg_pick    = pick_match.get('congress_label') == 'BUYING'
-    cg_who     = pick_match.get('congress_notes', '')
-    cg_others  = [
-        f'{c["ticker"]}: {c.get("congress_notes","")}'
-        for c in (candidates or [])
-        if c.get('congress_label') == 'BUYING' and c['ticker'] != ticker
-    ][:3]
-    congress_line = f'Congress also buying:\n' + '\n'.join(f'  {o}' for o in cg_others) + '\n' if cg_others else ''
-    cg_tag = f'\nCONGRESS: {cg_who}' if cg_pick else ''
-
-    # ── Technicals from candidate ─────────────────────────────
-    rsi     = pick_match.get('rsi')
-    adx     = pick_match.get('adx')
-    mom5    = pick_match.get('momentum_5d')
-    vr      = pick_match.get('vol_ratio')
-    analyst = pick_match.get('analyst_rating', '')
-    upside  = pick_match.get('upside_pct')
-    earn_d  = pick_match.get('earnings_days_away', 'N/A')
-    short_f = pick_match.get('short_pct_float')
-    sec_8k  = pick_match.get('sec_8k_filings', [])
-    insider = pick_match.get('insider_label', '')
-    options = pick_match.get('options_label', '')
-    tech_bd = pick_match.get('tech_score_breakdown', {})
-
-    tech_line = ''
-    if rsi is not None:
-        tech_line = f'RSI {rsi:.1f} | ADX {adx:.1f} | Mom5d {mom5:+.1f}% | Vol {vr:.1f}x' if all(v is not None for v in [adx, mom5, vr]) else f'RSI {rsi:.1f}'
-    analyst_line = ''
-    if analyst or upside is not None:
-        up_str = f' | Upside {upside:+.1f}%' if upside is not None else ''
-        analyst_line = f'Analyst: {analyst}{up_str}\n'
-    earnings_line = f'Earnings: {earn_d}d away\n' if earn_d not in ('N/A', None) else ''
-    short_line    = f'Short float: {short_f:.1f}%\n' if short_f is not None else ''
-    flow_line     = ''
-    if insider != 'NEUTRAL' or options != 'NEUTRAL':
-        flow_line = f'Insider: {insider} | Options P/C: {options}\n'
-    sec_line = ''
-    if sec_8k:
-        sec_line = f'SEC 8-K: {sec_8k[0][:80]}\n' if isinstance(sec_8k[0], str) else ''
-
-    # ── R:R ──────────────────────────────────────────────────
-    rr_str = 'N/A'
-    if isinstance(stop_price, (int,float)) and isinstance(target_price, (int,float)) and isinstance(ep, (int,float)) and ep - stop_price > 0:
-        rr = round((target_price - ep) / (ep - stop_price), 1)
-        rr_str = f'1:{rr}'
-
-    # ── Actual position from portfolio ────────────────────────
-    pos = next((p for p in (portfolio or {}).get('positions', []) if p['ticker'] == ticker), None)
-    shares_str = f'{pos["shares"]} shares | Spent: {pos["cost_basis"]:,.0f}' if pos else ''
-
-    # ── Watch list ────────────────────────────────────────────
-    today_str_short = datetime.now().strftime('%b %d')
-    # History = prior picks only (exclude today's pick)
-    history_lines = [l for l in _recent_picks_summary(days=14)
-                     if ticker not in l or today_str_short not in l]
-    history_block = ('HISTORY:\n' + '\n'.join(history_lines)) if history_lines else ''
-
-    # Open positions excluding today's new pick
-    other_positions = [p for p in (portfolio or {}).get('positions', []) if p['ticker'] != ticker]
-    if other_positions:
-        open_block = 'OPEN:\n' + '\n'.join(
-            f'  {p["ticker"]} {p["shares"]}sh {p.get("unrealized_pnl_pct",0):+.1f}% | '
-            f'Stop {p.get("stop_price","?")} | {p.get("hold_days",0)}d'
-            for p in other_positions
-        )
-    else:
-        open_block = ''
-
-    watch_lines = ''
-    for w in wl[:2]:
-        wc = next((c for c in (candidates or []) if c['ticker'] == w.get('ticker','')), {})
-        wr_rsi = wc.get('rsi')
-        wr_mom = wc.get('momentum_5d')
-        wr_tag = f' RSI {wr_rsi:.0f} Mom {wr_mom:+.1f}%' if wr_rsi is not None and wr_mom is not None else ''
-        watch_lines += f'  {w.get("ticker","")} {w.get("confidence",0)}/100{wr_tag}\n'
-
-    # ── Build message ─────────────────────────────────────────
-    all_positions = sorted(
-        (portfolio or {}).get('positions', []),
-        key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True
-    )
-    pf_total_val = round((portfolio or {}).get('cash', 0) +
-        sum(p.get('current_value', p.get('cost_basis', 0)) for p in all_positions), 0) if portfolio else 0
-    pf_cash      = (portfolio or {}).get('cash', 0)
-    slots_used   = len(all_positions)
-
-    def _pos_line(p):
-        upc = p.get('unrealized_pnl_pct', 0)
-        cur_val = round(p.get('current_value', p.get('cost_basis', 0)), 0)
-        arrow = '▲' if upc >= 0 else '▼'
-        return f'{arrow} {p["ticker"]}  {upc:+.1f}%  USD {cur_val:,.0f}  Day {p.get("hold_days",0)}'
-
-    positions_block = '\n'.join(_pos_line(p) for p in all_positions) if all_positions else '  No open positions'
-
-    sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-
+    ticker = pick.get('ticker', 'NONE')
+    sig    = pick.get('signal', 'NO PICK')
+    conf   = pick.get('confidence', 0)
+    sector = pick.get('sector', '')
     thesis = str(pick.get('reasoning', ''))[:120].strip()
     risk   = str(pick.get('key_risk', ''))[:80].strip()
 
+    # ── R:R ──────────────────────────────────────────────────
+    rr_str = 'N/A'
+    if (isinstance(stop_price, (int, float)) and isinstance(target_price, (int, float))
+            and isinstance(ep, (int, float)) and ep - stop_price > 0):
+        rr_str = f'1:{round((target_price - ep) / (ep - stop_price), 1)}'
+
+    # ── Portfolio numbers ─────────────────────────────────────
+    pf           = portfolio or {}
+    all_positions = sorted(pf.get('positions', []),
+                           key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True)
+    pf_total_val = round(pf.get('cash', 0) +
+                         sum(p.get('current_value', p.get('cost_basis', 0)) for p in all_positions), 0)
+    pf_cash      = pf.get('cash', 0)
+    start_cap    = pf.get('starting_capital', STARTING_CAPITAL)
+    total_pct    = round((pf_total_val - start_cap) / start_cap * 100, 2) if start_cap else 0
+    slots_used   = len(all_positions)
+
+    # ── Shares/cost of today's new position ──────────────────
+    pos = next((p for p in pf.get('positions', []) if p['ticker'] == ticker), None)
+    shares_str = f'{pos["shares"]} shares · Spent: {pos["cost_basis"]:,.0f}' if pos else ''
+
+    # ── Action label ──────────────────────────────────────────
     if sig == 'BUY' and position_opened:
         action_line = f'BOUGHT {ticker} · {sector} · {conf}/100'
     elif sig == 'BUY' and not position_opened:
@@ -3489,13 +3366,25 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     for ct in (closed_today or []):
         pnl     = ct.get('realized_pnl', 0)
         pnl_pct = ct.get('realized_pnl_pct', 0)
-        reason  = ct.get('reason', '').split(' ')[0]   # trim detail after space
+        reason  = ct.get('reason', '').split(' ')[0]
         arrow   = '▲' if pnl >= 0 else '▼'
         sold_block_lines.append(f'{arrow} {ct["ticker"]}  {pnl:+,.0f} USD  {pnl_pct:+.1f}%  [{reason}]')
 
-    msg_parts = [
-        f'◆ {action_line}',
-    ]
+    # ── Open positions block ──────────────────────────────────
+    def _pos_line(p):
+        upc     = p.get('unrealized_pnl_pct', 0)
+        cur_val = round(p.get('current_value', p.get('cost_basis', 0)), 0)
+        arrow   = '▲' if upc >= 0 else '▼'
+        return f'{arrow} {p["ticker"]}  {upc:+.1f}%  USD {cur_val:,.0f}  Day {p.get("hold_days", 0)}'
+
+    positions_block = ('\n'.join(_pos_line(p) for p in all_positions)
+                       if all_positions else '  No open positions')
+
+    # ── Assemble ──────────────────────────────────────────────
+    sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+    msg_parts = [f'◆ {action_line}']
+
     if sig == 'BUY':
         msg_parts += [
             f'Entry {ep} · Stop {stop_price} · Tgt {target_price}',
@@ -3504,12 +3393,10 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             thesis,
             f'Risk: {risk}' if risk else '',
         ]
+
     if sold_block_lines:
-        msg_parts += [
-            '',
-            sep,
-            'SOLD TODAY',
-        ] + sold_block_lines
+        msg_parts += ['', sep, 'SOLD TODAY'] + sold_block_lines
+
     msg_parts += [
         '',
         sep,
@@ -3520,7 +3407,9 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         sep,
         f'SPY {ctx["spy_return_today"]:+.2f}%  ·  VIX {ctx["vix_level"]:.1f}  ·  QQQ {ctx["qqq_trend"]}',
     ]
+
     msg = '\n'.join(filter(None, msg_parts))
+    print(f'  WhatsApp preview ({len(msg)} chars):\n{msg}\n')
     _wa_send(msg, 'daily update')
 
 
