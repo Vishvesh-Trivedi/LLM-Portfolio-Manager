@@ -2052,6 +2052,7 @@ def analyze_exit_signals(ctx, all_stock_news, portfolio=None):
             try:
                 days_in = (datetime.now() - datetime.strptime(pick_date, '%Y-%m-%d')).days
             except: days_in = 0
+            curr = None
             try:
                 curr = round(float(yf.Ticker(ticker).history(period='2d')['Close'].iloc[-1]), 2)
                 entry = float(entry_str)
@@ -3103,7 +3104,7 @@ def send_weekly_summary():
     _wa_send(msg, 'weekly-summary')
 
 
-def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None, position_opened=False):
+def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None, position_opened=False, closed_today=None):
     """Send daily pick as 3 WhatsApp messages via CallMeBot (uses ~3 of 10 daily limit)."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
         return
@@ -3268,6 +3269,15 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     else:
         action_line = 'NO PICK TODAY'
 
+    # ── Sold today block ──────────────────────────────────────
+    sold_block_lines = []
+    for ct in (closed_today or []):
+        pnl     = ct.get('realized_pnl', 0)
+        pnl_pct = ct.get('realized_pnl_pct', 0)
+        reason  = ct.get('reason', '').split(' ')[0]   # trim detail after space
+        arrow   = '▲' if pnl >= 0 else '▼'
+        sold_block_lines.append(f'{arrow} {ct["ticker"]}  {pnl:+,.0f} USD  {pnl_pct:+.1f}%  [{reason}]')
+
     msg_parts = [
         f'◆ {action_line}',
     ]
@@ -3279,6 +3289,12 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             thesis,
             f'Risk: {risk}' if risk else '',
         ]
+    if sold_block_lines:
+        msg_parts += [
+            '',
+            sep,
+            'SOLD TODAY',
+        ] + sold_block_lines
     msg_parts += [
         '',
         sep,
@@ -4120,7 +4136,9 @@ def run_screener():
 
     print('\nStep 0/8: Loading portfolio...')
     portfolio = load_portfolio()
+    _closed_before = len(portfolio.get('closed_trades', []))
     portfolio = update_portfolio_prices(portfolio)
+    _closed_today = portfolio['closed_trades'][_closed_before:]
     print(portfolio_summary_str(portfolio))
 
     # Drawdown & deployment status (human-readable console summary)
@@ -4316,7 +4334,7 @@ def run_screener():
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
                      stop_price=_stop, target_price=_tgt)
     display_scorecard()
-    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates, portfolio=portfolio, position_opened=_position_opened)
+    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates, portfolio=portfolio, position_opened=_position_opened, closed_today=_closed_today)
 
     print('\nStep 9/8: LLM self-adaptation (updating config for next run)...')
     update_config_from_llm(pick_history)
