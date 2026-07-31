@@ -1,160 +1,71 @@
-# 🤖 Autonomous Stock Screener — Powered by Claude AI
+# LLM Portfolio Manager
 
-> Built by an OSS Architect. Driven by curiosity. Running every day.
+A Python-based stock screening and portfolio workflow that combines market data, technical indicators, news sentiment, and LLM reasoning to generate BUY/WATCH decisions.
 
-A fully automated daily stock screener that combines technical analysis, NLP sentiment, macro news intelligence, and Claude AI reasoning to surface high-conviction **BUY / WATCH / NO PICK** candidates — every evening after market close.
+## Current Entry Point
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
-[![Anthropic](https://img.shields.io/badge/Powered%20by-Claude%20AI-orange.svg)](https://anthropic.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Cost](https://img.shields.io/badge/Cost%20per%20run-~%240.05--0.10-brightgreen.svg)]()
+- Main script: `LLM_Portfolio_Manager.py`
 
----
+## Project Layout
 
-## 🧠 Philosophy
+- `LLM_Portfolio_Manager.py` - current all-in-one script.
+- `requirements.txt` - Python dependencies.
+- `.env.example` - environment variable template.
+- `docs/` - project documentation.
+- `config/` - configuration files (future split from script constants).
+- `data/` - local intermediate data (git-ignored except `.gitkeep`).
+- `reports/` - generated reports and exports (git-ignored except `.gitkeep`).
+- `tests/` - test suite and testing notes.
 
-**Architecture first, code second.**
+See `docs/PROJECT_STRUCTURE.md` for details and next refactor steps.
 
-This project was designed as a complete pipeline before a single line was written. Claude (Anthropic) acts as the reasoning layer — not just a chatbot, but a structured analytical engine with full market context fed at inference time.
+## Quick Start (Local)
 
----
-
-## ✨ Features
-
-- **375+ stocks screened** in a single API call every evening
-- **Bidirectional screening** — technical filters AND news-driven rescue running in parallel
-- **10 pre-score indicators**: RSI, MACD, ADX, CMF, StochRSI, VWAP, OBV, Options P/C ratio, Insider flow, VADER NLP sentiment
-- **3-layer news intelligence**: macro RSS headlines → sector ETF news → per-stock news
-- **Claude AI reasoning layer** — top 30 candidates with full macro context, sector rotation, earnings risk, self-calibration
-- **Structured output** — BUY/WATCH/NO PICK with stop zones, targets, R:R ratio, devil's advocate, score breakdown
-- **Zero-infrastructure deployment** — Google Colab + Google Drive
-- **Performance tracking** — 10d and 30d return tracking, win rate by confidence band
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Tool |
-|---|---|
-| Market data | `yfinance` (free) |
-| NLP sentiment | `VADER` (free, no API key) |
-| Macro news | 16 RSS feeds — Reuters, CNBC, MarketWatch, BBC, NYT |
-| AI reasoning | Anthropic Claude API (`claude-sonnet-4-5`) |
-| Execution | Google Colab |
-| Storage | Google Drive |
-
----
-
-## ⚙️ Setup
-
-### API Keys Required
-
-| Service | Where | Cost |
-|---|---|---|
-| Anthropic API | [console.anthropic.com](https://console.anthropic.com) | ~$0.05–0.10/run |
-| Google Drive | Your Google account | Free |
-
----
-
-## 🚀 Option 1 — Google Colab (Recommended)
-
-1. Upload the `.py` file to [colab.research.google.com](https://colab.research.google.com)
-2. Click 🔑 **Secrets** → add `ANTHROPIC_API_KEY` = your key
-3. Mount Google Drive when prompted
-4. **Runtime → Run all**
-
-## 💻 Option 2 — Local
+1. Create and activate a virtual environment.
+2. Install dependencies:
 
 ```bash
-git clone https://github.com/Vishvesh-Trivedi/autonomous-stock-screener.git
-cd autonomous-stock-screener
-pip install anthropic yfinance vaderSentiment pandas numpy requests python-dotenv
+pip install -r requirements.txt
 ```
 
-Create `.env`:
-```
-ANTHROPIC_API_KEY=your-key-here
-```
+3. Create `.env` from `.env.example` and set values.
+4. Run:
 
-Run:
 ```bash
-python Daily_Stock_Screener_v6_2_GitHub.py
+python LLM_Portfolio_Manager.py
 ```
 
----
+## Environment Variables
 
-## 📊 Sample Output
+- `NVIDIA_API_KEY` - required for LLM analysis (free key from build.nvidia.com).
+- `WHATSAPP_PHONE` - optional, for WhatsApp notifications (E.164 format, e.g. +64211234567).
+- `CALLMEBOT_API_KEY` - optional, for WhatsApp notifications (via CallMeBot).
 
-```
-=================================================================
-  DAILY STOCK SCREENER v6.2 - RESULT
-=================================================================
-  Date:       2026-04-28
-  VIX:        17.83 (p56) | MODERATE | 1.0x multiplier
-  QQQ:        $657.55 | BULLISH (+8.07% vs 50MA)
-  Sentiment:  CAUTIOUS | Adj: -8
------------------------------------------------------------------
-  TICKER:     CTRA [NEWS]
-  SIGNAL:     BUY | CONFIDENCE: 82/100 | SECTOR: Energy
-  ENTRY:      $34.63 | STOP: ~$33.03 | TARGET: ~$37.84  R:R 1:2
-  Score:      Tech:38/60 | News:28/40 | VIX:1.0x = 82
-  Options P/C: 0.52 (BULLISH)
-  RSI=58.0 | ADX=19.0 | MACD=bull | RS_vs_SPY=+3.34%
-  Reasoning:  Energy rotation with UAE/OPEC tensions + bullish options
-  Devils Adv: Low volume limits conviction. Reversal risk on OPEC news.
-  WATCH: DVN 78 | TRGP 76 | VTR 74
-=================================================================
-```
+## Automated Daily Run (GitHub Actions)
 
----
+The workflow at `.github/workflows/daily-screener.yml` runs the screener automatically
+every day at 21:30 UTC (after the US market close) and on manual dispatch.
 
-## 🗺️ Roadmap
+- The script self-skips on weekends and US market holidays, so the daily schedule is safe.
+- Add the three variables above as repository **Secrets**
+  (`Settings -> Secrets and variables -> Actions`). Only `NVIDIA_API_KEY` is required;
+  the two WhatsApp values enable alerts.
+- Set `Settings -> Actions -> General -> Workflow permissions` to
+  **Read and write permissions** so the run can commit updated state back and upload
+  the HTML/CSV/JSON reports as build artifacts.
 
-- [x] Bidirectional screening (technical + news rescue)
-- [x] Deterministic pre-scoring before Claude
-- [x] Options P/C + insider signals
-- [x] VADER NLP sentiment
-- [x] Self-calibration from historical picks
-- [x] Devil's advocate on every pick
-- [ ] **Sharesies API** → automated order execution
-- [ ] Backtesting module on historical CSV
-- [ ] Telegram/email alerts
-- [ ] Web dashboard
+## WhatsApp Alerts
 
-> 💬 **@Sharesies** — 3 years as a loyal user. If you launch a trading API, this is the use case. The screener already knows what to buy, the stop, the target, and the R:R. It just needs the green light.
+When configured, each run sends two concise WhatsApp messages:
 
----
+1. **Daily decision** - market read (QQQ/VIX/SPY), the actual action taken
+   (bought / picked but not opened / watch only / no buy), entry/stop/target and
+   risk:reward, the reasoning and key risk, positions closed today, and the next watchlist.
+2. **Portfolio** - total value, P&L, cash, and each holding worst-first with a health tag
+   (near stop / near target / hold done / ok).
 
-## 🏗️ Architecture
+## Notes
 
-![Architecture Diagram](architecture/screener_v62_architecture.png)
-
----
-
-## ⚠️ Disclaimer
-
-This is a personal learning project. It is **not financial advice**. Always do your own research before making any investment decisions.
-
----
-
-## 🙏 Acknowledgements
-
-Built with [Claude](https://anthropic.com) by Anthropic · Data via [yfinance](https://github.com/ranaroussi/yfinance) · Sentiment via [VADER](https://github.com/cjhutto/vaderSentiment)
-
----
-
-## 🤝 Contributing
-
-- Found a bug? [Open an issue](https://github.com/Vishvesh-Trivedi/autonomous-stock-screener/issues)
-- Got a better indicator? Submit a PR
-- Want to discuss results? [Start a discussion](https://github.com/Vishvesh-Trivedi/autonomous-stock-screener/discussions)
-
----
-
-## 📬 Connect
-
-Built by **Vishvesh Trivedi** — OSS Architect | AI/ML Automation | 12 Patents | Rakuten Mobile Alumni
-
-[LinkedIn](https://www.linkedin.com/in/vishvesh-trivedi) · #TheRoadToAutonomousNetworks
-
-> *"Sometimes the best way to learn a domain is to build something real in it."* 🚀
+- The current script is notebook-style and runs end-to-end when executed.
+- Runtime output is written under `StockScreener/` by default when not in Colab.
+- This repository structure is prepared so the script can be split into modules incrementally.
