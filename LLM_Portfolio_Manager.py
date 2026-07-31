@@ -4757,12 +4757,11 @@ def run_screener():
         _et_now = datetime.now()  # last resort: local time
 
     if _et_now.weekday() >= 5:
-        if _et_now.weekday() == 5:  # US Saturday = Sunday NZT → send weekly summary
+        if _et_now.weekday() == 5:  # US Saturday = Sunday morning NZT → send weekly review
             print(f'\nMarket closed (US Saturday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending weekly summary...')
             send_weekly_summary()
-        else:  # US Sunday → send a portfolio snapshot too
-            print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending portfolio snapshot...')
-            send_weekly_summary(reason='Weekend')
+        else:  # US Sunday = Monday morning NZT → you already got Saturday's review, so skip
+            print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — weekly summary already sent Saturday. Nothing to do.')
         return None
 
     # US market holiday check — NYSE is closed; skip the run (no picks, no trades).
