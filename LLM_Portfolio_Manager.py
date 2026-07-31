@@ -3511,8 +3511,13 @@ def _wa_send(text, label=''):
         return False
 
 
-def send_weekly_summary():
-    """Send portfolio weekly review — called on US Saturday (= Sunday NZT)."""
+def send_weekly_summary(reason='weekly'):
+    """Send a portfolio snapshot on a non-trading day.
+
+    reason='weekly'  -> full weekly review (US Saturday = Sunday NZT).
+    reason=<holiday> -> 'MARKET CLOSED' snapshot for a NYSE holiday.
+    reason='Weekend' -> 'MARKET CLOSED' snapshot for US Sunday.
+    """
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
         return
     pf = load_portfolio()
@@ -3575,6 +3580,13 @@ def send_weekly_summary():
     date_str = datetime.now().strftime('%b %d %Y')
     cash     = round(pf['cash'], 0)
 
+    if reason == 'weekly':
+        header    = f'WEEKLY SUMMARY  {date_str}'
+        next_note = 'Next run: Tuesday 9AM NZT'
+    else:
+        header    = f'MARKET CLOSED — {reason}  ({date_str})'
+        next_note = 'No trading today. Markets reopen next US trading day.'
+
     winning = sorted([p for p in pf['positions'] if p.get('unrealized_pnl_pct', 0) >= 0],
                      key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True)
     losing  = sorted([p for p in pf['positions'] if p.get('unrealized_pnl_pct', 0) < 0],
@@ -3588,7 +3600,7 @@ def send_weekly_summary():
         return f'{arrow} {p["ticker"]}  {word} {abs(upc):.1f}%  (USD {abs(upl):,.0f})  Day {p.get("hold_days",0)}/{_CFG_HOLD_DAYS}'
 
     lines = [
-        f'WEEKLY SUMMARY  {date_str}',
+        header,
         sep,
         'YOUR PORTFOLIO',
         f'Total value:  USD {total_val:,.0f}  ({total_pct:+.1f}% since start)',
@@ -3621,11 +3633,12 @@ def send_weekly_summary():
     else:
         lines.append('No trades closed this week')
 
-    lines += [sep, 'Next run: Tuesday 9AM NZT']
+    lines += [sep, next_note]
 
     msg = '\n'.join(l for l in lines if l is not None)
-    print(f'  Weekly summary preview ({len(msg)} chars):\n{msg}\n')
-    _wa_send(msg, 'weekly-summary')
+    _label = 'weekly-summary' if reason == 'weekly' else 'closed-summary'
+    print(f'  {_label} preview ({len(msg)} chars):\n{msg}\n')
+    _wa_send(msg, _label)
 
 
 def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None, position_opened=False, closed_today=None):
@@ -4747,14 +4760,16 @@ def run_screener():
         if _et_now.weekday() == 5:  # US Saturday = Sunday NZT → send weekly summary
             print(f'\nMarket closed (US Saturday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending weekly summary...')
             send_weekly_summary()
-        else:
-            print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — nothing to do. See you Monday.')
+        else:  # US Sunday → send a portfolio snapshot too
+            print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending portfolio snapshot...')
+            send_weekly_summary(reason='Weekend')
         return None
 
     # US market holiday check — NYSE is closed; skip the run (no picks, no trades).
     _holiday = _us_market_holiday(_et_now)
     if _holiday:
-        print(f'\nMarket closed ({_holiday}, US {_et_now.strftime("%Y-%m-%d")} ET) — no trading today. Skipping run.')
+        print(f'\nMarket closed ({_holiday}, US {_et_now.strftime("%Y-%m-%d")} ET) — no trading today. Sending portfolio snapshot...')
+        send_weekly_summary(reason=_holiday)
         return None
 
     print(f'   US ET:  {_et_now.strftime("%Y-%m-%d %H:%M %Z")} (weekday {_et_now.weekday()}, markets open)')
