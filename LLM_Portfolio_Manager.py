@@ -41,7 +41,7 @@ Every evening after market close:
   → Computes deterministic pre-scores:
        RSI, MACD, ADX, CMF, StochRSI, VWAP, OBV,
        Options P/C ratio, Insider flow, VADER NLP sentiment
-  → Feeds top 30 candidates to Claude with full context:
+  → Feeds top 30 candidates to the LLM (NVIDIA NIM) with full context:
        Macro headlines, sector rotation, earnings risk,
        self-calibration from past picks
   → Gets back BUY / WATCH / NO PICK with:
@@ -84,11 +84,11 @@ Version History:
   FIX 4  Hard caps clamped post-hoc instead of trusted to the LLM
   FIX 5  FI ticker removed (Yahoo Finance delisted - was FISV)
   FIX 6  Sector bonus reduced from 3 to 2 (sum cleanly to 60 max)
-  FIX 7  Model names unified to claude-sonnet-4-5 in all 3 Claude calls
+  FIX 7  Model unified to one valid NVIDIA NIM id (meta/llama-3.3-70b-instruct)
   FIX 8  compute_indicators logs exception when SCREENER_DEBUG env set
   FIX 9  ETFs included in batch_download so sector ranks + ETF news work
-  FIX 10 Candidates trimmed to top 30 by pre_score before Claude call
-  FIX 11 Claude output tokens raised from 1200 to 2000
+  FIX 10 Candidates trimmed to top 30 by pre_score before the LLM call
+  FIX 11 LLM output tokens raised from 1200 to 2000 (round 2 now 4000)
 """
 
 # ============================================================
@@ -340,8 +340,7 @@ _CFG_MAX_POSITIONS      = 5       # max simultaneous open positions (LLM configu
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
 #
 # RECOMMENDED FOR THIS SCREENER (best JSON + financial reasoning):
-#   'deepseek-ai/deepseek-v4-pro'           ← newest DeepSeek, free on NVIDIA NIM
-#   'meta/llama-3.3-70b-instruct'           ← solid all-rounder
+#   'meta/llama-3.3-70b-instruct'           ← solid all-rounder (default)
 #   'nvidia/llama-3.1-nemotron-70b-instruct'← NVIDIA-tuned, very strong reasoning
 #   'qwen/qwen2.5-72b-instruct'             ← excellent structured JSON output
 #   'mistralai/mixtral-8x22b-instruct-v0.1' ← fast, good for JSON
@@ -590,7 +589,7 @@ def compute_vader_sentiment(news_titles):
 
 def compute_tech_score(ind, ctx, sector_rank=6):
     """
-    Deterministic technical score 0-60. Runs BEFORE Claude.
+    Deterministic technical score 0-60. Runs BEFORE the LLM.
 
     Components:
       RSI regime fit      0-12
@@ -705,7 +704,7 @@ def compute_news_score(news_titles, rescue_keywords, analyst_rating,
                        upside_pct, market_sentiment, pc_ratio=None,
                        insider_label='NEUTRAL'):
     """
-    News-driven score 0-40. Runs BEFORE Claude.
+    News-driven score 0-40. Runs BEFORE the LLM.
     """
     vader_compound, vader_label = compute_vader_sentiment(news_titles)
 
@@ -4893,7 +4892,7 @@ def run_screener():
         wins=sum(1 for h in pick_history if h['result']=='Win')
         print(f'  Self-calibration: {len(pick_history)} prior picks, {wins/len(pick_history)*100:.0f}% win rate')
 
-    print('\nStep 6/8: Claude final scoring...')
+    print('\nStep 6/8: LLM final scoring...')
     result = analyze_with_nvidia(candidates, ctx, nd, pick_history=pick_history, portfolio=portfolio)
     if not result:
         print('NVIDIA analysis failed - no result returned'); return None
