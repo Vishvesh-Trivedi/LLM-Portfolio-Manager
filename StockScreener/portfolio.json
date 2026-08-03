@@ -1,0 +1,10 @@
+{
+  "cash": 10000.0,
+  "starting_capital": 10000.0,
+  "positions": [],
+  "closed_trades": [],
+  "total_realized_pnl": 0.0,
+  "created": "2026-08-03",
+  "last_nzdusd_rate": 0.59,
+  "last_updated": "2026-08-03 22:19"
+}
