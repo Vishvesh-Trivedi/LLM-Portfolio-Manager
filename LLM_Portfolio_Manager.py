@@ -4756,11 +4756,13 @@ def run_screener():
     except Exception:
         _et_now = datetime.now()  # last resort: local time
 
+    _is_manual = os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'
     if _et_now.weekday() >= 5:
-        if _et_now.weekday() == 5:  # US Saturday = Sunday morning NZT → send weekly review
-            print(f'\nMarket closed (US Saturday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending weekly summary...')
+        if _et_now.weekday() == 5 or _is_manual:  # US Saturday OR manual trigger → send weekly review
+            _day_label = 'US Saturday' if _et_now.weekday() == 5 else 'US Sunday (manual trigger)'
+            print(f'\nMarket closed ({_day_label} {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending weekly summary...')
             send_weekly_summary()
-        else:  # US Sunday = Monday morning NZT → you already got Saturday's review, so skip
+        else:  # US Sunday scheduled → you already got Saturday's review, so skip
             print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — weekly summary already sent Saturday. Nothing to do.')
         return None
 
