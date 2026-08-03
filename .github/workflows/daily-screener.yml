@@ -6,9 +6,9 @@ name: Daily Stock Screener
 
 on:
   schedule:
-    # 21:30 UTC every day = ~4:30-5:30 PM US Eastern (after the market close),
-    # which is the morning in NZ. The script decides whether it's a trading day.
-    - cron: '30 21 * * *'
+    # 21:15 UTC every day = ~4:15-5:15 PM US Eastern (after the market close),
+    # which lands a little earlier in the NZ morning. The script decides whether it's a trading day.
+    - cron: '15 21 * * *'
   workflow_dispatch: {}   # allow manual "Run workflow" from the Actions tab
 
 # Never let two runs overlap (portfolio state is committed back to the repo).
