@@ -2622,7 +2622,8 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     top10 = [c['ticker'] for c in candidates[:10]]
     r1_notes = ''
     try:
-        raw1 = call_llm(SYS, r1_user, max_tokens=400)
+        raw1 = call_llm(SYS, r1_user, max_tokens=400, max_attempts=2, read_timeout=45)
+        if not raw1: raise RuntimeError('empty')
         if '{' in raw1: raw1 = raw1[raw1.index('{'):]
         r1 = json.loads(raw1)
         top10 = r1.get('top10', top10)[:10]
@@ -2674,7 +2675,8 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     try:
         # 10 bull/bear/edge analyses easily exceed 2000 tokens and truncate the
         # JSON mid-object; give enough room so Round 2 parses cleanly.
-        raw2 = call_llm(SYS, r2_user, max_tokens=4000)
+        raw2 = call_llm(SYS, r2_user, max_tokens=4000, max_attempts=2, read_timeout=45)
+        if not raw2: raise RuntimeError('empty')
         if '{' in raw2 and '}' in raw2:
             raw2 = raw2[raw2.index('{'):raw2.rindex('}')+1]
         r2 = json.loads(raw2)
@@ -2719,7 +2721,8 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     )
 
     try:
-        raw3 = call_llm(SYS, r3_user, max_tokens=2000)
+        raw3 = call_llm(SYS, r3_user, max_tokens=2000, max_attempts=2, read_timeout=60)
+        if not raw3: raise RuntimeError('empty')
         if '```' in raw3:
             for part in raw3.split('```'):
                 part = part.strip()
@@ -4307,7 +4310,8 @@ You can change ANY value. Keep unchanged values as-is.
 
     print('\n  Asking LLM to update screening config based on pick history...')
     try:
-        raw = call_llm(sys_msg, user_msg, max_tokens=600)
+        raw = call_llm(sys_msg, user_msg, max_tokens=600, max_attempts=2,
+                       raise_on_failure=False, read_timeout=45)
         if not raw:
             print(f'  Config update skipped — LLM returned empty response')
             return
