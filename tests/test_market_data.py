@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest.mock import patch
 
 os.environ['SCREENER_SKIP_UNIVERSE_FETCH'] = '1'
 
@@ -50,6 +51,32 @@ class MarketDataCleaningTests(unittest.TestCase):
         closes = screener._valid_closes(frame)
 
         self.assertEqual(closes.tolist(), [100.0, 101.0])
+
+
+class LlmTimeoutTests(unittest.TestCase):
+    def test_fail_soft_call_uses_bounded_timeout_without_transport_retries(self):
+        screener._LLM_REQUEST_TIMESTAMPS.clear()
+        screener._LLM_LAST_CALL[0] = 0.0
+        adapter = screener._REQUESTS_SESSION.get_adapter('https://')
+        self.assertEqual(adapter.max_retries.total, 0)
+
+        with patch.object(
+            screener._REQUESTS_SESSION,
+            'post',
+            side_effect=screener.requests.exceptions.ReadTimeout('timed out'),
+        ) as post:
+            result = screener.call_llm(
+                'system',
+                'user',
+                max_attempts=1,
+                raise_on_failure=False,
+                connect_timeout=3,
+                read_timeout=7,
+            )
+
+        self.assertEqual(result, '')
+        self.assertEqual(post.call_count, 1)
+        self.assertEqual(post.call_args.kwargs['timeout'], (3, 7))
 
 
 if __name__ == '__main__':

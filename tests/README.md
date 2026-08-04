@@ -6,6 +6,7 @@ Current coverage:
 - Yahoo Finance OHLCV cleanup when an in-progress trailing row contains NaNs.
 - Technical indicator calculation after incomplete-row cleanup.
 - Close-price cleanup for market context.
+- Bounded fail-soft NVIDIA calls without hidden transport retries.
 
 Suggested first tests:
 - Candidate filtering rules.
