@@ -466,7 +466,7 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
         try:
             _llm_acquire_rate_slot()
             resp = _REQUESTS_SESSION.post("https://integrate.api.nvidia.com/v1/chat/completions",
-                                 headers=headers, json=payload, timeout=(30, 600))
+                                 headers=headers, json=payload, timeout=(30, 90))
             resp.raise_for_status()
             raw = resp.json()['choices'][0]['message']['content'].strip()
             if '</think>' in raw:
@@ -1305,7 +1305,11 @@ def _fetch_dynamic_universe():
     print(f'  Dynamic universe: {" + ".join(sources)} = {len(unique)} unique tickers')
     return unique
 
-_dynamic_stocks  = _fetch_dynamic_universe()
+if os.environ.get('SCREENER_SKIP_UNIVERSE_FETCH') == '1':
+    _dynamic_stocks = list(dict.fromkeys(NASDAQ_100 + SP500_STOCKS))
+    print(f'  Dynamic universe fetch skipped for test/import ({len(_dynamic_stocks)} fallback tickers)')
+else:
+    _dynamic_stocks = _fetch_dynamic_universe()
 TICKER_UNIVERSE  = list(dict.fromkeys(_dynamic_stocks + KEY_ETFS + MY_STOCKS))
 UNIVERSE_SET     = set(TICKER_UNIVERSE)
 ETF_SET          = set(KEY_ETFS)
@@ -1317,10 +1321,40 @@ print(f'   ETFs:      {len(ETF_SET)}')
 print(f'   TOTAL:     {len(TICKER_UNIVERSE)}')
 
 
+def _clean_ohlcv(df):
+    """Return aligned, numeric OHLCV rows and discard incomplete Yahoo rows.
+
+    Yahoo can append an in-progress row whose Close/High/Low values are NaN.
+    Keeping that row while dropping NaNs from Close alone gives indicators
+    unequal indexes and makes every ticker fail the technical screen.
+    """
+    required = ['High', 'Low', 'Close', 'Volume']
+    if df is None or not all(col in df.columns for col in required):
+        return None
+    clean = df.copy()
+    for col in required + (['Open'] if 'Open' in clean.columns else []):
+        clean[col] = pd.to_numeric(clean[col], errors='coerce')
+    clean = clean.replace([np.inf, -np.inf], np.nan)
+    clean = clean.dropna(subset=['High', 'Low', 'Close'])
+    if clean.empty:
+        return None
+    clean['Volume'] = clean['Volume'].fillna(0.0)
+    return clean
+
+
+def _valid_closes(df):
+    """Return finite Close values from a Yahoo history frame."""
+    if df is None or 'Close' not in df.columns:
+        return pd.Series(dtype=float)
+    return pd.to_numeric(df['Close'], errors='coerce').replace([np.inf, -np.inf], np.nan).dropna()
+
+
 def get_market_context():
     print('\nMarket context...')
     try:
-        vix_hist  = yf.Ticker('^VIX').history(period='1y')['Close']
+        vix_hist  = _valid_closes(yf.Ticker('^VIX').history(period='1y'))
+        if vix_hist.empty:
+            raise ValueError('VIX history has no valid closes')
         vix_l     = round(float(vix_hist.iloc[-1]), 2)
         vix_pct   = round(float(vix_hist.rank(pct=True).iloc[-1]) * 100, 1)
     except:
@@ -1333,8 +1367,11 @@ def get_market_context():
 
     try:
         qh  = yf.Ticker('QQQ').history(period='60d')
-        qc  = float(qh['Close'].iloc[-1])
-        q50 = float(qh['Close'].rolling(50).mean().iloc[-1])
+        qcl = _valid_closes(qh)
+        if len(qcl) < 50:
+            raise ValueError('QQQ history has fewer than 50 valid closes')
+        qc  = float(qcl.iloc[-1])
+        q50 = float(qcl.rolling(50).mean().iloc[-1])
         qt  = 'BULLISH' if qc > q50 else 'BEARISH'
         qv  = round(((qc - q50) / q50) * 100, 2)
         qp  = round(qc, 2)
@@ -1343,9 +1380,12 @@ def get_market_context():
 
     try:
         spy_hist = yf.Ticker('SPY').history(period='5d')
-        spy_ret  = round(((float(spy_hist['Close'].iloc[-1]) -
-                           float(spy_hist['Close'].iloc[-2])) /
-                           float(spy_hist['Close'].iloc[-2])) * 100, 2)
+        spy_closes = _valid_closes(spy_hist)
+        if len(spy_closes) < 2:
+            raise ValueError('SPY history has fewer than 2 valid closes')
+        spy_ret  = round(((float(spy_closes.iloc[-1]) -
+                           float(spy_closes.iloc[-2])) /
+                           float(spy_closes.iloc[-2])) * 100, 2)
     except:
         spy_ret = 0.0
 
@@ -1364,9 +1404,10 @@ def get_market_context():
     for name, sym in _GLOBAL.items():
         try:
             h = yf.Ticker(sym).history(period='5d')
-            if not h.empty and len(h) >= 2:
-                latest = round(float(h['Close'].iloc[-1]), 2)
-                prev   = float(h['Close'].iloc[-2])
+            closes = _valid_closes(h)
+            if len(closes) >= 2:
+                latest = round(float(closes.iloc[-1]), 2)
+                prev   = float(closes.iloc[-2])
                 chg    = round((latest - prev) / prev * 100, 2) if prev else 0.0
                 global_macro[name] = {'price': latest, 'chg_pct': chg}
         except:
@@ -1419,14 +1460,16 @@ def batch_download(tickers):
         if isinstance(raw.columns, pd.MultiIndex):
             for t in tickers:
                 try:
-                    df = raw.xs(t, axis=1, level=1).dropna(how='all')
-                    if not df.empty and len(df) >= 20:
+                    df = _clean_ohlcv(raw.xs(t, axis=1, level=1))
+                    if df is not None and len(df) >= 20:
                         result[t] = df
                 except:
                     continue
         else:
             if len(tickers) == 1 and not raw.empty:
-                result[tickers[0]] = raw
+                df = _clean_ohlcv(raw)
+                if df is not None and len(df) >= 20:
+                    result[tickers[0]] = df
 
         print(f'  Downloaded: {len(result)}/{len(tickers)} tickers')
         return result
@@ -1709,12 +1752,13 @@ def derive_sector_sentiment(candidates):
 
 def compute_indicators(df, spy_return_today=0.0):
     """Compute all technical indicators from OHLCV DataFrame."""
+    df = _clean_ohlcv(df)
     if df is None or len(df) < 20:
         return None
     try:
         hi = df['High']
         lo = df['Low']
-        cl = df['Close'].dropna()
+        cl = df['Close']
         vo = df['Volume']
         if len(cl) < 20:
             return None
@@ -3420,9 +3464,9 @@ def display_scorecard():
             continue
         wins = len(done[done['Result']=='Win'])
         wr   = round(wins / len(done) * 100, 1)
-        r30  = pd.to_numeric(done['Return_30d_pct'], errors='coerce').mean()
-        r30_str = f'{r30:+.1f}%' if pd.notna(r30) else 'n/a'
-        print(f'  {label}: {wins}/{len(done)} wins ({wr}%) | avg 30d {r30_str} | {len(pend)} pending')
+        avg_return = pd.to_numeric(done['Return_Pct'], errors='coerce').mean()
+        avg_return_str = f'{avg_return:+.1f}%' if pd.notna(avg_return) else 'n/a'
+        print(f'  {label}: {wins}/{len(done)} wins ({wr}%) | avg {_CFG_HOLD_DAYS}d {avg_return_str} | {len(pend)} pending')
     print(f'  📁 Full report → {DRIVE_FOLDER}/report_latest.html')
     print('─' * 60)
 
@@ -3470,7 +3514,7 @@ def _recent_picks_summary(days=10):
                 else:
                     status = 'Open'
             else:
-                ret = row.get('Return_30d_pct', '')
+                ret = row.get('Return_Pct', '')
                 try:
                     status = f'{result} ({float(ret):+.1f}%)'
                 except:
@@ -3479,6 +3523,34 @@ def _recent_picks_summary(days=10):
     except Exception:
         pass
     return lines
+
+
+def _wa_no_pick(ctx, portfolio, reason='No qualifying candidates today'):
+    """Send a brief WhatsApp notification when the screener finds no pick."""
+    if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
+        return
+    ctx = ctx or {}
+    pf  = portfolio or {}
+    positions = pf.get('positions', [])
+    cash      = round(pf.get('cash', STARTING_CAPITAL), 2)
+    start_cap = float(pf.get('starting_capital', STARTING_CAPITAL) or STARTING_CAPITAL)
+    total_val = round(cash + sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions), 2)
+    total_pnl = round(total_val - start_cap, 2)
+    total_pct = round((total_pnl / start_cap) * 100, 1) if start_cap else 0.0
+    sign      = '+' if total_pnl >= 0 else ''
+    date_str  = datetime.now().strftime('%b %d %Y %H:%M')
+    n_open    = len(positions)
+    vix       = ctx.get('vix_level', '?')
+    qqq_trend = ctx.get('qqq_trend', '?')
+    spy_ret   = ctx.get('spy_return_today', 0)
+    msg = (
+        f'📊 Screener ran {date_str} NZT\n'
+        f'Result: NO PICK — {reason}\n\n'
+        f'Market: VIX={vix} | QQQ={qqq_trend} | SPY={spy_ret:+.2f}%\n'
+        f'Portfolio: ${total_val:,.0f} ({sign}{total_pct}%) | '
+        f'Cash ${cash:,.0f} | {n_open} open position(s)'
+    )
+    _wa_send(msg, label='no-pick')
 
 
 def _wa_send(text, label=''):
@@ -4828,6 +4900,7 @@ def run_screener():
     batch_data = batch_download(scan_universe + KEY_ETFS)
     if not batch_data:
         print('  Batch download failed - cannot proceed')
+        _wa_no_pick(ctx if 'ctx' in dir() else {}, portfolio if 'portfolio' in dir() else {}, reason='Batch data download failed')
         display_scorecard(); return None
 
     headlines        = fetch_macro_news()
@@ -4870,6 +4943,7 @@ def run_screener():
 
     if not candidates:
         print('\nNo candidates from any stream today - NO PICK')
+        _wa_no_pick(ctx, portfolio, reason='No qualifying candidates from any stream')
         display_scorecard(); return None
 
     print('\nStep 4.6/8: Options P/C + insider + congress + SEC 8-K...')
@@ -4892,6 +4966,7 @@ def run_screener():
 
     if not candidates:
         print('All candidates dropped by news filter')
+        _wa_no_pick(ctx, portfolio, reason='All candidates dropped by news filter')
         display_scorecard(); return None
 
     market_sentiment = nd.get('market_sentiment','NEUTRAL')
@@ -4901,6 +4976,7 @@ def run_screener():
     candidates = apply_config_criteria(candidates, ctx=ctx)
     if not candidates:
         print('All candidates dropped by config criteria')
+        _wa_no_pick(ctx, portfolio, reason='All candidates dropped by config/LLM criteria')
         display_scorecard(); return None
 
     pick_history = load_performance_history(PICKS_CSV)
@@ -4911,6 +4987,7 @@ def run_screener():
     print('\nStep 6/8: LLM final scoring...')
     result = analyze_with_nvidia(candidates, ctx, nd, pick_history=pick_history, portfolio=portfolio)
     if not result:
+        _wa_no_pick(ctx, portfolio, reason='LLM analysis failed to return a result')
         print('NVIDIA analysis failed - no result returned'); return None
 
     # Post-hoc cap enforcement — only active if LLM has enabled caps via config
@@ -4999,4 +5076,5 @@ def run_screener():
     return result
 
 
-result = run_screener()
+if __name__ == '__main__':
+    result = run_screener()
