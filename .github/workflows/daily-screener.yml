@@ -1,4 +1,4 @@
-name: Daily Stock Screener
+    timeout-minutes: 90
 
 # Runs the LLM portfolio screener once per day.
 # The Python script itself self-skips US weekends and NYSE public holidays
