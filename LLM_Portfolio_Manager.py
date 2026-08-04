@@ -4153,11 +4153,27 @@ def update_config_from_llm(pick_history):
     wins = sum(1 for h in closed if h['result'] == 'Win')
     wr   = wins / len(closed) * 100
 
+    # Consecutive loss streak from the most recent picks
+    streak = 0
+    for h in reversed(closed):
+        if h['result'] == 'Loss':
+            streak += 1
+        else:
+            break
+    streak_warn = ''
+    if streak >= 3:
+        streak_warn = (f'\n⚠️  LOSS STREAK: last {streak} consecutive picks all LOST. '
+                       f'Current guidelines are not working. You MUST make meaningful changes.\n')
+    elif streak >= 2:
+        streak_warn = f'\nNOTICE: last {streak} picks both lost. Review your criteria.\n'
+
     history_lines = []
     for h in closed[-20:]:
+        ret = h.get('vs_qqq_10d', h.get('vs_qqq_30d', '?'))
         line = (f"  {h.get('date','?')}: {h.get('ticker','?')} [{h.get('sector','?')}/{h.get('source','?')}]"
-                f" @ {h.get('price','?')} → {h.get('result','?')}"
-                f" (vs QQQ: {h.get('vs_qqq_10d', h.get('vs_qqq_30d','?'))}%)")
+                f" conf={h.get('confidence','?')} RSI={h.get('rsi','?')} VIX={h.get('vix','?')} QQQ={h.get('qqq_trend','?')}"
+                f" → {h.get('result','?')} ret={h.get('return_pct', h.get('return_30d','?'))}% vsQQQ={ret}%"
+                f" | {str(h.get('reasoning',''))[:80]}")
         history_lines.append(line)
 
     current_cfg = {
@@ -4216,17 +4232,20 @@ def update_config_from_llm(pick_history):
         'You have FULL AUTHORITY to change any screening parameter, including hold_days itself. '
         'Your goal: maximize QQQ-relative returns across all picks.'
     )
-    user_msg = f"""PORTFOLIO PERFORMANCE: {wr:.0f}% win rate ({wins}/{len(closed)} closed picks, Win = beat QQQ by >{_CFG_WIN_THRESHOLD_PCT}% in {_CFG_HOLD_DAYS} days)
-
+    user_msg = f"""PORTFOLIO PERFORMANCE: {wr:.0f}% win rate ({wins}/{len(closed)} closed picks, Win = beat QQQ by >{_CFG_WIN_THRESHOLD_PCT}% in {_CFG_HOLD_DAYS} days){streak_warn}
 CURRENT SCREENING CONFIG:
 {json.dumps(current_cfg, indent=2)}
 
-PICK HISTORY (last 20 closed picks, sorted oldest→newest):
+PICK HISTORY (last 20 closed picks — includes RSI, confidence, VIX, QQQ trend so you can spot the failure pattern):
 {chr(10).join(history_lines)}
 
 YOUR JOB:
-1. Find the pattern. What sectors, sources, VIX regimes, or signal types are winning vs losing?
+1. Find the pattern. What sectors, sources, RSI ranges, VIX regimes, or confidence levels are winning vs losing?
 2. Change the config to capitalise on what's working and eliminate what's failing.
+   — Win rate >65%: fine-tune only.
+   — Win rate 50-65%: adjust 2-3 parameters.
+   — Win rate <50%: make meaningful changes across multiple parameters.
+   — Loss streak ≥3: something is structurally wrong. Overhaul aggressively.
 3. You have FULL AUTHORITY — no restrictions. You can:
    - Change any numeric threshold to any value that makes sense
    - Blacklist entire sectors that keep losing
@@ -4246,8 +4265,7 @@ YOUR JOB:
    - Raise sector_conc_max if diversification is hurting returns, lower it to force diversity
    - Lower rsi_exit (e.g. 75) to take profits earlier; raise it (e.g. 82) to let winners run further
    - Lower rsi_exit_min_profit / macd_exit_min_profit if momentum reversals are costing unrealised gains
-4. When win rate >65%: fine-tune only. When win rate <50%: make meaningful changes.
-5. If no clear pattern: keep current config unchanged.
+4. If no clear pattern visible yet: keep current config unchanged.
 
 Return ONLY valid JSON — no markdown fences, no text outside the JSON.
 You can change ANY value. Keep unchanged values as-is.
