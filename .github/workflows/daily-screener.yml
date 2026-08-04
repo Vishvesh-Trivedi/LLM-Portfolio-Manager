@@ -22,7 +22,7 @@ permissions:
 jobs:
   screen:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repo
@@ -39,12 +39,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run regression tests
+        env:
+          SCREENER_SKIP_UNIVERSE_FETCH: '1'
+        run: python -m unittest discover -s tests -p "test_*.py"
+
       - name: Run screener
         env:
           NVIDIA_API_KEY:    ${{ secrets.NVIDIA_API_KEY }}
           WHATSAPP_PHONE:    ${{ secrets.WHATSAPP_PHONE }}
           CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
-        run: python LLM_Portfolio_Manager.py
+          PYTHONUNBUFFERED:   '1'
+        run: python -u LLM_Portfolio_Manager.py
 
       - name: Commit updated portfolio state
         if: always()   # persist state even if the screen step failed part-way
