@@ -1,4 +1,4 @@
-    timeout-minutes: 90
+name: Daily Stock Screener
 
 # Runs the LLM portfolio screener once per day.
 # The Python script itself self-skips US weekends and NYSE public holidays
@@ -22,7 +22,7 @@ permissions:
 jobs:
   screen:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repo
