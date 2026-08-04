@@ -257,9 +257,12 @@ def _create_requests_session():
     """Create a requests session with retry logic for Nvidia API reliability."""
     session = requests.Session()
     retry_strategy = Retry(
-        total=2,
-        connect=2,
-        read=2,
+        # call_llm() owns retries and model rotation. Transport-level retries
+        # multiplied each 90-second read timeout and made one attempt last
+        # several minutes with no visible progress.
+        total=0,
+        connect=0,
+        read=0,
         status=0,  # Handle HTTP status retries (especially 429) in call_llm() with explicit cooldown.
         backoff_factor=0.5,
         status_forcelist=[500, 502, 503, 504],
@@ -436,7 +439,8 @@ def _llm_backoff_seconds(attempt, retry_after=None):
     return min(90.0, (2 ** (attempt + 2)) * jitter)
 
 
-def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=5):
+def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=5,
+             connect_timeout=15, read_timeout=60):
     """Call NVIDIA NIM with retry/backoff and optional fail-soft mode.
 
     Built-in rate limiter (40/min). Strips DeepSeek <think> blocks.
@@ -466,7 +470,8 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
         try:
             _llm_acquire_rate_slot()
             resp = _REQUESTS_SESSION.post("https://integrate.api.nvidia.com/v1/chat/completions",
-                                 headers=headers, json=payload, timeout=(30, 90))
+                                 headers=headers, json=payload,
+                                 timeout=(connect_timeout, read_timeout))
             resp.raise_for_status()
             raw = resp.json()['choices'][0]['message']['content'].strip()
             if '</think>' in raw:
@@ -2238,7 +2243,8 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
         )
         try:
             # Fail-soft: if a batch is throttled/invalid, keep defaults and continue the run.
-            raw = call_llm(sys_msg, user_msg, max_tokens=900, max_attempts=3, raise_on_failure=False)
+            raw = call_llm(sys_msg, user_msg, max_tokens=900, max_attempts=1,
+                           raise_on_failure=False, read_timeout=45)
             if not raw:
                 skipped_batches += 1
                 consecutive_skips += 1
