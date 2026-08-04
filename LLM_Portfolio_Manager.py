@@ -371,9 +371,8 @@ _LLM_RATE_LOCK = threading.Lock()
 _LLM_BATCH_COOLDOWN_EVERY = 8      # pause less often for faster completion
 _LLM_BATCH_COOLDOWN_SECONDS = 8.0  # short reset aid without large runtime penalty
 _NVIDIA_FALLBACK_MODELS = [
-    'nvidia/llama-3.1-nemotron-70b-instruct',
-    'deepseek-ai/deepseek-r1',
-    'qwen/qwen2.5-72b-instruct',
+    # nemotron-70b, deepseek-r1, and qwen2.5-72b all returned 404 on 2026-08-05.
+    # Keep only the small model that is confirmed reachable as a fast fallback.
     'meta/llama-3.1-8b-instruct',
 ]
 _NVIDIA_ACTIVE_MODEL = [NVIDIA_MODEL]
@@ -2166,7 +2165,7 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
         raw = call_llm(
             system='Extract US stock tickers from headlines. Return ONLY a JSON array like ["AAPL","GOOGL"]. No explanation.',
             user=f'HEADLINES:\n{chr(10).join(headlines)}\n\nRules: US stocks only, no ETFs, no indices, max 15 tickers, [] if none.',
-            max_tokens=200
+            max_tokens=200, max_attempts=2, raise_on_failure=False, read_timeout=45
         )
         if '[' in raw:
             raw = raw[raw.index('['):]
