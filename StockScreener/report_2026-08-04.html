@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM Portfolio Manager — 2026-08-04</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+     background:#f0f2f5;color:#1a1a2e;padding:20px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:20px;font-weight:700;color:#333}
+.sub{color:#888;font-size:12px;margin-bottom:18px;margin-top:3px}
+.mkt{display:flex;gap:20px;background:white;border-radius:10px;padding:12px 20px;
+      margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-wrap:wrap;font-size:13px}
+.mi .ml{color:#888;font-size:11px} .mi .mv{font-weight:600}
+.tabs{display:flex;gap:4px;margin-bottom:18px}
+.tb{flex:1;padding:12px;text-align:center;font-size:15px;font-weight:600;
+     border:none;border-radius:8px;cursor:pointer;background:#e0e0e0;color:#666;transition:.15s}
+.tb.on{background:#1a1a2e;color:white}
+.tp{display:none} .tp.on{display:block}
+.sec{background:white;border-radius:10px;padding:20px;margin-bottom:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.sh{font-size:14px;font-weight:700;color:#333;margin-bottom:12px;
+     border-bottom:2px solid #f0f0f0;padding-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fa;padding:9px 8px;text-align:left;font-weight:600;
+    color:#555;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+td{padding:8px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LLM Portfolio Manager</h1>
+  <p class="sub">Tuesday August 04 2026  22:49 &nbsp;·&nbsp; meta/llama-3.3-70b-instruct</p>
+
+  <div class="mkt">
+    <div class="mi"><div class="ml">VIX</div><div class="mv">16.5 &nbsp;MODERATE (p37 </div></div>
+    <div class="mi"><div class="ml">SPY Today</div>
+        <div class="mv" style="color:#00c853">+1.80%</div></div>
+    <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BULLISH</div></div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">Unavailable</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tb on" onclick="sw('buy',this)">BUY</button>
+    <button class="tb"    onclick="sw('see',this)">SEE</button>
+    <button class="tb"    onclick="sw('hold',this)">HOLD</button>
+    <button class="tb"    onclick="sw('stop',this)" style="">STOP</button>
+  </div>
+
+  <!-- ═══ BUY ═══ -->
+  <div id="t-buy" class="tp on">
+    <div class="section" style="border-left:4px solid #1565c0">
+    <h2>🧠 What the AI Learned from Your Trade History</h2>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">Initial analysis suggests a focus on earnings beats, strong fundamentals, and positive sector trends.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated.</li></ul>
+    
+  </div>
+    <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
+                margin-bottom:14px;border-left:8px solid #00c853">
+      <div style="font-size:28px;font-weight:800;color:#00c853;margin-bottom:6px">
+        BOUGHT BR
+      </div>
+      <div style="color:#aaa;font-size:13px">
+        2026-08-04 &nbsp;·&nbsp; Basic Materials &nbsp;·&nbsp; BULLISH ANALYSIS
+      </div>
+      
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Confidence</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">85/100</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
+            <div style="background:#00c853;border-radius:99px;height:6px;width:85%"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Entry</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">168.92</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">159.42 / 187.91</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1:2.0</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
+                  font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
+          BR's strong sales growth and positive guidance make it an attractive trade. The company's robust pipeline for fiscal 2027 provides a clear path for continued growth.
+      </div>
+      <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
+                  border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
+          Risk: Potential decline in sales growth could impact stock price.
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sh">Watch List</div>
+      
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">IT</span>
+          <span style="color:#888;font-size:13px">80/100 &nbsp;·&nbsp; Technology</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:80%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">IT's strong earnings report and positive guidance make it an attractive trade, but the stock's recent breakout may be at</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SEE ═══ -->
+  <div id="t-see" class="tp">
+    <div style="background:#1a1a2e;color:white;border-radius:12px;padding:20px;
+                margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
+        <div style="font-size:28px;font-weight:700">USD 10,000</div>
+        <div style="color:#00c853;font-size:15px;margin-top:2px">+0.0% vs starting capital</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
+        <div style="font-size:22px;font-weight:600">USD 7,128</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Slots Used</div>
+        <div style="font-size:22px;font-weight:600">1 / 5</div>
+      </div>
+    </div>
+    
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">BR</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Basic Materials</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ -0.0%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          17 shares &nbsp;·&nbsp; Value USD 2,872
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">-0</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 159.42</span><span>Target 187.91</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:33%;background:#00c853;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:33%;width:4px;height:16px;top:-4px;
+                        background:#00c853;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 168.92 &nbsp;·&nbsp; Current 168.92</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:0%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 0 of 10</div>
+      </div>
+  </div>
+
+  <!-- ═══ HOLD ═══ -->
+  <div id="t-hold" class="tp">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700;color:#00c853">+0</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Realized P&amp;L (USD)</div>
+      </div>
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700">0%</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Win Rate &nbsp;(0W / 0L)</div>
+      </div>
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700">0</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Trades Closed</div>
+      </div>
+    </div>
+    <div class="sec">
+      <table>
+        <tr><th>Closed</th><th>Ticker</th><th>Entry</th><th>Exit</th>
+            <th>P&amp;L USD</th><th>Return</th><th>Days</th><th>Reason</th></tr>
+        <tr><td colspan="8" style="color:#aaa;text-align:center;padding:16px">No closed trades yet.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ STOP ═══ -->
+  <div id="t-stop" class="tp">
+    
+    <div style="background:#f1fff6;border-left:5px solid #00c853;border-radius:8px;
+                padding:14px 18px;margin-bottom:14px;font-size:15px;font-weight:600;color:#00a040">
+      No stop losses hit today
+    </div>
+    
+    <div class="sec">
+      <div class="sh" style="color:#c62828">Stop Loss History</div>
+      <table>
+        <tr><th>Date</th><th>Ticker</th><th>Entry</th><th>Exit</th>
+            <th>Loss USD</th><th>Return</th><th>Days</th></tr>
+        <tr><td colspan="7" style="color:#aaa;text-align:center;padding:16px">No stop losses in history.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:#ccc;font-size:11px;margin-top:18px">
+    Not financial advice &nbsp;·&nbsp; Personal project &nbsp;·&nbsp; DYOR
+  </p>
+</div>
+<script>
+function sw(id,btn){
+  document.querySelectorAll('.tp').forEach(function(p){p.classList.remove('on')});
+  document.querySelectorAll('.tb').forEach(function(b){b.classList.remove('on')});
+  document.getElementById('t-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>

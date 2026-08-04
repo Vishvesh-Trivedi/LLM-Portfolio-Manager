@@ -1,10 +1,32 @@
 {
-  "cash": 10000.0,
+  "cash": 7128.36,
   "starting_capital": 10000.0,
-  "positions": [],
+  "positions": [
+    {
+      "ticker": "BR",
+      "shares": 17,
+      "entry_price": 168.92,
+      "cost_basis": 2871.64,
+      "brokerage_in": 0.0,
+      "entry_date": "2026-08-04",
+      "stop_price": 159.42,
+      "target_price": 187.91,
+      "sector": "Basic Materials",
+      "current_price": 168.92,
+      "current_value": 2871.64,
+      "unrealized_pnl": -0.0,
+      "unrealized_pnl_pct": -0.0,
+      "hold_days": 0,
+      "high_watermark": 168.92,
+      "atr_at_entry": 6.33
+    }
+  ],
   "closed_trades": [],
   "total_realized_pnl": 0.0,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.59,
-  "last_updated": "2026-08-04 22:18"
+  "last_updated": "2026-08-04 22:49",
+  "sharesies_month": "2026-08",
+  "sharesies_bought_usd": 2871.64,
+  "sharesies_sold_usd": 0.0
 }
