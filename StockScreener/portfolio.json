@@ -12,20 +12,21 @@
       "stop_price": 159.42,
       "target_price": 187.91,
       "sector": "Basic Materials",
-      "current_price": 168.92,
-      "current_value": 2871.64,
-      "unrealized_pnl": -0.0,
-      "unrealized_pnl_pct": -0.0,
-      "hold_days": 0,
+      "current_price": 163.41,
+      "current_value": 2777.97,
+      "unrealized_pnl": -93.67,
+      "unrealized_pnl_pct": -3.26,
+      "hold_days": 1,
       "high_watermark": 168.92,
-      "atr_at_entry": 6.33
+      "atr_at_entry": 6.33,
+      "earnings_days_away": 90
     }
   ],
   "closed_trades": [],
   "total_realized_pnl": 0.0,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.59,
-  "last_updated": "2026-08-04 22:49",
+  "last_updated": "2026-08-05 22:21",
   "sharesies_month": "2026-08",
   "sharesies_bought_usd": 2871.64,
   "sharesies_sold_usd": 0.0
