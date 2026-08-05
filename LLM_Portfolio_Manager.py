@@ -3286,7 +3286,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
     spy      = ctx.get('spy_return_today', 0)
     qqq_t    = ctx.get('qqq_trend', '')
     spy_col  = '#00c853' if spy >= 0 else '#f44336'
-    macro_txt = (nd.get('macro_summary', '') if nd else '')[:160]     failure_reason = str((result or {}).get('failure_reason', '')).strip()     failure_reason_html = (         f'<div style="margin-top:10px;color:#ffb3b3;font-size:12px">'         f'LLM failure reason: {failure_reason[:220]}</div>'         if failure_reason else ''     )
+    macro_txt = (nd.get('macro_summary', '') if nd else '')[:160]; failure_reason = str((result or {}).get('failure_reason', '')).strip(); failure_reason_html = (f'<div style="margin-top:10px;color:#ffb3b3;font-size:12px">LLM failure reason: {failure_reason[:220]}</div>' if failure_reason else '')
 
     # ── LLM rules block (kept for BUY tab) ───────────────────────────────────
     rules_html = _build_rules_html(derived_rules, learning_summary)
