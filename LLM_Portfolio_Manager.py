@@ -2622,7 +2622,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     top10 = [c['ticker'] for c in candidates[:10]]
     r1_notes = ''
     try:
-        raw1 = call_llm(SYS, r1_user, max_tokens=400, max_attempts=2, read_timeout=45)
+        raw1 = call_llm(SYS, r1_user, max_tokens=400, max_attempts=2, read_timeout=60)
         if not raw1: raise RuntimeError('empty')
         if '{' in raw1: raw1 = raw1[raw1.index('{'):]
         r1 = json.loads(raw1)
@@ -2675,7 +2675,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     try:
         # 10 bull/bear/edge analyses easily exceed 2000 tokens and truncate the
         # JSON mid-object; give enough room so Round 2 parses cleanly.
-        raw2 = call_llm(SYS, r2_user, max_tokens=4000, max_attempts=2, read_timeout=45)
+        raw2 = call_llm(SYS, r2_user, max_tokens=4000, max_attempts=2, read_timeout=75)
         if not raw2: raise RuntimeError('empty')
         if '{' in raw2 and '}' in raw2:
             raw2 = raw2[raw2.index('{'):raw2.rindex('}')+1]
@@ -2721,7 +2721,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     )
 
     try:
-        raw3 = call_llm(SYS, r3_user, max_tokens=2000, max_attempts=2, read_timeout=60)
+        raw3 = call_llm(SYS, r3_user, max_tokens=2000, max_attempts=2, read_timeout=90)
         if not raw3: raise RuntimeError('empty')
         if '```' in raw3:
             for part in raw3.split('```'):
@@ -3286,7 +3286,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
     spy      = ctx.get('spy_return_today', 0)
     qqq_t    = ctx.get('qqq_trend', '')
     spy_col  = '#00c853' if spy >= 0 else '#f44336'
-    macro_txt = (nd.get('macro_summary', '') if nd else '')[:160]
+    macro_txt = (nd.get('macro_summary', '') if nd else '')[:160]     failure_reason = str((result or {}).get('failure_reason', '')).strip()     failure_reason_html = (         f'<div style="margin-top:10px;color:#ffb3b3;font-size:12px">'         f'LLM failure reason: {failure_reason[:220]}</div>'         if failure_reason else ''     )
 
     # ── LLM rules block (kept for BUY tab) ───────────────────────────────────
     rules_html = _build_rules_html(derived_rules, learning_summary)
@@ -3721,7 +3721,7 @@ def send_weekly_summary(reason='weekly'):
     _wa_send(msg, _label)
 
 
-def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None, position_opened=False, closed_today=None):
+def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None,                   position_opened=False, closed_today=None, no_pick_reason=''):
     """Send 2 compact WhatsApp messages per daily run via CallMeBot."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
         print('  WhatsApp skipped — WHATSAPP_PHONE or CALLMEBOT_API_KEY not set')
@@ -5095,7 +5095,7 @@ def run_screener():
     save_html_report(result, ctx, nd, ep, wl, derived_rules=_rules, learning_summary=_summary,
                      stop_price=_stop, target_price=_tgt, portfolio=portfolio, position_opened=_position_opened)
     display_scorecard()
-    send_whatsapp(pick, ctx, ep, wl, _stop, _tgt, candidates=candidates, portfolio=portfolio, position_opened=_position_opened, closed_today=_closed_today)
+    send_whatsapp(         pick, ctx, ep, wl, _stop, _tgt,         candidates=candidates,         portfolio=portfolio,         position_opened=_position_opened,         closed_today=_closed_today,         no_pick_reason=result.get('failure_reason', '') if isinstance(result, dict) else ''     )
 
     print('\nStep 9/8: LLM self-adaptation (updating config for next run)...')
     update_config_from_llm(pick_history)
