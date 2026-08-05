@@ -1,5 +1,5 @@
 {
-  "cash": 7128.36,
+  "cash": 5840.88,
   "starting_capital": 10000.0,
   "positions": [
     {
@@ -20,14 +20,32 @@
       "high_watermark": 168.92,
       "atr_at_entry": 6.33,
       "earnings_days_away": 90
+    },
+    {
+      "ticker": "EXPE",
+      "shares": 4,
+      "entry_price": 320.62,
+      "cost_basis": 1287.48,
+      "brokerage_in": 5.0,
+      "entry_date": "2026-08-05",
+      "stop_price": 301.48,
+      "target_price": 358.9,
+      "sector": "Consumer Cyclical",
+      "current_price": 320.62,
+      "current_value": 1282.48,
+      "unrealized_pnl": -5.0,
+      "unrealized_pnl_pct": -0.39,
+      "hold_days": 0,
+      "high_watermark": 320.62,
+      "atr_at_entry": 12.76
     }
   ],
   "closed_trades": [],
   "total_realized_pnl": 0.0,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.59,
-  "last_updated": "2026-08-05 22:57",
+  "last_updated": "2026-08-05 23:37",
   "sharesies_month": "2026-08",
-  "sharesies_bought_usd": 2871.64,
+  "sharesies_bought_usd": 4154.12,
   "sharesies_sold_usd": 0.0
 }
