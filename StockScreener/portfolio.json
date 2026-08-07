@@ -1,5 +1,5 @@
 {
-  "cash": 5840.88,
+  "cash": 4858.02,
   "starting_capital": 10000.0,
   "positions": [
     {
@@ -12,14 +12,14 @@
       "stop_price": 159.42,
       "target_price": 187.91,
       "sector": "Basic Materials",
-      "current_price": 163.41,
-      "current_value": 2777.97,
-      "unrealized_pnl": -93.67,
-      "unrealized_pnl_pct": -3.26,
-      "hold_days": 1,
+      "current_price": 164.75,
+      "current_value": 2800.75,
+      "unrealized_pnl": -70.89,
+      "unrealized_pnl_pct": -2.47,
+      "hold_days": 3,
       "high_watermark": 168.92,
       "atr_at_entry": 6.33,
-      "earnings_days_away": 90
+      "earnings_days_away": 88
     },
     {
       "ticker": "EXPE",
@@ -31,21 +31,40 @@
       "stop_price": 301.48,
       "target_price": 358.9,
       "sector": "Consumer Cyclical",
-      "current_price": 320.62,
-      "current_value": 1282.48,
-      "unrealized_pnl": -5.0,
-      "unrealized_pnl_pct": -0.39,
-      "hold_days": 0,
+      "current_price": 306.57,
+      "current_value": 1226.28,
+      "unrealized_pnl": -61.2,
+      "unrealized_pnl_pct": -4.75,
+      "hold_days": 2,
       "high_watermark": 320.62,
-      "atr_at_entry": 12.76
+      "atr_at_entry": 12.76,
+      "earnings_days_away": 90
+    },
+    {
+      "ticker": "COR",
+      "shares": 3,
+      "entry_price": 325.99,
+      "cost_basis": 982.86,
+      "brokerage_in": 4.89,
+      "entry_date": "2026-08-07",
+      "stop_price": 313.39,
+      "target_price": 351.19,
+      "sector": "Real Estate",
+      "current_price": 325.99,
+      "current_value": 977.97,
+      "unrealized_pnl": -4.89,
+      "unrealized_pnl_pct": -0.5,
+      "hold_days": 0,
+      "high_watermark": 325.99,
+      "atr_at_entry": 8.4
     }
   ],
   "closed_trades": [],
   "total_realized_pnl": 0.0,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.59,
-  "last_updated": "2026-08-05 23:37",
+  "last_updated": "2026-08-07 01:15",
   "sharesies_month": "2026-08",
-  "sharesies_bought_usd": 4154.12,
+  "sharesies_bought_usd": 5132.09,
   "sharesies_sold_usd": 0.0
 }
