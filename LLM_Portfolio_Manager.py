@@ -8,15 +8,15 @@ Built by Vishvesh Trivedi
 OSS Architect | AI/ML Automation | 12 Patents
 LinkedIn: https://www.linkedin.com/in/vishvesh-trivedi
 
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-âš ï¸  IMPORTANT: HOW TO SET YOUR API KEY (READ THIS FIRST)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+─────────────────────────────────────────────────────────────
+⚠️  IMPORTANT: HOW TO SET YOUR API KEY (READ THIS FIRST)
+─────────────────────────────────────────────────────────────
 
 Option A - Google Colab (Recommended):
-  1. Click the ðŸ”‘ Secrets icon in the left sidebar
+  1. Click the 🔑 Secrets icon in the left sidebar
   2. Add a new secret:
        Name:  NVIDIA_API_KEY
-       Value: your-key-here (get it free from build.nvidia.com â†’ sign up â†’ "Get API Key")
+       Value: your-key-here (get it free from build.nvidia.com → sign up → "Get API Key")
   3. Enable the secret for this notebook
   4. The code below will read it automatically
 
@@ -29,54 +29,54 @@ Option B - Local Python:
 Option C - Paste directly (Colab only, NOT for GitHub):
   Find the line:  NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
   Replace with:   NVIDIA_API_KEY = "your-key-here"
-  âš ï¸  Never upload this version to GitHub!
+  ⚠️  Never upload this version to GitHub!
 
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+─────────────────────────────────────────────────────────────
 WHAT THIS SCREENER DOES
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+─────────────────────────────────────────────────────────────
 
 Every evening after market close:
-  â†’ Downloads OHLCV for 375+ stocks in a single API call
-  â†’ Runs bidirectional screening â€” technical filters AND news rescue in parallel
-  â†’ Computes deterministic pre-scores:
+  → Downloads OHLCV for 375+ stocks in a single API call
+  → Runs bidirectional screening — technical filters AND news rescue in parallel
+  → Computes deterministic pre-scores:
        RSI, MACD, ADX, CMF, StochRSI, VWAP, OBV,
        Options P/C ratio, Insider flow, VADER NLP sentiment
-  â†’ Feeds top 30 candidates to the LLM (NVIDIA NIM) with full context:
+  → Feeds top 30 candidates to the LLM (NVIDIA NIM) with full context:
        Macro headlines, sector rotation, earnings risk,
        self-calibration from past picks
-  â†’ Gets back BUY / WATCH / NO PICK with:
+  → Gets back BUY / WATCH / NO PICK with:
        Stop zones, price targets, R:R ratio,
        devil's advocate, full score breakdown
-  â†’ Saves everything to Google Drive
-  â†’ Auto-updates 10-day and 30-day returns over time
+  → Saves everything to Google Drive
+  → Auto-updates 10-day and 30-day returns over time
 
 Tech Stack (100% free):
-  â€¢ yfinance       â€” market data
-  â€¢ VADER          â€” free NLP sentiment (no API key needed)
-  â€¢ 16 RSS feeds   â€” macro news (Reuters, CNBC, MarketWatch, BBC...)
-  â€¢ NVIDIA NIM API â€” AI reasoning layer (free tier at build.nvidia.com)
-  â€¢ Google Colab + Drive â€” zero-infrastructure deployment
+  • yfinance       — market data
+  • VADER          — free NLP sentiment (no API key needed)
+  • 16 RSS feeds   — macro news (Reuters, CNBC, MarketWatch, BBC...)
+  • NVIDIA NIM API — AI reasoning layer (free tier at build.nvidia.com)
+  • Google Colab + Drive — zero-infrastructure deployment
 
 Cost per run:  ~$0.00 (NVIDIA NIM free tier)
 Runtime:       ~7 - 9 minutes
 
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+─────────────────────────────────────────────────────────────
 DAILY ROUTINE
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  Cell 1  Mount Google Drive        â†’ run every session
-  Cell 2  Install dependencies      â†’ first time only
-  Cell 3  API key + config          â†’ first time only
-  Cell 4  Load functions            â†’ run every session
-  Cell 5  Run screener              â†’ run every day after market close
+─────────────────────────────────────────────────────────────
+  Cell 1  Mount Google Drive        → run every session
+  Cell 2  Install dependencies      → first time only
+  Cell 3  API key + config          → first time only
+  Cell 4  Load functions            → run every session
+  Cell 5  Run screener              → run every day after market close
 
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+─────────────────────────────────────────────────────────────
 DISCLAIMER
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+─────────────────────────────────────────────────────────────
 This is a personal learning project built out of curiosity.
 It is NOT financial advice. Past screener performance does
 not guarantee future results. Always do your own research.
 
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+─────────────────────────────────────────────────────────────
 Version History:
   FIX 1  enrich_with_scores() is now actually called in run_screener
   FIX 2  load_performance_history() called and passed to analyze_with_nvidia
@@ -100,15 +100,15 @@ try:
     drive.mount('/content/drive')
     IN_COLAB = True
     DRIVE_FOLDER = '/content/drive/MyDrive/StockScreener'
-    print('âœ… Google Drive mounted')
+    print('✅ Google Drive mounted')
 except ImportError:
     IN_COLAB = False
     DRIVE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'StockScreener')
 
 os.makedirs(DRIVE_FOLDER, exist_ok=True)
-print(f'ðŸ“ Output folder: {DRIVE_FOLDER}')
+print(f'📁 Output folder: {DRIVE_FOLDER}')
 if os.listdir(DRIVE_FOLDER):
-    print(f'ðŸ“„ Files:  {os.listdir(DRIVE_FOLDER)}')
+    print(f'📄 Files:  {os.listdir(DRIVE_FOLDER)}')
 
 # ============================================================
 # CELL 2 - INSTALL DEPENDENCIES (first time only)
@@ -118,20 +118,20 @@ if os.listdir(DRIVE_FOLDER):
 #
 # Locally: run this once in your terminal instead:
 #   pip install yfinance pandas openai requests vaderSentiment python-dotenv
-print('âœ… Dependencies assumed installed')
+print('✅ Dependencies assumed installed')
 
 # ============================================================
 # CELL 3 - CONFIGURATION
 # ============================================================
 
-# â”€â”€ API KEY (reads from Colab Secrets or .env file) â”€â”€â”€â”€â”€â”€â”€â”€
+# ── API KEY (reads from Colab Secrets or .env file) ────────
 # Follow the instructions at the top of this file to set your key safely.
-# Get your free NVIDIA NIM API key at: build.nvidia.com â†’ sign up â†’ "Get API Key"
+# Get your free NVIDIA NIM API key at: build.nvidia.com → sign up → "Get API Key"
 # Never paste your real key here if you plan to share or upload this file.
 
 import os
 
-# 1. Try Colab Secrets (userdata API â€” works in newer Colab)
+# 1. Try Colab Secrets (userdata API — works in newer Colab)
 NVIDIA_API_KEY = ""
 try:
     from google.colab import userdata
@@ -152,7 +152,7 @@ if not NVIDIA_API_KEY:
     except ImportError:
         pass
 
-# Default LLM model â€” defined unconditionally so downstream code never hits a
+# Default LLM model — defined unconditionally so downstream code never hits a
 # NameError when the API key is missing. Must be a VALID NVIDIA NIM model id
 # (build.nvidia.com). 'deepseek-v4-*' ids are not real and 503/429 on every call.
 NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct'  # solid free-tier default, valid NIM id
@@ -162,9 +162,9 @@ if not NVIDIA_API_KEY:
     print("   Get your FREE key at: build.nvidia.com -> sign up -> 'Get API Key'")
     print("   In Colab: use the Secrets panel on the left sidebar.")
 else:
-    print("âœ… API key loaded successfully")
+    print("✅ API key loaded successfully")
 
-# â”€â”€ WHATSAPP (CallMeBot) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── WHATSAPP (CallMeBot) ────────────────────────────────────
 # Store WHATSAPP_PHONE and CALLMEBOT_API_KEY in Colab Secrets (same panel as NVIDIA_API_KEY)
 # WHATSAPP_PHONE: your number in international format WITHOUT +, e.g. 447911123456 or 919876543210
 WHATSAPP_PHONE      = ""
@@ -181,29 +181,29 @@ for _secret in ["WHATSAPP_PHONE", "CALLMEBOT_API_KEY"]:
         CALLMEBOT_API_KEY = _val
 
 if WHATSAPP_PHONE and CALLMEBOT_API_KEY:
-    print(f"âœ… WhatsApp configured (phone ...{WHATSAPP_PHONE[-4:]})")
+    print(f"✅ WhatsApp configured (phone ...{WHATSAPP_PHONE[-4:]})")
 else:
     missing = []
     if not WHATSAPP_PHONE:    missing.append("WHATSAPP_PHONE")
     if not CALLMEBOT_API_KEY: missing.append("CALLMEBOT_API_KEY")
-    print(f"âš ï¸  WhatsApp disabled â€” missing Colab Secrets: {', '.join(missing)}")
+    print(f"⚠️  WhatsApp disabled — missing Colab Secrets: {', '.join(missing)}")
     print("   Add them in the Secrets panel (key icon, left sidebar) then re-run Cell 1.")
 
-# â”€â”€ SCREENER SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── SCREENER SETTINGS ──────────────────────────────────────
 BUY_THRESHOLD    = 80    # minimum confidence score to generate a BUY signal
 WATCH_THRESHOLD  = 70    # minimum confidence score for WATCH list
 VOLUME_MIN_RATIO = 1.2   # stock must trade at 1.2x its average volume
 RSI_MIN          = 35    # minimum RSI (avoid oversold)
 RSI_MAX          = 75    # maximum RSI (avoid overbought)
 MIN_PRICE        = 5.0   # minimum stock price in USD
-SAMPLE_SIZE      = 900   # full dynamic universe â€” LLM can lower via config_overrides.json
+SAMPLE_SIZE      = 900   # full dynamic universe — LLM can lower via config_overrides.json
 
 PICKS_CSV        = f'{DRIVE_FOLDER}/stock_picks.csv'
 WATCH_CSV        = f'{DRIVE_FOLDER}/watch_list.csv'
 PORTFOLIO_JSON   = f'{DRIVE_FOLDER}/portfolio.json'
 STARTING_CAPITAL = 10_000.00
 
-# â”€â”€ SHARESIES $15/MONTH PLAN (NZ broker â€” buys NYSE/NASDAQ in USD) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── SHARESIES $15/MONTH PLAN (NZ broker — buys NYSE/NASDAQ in USD) ──────────
 # Plan:  $5,000 NZD free buys + $5,000 NZD free sells per month
 # Rate:  fetched live via NZDUSD=X each run (stored in ctx['global_macro']['nzdusd'])
 # Fee when OVER coverage: 0.5% of order value, capped at $5.00 USD per trade
@@ -215,7 +215,7 @@ BROKERAGE_FEE          = 0.00      # $0 within coverage, max $5 USD over
 # Optional: set to '1' to see why tickers fail compute_indicators
 # os.environ['SCREENER_DEBUG'] = '1'
 
-print('\nâœ… Configuration ready')
+print('\n✅ Configuration ready')
 print(f'   BUY threshold:   {BUY_THRESHOLD}')
 print(f'   WATCH threshold: {WATCH_THRESHOLD}')
 print(f'   Sample size:     {SAMPLE_SIZE}')
@@ -249,7 +249,7 @@ try:
 except ImportError:
     _VADER = None
 
-# â”€â”€ REQUESTS RETRY SESSION FOR NVIDIA API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── REQUESTS RETRY SESSION FOR NVIDIA API ──────────────────
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -276,10 +276,10 @@ def _create_requests_session():
 _REQUESTS_SESSION = _create_requests_session()
 
 
-# â”€â”€ TUNING CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── TUNING CONSTANTS ───────────────────────────────────────
 MIN_DOLLAR_VOLUME_M  = 20      # minimum $20M/day - ensures liquidity
 ATR_STOP_MULT        = 1.5     # stop = entry - 1.5xATR
-ATR_TARGET_MULT      = 3.0     # target = entry + 3xATR â†’ R:R 1:2
+ATR_TARGET_MULT      = 3.0     # target = entry + 3xATR → R:R 1:2
 ADX_MIN              = 20      # minimum trend strength
 VIX_LOW_PCTILE       = 25      # below this = risk-on regime
 VIX_HIGH_PCTILE      = 75      # above this = risk-off regime
@@ -287,7 +287,7 @@ SECTOR_CONC_LOOKBACK = 5       # look back N picks for sector concentration
 SECTOR_CONC_MAX      = 3       # max same-sector picks in lookback window
 SECTOR_CONC_PENALTY  = 10      # confidence penalty if concentrated
 
-# â”€â”€ LLM-CONTROLLED TUNING CONSTANTS (override via config_overrides.json) â”€â”€â”€â”€
+# ── LLM-CONTROLLED TUNING CONSTANTS (override via config_overrides.json) ────
 _CFG_VIX_LOW_PCTILE      = VIX_LOW_PCTILE    # VIX below this = risk-on (1.1x multiplier)
 _CFG_VIX_HIGH_PCTILE     = VIX_HIGH_PCTILE   # VIX above this = risk-off (0.7x multiplier)
 _CFG_SECTOR_CONC_LOOKBACK= SECTOR_CONC_LOOKBACK  # rolling window for sector concentration
@@ -306,9 +306,9 @@ _CFG_TRAIL_ATR_MULT      = 1.5   # trailing stop ratchet multiplier (can differ 
 _CFG_VOLUME_MIN_RATIO    = VOLUME_MIN_RATIO  # min volume vs average to pass universe screen
 NEWS_WORKERS         = 20      # parallel workers for news/fundamentals fetch
 
-# â”€â”€ LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── LLM-CONTROLLED CRITERIA (overridden by config_overrides.json) ──────────
 # The screener writes these after each run so the LLM can change its own rules.
-# LLM has FULL AUTHORITY â€” it can change any of these values or add new ones.
+# LLM has FULL AUTHORITY — it can change any of these values or add new ones.
 _CFG_SECTOR_BLACKLIST   = []      # sectors the LLM has decided to avoid
 _CFG_SECTOR_WHITELIST   = []      # sectors the LLM is favouring (gets +5 boost)
 _CFG_SOURCE_PREFERENCE  = 'ANY'   # ANY | TECHNICAL | NEWS | BOTH
@@ -339,25 +339,25 @@ _CFG_UPSIDE_HARD_CAP    = -999    # analyst upside below this clamps confidence 
 _CFG_UPSIDE_CAP_CONF    = 65      # confidence ceiling when UPSIDE_HARD_CAP is breached
 _CFG_MAX_POSITIONS      = 5       # max simultaneous open positions (LLM configurable)
 
-# â”€â”€ NVIDIA MODEL SELECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Pick any one â€” all are free on NVIDIA NIM (build.nvidia.com)
+# ── NVIDIA MODEL SELECTION ─────────────────────────────────
+# Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
 #
 # RECOMMENDED FOR THIS SCREENER (best JSON + financial reasoning):
-#   'meta/llama-3.3-70b-instruct'           â† solid all-rounder (default)
-#   'nvidia/llama-3.1-nemotron-70b-instruct'â† NVIDIA-tuned, very strong reasoning
-#   'qwen/qwen2.5-72b-instruct'             â† excellent structured JSON output
-#   'mistralai/mixtral-8x22b-instruct-v0.1' â† fast, good for JSON
+#   'meta/llama-3.3-70b-instruct'           ← solid all-rounder (default)
+#   'nvidia/llama-3.1-nemotron-70b-instruct'← NVIDIA-tuned, very strong reasoning
+#   'qwen/qwen2.5-72b-instruct'             ← excellent structured JSON output
+#   'mistralai/mixtral-8x22b-instruct-v0.1' ← fast, good for JSON
 #
-# DEEPSEEK REASONING (chain-of-thought â€” <think> block stripped automatically):
-#   'deepseek-ai/deepseek-r1'              â† strongest reasoning, but slowest
+# DEEPSEEK REASONING (chain-of-thought — <think> block stripped automatically):
+#   'deepseek-ai/deepseek-r1'              ← strongest reasoning, but slowest
 #
 # LARGER / MORE POWERFUL (slower, may hit free tier limits):
-#   'meta/llama-3.1-405b-instruct'           â† biggest Llama, best reasoning
-#   'mistralai/mistral-large-latest'         â† strong general reasoning
+#   'meta/llama-3.1-405b-instruct'           ← biggest Llama, best reasoning
+#   'mistralai/mistral-large-latest'         ← strong general reasoning
 #
 # SMALLER / FASTER (lower quality but instant):
-#   'meta/llama-3.2-3b-instruct'             â† very fast, lower quality
-#   'microsoft/phi-3-mini-128k-instruct'     â† lightweight
+#   'meta/llama-3.2-3b-instruct'             ← very fast, lower quality
+#   'microsoft/phi-3-mini-128k-instruct'     ← lightweight
 
 
 _LLM_CALL_COUNT = [0]
@@ -372,13 +372,16 @@ _LLM_RATE_LOCK = threading.Lock()
 _LLM_BATCH_COOLDOWN_EVERY = 8      # pause less often for faster completion
 _LLM_BATCH_COOLDOWN_SECONDS = 8.0  # short reset aid without large runtime penalty
 _NVIDIA_FALLBACK_MODELS = [
-    # Ordered fallbacks currently marked "Free Endpoint" on build.nvidia.com.
-    # Keep this list updated as NVIDIA catalog availability can change over time.
-    'deepseek-ai/deepseek-v4-flash',
+    # Ordered fallbacks verified against https://integrate.api.nvidia.com/v1/models
+    # on 2026-08-12. Keep this list in sync with the live catalog; ids that are not
+    # served return 404/410 and trigger rotation to the next entry.
+    'meta/llama-3.1-70b-instruct',
+    'deepseek-ai/deepseek-v4-flash-0731',
     'z-ai/glm-5.2',
-    'mistralai/mistral-medium-3.5-128b',
     'moonshotai/kimi-k2.6',
     'minimaxai/minimax-m3',
+    'mistralai/mistral-large-2-instruct',
+    'meta/llama-3.1-8b-instruct',
 ]
 _NVIDIA_ACTIVE_MODEL = [NVIDIA_MODEL]
 
@@ -495,8 +498,8 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
                         retry_after = int(retry_after)
                     except Exception:
                         retry_after = None
-                if status == 404:
-                    fallback_switched = _switch_llm_model('404 model unavailable')
+                if status in (404, 410):
+                    fallback_switched = _switch_llm_model(f'{status} model unavailable')
                 if status in transient_statuses:
                     cooldown = _llm_backoff_seconds(attempt, retry_after=retry_after)
                     _LLM_COOLDOWN_UNTIL[0] = max(_LLM_COOLDOWN_UNTIL[0], time.time() + cooldown)
@@ -551,7 +554,7 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
         raise last_err
     return ''
 
-# â”€â”€ TWO-TIER RESCUE KEYWORDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── TWO-TIER RESCUE KEYWORDS ───────────────────────────────
 RESCUE_TIER1 = [
     'acquisition', 'merger', 'buyout', 'takeover',
     'fda', 'clearance',
@@ -801,7 +804,7 @@ def _fetch_options_single(ticker):
         elif pc < 0.7:    label = 'BULLISH'
         elif pc > 1.3:    label = 'BEARISH'
         else:             label = 'NEUTRAL'
-        # Unusual call activity: any strike where volume > 3Ã— open interest (smart money positioning)
+        # Unusual call activity: any strike where volume > 3× open interest (smart money positioning)
         unusual_calls = False
         try:
             calls = opt.calls.copy()
@@ -877,7 +880,7 @@ def _fetch_insider_single(ticker):
 def fetch_congress_trades(days=60):
     """
     Fetch recent US congressional stock PURCHASES (House + Senate STOCK Act disclosures).
-    Tries 4 sources in order â€” stops at first success:
+    Tries 4 sources in order — stops at first success:
       1. House S3 bucket  (bypasses DNS issues in Colab)
       2. Senate S3 bucket
       3. housestockwatcher.com API  (fallback)
@@ -965,10 +968,10 @@ def fetch_congress_trades(days=60):
                     cached = json.load(f)
                 cache_age = (datetime.now() - datetime.fromisoformat(cached.get('fetched_at', '2000-01-01'))).days
                 if cache_age <= 7:  # use cache if < 7 days old
-                    print(f'  Congress trades: live sources unavailable â€” using Drive cache ({cache_age}d old)')
+                    print(f'  Congress trades: live sources unavailable — using Drive cache ({cache_age}d old)')
                     return cached.get('data', {})
                 else:
-                    print(f'  Congress trades: all sources unavailable (cache is {cache_age}d old â€” too stale)')
+                    print(f'  Congress trades: all sources unavailable (cache is {cache_age}d old — too stale)')
             else:
                 print(f'  Congress trades: all sources unavailable (no cache)')
         except Exception as ce:
@@ -1164,15 +1167,15 @@ def build_learning_insights(pick_history):
 
     # Avg indicator scores: winners vs losers
     if wins and losses:
-        lines.append(f'  Avg Tech_Score  â€” wins: {avg_field(wins,"tech_score")}  losses: {avg_field(losses,"tech_score")}')
-        lines.append(f'  Avg News_Score  â€” wins: {avg_field(wins,"news_score")}  losses: {avg_field(losses,"news_score")}')
-        lines.append(f'  Avg Confidence  â€” wins: {avg_field(wins,"confidence")}  losses: {avg_field(losses,"confidence")}')
-        lines.append(f'  Avg RSI         â€” wins: {avg_field(wins,"rsi")}  losses: {avg_field(losses,"rsi")}')
+        lines.append(f'  Avg Tech_Score  — wins: {avg_field(wins,"tech_score")}  losses: {avg_field(losses,"tech_score")}')
+        lines.append(f'  Avg News_Score  — wins: {avg_field(wins,"news_score")}  losses: {avg_field(losses,"news_score")}')
+        lines.append(f'  Avg Confidence  — wins: {avg_field(wins,"confidence")}  losses: {avg_field(losses,"confidence")}')
+        lines.append(f'  Avg RSI         — wins: {avg_field(wins,"rsi")}  losses: {avg_field(losses,"rsi")}')
 
     # Recent losses with full context so LLM can reason about what went wrong
     recent_losses = [h for h in pick_history[-15:] if h['result'] == 'Loss']
     if recent_losses:
-        lines.append('RECENT LOSSES â€” what went wrong:')
+        lines.append('RECENT LOSSES — what went wrong:')
         for h in recent_losses:
             lines.append(
                 f'  {h["date"]} {h["ticker"]} | conf={h["confidence"]} src={h["source"]} sector={h["sector"]}'
@@ -1184,7 +1187,7 @@ def build_learning_insights(pick_history):
     return '\n'.join(lines)
 
 
-# â”€â”€ TICKER UNIVERSE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── TICKER UNIVERSE ────────────────────────────────────────
 NASDAQ_100 = [
     'AAPL','MSFT','NVDA','AMZN','META','GOOGL','GOOG','TSLA','AVGO','COST',
     'NFLX','ASML','TMUS','AMD','ADBE','CSCO','PEP','INTU','CMCSA','HON',
@@ -1269,14 +1272,14 @@ SECTOR_ETF_MAP = {
     'Communication Services': 'XLC',
 }
 
-# â”€â”€ YOUR PRIORITY STOCKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── YOUR PRIORITY STOCKS ──────────────────────────────────────────────────────
 # These are ALWAYS evaluated by the LLM regardless of pre-score.
 # Add stocks you'd actually consider buying. Broad scan still runs for discovery.
 MY_STOCKS = [
     # Add your tickers here, e.g.:
     # 'AAPL', 'NVDA', 'TSLA', 'MSFT',
 ]
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def _fetch_dynamic_universe():
     """
@@ -1294,18 +1297,18 @@ def _fetch_dynamic_universe():
         r.raise_for_status()
         return pd.read_html(_io.StringIO(r.text))[0]
 
-    # S&P 500 â€” large cap
+    # S&P 500 — large cap
     try:
         df    = _wiki_table('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
-        sp500 = [str(t).replace('.', '-') for t in df['Symbol'].tolist()]  # BRK.B â†’ BRK-B
+        sp500 = [str(t).replace('.', '-') for t in df['Symbol'].tolist()]  # BRK.B → BRK-B
         tickers.extend(sp500)
         sources.append(f'S&P 500 ({len(sp500)})')
     except Exception as e:
-        print(f'  S&P 500 Wikipedia fetch failed ({e}) â€” using hardcoded fallback')
+        print(f'  S&P 500 Wikipedia fetch failed ({e}) — using hardcoded fallback')
         tickers.extend(NASDAQ_100 + SP500_STOCKS)
         sources.append(f'hardcoded fallback ({len(set(NASDAQ_100 + SP500_STOCKS))})')
 
-    # S&P 400 MidCap â€” expands into mid-cap opportunities
+    # S&P 400 MidCap — expands into mid-cap opportunities
     try:
         df    = _wiki_table('https://en.wikipedia.org/wiki/List_of_S%26P_400_companies')
         col   = next((c for c in df.columns if 'ticker' in c.lower() or 'symbol' in c.lower()), df.columns[1])
@@ -1313,7 +1316,7 @@ def _fetch_dynamic_universe():
         tickers.extend(sp400)
         sources.append(f'S&P 400 MidCap ({len(sp400)})')
     except Exception as e:
-        print(f'  S&P 400 Wikipedia fetch failed ({e}) â€” skipping midcap expansion')
+        print(f'  S&P 400 Wikipedia fetch failed ({e}) — skipping midcap expansion')
 
     unique = list(dict.fromkeys(tickers))
     print(f'  Dynamic universe: {" + ".join(sources)} = {len(unique)} unique tickers')
@@ -1329,7 +1332,7 @@ UNIVERSE_SET     = set(TICKER_UNIVERSE)
 ETF_SET          = set(KEY_ETFS)
 STOCK_UNIVERSE   = [t for t in TICKER_UNIVERSE if t not in ETF_SET]
 
-print('âœ… Universe loaded:')
+print('✅ Universe loaded:')
 print(f'   Stocks:    {len(STOCK_UNIVERSE)}')
 print(f'   ETFs:      {len(ETF_SET)}')
 print(f'   TOTAL:     {len(TICKER_UNIVERSE)}')
@@ -1403,7 +1406,7 @@ def get_market_context():
     except:
         spy_ret = 0.0
 
-    # Global macro â€” 10Y yield, dollar, overnight markets
+    # Global macro — 10Y yield, dollar, overnight markets
     _GLOBAL = {
         'yield_10y':  '^TNX',      # US 10-Year Treasury yield
         'dxy':        'DX-Y.NYB',  # Dollar index
@@ -1492,7 +1495,7 @@ def batch_download(tickers):
 
 
 def _fetch_stock_news_single(ticker):
-    """Fetch news for one ticker â€” title + summary for richer LLM context."""
+    """Fetch news for one ticker — title + summary for richer LLM context."""
     try:
         news   = yf.Ticker(ticker).news or []
         items  = []
@@ -1503,7 +1506,7 @@ def _fetch_stock_news_single(ticker):
                 continue
             text = title.lower()
             if summary and len(summary) > 20:
-                text += ' â€” ' + summary[:160].lower()
+                text += ' — ' + summary[:160].lower()
             items.append(text)
         return ticker, items
     except:
@@ -1525,7 +1528,7 @@ def fetch_all_stock_news_parallel(tickers):
 
 
 def _fetch_fundamentals_single(ticker):
-    """Fetch fundamentals for one ticker â€” reuses same Ticker object for all calls."""
+    """Fetch fundamentals for one ticker — reuses same Ticker object for all calls."""
     result = {
         'earnings_date':      'Unknown',
         'earnings_days_away': -1,
@@ -1626,7 +1629,7 @@ def _fetch_fundamentals_single(ticker):
                 from_g  = str(row.get('From Grade', ''))
                 date_s  = idx.strftime('%m/%d')
                 if to_g or from_g:
-                    actions.append(f'{date_s} {firm}: {from_g}â†’{to_g} ({action})')
+                    actions.append(f'{date_s} {firm}: {from_g}→{to_g} ({action})')
             result['analyst_actions'] = actions
     except:
         pass
@@ -1679,7 +1682,7 @@ def fetch_sec_8k(tickers, days=7):
                 updated = (entry.findtext('atom:updated', '', ns) or '')[:10]
                 summary = (entry.findtext('atom:summary', '', ns) or '').strip()[:200]
                 if updated >= start and title:
-                    filings.append(f'{updated}: {title}' + (f' â€” {summary}' if summary else ''))
+                    filings.append(f'{updated}: {title}' + (f' — {summary}' if summary else ''))
             return ticker, filings
         except:
             return ticker, []
@@ -1697,7 +1700,7 @@ def fetch_sec_8k(tickers, days=7):
 
 
 def fetch_macro_news():
-    """RSS feeds â€” Reuters removed (shut down 2020), replaced with reliable alternatives."""
+    """RSS feeds — Reuters removed (shut down 2020), replaced with reliable alternatives."""
     feeds = [
         ('US_MARKET',    'https://finance.yahoo.com/rss/topstories'),
         ('US_MARKET',    'https://finance.yahoo.com/rss/2.0/headline?s=^GSPC&region=US&lang=en-US'),
@@ -1738,7 +1741,7 @@ def fetch_macro_news():
 
 
 def derive_sector_sentiment(candidates):
-    """Derive sector context from already-fetched stock news/scores â€” no ETF API needed."""
+    """Derive sector context from already-fetched stock news/scores — no ETF API needed."""
     from collections import defaultdict
     buckets = defaultdict(lambda: {'news_scores': [], 'tickers': [], 'momentum': []})
     for c in candidates:
@@ -1971,7 +1974,7 @@ def screen_news(batch_data, all_stock_news, technical_passed, ctx):
         rescued_count += 1
 
     rescued_tickers = list(rescued.keys())
-    print(f'  News rescued: {rescued_count} stocks â†’ {rescued_tickers[:10]}{"..." if rescued_count>10 else ""}')
+    print(f'  News rescued: {rescued_count} stocks → {rescued_tickers[:10]}{"..." if rescued_count>10 else ""}')
     return rescued
 
 
@@ -2096,7 +2099,7 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
         f'LAYER 2 - SECTOR NEWS:\n{sector_text}\n\n'
         f'LAYER 3 - STOCK NEWS (title + summary):\n{stock_text}\n\n'
         f'ANALYST UPGRADES/DOWNGRADES (last 14 days):\n{analyst_actions_text}\n\n'
-        f'SEC EDGAR 8-K FILINGS (last 7 days â€” material corporate events):\n{edgar_text}\n\n'
+        f'SEC EDGAR 8-K FILINGS (last 7 days — material corporate events):\n{edgar_text}\n\n'
         f'ANALYST CONSENSUS (mean rating 1=Strong Buy, 5=Sell | price target upside):\n{chr(10).join(analyst_lines) if analyst_lines else "No data"}\n\n'
         f'ALL CANDIDATES: {all_tickers}{both_note}{news_note}{earnings_note}\n'
         f'SECTORS: {sectors_in_pool}\n\n'
@@ -2222,7 +2225,7 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
     BATCH = 12  # fewer API calls to reduce free-tier throttling
     batches = [candidates[i:i+BATCH] for i in range(0, len(candidates), BATCH)]
     n_calls = len(batches)
-    print(f'  Catalyst scoring: {len(candidates)} stocks â†’ {n_calls} LLM calls...')
+    print(f'  Catalyst scoring: {len(candidates)} stocks → {n_calls} LLM calls...')
     sys_msg = ('You are a short-to-medium term equity trader (1-4 week holds). '
                'Rate each stock purely on near-term tradability. Respond ONLY with valid JSON.')
     skipped_batches = 0
@@ -2246,7 +2249,7 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
             f'- catalyst_score: 1-10 (10=strong specific near-term catalyst, 1=no reason to buy now)\n'
             f'- catalyst_type: EARNINGS_CATALYST|UPGRADE|BREAKOUT|SECTOR_ROTATION|MOMENTUM|NEWS_HYPE|NONE\n'
             f'- auto_drop: true if news is clearly negative or there is zero short-term reason to buy\n'
-            f'- reason: one sentence â€” the specific 1-4 week thesis or why dropping\n\n'
+            f'- reason: one sentence — the specific 1-4 week thesis or why dropping\n\n'
             f'Return ONLY: {{"ratings":[{{"ticker":"X","catalyst_score":7,"catalyst_type":"BREAKOUT",'
             f'"auto_drop":false,"reason":"..."}}]}}'
         )
@@ -2257,7 +2260,7 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
             if not raw:
                 skipped_batches += 1
                 consecutive_skips += 1
-                print(f'    Batch {bi+1}/{n_calls} âš  skipped (LLM unavailable/rate-limited)')
+                print(f'    Batch {bi+1}/{n_calls} ⚠ skipped (LLM unavailable/rate-limited)')
                 if consecutive_skips >= max_consecutive_skips:
                     rem = n_calls - (bi + 1)
                     if rem > 0:
@@ -2304,14 +2307,14 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
                         match['auto_drop'] = True
                         match['news_notes'] = f'AUTO DROP: {r.get("reason","no short-term catalyst")}'
             consecutive_skips = 0
-            print(f'    Batch {bi+1}/{n_calls} âœ“')
+            print(f'    Batch {bi+1}/{n_calls} ✓')
             if (bi + 1) % _LLM_BATCH_COOLDOWN_EVERY == 0 and (bi + 1) < n_calls:
                 print(f'    Cooldown: pausing {_LLM_BATCH_COOLDOWN_SECONDS:.0f}s to avoid free-tier throttling')
                 time.sleep(_LLM_BATCH_COOLDOWN_SECONDS)
         except Exception as e:
             skipped_batches += 1
             consecutive_skips += 1
-            print(f'    Batch {bi+1}/{n_calls} âš  skipped ({type(e).__name__}: {e})')
+            print(f'    Batch {bi+1}/{n_calls} ⚠ skipped ({type(e).__name__}: {e})')
             if consecutive_skips >= max_consecutive_skips:
                 rem = n_calls - (bi + 1)
                 if rem > 0:
@@ -2321,12 +2324,12 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
     dropped = sum(1 for c in candidates if c.get('auto_drop'))
     if skipped_batches:
         print(f'  Catalyst scoring partial: skipped {skipped_batches}/{n_calls} batches due to throttling/invalid JSON')
-    print(f'  Catalyst scoring done â€” {dropped} auto-dropped, {len(candidates)-dropped} remain')
+    print(f'  Catalyst scoring done — {dropped} auto-dropped, {len(candidates)-dropped} remain')
     return candidates
 
 
 def analyze_exit_signals(ctx, all_stock_news, portfolio=None):
-    """Check every pending pick â€” LLM says HOLD / EXIT / ADD for each."""
+    """Check every pending pick — LLM says HOLD / EXIT / ADD for each."""
     for fp, label in [(PICKS_CSV, 'BUY'), (WATCH_CSV, 'WATCH')]:
         if not os.path.exists(fp): continue
         df = pd.read_csv(fp)
@@ -2405,7 +2408,7 @@ def analyze_exit_signals(ctx, all_stock_news, portfolio=None):
 
 
 def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
-    """3-round LLM deliberation: rank â†’ deep-dive â†’ final pick. No 1-shot guessing."""
+    """3-round LLM deliberation: rank → deep-dive → final pick. No 1-shot guessing."""
     if not candidates: return None
     print(f'\nPhase 6 - NVIDIA final scoring ({len(candidates)} candidates)...')
 
@@ -2461,7 +2464,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     if not pick_history:
         hist_block = (
             '\nNO TRADING HISTORY YET.\n'
-            'derived_rules MUST be exactly: ["No history yet (n=0) â€” using baseline judgment. Rules will emerge after first picks are evaluated."]\n'
+            'derived_rules MUST be exactly: ["No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated."]\n'
             'Do not invent sample sizes or win rates. There is no data to derive rules from.\n'
         )
     if pick_history:
@@ -2510,23 +2513,23 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
                 try: r30_vals.append(float(p['return_30d']))
                 except: pass
             avg_ret = f'{sum(r30_vals)/len(r30_vals):+.1f}%' if r30_vals else '?'
-            marker = ' â† TODAY\'S REGIME' if reg == curr_regime else ''
+            marker = ' ← TODAY\'S REGIME' if reg == curr_regime else ''
             regime_lines += f'\n  REGIME: {reg} | {len(picks)} picks | {reg_wr}% win rate | avg 30d return: {avg_ret}{marker}\n'
             regime_lines += '\n'.join(_fmt(h) for h in picks) + '\n'
 
         hist_block = (
-            f'\nâ”€â”€ YOUR FULL TRADING HISTORY ({total} evaluated picks | {wr}% win rate) â”€â”€\n'
+            f'\n── YOUR FULL TRADING HISTORY ({total} evaluated picks | {wr}% win rate) ──\n'
             f'TODAY\'S REGIME: {curr_regime} (VIX={curr_vix:.1f}, QQQ={curr_qqq})\n'
             f'{regime_lines}\n'
             f'SELF-OPTIMIZATION INSTRUCTIONS:\n'
-            f'Step 1 â€” Study the regime groups above. Focus MOST on the group marked TODAY\'S REGIME\n'
+            f'Step 1 — Study the regime groups above. Focus MOST on the group marked TODAY\'S REGIME\n'
             f'         since that\'s the market condition you are picking in right now.\n'
-            f'Step 2 â€” Derive your own rules from the data. For each rule, note: how many picks\n'
+            f'Step 2 — Derive your own rules from the data. For each rule, note: how many picks\n'
             f'         support it (n=X), the win rate (wr=Y%), and the avg magnitude of wins/losses.\n'
             f'         A rule based on n<3 picks should be flagged as LOW CONFIDENCE.\n'
-            f'Step 3 â€” Weight rules by: (a) regime match to today, (b) sample size, (c) magnitude.\n'
+            f'Step 3 — Weight rules by: (a) regime match to today, (b) sample size, (c) magnitude.\n'
             f'         A rule with n=10, wr=80%, avg+12% beats a rule with n=2, wr=100%, avg+0.5%.\n'
-            f'Step 4 â€” Apply your rules when scoring today\'s candidates. Reference them in reasoning.\n'
+            f'Step 4 — Apply your rules when scoring today\'s candidates. Reference them in reasoning.\n'
             f'Rules must be derived from the data. Do not invent rules not supported by history.\n'
         )
 
@@ -2540,9 +2543,9 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
 
     SYS = ('You are a short-to-medium term equity trader (1-4 week holds). '
            'NOT a long-term investor. Momentum, catalysts, and near-term price action matter most. '
-           'Analyst 12-month targets are nearly irrelevant â€” focus on what moves in 1-4 weeks. '
+           'Analyst 12-month targets are nearly irrelevant — focus on what moves in 1-4 weeks. '
            'Earnings within 2 weeks = elevated risk. Earnings within 5 days = near-disqualifier. '
-           'CRITICAL RULE: Before committing to any BUY, you MUST articulate a credible bear case â€” '
+           'CRITICAL RULE: Before committing to any BUY, you MUST articulate a credible bear case — '
            'specific reasons the trade could fail in the next 10 days. '
            'If you cannot name at least 2 concrete failure scenarios, the pick is not ready. '
            'High conviction with a weak bear case is overconfidence, not edge. '
@@ -2578,7 +2581,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'TRUMP: {nd.get("trump_signal",{}).get("detail","none")}'
     )
 
-    # â”€â”€ ROUND 1: Rank all candidates â†’ surface top 10 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── ROUND 1: Rank all candidates → surface top 10 ───────────────────────
     print(f'  Round 1/3: Ranking {len(candidates)} candidates...')
     compact_brief = [{
         'ticker': c['ticker'], 'sector': c['sector'], 'source': c['source'],
@@ -2641,11 +2644,11 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         for t in r1.get('drop', []):
             m = next((c for c in candidates if c['ticker'] == t), None)
             if m: m['auto_drop'] = True; m['news_notes'] = 'R1 drop: no short-term catalyst'
-        print(f'  Round 1 â†’ Top 10: {top10}')
+        print(f'  Round 1 → Top 10: {top10}')
     except Exception as e:
-        print(f'  Round 1 failed ({e}) â€” using pre_score top 10')
+        print(f'  Round 1 failed ({e}) — using pre_score top 10')
 
-    # â”€â”€ ROUND 2: Deep-dive top 10 â†’ bull/bear for each â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── ROUND 2: Deep-dive top 10 → bull/bear for each ──────────────────────
     print(f'  Round 2/3: Deep-diving top 10...')
     top10_candidates = [c for c in candidates if c['ticker'] in top10 and not c.get('auto_drop')]
     compact_deep = [{
@@ -2692,11 +2695,11 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         r2 = json.loads(raw2)
         for a in r2.get('analyses', []):
             r2_analyses[a['ticker']] = a
-        print(f'  Round 2 â†’ analyses for {list(r2_analyses.keys())}')
+        print(f'  Round 2 → analyses for {list(r2_analyses.keys())}')
     except Exception as e:
         print(f'  Round 2 failed ({e})')
 
-    # â”€â”€ ROUND 3: Final pick â€” uses rounds 1+2 + full history + regime â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── ROUND 3: Final pick — uses rounds 1+2 + full history + regime ────────
     print(f'  Round 3/3: Final deliberation...')
     r2_summary = '\n'.join([
         f'  {t}: BULL={a.get("bull","")} | BEAR={a.get("bear","")} | EDGE={a.get("short_term_edge","")}'
@@ -2718,7 +2721,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'"pre_score":80,"catalyst_score":8,"catalyst_type":"BREAKOUT",'
         f'"score_breakdown":"Tech:48 | News:32 | Catalyst:8 | VIX:{mult}x = 85",'
         f'"position_size_pct":0,'
-        f'"reasoning":"2 sentences â€” specific 1-4 week thesis citing the bull case.",'
+        f'"reasoning":"2 sentences — specific 1-4 week thesis citing the bull case.",'
         f'"devils_advocate":"2 specific risks in the next 4 weeks.",'
         f'"key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}},'
         f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","reasoning":"1 sentence.","key_risk":"1 sentence.","sector":"X","source":"TECHNICAL"}}]}}\n'
@@ -2727,7 +2730,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'Context: {len(open_tickers)} positions currently open. VIX {mult}x regime.\n'
         f'Sector exposure in current portfolio: {sector_str}\n'
         f'Realized P&L this week: {week_str}\n'
-        f'There are no rules â€” size based purely on your conviction, portfolio heat, and risk assessment.'
+        f'There are no rules — size based purely on your conviction, portfolio heat, and risk assessment.'
     )
 
     try:
@@ -2749,16 +2752,16 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         result = json.loads(raw3)
         _LAST_LLM_FAILURE_REASON[0] = ''
         pick = result.get('top_pick', {})
-        print(f'  Final pick: {pick.get("ticker")} | pre={pick.get("pre_score","?")} â†’ {pick.get("confidence")}/100 | {pick.get("signal")} | {_LLM_CALL_COUNT[0]} LLM calls this run')
+        print(f'  Final pick: {pick.get("ticker")} | pre={pick.get("pre_score","?")} → {pick.get("confidence")}/100 | {pick.get("signal")} | {_LLM_CALL_COUNT[0]} LLM calls this run')
 
         rules = result.get('derived_rules', [])
         summary = result.get('learning_summary', '')
         if rules:
-            print(f'\nâ”Œâ”€ LLM SELF-DERIVED RULES {"â”€"*44}')
+            print(f'\n┌─ LLM SELF-DERIVED RULES {"─"*44}')
             for i, r in enumerate(rules, 1):
-                print(f'â”‚ {i}. {r}')
-            if summary: print(f'â”‚ â†’ {summary}')
-            print(f'â””{"â”€"*62}')
+                print(f'│ {i}. {r}')
+            if summary: print(f'│ → {summary}')
+            print(f'└{"─"*62}')
             rules_log = os.path.join(DRIVE_FOLDER, 'rules_log.csv')
             today_str = datetime.now().strftime('%Y-%m-%d %H:%M')
             wr_now = round(sum(1 for h in (pick_history or []) if h['result'] == 'Win') / max(len(pick_history or []), 1) * 100, 1)
@@ -2806,7 +2809,7 @@ PICK_COLS = [
 WATCH_COLS = PICK_COLS + ['Watch_Score']
 
 
-# Legacy column names from older screener versions â†’ current names
+# Legacy column names from older screener versions → current names
 _CSV_RENAMES = {
     'Stop_Zone':   'Stop_Price',
     'Target_Zone': 'Target_Price',
@@ -2920,7 +2923,7 @@ def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=
     }
     if watch_score is not None: row['Watch_Score'] = watch_score
     pd.concat([df, pd.DataFrame([row])], ignore_index=True).to_csv(fp, index=False)
-    print(f'  âœ… Saved {ticker} | Stop:{stop_p} Target:{tgt_p}')
+    print(f'  ✅ Saved {ticker} | Stop:{stop_p} Target:{tgt_p}')
 
 
 def update_results(fp, cols):
@@ -2976,12 +2979,12 @@ def display_result(result, ctx, nd, ep, wl, all_candidates=None):
     fund = next((c for c in (all_candidates or []) if c['ticker'] == ticker), {})
     W = 65
 
-    print('\n' + 'â–ˆ' * W)
-    print(f'  TODAY\'S PICK  â€”  {datetime.now().strftime("%A, %b %d %Y")}')
-    print('â–ˆ' * W)
+    print('\n' + '█' * W)
+    print(f'  TODAY\'S PICK  —  {datetime.now().strftime("%A, %b %d %Y")}')
+    print('█' * W)
     print(f'  Market:  VIX {ctx["vix_level"]:.1f} ({ctx["vix_regime"]})  |  QQQ {ctx["qqq_trend"]}  |  SPY {ctx["spy_return_today"]:+.2f}%')
     print(f'  Macro:   {nd.get("macro_summary","Unavailable")[:80]}')
-    print('â”€' * W)
+    print('─' * W)
 
     if sig == 'NO PICK' or conf < BUY_THRESHOLD:
         print('  NO PICK TODAY')
@@ -2990,15 +2993,15 @@ def display_result(result, ctx, nd, ep, wl, all_candidates=None):
         atr        = fund.get('atr', 0)
         stop_price = round(ep - ATR_STOP_MULT  * atr, 2) if atr and isinstance(ep, (int, float)) else 'N/A'
         tgt_price  = round(ep + ATR_TARGET_MULT * atr, 2) if atr and isinstance(ep, (int, float)) else 'N/A'
-        er_warn    = '  âš ï¸  EARNINGS THIS WEEK' if fund.get('earnings_risk') else ''
-        conf_bar   = 'â–ˆ' * int(conf / 5) + 'â–‘' * (20 - int(conf / 5))
+        er_warn    = '  ⚠️  EARNINGS THIS WEEK' if fund.get('earnings_risk') else ''
+        conf_bar   = '█' * int(conf / 5) + '░' * (20 - int(conf / 5))
 
         print(f'  BUY  {ticker}  [{src}]{er_warn}')
         print(f'  Sector:     {pk.get("sector","")}')
         print(f'  Confidence: {conf}/100  {conf_bar}')
         print(f'  Entry:  ~${ep}   Stop: ~${stop_price}   Target: ~${tgt_price}   R:R 1:2')
         print(f'  Score:  {pk.get("score_breakdown","")}')
-        print('â”€' * W)
+        print('─' * W)
         print(f'  Why:      {pk.get("reasoning","")}')
         print(f'  Key Risk: {pk.get("key_risk","")}')
         if pk.get('devils_advocate'):
@@ -3008,7 +3011,7 @@ def display_result(result, ctx, nd, ep, wl, all_candidates=None):
         print('\n  WATCH LIST:')
         for w in wl:
             print(f'    {w.get("ticker"):<6}  {w.get("confidence")}/100  [{w.get("sector","")}]  {w.get("reasoning","")[:70]}')
-    print('â–ˆ' * W)
+    print('█' * W)
 
 
 def _build_rules_html(rules, summary):
@@ -3029,7 +3032,7 @@ def _build_rules_html(rules, summary):
             past = rdf[~rdf['Date'].str.startswith(datetime.now().strftime('%Y-%m-%d'), na=False)]
             if not past.empty:
                 dates = past['Date'].unique()[-5:]
-                history_html = '<details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">â–¶ Show rule evolution (last 5 runs)</summary>'
+                history_html = '<details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary>'
                 for d in reversed(dates):
                     day_rules = past[past['Date']==d]['Rule'].tolist()
                     history_html += f'<div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">{d}</b><ul style="margin-top:4px;padding-left:16px;font-size:12px">'
@@ -3039,7 +3042,7 @@ def _build_rules_html(rules, summary):
                 history_html += '</details>'
         except: pass
     return f'''<div class="section" style="border-left:4px solid #1565c0">
-    <h2>ðŸ§  What the AI Learned from Your Trade History</h2>
+    <h2>🧠 What the AI Learned from Your Trade History</h2>
     {f'<p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">{summary}</p>' if summary else ''}
     <ul style="list-style:none;padding:0">{rule_items}</ul>
     {history_html}
@@ -3058,7 +3061,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
     stop_str = str(stop_price) if isinstance(stop_price, (int, float)) else stop_price
     tgt_str  = str(target_price) if isinstance(target_price, (int, float)) else target_price
 
-    # â”€â”€ Action label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Action label ──────────────────────────────────────────────────────────
     if sig == 'BUY' and position_opened:
         action_label = f'BOUGHT {ticker}'
         action_color = '#00c853'
@@ -3069,14 +3072,14 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         action_label = 'NO PICK TODAY'
         action_color = '#546e7a'
 
-    # â”€â”€ R:R â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── R:R ──────────────────────────────────────────────────────────────────
     rr_str = 'N/A'
     if (isinstance(stop_price, (int, float)) and isinstance(target_price, (int, float))
             and isinstance(ep, (int, float)) and ep - stop_price > 0):
         rr = round((target_price - ep) / (ep - stop_price), 1)
         rr_str = f'1:{rr}'
 
-    # â”€â”€ Portfolio data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Portfolio data ────────────────────────────────────────────────────────
     pf        = portfolio or {}
     positions = pf.get('positions', [])
     closed    = pf.get('closed_trades', [])
@@ -3090,7 +3093,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
     wr        = round(wins_ct / len(closed) * 100, 1) if closed else 0
     pf_color  = '#00c853' if total_pct >= 0 else '#f44336'
 
-    # â”€â”€ BUY tab â€” pick details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── BUY tab — pick details ────────────────────────────────────────────────
     if sig == 'BUY':
         buy_details_html = f'''
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
@@ -3125,7 +3128,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
     else:
         buy_details_html = '<div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div>'
 
-    # â”€â”€ BUY tab â€” watch list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── BUY tab — watch list ──────────────────────────────────────────────────
     watch_html = ''
     for w in (wl or [])[:5]:
         wc  = w.get('confidence', 0)
@@ -3134,7 +3137,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
                   border-radius:6px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
           <span style="font-weight:700;font-size:16px">{w.get("ticker","")}</span>
-          <span style="color:#888;font-size:13px">{wc}/100 &nbsp;Â·&nbsp; {w.get("sector","")}</span>
+          <span style="color:#888;font-size:13px">{wc}/100 &nbsp;·&nbsp; {w.get("sector","")}</span>
         </div>
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
           <div style="background:#f9a825;border-radius:4px;height:4px;width:{wc}%"></div>
@@ -3144,7 +3147,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
     if not watch_html:
         watch_html = '<p style="color:#aaa;padding:8px 0">No watch picks today.</p>'
 
-    # â”€â”€ SEE tab â€” open position cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── SEE tab — open position cards ─────────────────────────────────────────
     def pos_card(p):
         upc   = p.get('unrealized_pnl_pct', 0)
         upl   = p.get('unrealized_pnl', 0)
@@ -3154,7 +3157,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         tgt_  = p.get('target_price')
         hdays = p.get('hold_days', 0)
         col   = '#00c853' if upc >= 0 else '#f44336'
-        arrow = 'â–²' if upc >= 0 else 'â–¼'
+        arrow = '▲' if upc >= 0 else '▼'
         hold_pct = min(100, round(hdays / max(_CFG_HOLD_DAYS, 1) * 100))
 
         ladder = ''
@@ -3175,7 +3178,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
             <div style="position:absolute;left:{curr_pos}%;width:4px;height:16px;top:-4px;
                         background:{col};border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry {ep_} &nbsp;Â·&nbsp; Current {curr}</div>'''
+          <div style="font-size:11px;color:#999">Entry {ep_} &nbsp;·&nbsp; Current {curr}</div>'''
 
         return f'''
       <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
@@ -3188,8 +3191,8 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
           <span style="font-size:22px;font-weight:700;color:{col}">{arrow} {upc:+.1f}%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          {p.get("shares",0)} shares &nbsp;Â·&nbsp; Value USD {p.get("current_value",0):,.0f}
-          &nbsp;Â·&nbsp; P&amp;L <span style="color:{col};font-weight:600">{upl:+,.0f}</span>
+          {p.get("shares",0)} shares &nbsp;·&nbsp; Value USD {p.get("current_value",0):,.0f}
+          &nbsp;·&nbsp; P&amp;L <span style="color:{col};font-weight:600">{upl:+,.0f}</span>
         </div>
         {ladder}
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
@@ -3202,7 +3205,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         pos_card(p) for p in sorted(positions, key=lambda x: x.get('unrealized_pnl_pct', 0), reverse=True)
     ) or '<p style="color:#aaa;padding:12px 0">No open positions.</p>'
 
-    # â”€â”€ HOLD tab â€” closed trades table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── HOLD tab — closed trades table ────────────────────────────────────────
     def ct_row(t):
         pnl     = t.get('realized_pnl', 0)
         pnl_pct = t.get('realized_pnl_pct', 0)
@@ -3224,7 +3227,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         ct_row(t) for t in sorted(closed, key=lambda x: x.get('exit_date', ''), reverse=True)
     ) or '<tr><td colspan="8" style="color:#aaa;text-align:center;padding:16px">No closed trades yet.</td></tr>'
 
-    # â”€â”€ STOP tab data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── STOP tab data ─────────────────────────────────────────────────────────
     today_stops   = [t for t in closed
                      if str(t.get('exit_date', ''))[:10] == today
                      and 'stop' in t.get('reason', '').lower()]
@@ -3248,8 +3251,8 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
           <span style="font-size:20px;font-weight:700;color:#f44336">{pnl:+,.0f} USD &nbsp;({pnl_pct:+.1f}%)</span>
         </div>
         <div style="color:#888;font-size:13px;margin-top:4px">
-          Entry {t.get("entry_price","")} &nbsp;Â·&nbsp; Exited @ {t.get("exit_price","")}
-          &nbsp;Â·&nbsp; Held {t.get("hold_days",0)} days
+          Entry {t.get("entry_price","")} &nbsp;·&nbsp; Exited @ {t.get("exit_price","")}
+          &nbsp;·&nbsp; Held {t.get("hold_days",0)} days
         </div>
       </div>'''
         today_stop_banner = f'''
@@ -3279,7 +3282,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         </div>
         <div style="text-align:right">
           <div style="font-size:15px;font-weight:600;color:#e65100">{gap_pct:.1f}% above stop</div>
-          <div style="font-size:12px;color:#888">Current {curr_} &nbsp;Â·&nbsp; Stop {stop_}</div>
+          <div style="font-size:12px;color:#888">Current {curr_} &nbsp;·&nbsp; Stop {stop_}</div>
         </div>
       </div>'''
         danger_section = f'''
@@ -3306,7 +3309,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
     stop_history_rows = ''.join(stop_row(t) for t in all_stops) or \
         '<tr><td colspan="7" style="color:#aaa;text-align:center;padding:16px">No stop losses in history.</td></tr>'
 
-    # â”€â”€ Market context strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Market context strip ──────────────────────────────────────────────────
     vix      = ctx.get('vix_level', 0)
     vix_r    = ctx.get('vix_regime', '')[:14]
     spy      = ctx.get('spy_return_today', 0)
@@ -3320,7 +3323,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
         if failure_reason else ''
     )
 
-    # â”€â”€ LLM rules block (kept for BUY tab) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── LLM rules block (kept for BUY tab) ───────────────────────────────────
     rules_html = _build_rules_html(derived_rules, learning_summary)
 
     html = f'''<!DOCTYPE html>
@@ -3328,7 +3331,7 @@ def save_html_report(result, ctx, nd, ep, wl, derived_rules=None, learning_summa
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LLM Portfolio Manager â€” {today}</title>
+<title>LLM Portfolio Manager — {today}</title>
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
@@ -3358,7 +3361,7 @@ tr:last-child td{{border-bottom:none}}
 <body>
 <div class="wrap">
   <h1>LLM Portfolio Manager</h1>
-  <p class="sub">{datetime.now().strftime("%A %B %d %Y  %H:%M")} &nbsp;Â·&nbsp; {NVIDIA_MODEL}</p>
+  <p class="sub">{datetime.now().strftime("%A %B %d %Y  %H:%M")} &nbsp;·&nbsp; {NVIDIA_MODEL}</p>
 
   <div class="mkt">
     <div class="mi"><div class="ml">VIX</div><div class="mv">{vix:.1f} &nbsp;{vix_r}</div></div>
@@ -3375,7 +3378,7 @@ tr:last-child td{{border-bottom:none}}
     <button class="tb"    onclick="sw('stop',this)" style="{"color:#f44336;font-weight:700" if today_stops else ""}">STOP{"  !" if today_stops else ""}</button>
   </div>
 
-  <!-- â•â•â• BUY â•â•â• -->
+  <!-- ═══ BUY ═══ -->
   <div id="t-buy" class="tp on">
     {rules_html}
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
@@ -3384,7 +3387,7 @@ tr:last-child td{{border-bottom:none}}
         {action_label}
       </div>
       <div style="color:#aaa;font-size:13px">
-        {today} &nbsp;Â·&nbsp; {pk.get("sector","")} &nbsp;Â·&nbsp; {pk.get("source","")}
+        {today} &nbsp;·&nbsp; {pk.get("sector","")} &nbsp;·&nbsp; {pk.get("source","")}
       </div>
             {failure_reason_html}
       {buy_details_html}
@@ -3395,7 +3398,7 @@ tr:last-child td{{border-bottom:none}}
     </div>
   </div>
 
-  <!-- â•â•â• SEE â•â•â• -->
+  <!-- ═══ SEE ═══ -->
   <div id="t-see" class="tp">
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:20px;
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
@@ -3416,7 +3419,7 @@ tr:last-child td{{border-bottom:none}}
     {positions_html}
   </div>
 
-  <!-- â•â•â• HOLD â•â•â• -->
+  <!-- ═══ HOLD ═══ -->
   <div id="t-hold" class="tp">
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
       <div class="sec" style="padding:16px;text-align:center">
@@ -3441,7 +3444,7 @@ tr:last-child td{{border-bottom:none}}
     </div>
   </div>
 
-  <!-- â•â•â• STOP â•â•â• -->
+  <!-- ═══ STOP ═══ -->
   <div id="t-stop" class="tp">
     {today_stop_banner}
     {danger_section}
@@ -3456,7 +3459,7 @@ tr:last-child td{{border-bottom:none}}
   </div>
 
   <p style="text-align:center;color:#ccc;font-size:11px;margin-top:18px">
-    Not financial advice &nbsp;Â·&nbsp; Personal project &nbsp;Â·&nbsp; DYOR
+    Not financial advice &nbsp;·&nbsp; Personal project &nbsp;·&nbsp; DYOR
   </p>
 </div>
 <script>
@@ -3489,12 +3492,12 @@ function sw(id,btn){{
         )
         _ipy_display(_IPyHTML(iframe))
     except Exception:
-        print(f'Report saved â†’ {latest_path}')
+        print(f'Report saved → {latest_path}')
 
 
 def display_scorecard():
-    """Minimal terminal summary â€” full detail is in the HTML report rendered above."""
-    print('\n' + 'â”€' * 60)
+    """Minimal terminal summary — full detail is in the HTML report rendered above."""
+    print('\n' + '─' * 60)
     for label, fp in [('CONFIRMED PICKS', PICKS_CSV), ('WATCH LIST', WATCH_CSV)]:
         if not os.path.exists(fp): continue
         df   = pd.read_csv(fp)
@@ -3508,12 +3511,12 @@ def display_scorecard():
         avg_return = pd.to_numeric(done['Return_Pct'], errors='coerce').mean()
         avg_return_str = f'{avg_return:+.1f}%' if pd.notna(avg_return) else 'n/a'
         print(f'  {label}: {wins}/{len(done)} wins ({wr}%) | avg {_CFG_HOLD_DAYS}d {avg_return_str} | {len(pend)} pending')
-    print(f'  ðŸ“ Full report â†’ {DRIVE_FOLDER}/report_latest.html')
-    print('â”€' * 60)
+    print(f'  📁 Full report → {DRIVE_FOLDER}/report_latest.html')
+    print('─' * 60)
 
 
-print('\nâœ… All functions loaded - v6.2')
-print('â–¶  Run Cell 5 to start the screener')
+print('\n✅ All functions loaded - v6.2')
+print('▶  Run Cell 5 to start the screener')
 
 
 def _recent_picks_summary(days=10):
@@ -3585,8 +3588,8 @@ def _wa_no_pick(ctx, portfolio, reason='No qualifying candidates today'):
     qqq_trend = ctx.get('qqq_trend', '?')
     spy_ret   = ctx.get('spy_return_today', 0)
     msg = (
-        f'ðŸ“Š Screener ran {date_str} NZT\n'
-        f'Result: NO PICK â€” {reason}\n\n'
+        f'📊 Screener ran {date_str} NZT\n'
+        f'Result: NO PICK — {reason}\n\n'
         f'Market: VIX={vix} | QQQ={qqq_trend} | SPY={spy_ret:+.2f}%\n'
         f'Portfolio: ${total_val:,.0f} ({sign}{total_pct}%) | '
         f'Cash ${cash:,.0f} | {n_open} open position(s)'
@@ -3640,7 +3643,7 @@ def send_weekly_summary(reason='weekly'):
     total_pnl = round(total_val - pf['starting_capital'], 2)
     total_pct = round(total_pnl / pf['starting_capital'] * 100, 2)
 
-    # QQQ comparison â€” only from portfolio creation date, not a fixed 7-day window.
+    # QQQ comparison — only from portfolio creation date, not a fixed 7-day window.
     # Avoids false alpha when portfolio started mid-week.
     created_str = pf.get('created', '')
     qqq_week = None
@@ -3664,7 +3667,7 @@ def send_weekly_summary(reason='weekly'):
                 else:
                     qqq_label = 'QQQ: portfolio too new for comparison'
             else:
-                # No creation date â€” use last 7 days but flag it
+                # No creation date — use last 7 days but flag it
                 qqq_week = round((float(qqq_h['Close'].iloc[-1]) - float(qqq_h['Close'].iloc[-5])) /
                                   float(qqq_h['Close'].iloc[-5]) * 100, 2)
                 qqq_label = f'QQQ this week: {qqq_week:+.2f}%'
@@ -3697,7 +3700,7 @@ def send_weekly_summary(reason='weekly'):
         header    = f'WEEKLY SUMMARY  {date_str}'
         next_note = 'Next run: Tuesday 9AM NZT'
     else:
-        header    = f'MARKET CLOSED â€” {reason}  ({date_str})'
+        header    = f'MARKET CLOSED — {reason}  ({date_str})'
         next_note = 'No trading today. Markets reopen next US trading day.'
 
     winning = sorted([p for p in pf['positions'] if p.get('unrealized_pnl_pct', 0) >= 0],
@@ -3709,7 +3712,7 @@ def send_weekly_summary(reason='weekly'):
         upc  = p.get('unrealized_pnl_pct', 0)
         upl  = round(p.get('unrealized_pnl', 0), 0)
         word = 'up' if upc >= 0 else 'down'
-        arrow = 'â–²' if upc >= 0 else 'â–¼'
+        arrow = '▲' if upc >= 0 else '▼'
         return f'{arrow} {p["ticker"]}  {word} {abs(upc):.1f}%  (USD {abs(upl):,.0f})  Day {p.get("hold_days",0)}/{_CFG_HOLD_DAYS}'
 
     lines = [
@@ -3740,9 +3743,9 @@ def send_weekly_summary(reason='weekly'):
             pnl     = t.get('realized_pnl', 0)
             pnl_pct = t.get('realized_pnl_pct', 0)
             word    = 'profit' if pnl >= 0 else 'loss'
-            arrow   = 'â–²' if pnl >= 0 else 'â–¼'
+            arrow   = '▲' if pnl >= 0 else '▼'
             reason  = _clean(t.get('reason', ''))
-            lines.append(f'{arrow} {t["ticker"]}  {word} USD {abs(pnl):,.0f}  ({pnl_pct:+.1f}%)  â€” {reason}')
+            lines.append(f'{arrow} {t["ticker"]}  {word} USD {abs(pnl):,.0f}  ({pnl_pct:+.1f}%)  — {reason}')
     else:
         lines.append('No trades closed this week')
 
@@ -3758,7 +3761,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
                   position_opened=False, closed_today=None, no_pick_reason=''):
     """Send 2 compact WhatsApp messages per daily run via CallMeBot."""
     if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
-        print('  WhatsApp skipped â€” WHATSAPP_PHONE or CALLMEBOT_API_KEY not set')
+        print('  WhatsApp skipped — WHATSAPP_PHONE or CALLMEBOT_API_KEY not set')
         return
 
     pick      = pick or {}
@@ -3782,9 +3785,9 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
 
     def _short(txt, n=180):
         txt = ' '.join(str(txt or '').split())
-        return (txt[:n - 1] + 'â€¦') if len(txt) > n else txt
+        return (txt[:n - 1] + '…') if len(txt) > n else txt
 
-    # â”€â”€ Open positions sorted by P/L (worst first so risk is visible up top) â”€â”€
+    # ── Open positions sorted by P/L (worst first so risk is visible up top) ──
     open_positions = sorted(positions, key=lambda p: p.get('unrealized_pnl_pct', 0))
 
     def _health(p):
@@ -3811,7 +3814,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         tgt_p   = _num(p.get('target_price'))
         stop_s  = f'{stop_p:.2f}' if stop_p is not None else 'N/A'
         tgt_s   = f'{tgt_p:.2f}' if tgt_p is not None else 'N/A'
-        arrow   = 'â–²' if upc >= 0 else 'â–¼'
+        arrow   = '▲' if upc >= 0 else '▼'
         return (
             f'{arrow} {p["ticker"]} {int(shares)}sh {entry:.2f}->{current:.2f} '
             f'| {upl:+,.0f} ({upc:+.1f}%) | stop {stop_s} tgt {tgt_s} '
@@ -3826,7 +3829,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         key = str(raw or '').split(' ')[0].lower()
         return _reason_map.get(key, key.replace('_', ' ') or 'closed')
 
-    # â•â•â• MESSAGE 1: TODAY'S DECISION (the part that was missing) â•â•â•
+    # ═══ MESSAGE 1: TODAY'S DECISION (the part that was missing) ═══
     sig      = str(pick.get('signal', 'NO PICK')).upper()
     tkr      = str(pick.get('ticker', '') or '').upper()
     conf     = pick.get('confidence', 0)
@@ -3845,7 +3848,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     if isinstance(spy, (int, float)):
         mkt_bits.append(f'SPY {spy:+.1f}%')
 
-    m1 = [f'DAILY SCREEN â€” {date_str}', 'Market: ' + ' | '.join(mkt_bits), '']
+    m1 = [f'DAILY SCREEN — {date_str}', 'Market: ' + ' | '.join(mkt_bits), '']
 
     def _rr():
         if ep_num and stop_num and tgt_num and (ep_num - stop_num) > 0:
@@ -3856,16 +3859,16 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         _opened_pos = next((p for p in positions if str(p.get('ticker', '')).upper() == tkr), {})
         _shares = int(_opened_pos.get('shares', 0)) if position_opened else 0
         if position_opened:
-            m1.append(f'âœ… BOUGHT {tkr}  (conf {conf}, {pick.get("catalyst_type", "setup")})')
+            m1.append(f'✅ BOUGHT {tkr}  (conf {conf}, {pick.get("catalyst_type", "setup")})')
             head = f'{_shares}sh'
             if ep_num:
                 head += f' @ ${ep_num:.2f}'
             head += f'  ({pick.get("position_size_pct", 0):.0f}% of cash)'
             m1.append(head)
         else:
-            m1.append(f'âš ï¸ PICKED {tkr} but NOT opened  (conf {conf})')
+            m1.append(f'⚠️ PICKED {tkr} but NOT opened  (conf {conf})')
             if ep_num:
-                m1.append(f'Would enter ~${ep_num:.2f} â€” likely no cash or already held')
+                m1.append(f'Would enter ~${ep_num:.2f} — likely no cash or already held')
         lvl = []
         if stop_num:
             _sp = f'-{abs((stop_num/ep_num-1)*100):.1f}%' if ep_num else ''
@@ -3880,11 +3883,11 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         if pick.get('key_risk'):
             m1.append(f'Risk: {_short(pick.get("key_risk"), 140)}')
     elif sig == 'WATCH' and tkr and tkr not in ('NONE', ''):
-        m1.append(f'ðŸ‘€ WATCH ONLY: {tkr}  (conf {conf}, below buy bar)')
+        m1.append(f'👀 WATCH ONLY: {tkr}  (conf {conf}, below buy bar)')
         if pick.get('reasoning'):
             m1.append(f'Why: {_short(pick.get("reasoning"))}')
     else:
-        m1.append(f'ðŸ˜ NO BUY TODAY â€” nothing cleared confidence {BUY_THRESHOLD}.')
+        m1.append(f'😐 NO BUY TODAY — nothing cleared confidence {BUY_THRESHOLD}.')
         _np_reason = str(no_pick_reason or pick.get('reasoning', '')).strip()
         if _np_reason:
             m1.append(f'Reason: {_short(_np_reason, 220)}')
@@ -3898,8 +3901,8 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         for t in closed_today[:4]:
             _pnl = float(t.get('realized_pnl', 0) or 0)
             _pct = float(t.get('realized_pnl_pct', 0) or 0)
-            _ar  = 'â–²' if _pnl >= 0 else 'â–¼'
-            m1.append(f'{_ar} {str(t.get("ticker","?")).upper()} {_pnl:+,.0f} ({_pct:+.1f}%) â€” {_clean_reason(t.get("reason"))}')
+            _ar  = '▲' if _pnl >= 0 else '▼'
+            m1.append(f'{_ar} {str(t.get("ticker","?")).upper()} {_pnl:+,.0f} ({_pct:+.1f}%) — {_clean_reason(t.get("reason"))}')
 
     # Watchlist (top few, with a one-liner each)
     _wl_named = [w for w in wl if str(w.get('ticker', '')).upper() not in ('', 'NONE')]
@@ -3910,16 +3913,16 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             _wt = str(w.get('ticker', '?')).upper()
             _wc = w.get('confidence', 0)
             _wr = _short(w.get('reasoning', ''), 90)
-            m1.append(f'â€¢ {_wt} ({_wc}) {("- " + _wr) if _wr else ""}'.rstrip())
+            m1.append(f'• {_wt} ({_wc}) {("- " + _wr) if _wr else ""}'.rstrip())
 
     msg1 = '\n'.join(m1)
 
-    # â•â•â• MESSAGE 2: YOUR PORTFOLIO + HOLDINGS â•â•â•
+    # ═══ MESSAGE 2: YOUR PORTFOLIO + HOLDINGS ═══
     green_count = sum(1 for p in open_positions if p.get('unrealized_pnl', 0) > 0)
     red_count   = sum(1 for p in open_positions if p.get('unrealized_pnl', 0) < 0)
 
     m2 = [
-        f'PORTFOLIO â€” {date_str}',
+        f'PORTFOLIO — {date_str}',
         f'Value USD {total_val:,.0f}  ({portfolio_state} ${abs(total_pnl):,.0f} / {total_pct:+.1f}%)',
         f'Cash USD {cash:,.0f}  |  {len(open_positions)} open ({green_count} green / {red_count} red)',
         '',
@@ -3935,9 +3938,9 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         # Flag any at-risk positions explicitly at the bottom
         _risk = [p['ticker'] for p in open_positions if _health(p) == 'NEAR STOP']
         if _risk:
-            m2.append(f'âš  Watch closely (near stop): {", ".join(_risk)}')
+            m2.append(f'⚠ Watch closely (near stop): {", ".join(_risk)}')
     else:
-        m2.append('No open holdings â€” 100% cash.')
+        m2.append('No open holdings — 100% cash.')
 
     msg2 = '\n'.join(m2)
 
@@ -3947,7 +3950,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
             return txt
         hard = txt[:WA_MAX_CHARS - 4]
         nl = hard.rfind('\n')
-        return (hard[:nl] if nl > int(WA_MAX_CHARS * 0.6) else hard).rstrip() + '\nâ€¦'
+        return (hard[:nl] if nl > int(WA_MAX_CHARS * 0.6) else hard).rstrip() + '\n…'
 
     msg1, msg2 = _cap(msg1), _cap(msg2)
 
@@ -3959,7 +3962,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
 
 
 # ============================================================
-# LLM SELF-ADAPTATION  â€”  config overrides + criteria engine
+# LLM SELF-ADAPTATION  —  config overrides + criteria engine
 # ============================================================
 
 _CFG_PATH = f'{DRIVE_FOLDER}/config_overrides.json'
@@ -3995,7 +3998,7 @@ def load_config_overrides():
             with open(p) as f:
                 ov = json.load(f)
 
-            # Numeric thresholds â€” LLM proposes; safety clamps applied below
+            # Numeric thresholds — LLM proposes; safety clamps applied below
             RSI_MIN           = float(ov.get('RSI_MIN',          RSI_MIN))
             RSI_MAX           = float(ov.get('RSI_MAX',          RSI_MAX))
             ADX_MIN           = float(ov.get('ADX_MIN',          ADX_MIN))
@@ -4005,7 +4008,7 @@ def load_config_overrides():
             ATR_TARGET_MULT   = float(ov.get('ATR_TARGET_MULT',  ATR_TARGET_MULT))
             VOLUME_MIN_RATIO  = float(ov.get('VOLUME_MIN_RATIO', VOLUME_MIN_RATIO))
 
-            # Criteria â€” LLM full authority
+            # Criteria — LLM full authority
             _CFG_SECTOR_BLACKLIST   = [s.strip() for s in ov.get('sector_blacklist',   [])]
             _CFG_SECTOR_WHITELIST   = [s.strip() for s in ov.get('sector_whitelist',   [])]
             _CFG_SOURCE_PREFERENCE  = str(ov.get('source_preference', 'ANY')).upper()
@@ -4053,9 +4056,9 @@ def load_config_overrides():
             _CFG_VOLUME_MIN_RATIO    = float(ov.get('volume_min_ratio',        _CFG_VOLUME_MIN_RATIO))
             VOLUME_MIN_RATIO         = _CFG_VOLUME_MIN_RATIO
 
-            # â”€â”€ SAFETY CLAMPS â€” stop LLM self-tuning from choking the funnel â”€â”€
+            # ── SAFETY CLAMPS — stop LLM self-tuning from choking the funnel ──
             # Without bounds the LLM ratchets selectivity up every losing streak
-            # (BUYâ†’92, ADXâ†’35, $volâ†’50M) until 900 stocks collapse to a structural
+            # (BUY→92, ADX→35, $vol→50M) until 900 stocks collapse to a structural
             # NO PICK. Clamp the key selectivity levers to keep the funnel open.
             BUY_THRESHOLD         = max(70.0, min(88.0, BUY_THRESHOLD))
             WATCH_THRESHOLD       = max(55.0, min(BUY_THRESHOLD - 1, WATCH_THRESHOLD))
@@ -4072,7 +4075,7 @@ def load_config_overrides():
             SAMPLE_SIZE         = _CFG_SAMPLE_SIZE
             BROKERAGE_FEE       = _CFG_BROKERAGE_FEE
 
-            print(f'âœ… Config overrides loaded  RSI {RSI_MIN}-{RSI_MAX}  ADXâ‰¥{ADX_MIN}  BUYâ‰¥{BUY_THRESHOLD}')
+            print(f'✅ Config overrides loaded  RSI {RSI_MIN}-{RSI_MAX}  ADX≥{ADX_MIN}  BUY≥{BUY_THRESHOLD}')
             if _CFG_SECTOR_BLACKLIST:
                 print(f'   Sector blacklist: {", ".join(_CFG_SECTOR_BLACKLIST)}')
             if _CFG_SECTOR_WHITELIST:
@@ -4080,15 +4083,15 @@ def load_config_overrides():
             if _CFG_SOURCE_PREFERENCE != 'ANY':
                 print(f'   Source preference: {_CFG_SOURCE_PREFERENCE} only')
             if _CFG_REQUIRE_CONGRESS:
-                print(f'   Congress filter: ON â€” only tickers with congressional buys')
+                print(f'   Congress filter: ON — only tickers with congressional buys')
             if _CFG_AVOID_EARNINGS:
-                print(f'   Earnings filter: ON â€” auto-dropping earnings-risk tickers')
+                print(f'   Earnings filter: ON — auto-dropping earnings-risk tickers')
             if ov.get('reasoning'):
                 print(f'   LLM note: {str(ov["reasoning"])[:120]}')
             return
         except Exception as e:
-            print(f'âš ï¸  config_overrides.json load error: {e}')
-    print('â„¹ï¸  No config_overrides.json â€” using defaults')
+            print(f'⚠️  config_overrides.json load error: {e}')
+    print('ℹ️  No config_overrides.json — using defaults')
 
 
 def save_config_overrides(cfg: dict):
@@ -4096,7 +4099,7 @@ def save_config_overrides(cfg: dict):
     try:
         with open(_CFG_PATH, 'w') as f:
             json.dump(cfg, f, indent=2)
-        print(f'  Config saved â†’ {_CFG_PATH}')
+        print(f'  Config saved → {_CFG_PATH}')
     except Exception as e:
         print(f'  Could not save config: {e}')
 
@@ -4104,15 +4107,15 @@ def save_config_overrides(cfg: dict):
 def apply_config_criteria(candidates, ctx=None):
     """
     Post-enrichment filter enforcing LLM-written criteria.
-    LLM has full authority â€” any of these flags can be set.
+    LLM has full authority — any of these flags can be set.
     Runs after enrich_with_scores so sector/source/congress fields are populated.
     """
     kept, dropped = [], []
 
-    # VIX gate â€” if market too wild, skip everything
+    # VIX gate — if market too wild, skip everything
     vix = (ctx or {}).get('vix_level', 0)
     if _CFG_MAX_VIX < 999 and vix and float(vix) > _CFG_MAX_VIX:
-        print(f'  VIX {vix:.1f} > {_CFG_MAX_VIX} cap â€” LLM says go to cash, no BUY signals')
+        print(f'  VIX {vix:.1f} > {_CFG_MAX_VIX} cap — LLM says go to cash, no BUY signals')
         return []
 
     for c in candidates:
@@ -4130,7 +4133,7 @@ def apply_config_criteria(candidates, ctx=None):
             dropped.append(f'{ticker}(source={source}, want {_CFG_SOURCE_PREFERENCE})')
             continue
 
-        # Congress filter â€” only stocks bought by congress members
+        # Congress filter — only stocks bought by congress members
         if _CFG_REQUIRE_CONGRESS and c.get('congress_label', 'NEUTRAL') != 'BUYING':
             dropped.append(f'{ticker}(no congress buy)')
             continue
@@ -4154,7 +4157,7 @@ def apply_config_criteria(candidates, ctx=None):
                 continue
 
         # Price floor override (screen_technicals already used updated MIN_PRICE,
-        # but Stream B news rescues can bypass it â€” check here as a backstop)
+        # but Stream B news rescues can bypass it — check here as a backstop)
         if c.get('price', 0) < _CFG_MIN_PRICE:
             dropped.append(f'{ticker}(price<{_CFG_MIN_PRICE})')
             continue
@@ -4164,7 +4167,7 @@ def apply_config_criteria(candidates, ctx=None):
             dropped.append(f'{ticker}(ADX={c.get("adx",0):.0f}<{_CFG_MIN_ADX_BUY:.0f})')
             continue
 
-        # Sector whitelist â€” boost score for preferred sectors
+        # Sector whitelist — boost score for preferred sectors
         if _CFG_SECTOR_WHITELIST and sector in _CFG_SECTOR_WHITELIST:
             c['news_adjustment'] = c.get('news_adjustment', 0) + 5
 
@@ -4184,7 +4187,7 @@ def update_config_from_llm(pick_history):
     """
     closed = [h for h in (pick_history or []) if h.get('result') in ('Win','Loss','Neutral')]
     if len(closed) < _CFG_MIN_PICKS_TO_LEARN:
-        print(f'  Config update skipped â€” need {_CFG_MIN_PICKS_TO_LEARN} closed picks, have {len(closed)}')
+        print(f'  Config update skipped — need {_CFG_MIN_PICKS_TO_LEARN} closed picks, have {len(closed)}')
         return
 
     wins = sum(1 for h in closed if h['result'] == 'Win')
@@ -4199,7 +4202,7 @@ def update_config_from_llm(pick_history):
             break
     streak_warn = ''
     if streak >= 3:
-        streak_warn = (f'\nâš ï¸  LOSS STREAK: last {streak} consecutive picks all LOST. '
+        streak_warn = (f'\n⚠️  LOSS STREAK: last {streak} consecutive picks all LOST. '
                        f'Current guidelines are not working. You MUST make meaningful changes.\n')
     elif streak >= 2:
         streak_warn = f'\nNOTICE: last {streak} picks both lost. Review your criteria.\n'
@@ -4209,7 +4212,7 @@ def update_config_from_llm(pick_history):
         ret = h.get('vs_qqq_10d', h.get('vs_qqq_30d', '?'))
         line = (f"  {h.get('date','?')}: {h.get('ticker','?')} [{h.get('sector','?')}/{h.get('source','?')}]"
                 f" conf={h.get('confidence','?')} RSI={h.get('rsi','?')} VIX={h.get('vix','?')} QQQ={h.get('qqq_trend','?')}"
-                f" â†’ {h.get('result','?')} ret={h.get('return_pct', h.get('return_30d','?'))}% vsQQQ={ret}%"
+                f" → {h.get('result','?')} ret={h.get('return_pct', h.get('return_30d','?'))}% vsQQQ={ret}%"
                 f" | {str(h.get('reasoning',''))[:80]}")
         history_lines.append(line)
 
@@ -4273,17 +4276,17 @@ def update_config_from_llm(pick_history):
 CURRENT SCREENING CONFIG:
 {json.dumps(current_cfg, indent=2)}
 
-PICK HISTORY (last 20 closed picks â€” includes RSI, confidence, VIX, QQQ trend so you can spot the failure pattern):
+PICK HISTORY (last 20 closed picks — includes RSI, confidence, VIX, QQQ trend so you can spot the failure pattern):
 {chr(10).join(history_lines)}
 
 YOUR JOB:
 1. Find the pattern. What sectors, sources, RSI ranges, VIX regimes, or confidence levels are winning vs losing?
 2. Change the config to capitalise on what's working and eliminate what's failing.
-   â€” Win rate >65%: fine-tune only.
-   â€” Win rate 50-65%: adjust 2-3 parameters.
-   â€” Win rate <50%: make meaningful changes across multiple parameters.
-   â€” Loss streak â‰¥3: something is structurally wrong. Overhaul aggressively.
-3. You have FULL AUTHORITY â€” no restrictions. You can:
+   — Win rate >65%: fine-tune only.
+   — Win rate 50-65%: adjust 2-3 parameters.
+   — Win rate <50%: make meaningful changes across multiple parameters.
+   — Loss streak ≥3: something is structurally wrong. Overhaul aggressively.
+3. You have FULL AUTHORITY — no restrictions. You can:
    - Change any numeric threshold to any value that makes sense
    - Blacklist entire sectors that keep losing
    - Whitelist sectors that keep winning
@@ -4304,7 +4307,7 @@ YOUR JOB:
    - Lower rsi_exit_min_profit / macd_exit_min_profit if momentum reversals are costing unrealised gains
 4. If no clear pattern visible yet: keep current config unchanged.
 
-Return ONLY valid JSON â€” no markdown fences, no text outside the JSON.
+Return ONLY valid JSON — no markdown fences, no text outside the JSON.
 You can change ANY value. Keep unchanged values as-is.
 {{
   "RSI_MIN": {RSI_MIN},
@@ -4368,7 +4371,7 @@ You can change ANY value. Keep unchanged values as-is.
         raw = call_llm(sys_msg, user_msg, max_tokens=600, max_attempts=2,
                        raise_on_failure=False, read_timeout=45)
         if not raw:
-            print(f'  Config update skipped â€” LLM returned empty response')
+            print(f'  Config update skipped — LLM returned empty response')
             return
 
         if '{' in raw and '}' in raw:
@@ -4407,7 +4410,7 @@ You can change ANY value. Keep unchanged values as-is.
                 return
 
         if not cfg:
-            print(f'  Config update skipped â€” unable to parse LLM response')
+            print(f'  Config update skipped — unable to parse LLM response')
             return
 
         # Validate core keys present
@@ -4415,7 +4418,7 @@ You can change ANY value. Keep unchanged values as-is.
                     'sector_blacklist','source_preference','reasoning']
         for k in required:
             if k not in cfg:
-                print(f'  Config update skipped â€” LLM response missing key: {k}')
+                print(f'  Config update skipped — LLM response missing key: {k}')
                 return
 
         print(f'  LLM config update: {cfg.get("reasoning","")[:120]}')
@@ -4425,7 +4428,7 @@ You can change ANY value. Keep unchanged values as-is.
 
 
 # ============================================================
-# PORTFOLIO  â€”  paper trading engine ($10,000 starting capital)
+# PORTFOLIO  —  paper trading engine ($10,000 starting capital)
 # ============================================================
 
 def load_portfolio():
@@ -4445,7 +4448,7 @@ def load_portfolio():
                 return pf
             except Exception as e:
                 print(f'  portfolio.json load error: {e}')
-    # First run â€” create fresh portfolio
+    # First run — create fresh portfolio
     pf = {
         'cash': STARTING_CAPITAL,
         'starting_capital': STARTING_CAPITAL,
@@ -4454,7 +4457,7 @@ def load_portfolio():
         'total_realized_pnl': 0.0,
         'created': datetime.now().strftime('%Y-%m-%d'),
     }
-    print(f'  New portfolio created â€” starting capital: ${STARTING_CAPITAL:,.0f}')
+    print(f'  New portfolio created — starting capital: ${STARTING_CAPITAL:,.0f}')
     return pf
 
 
@@ -4496,7 +4499,7 @@ def update_portfolio_prices(pf):
     except Exception as e:
         print(f'  price update error: {e}')
 
-    # â”€â”€ Trailing stop â€” raise stop as price rises, never lower it â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Trailing stop — raise stop as price rises, never lower it ───────────
     for pos in pf['positions']:
         curr = pos.get('current_price')
         if curr is None:
@@ -4510,9 +4513,9 @@ def update_portfolio_prices(pf):
                 old_stop = float(pos.get('stop_price') or 0)
                 if new_stop > old_stop:
                     pos['stop_price'] = new_stop
-                    print(f'  Trailing stop ratcheted: {pos["ticker"]} stop {old_stop} â†’ {new_stop} (new high {curr})')
+                    print(f'  Trailing stop ratcheted: {pos["ticker"]} stop {old_stop} → {new_stop} (new high {curr})')
 
-    # â”€â”€ Mechanical exit rules (run after prices are updated) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Mechanical exit rules (run after prices are updated) ─────────────────
     to_close = []   # (ticker, reason)
 
     for pos in pf['positions']:
@@ -4523,17 +4526,17 @@ def update_portfolio_prices(pf):
         if curr is None:
             continue
 
-        # Rule 1 â€” Stop-loss breached
+        # Rule 1 — Stop-loss breached
         if stop and float(curr) <= float(stop):
-            to_close.append((t, f'stop_loss (curr={curr} â‰¤ stop={stop})'))
+            to_close.append((t, f'stop_loss (curr={curr} ≤ stop={stop})'))
             continue
 
-        # Rule 2 â€” Profit target reached
+        # Rule 2 — Profit target reached
         if tgt and float(curr) >= float(tgt):
-            to_close.append((t, f'profit_target (curr={curr} â‰¥ target={tgt})'))
+            to_close.append((t, f'profit_target (curr={curr} ≥ target={tgt})'))
             continue
 
-        # Rule 3 â€” Earnings in â‰¤1 day: close to avoid binary event risk
+        # Rule 3 — Earnings in ≤1 day: close to avoid binary event risk
         try:
             cal    = yf.Ticker(t).calendar
             ed_raw = None
@@ -4554,7 +4557,7 @@ def update_portfolio_prices(pf):
         except:
             pass
 
-        # Rule 4 â€” RSI overbought exit: price extended, lock in gains
+        # Rule 4 — RSI overbought exit: price extended, lock in gains
         # Only fires when position is already profitable past LLM-set threshold
         pnl_pct = pos.get('unrealized_pnl_pct', 0)
         try:
@@ -4570,7 +4573,7 @@ def update_portfolio_prices(pf):
         except:
             pass
 
-        # Rule 5 â€” MACD bearish cross after a profitable run: momentum has turned
+        # Rule 5 — MACD bearish cross after a profitable run: momentum has turned
         try:
             if pnl_pct >= _CFG_MACD_EXIT_MIN_PROFIT and t not in [x[0] for x in to_close]:
                 _h2   = yf.Ticker(t).history(period='40d') if '_h' not in dir() or len(_h) < 26 else _h
@@ -4604,7 +4607,7 @@ def _sharesies_fee(amount_usd, pf, nzdusd_rate=None, side='buy'):
     if not nzdusd_rate:
         nzdusd_rate = pf.get('last_nzdusd_rate', 0)
     if not nzdusd_rate or float(nzdusd_rate) <= 0:
-        return 0.0  # rate unavailable â€” assume free
+        return 0.0  # rate unavailable — assume free
 
     month_key = datetime.now().strftime('%Y-%m')
     if pf.get('sharesies_month') != month_key:
@@ -4631,13 +4634,13 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', 
     """Deploy cash into a new position. LLM controls amount_usd."""
     # Guard: already holding this ticker
     if any(p['ticker'] == ticker for p in pf['positions']):
-        print(f'  Portfolio: already holding {ticker} â€” skipping')
+        print(f'  Portfolio: already holding {ticker} — skipping')
         return pf
     # Guard: not enough cash, or buying would leave less than the LLM-set cash floor
     if pf['cash'] < amount_usd or (pf['cash'] - amount_usd) < _CFG_MIN_CASH_FLOOR:
-        print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position â€” would breach cash floor ${_CFG_MIN_CASH_FLOOR:,.0f}')
+        print(f'  Portfolio: insufficient cash (${pf["cash"]:,.0f}) for ${amount_usd:,.0f} position — would breach cash floor ${_CFG_MIN_CASH_FLOOR:,.0f}')
         return pf
-    shares     = int(amount_usd / entry_price)          # whole shares only â€” remainder stays as cash
+    shares     = int(amount_usd / entry_price)          # whole shares only — remainder stays as cash
     if shares < 1:
         print(f'  Portfolio: cannot afford even 1 share of {ticker} @ ${entry_price} with ${amount_usd:,.0f}')
         return pf
@@ -4664,7 +4667,7 @@ def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', 
     })
     pf['cash'] = round(pf['cash'] - total_cost, 2)
     leftover   = round(amount_usd - total_cost, 2)
-    fee_note   = f' + ${brokerage:.2f} brokerage' if brokerage else ' (free â€” within Sharesies coverage)'
+    fee_note   = f' + ${brokerage:.2f} brokerage' if brokerage else ' (free — within Sharesies coverage)'
     print(f'  Portfolio: OPENED {ticker}  {shares} shares @ ${entry_price}  spent ${total_cost:,.2f}{fee_note}  leftover ${leftover:,.2f}  cash ${pf["cash"]:,.2f}')
     return pf
 
@@ -4704,7 +4707,7 @@ def close_position(pf, ticker, exit_price, reason='hold_period', nzdusd_rate=Non
 def reconcile_closed_picks(pf):
     """
     After update_results runs, check PICKS_CSV for any Win/Loss/Neutral entries
-    that still have an open position in the portfolio â€” and close them.
+    that still have an open position in the portfolio — and close them.
     """
     if not os.path.exists(PICKS_CSV):
         return pf
@@ -4736,12 +4739,12 @@ def reconcile_closed_picks(pf):
 
 
 def portfolio_summary_str(pf):
-    """One-block text summary for the LLM â€” shown before Round 1."""
+    """One-block text summary for the LLM — shown before Round 1."""
     total_value = round(pf['cash'] + sum(p.get('current_value', p['cost_basis']) for p in pf['positions']), 2)
     total_pnl   = round(total_value - pf['starting_capital'], 2)
     total_pct   = round(total_pnl / pf['starting_capital'] * 100, 2)
 
-    # Drawdown severity â€” inform the LLM; it decides how to respond
+    # Drawdown severity — inform the LLM; it decides how to respond
     if total_pct <= _CFG_DD_CRITICAL_PCT:
         dd_warn = (f'CRITICAL DRAWDOWN: Portfolio is {total_pct:.1f}% from starting capital '
                    f'(your critical threshold is {_CFG_DD_CRITICAL_PCT:.0f}%). You decide how to respond.')
@@ -4764,7 +4767,7 @@ def portfolio_summary_str(pf):
     deploy_pct = round(invested / total_value * 100, 0) if total_value > 0 else 0
     idle_pct   = 100 - deploy_pct
 
-    # â”€â”€ Sector exposure breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Sector exposure breakdown ─────────────────────────────────────────────
     sector_exposure = {}
     for p in pf['positions']:
         sec = p.get('sector', 'Unknown')
@@ -4775,7 +4778,7 @@ def portfolio_summary_str(pf):
         for sec, val in sorted(sector_exposure.items(), key=lambda x: -x[1])
     ) if sector_exposure else 'none'
 
-    # â”€â”€ Realized P&L this week â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Realized P&L this week ────────────────────────────────────────────────
     week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
     week_trades = [t for t in pf.get('closed_trades', [])
                    if str(t.get('close_date', ''))[:10] >= week_ago]
@@ -4789,18 +4792,18 @@ def portfolio_summary_str(pf):
         f'Realized P&L: ${pf.get("total_realized_pnl", 0):+,.2f} all-time  |  {week_str}',
     ]
 
-    # â”€â”€ Open positions â€” full detail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Open positions — full detail ──────────────────────────────────────────
     for p in pf['positions']:
         upl = p.get('unrealized_pnl', 0)
         upc = p.get('unrealized_pnl_pct', 0)
         stop  = p.get('stop_price', '?')
         tgt   = p.get('target_price', '?')
         earn  = p.get('earnings_days_away')
-        earn_str = f' | EARNINGS IN {earn}d âš ' if earn is not None and isinstance(earn, (int,float)) and earn <= 10 else ''
+        earn_str = f' | EARNINGS IN {earn}d ⚠' if earn is not None and isinstance(earn, (int,float)) and earn <= 10 else ''
         gap   = p.get('open_gap_pct')
         gap_str = f' | gap {gap:+.1f}% at entry' if gap is not None else ''
         lines.append(
-            f'  {p["ticker"]} [{p.get("sector","?")}]: {p["shares"]}sh @ ${p["entry_price"]} â†’ ${p.get("current_price","?")} '
+            f'  {p["ticker"]} [{p.get("sector","?")}]: {p["shares"]}sh @ ${p["entry_price"]} → ${p.get("current_price","?")} '
             f'({upl:+.0f} / {upc:+.1f}%) | {p.get("hold_days",0)}d | Stop ${stop} | Target ${tgt}{earn_str}{gap_str}'
         )
 
@@ -4816,7 +4819,7 @@ def portfolio_summary_str(pf):
 # ============================================================
 
 def _nth_weekday(year, month, weekday, n):
-    """Date of the n-th `weekday` (Mon=0) in month/year. n=-1 â†’ last."""
+    """Date of the n-th `weekday` (Mon=0) in month/year. n=-1 → last."""
     from calendar import monthrange
     days = [d for d in range(1, monthrange(year, month)[1] + 1)
             if datetime(year, month, d).weekday() == weekday]
@@ -4841,15 +4844,15 @@ def _easter(year):
 
 def _us_market_holiday(et_now):
     """Return the NYSE holiday name if `et_now`'s date is a market close, else ''.
-    Applies the NYSE observed-day rule (Satâ†’Fri, Sunâ†’Mon) for fixed-date holidays.
+    Applies the NYSE observed-day rule (Sat→Fri, Sun→Mon) for fixed-date holidays.
     Weekends are handled separately by the caller."""
     y = et_now.year
     today = datetime(y, et_now.month, et_now.day)
 
     def observed(dt):
-        if dt.weekday() == 5:   # Saturday â†’ observed Friday
+        if dt.weekday() == 5:   # Saturday → observed Friday
             return dt - timedelta(days=1)
-        if dt.weekday() == 6:   # Sunday â†’ observed Monday
+        if dt.weekday() == 6:   # Sunday → observed Monday
             return dt + timedelta(days=1)
         return dt
 
@@ -4869,7 +4872,7 @@ def _us_market_holiday(et_now):
 
 
 def run_screener():
-    print('ðŸš€ DAILY STOCK SCREENER v6.2')
+    print('🚀 DAILY STOCK SCREENER v6.2')
     print(f'   Time:   {datetime.now().strftime("%Y-%m-%d %H:%M")}')
     print(f'   Folder: {DRIVE_FOLDER}')
     print(f'   Stocks: {len(STOCK_UNIVERSE)} | ETFs: {len(KEY_ETFS)}')
@@ -4877,8 +4880,8 @@ def run_screener():
 
     load_config_overrides()
 
-    # Weekend check â€” always use US Eastern time, not local time.
-    # A user in NZ running Saturday 9 AM NZST is actually Friday 5 PM ET â€” valid trading day.
+    # Weekend check — always use US Eastern time, not local time.
+    # A user in NZ running Saturday 9 AM NZST is actually Friday 5 PM ET — valid trading day.
     try:
         from datetime import timezone, timedelta
         try:
@@ -4894,18 +4897,18 @@ def run_screener():
 
     _is_manual = os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'
     if _et_now.weekday() >= 5:
-        if _et_now.weekday() == 5 or _is_manual:  # US Saturday OR manual trigger â†’ send weekly review
+        if _et_now.weekday() == 5 or _is_manual:  # US Saturday OR manual trigger → send weekly review
             _day_label = 'US Saturday' if _et_now.weekday() == 5 else 'US Sunday (manual trigger)'
-            print(f'\nMarket closed ({_day_label} {_et_now.strftime("%Y-%m-%d %H:%M")} ET) â€” sending weekly summary...')
+            print(f'\nMarket closed ({_day_label} {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — sending weekly summary...')
             send_weekly_summary()
-        else:  # US Sunday scheduled â†’ you already got Saturday's review, so skip
-            print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) â€” weekly summary already sent Saturday. Nothing to do.')
+        else:  # US Sunday scheduled → you already got Saturday's review, so skip
+            print(f'\nMarket closed (US Sunday {_et_now.strftime("%Y-%m-%d %H:%M")} ET) — weekly summary already sent Saturday. Nothing to do.')
         return None
 
-    # US market holiday check â€” NYSE is closed; skip the run (no picks, no trades).
+    # US market holiday check — NYSE is closed; skip the run (no picks, no trades).
     _holiday = _us_market_holiday(_et_now)
     if _holiday:
-        print(f'\nMarket closed ({_holiday}, US {_et_now.strftime("%Y-%m-%d")} ET) â€” no trading today. Sending portfolio snapshot...')
+        print(f'\nMarket closed ({_holiday}, US {_et_now.strftime("%Y-%m-%d")} ET) — no trading today. Sending portfolio snapshot...')
         send_weekly_summary(reason=_holiday)
         return None
 
@@ -4932,16 +4935,16 @@ def run_screener():
     _total_val = round(portfolio['cash'] + sum(p.get('current_value', p['cost_basis']) for p in portfolio['positions']), 2)
     _dd_pct    = round((_total_val - portfolio['starting_capital']) / portfolio['starting_capital'] * 100, 2)
     if _dd_pct <= _CFG_DD_CRITICAL_PCT:
-        print(f'  *** CRITICAL DRAWDOWN {_dd_pct:.1f}% â€” portfolio ${_total_val:,.0f} â€” LLM in capital preservation mode ***')
+        print(f'  *** CRITICAL DRAWDOWN {_dd_pct:.1f}% — portfolio ${_total_val:,.0f} — LLM in capital preservation mode ***')
     elif _dd_pct <= _CFG_DD_SEVERE_PCT:
-        print(f'  *** SEVERE DRAWDOWN {_dd_pct:.1f}% â€” portfolio ${_total_val:,.0f} â€” LLM using high-conviction-only mode ***')
+        print(f'  *** SEVERE DRAWDOWN {_dd_pct:.1f}% — portfolio ${_total_val:,.0f} — LLM using high-conviction-only mode ***')
     elif _dd_pct <= _CFG_DD_CAUTION_PCT:
         print(f'  CAUTION: Portfolio down {abs(_dd_pct):.1f}% (${_total_val:,.0f})')
     if portfolio['cash'] <= _CFG_MIN_CASH_FLOOR:
         if portfolio['positions']:
-            print(f'  FULLY DEPLOYED: ${portfolio["cash"]:,.2f} cash left â€” {len(portfolio["positions"])} open position(s) still running â€” no new buys today')
+            print(f'  FULLY DEPLOYED: ${portfolio["cash"]:,.2f} cash left — {len(portfolio["positions"])} open position(s) still running — no new buys today')
         else:
-            print(f'  PORTFOLIO DEPLETED: ${portfolio["cash"]:,.2f} cash, no open positions â€” LLM will output NO PICK')
+            print(f'  PORTFOLIO DEPLETED: ${portfolio["cash"]:,.2f} cash, no open positions — LLM will output NO PICK')
 
     print('\nStep 1/8: Updating past results + exit signals...')
     migrate_csv(PICKS_CSV, PICK_COLS)
@@ -5003,7 +5006,7 @@ def run_screener():
         if c['ticker'] not in existing:
             candidates.append(c); existing.add(c['ticker'])
 
-    # Exit analysis here â€” has both market context AND fresh news
+    # Exit analysis here — has both market context AND fresh news
     portfolio = analyze_exit_signals(ctx, all_stock_news, portfolio=portfolio) or portfolio
 
     if not candidates:
@@ -5056,7 +5059,7 @@ def run_screener():
         _wa_no_pick(ctx, portfolio, reason=f'LLM analysis failed to return a result ({_reason})')
         print('NVIDIA analysis failed - no result returned'); return None
 
-    # Post-hoc cap enforcement â€” only active if LLM has enabled caps via config
+    # Post-hoc cap enforcement — only active if LLM has enabled caps via config
     pick = result.get('top_pick',{})
     if pick and pick.get('ticker') not in (None,'','NONE'):
         match=next((c for c in candidates if c['ticker']==pick['ticker']),{})
@@ -5072,7 +5075,7 @@ def run_screener():
 
     wl=result.get('watch_candidates',[]); conf=pick.get('confidence',0); sig=pick.get('signal','NO PICK')
     ep='N/A'
-    ep_close='N/A'   # last close â€” used for CSV display reference
+    ep_close='N/A'   # last close — used for CSV display reference
     if sig=='BUY' and conf>=BUY_THRESHOLD:
         match=next((c for c in candidates if c['ticker']==pick['ticker']),{})
         _p = match.get('price')
@@ -5097,7 +5100,7 @@ def run_screener():
     _stop = round(ep - ATR_STOP_MULT  * _atr, 2) if _atr and isinstance(ep, (int, float)) else 'N/A'
     _tgt  = round(ep + ATR_TARGET_MULT * _atr, 2) if _atr and isinstance(ep, (int, float)) else 'N/A'
 
-    # Open portfolio position â€” LLM chose position_size_pct
+    # Open portfolio position — LLM chose position_size_pct
     _position_opened = False
     if sig == 'BUY' and conf >= BUY_THRESHOLD and isinstance(ep, (int, float)) and ep > 0:
         pct    = min(float(pick.get('position_size_pct', 20)), 100)  # LLM sets this; 100% max is physics
