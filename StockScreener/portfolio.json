@@ -1,5 +1,5 @@
 {
-  "cash": 2863.48,
+  "cash": 3432.1,
   "starting_capital": 10000.0,
   "positions": [
     {
@@ -12,14 +12,14 @@
       "stop_price": 163.91,
       "target_price": 187.91,
       "sector": "Basic Materials",
-      "current_price": 171.01,
-      "current_value": 2907.17,
-      "unrealized_pnl": 35.53,
-      "unrealized_pnl_pct": 1.24,
-      "hold_days": 10,
+      "current_price": 167.84,
+      "current_value": 2853.28,
+      "unrealized_pnl": -18.36,
+      "unrealized_pnl_pct": -0.64,
+      "hold_days": 13,
       "high_watermark": 173.4,
       "atr_at_entry": 6.33,
-      "earnings_days_away": 81
+      "earnings_days_away": 78
     },
     {
       "ticker": "EXPE",
@@ -31,14 +31,14 @@
       "stop_price": 313.55,
       "target_price": 358.9,
       "sector": "Consumer Cyclical",
-      "current_price": 332.69,
-      "current_value": 1330.76,
-      "unrealized_pnl": 43.28,
-      "unrealized_pnl_pct": 3.36,
-      "hold_days": 9,
+      "current_price": 318.5,
+      "current_value": 1274.0,
+      "unrealized_pnl": -13.48,
+      "unrealized_pnl_pct": -1.05,
+      "hold_days": 12,
       "high_watermark": 332.69,
       "atr_at_entry": 12.76,
-      "earnings_days_away": 83
+      "earnings_days_away": 80
     },
     {
       "ticker": "AXON",
@@ -50,14 +50,14 @@
       "stop_price": 584.06,
       "target_price": 677.21,
       "sector": "Technology",
-      "current_price": 612.83,
-      "current_value": 612.83,
-      "unrealized_pnl": 37.25,
-      "unrealized_pnl_pct": 6.47,
-      "hold_days": 7,
+      "current_price": 604.32,
+      "current_value": 604.32,
+      "unrealized_pnl": 28.74,
+      "unrealized_pnl_pct": 4.99,
+      "hold_days": 10,
       "high_watermark": 636.31,
       "atr_at_entry": 34.83,
-      "earnings_days_away": 81
+      "earnings_days_away": 78
     },
     {
       "ticker": "GNRC",
@@ -76,7 +76,7 @@
       "hold_days": 2,
       "high_watermark": 222.57,
       "atr_at_entry": 12.29,
-      "earnings_days_away": 75
+      "earnings_days_away": 72
     },
     {
       "ticker": "AKAM",
@@ -88,32 +88,32 @@
       "stop_price": 115.8,
       "target_price": 145.41,
       "sector": "Technology",
-      "current_price": 124.99,
-      "current_value": 499.96,
-      "unrealized_pnl": -5.23,
-      "unrealized_pnl_pct": -1.04,
-      "hold_days": 1,
+      "current_price": 122.97,
+      "current_value": 491.88,
+      "unrealized_pnl": -13.31,
+      "unrealized_pnl_pct": -2.63,
+      "hold_days": 4,
       "high_watermark": 125.67,
       "atr_at_entry": 6.58,
-      "earnings_days_away": 83
+      "earnings_days_away": 80
     },
     {
-      "ticker": "MPC",
-      "shares": 4,
-      "entry_price": 356.49,
-      "cost_basis": 1430.96,
-      "brokerage_in": 5.0,
-      "entry_date": "2026-08-14",
-      "stop_price": 337.32,
-      "target_price": 394.83,
-      "sector": "Energy",
-      "current_price": 356.49,
-      "current_value": 1425.96,
-      "unrealized_pnl": -5.0,
-      "unrealized_pnl_pct": -0.35,
+      "ticker": "CPRT",
+      "shares": 27,
+      "entry_price": 31.8,
+      "cost_basis": 862.89,
+      "brokerage_in": 4.29,
+      "entry_date": "2026-08-17",
+      "stop_price": 30.26,
+      "target_price": 34.89,
+      "sector": "Consumer Cyclical",
+      "current_price": 31.8,
+      "current_value": 858.6,
+      "unrealized_pnl": -4.29,
+      "unrealized_pnl_pct": -0.5,
       "hold_days": 0,
-      "high_watermark": 356.49,
-      "atr_at_entry": 12.78
+      "high_watermark": 31.8,
+      "atr_at_entry": 1.03
     }
   ],
   "closed_trades": [
@@ -144,13 +144,27 @@
       "exit_date": "2026-08-12",
       "hold_days": 2,
       "reason": "rsi_overbought (RSI=85 > 78.0, up 2.8%)"
+    },
+    {
+      "ticker": "MPC",
+      "entry_price": 356.49,
+      "exit_price": 358.18,
+      "shares": 4,
+      "cost_basis": 1430.96,
+      "exit_value": 1431.51,
+      "realized_pnl": 0.55,
+      "realized_pnl_pct": 0.04,
+      "entry_date": "2026-08-14",
+      "exit_date": "2026-08-17",
+      "hold_days": 3,
+      "reason": "rsi_overbought (RSI=78 > 78.0, up 0.1%)"
     }
   ],
-  "total_realized_pnl": -18.3,
+  "total_realized_pnl": -17.75,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.59,
-  "last_updated": "2026-08-14 21:55",
+  "last_updated": "2026-08-17 21:50",
   "sharesies_month": "2026-08",
-  "sharesies_bought_usd": 8869.78,
-  "sharesies_sold_usd": 1759.71
+  "sharesies_bought_usd": 9728.38,
+  "sharesies_sold_usd": 3192.43
 }
