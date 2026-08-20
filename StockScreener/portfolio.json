@@ -1,26 +1,7 @@
 {
-  "cash": 3486.58,
+  "cash": 5241.18,
   "starting_capital": 10000.0,
   "positions": [
-    {
-      "ticker": "BR",
-      "shares": 17,
-      "entry_price": 168.92,
-      "cost_basis": 2871.64,
-      "brokerage_in": 0.0,
-      "entry_date": "2026-08-04",
-      "stop_price": 166.53,
-      "target_price": 187.91,
-      "sector": "Basic Materials",
-      "current_price": 176.03,
-      "current_value": 2992.51,
-      "unrealized_pnl": 120.87,
-      "unrealized_pnl_pct": 4.21,
-      "hold_days": 15,
-      "high_watermark": 176.03,
-      "atr_at_entry": 6.33,
-      "earnings_days_away": 76
-    },
     {
       "ticker": "EXPE",
       "shares": 4,
@@ -31,14 +12,14 @@
       "stop_price": 313.55,
       "target_price": 358.9,
       "sector": "Consumer Cyclical",
-      "current_price": 326.27,
-      "current_value": 1305.08,
-      "unrealized_pnl": 17.6,
-      "unrealized_pnl_pct": 1.37,
-      "hold_days": 14,
+      "current_price": 324.17,
+      "current_value": 1296.68,
+      "unrealized_pnl": 9.2,
+      "unrealized_pnl_pct": 0.71,
+      "hold_days": 15,
       "high_watermark": 332.69,
       "atr_at_entry": 12.76,
-      "earnings_days_away": 78
+      "earnings_days_away": 77
     },
     {
       "ticker": "AXON",
@@ -50,14 +31,14 @@
       "stop_price": 593.48,
       "target_price": 677.21,
       "sector": "Technology",
-      "current_price": 645.72,
-      "current_value": 645.72,
-      "unrealized_pnl": 70.14,
-      "unrealized_pnl_pct": 12.19,
-      "hold_days": 12,
+      "current_price": 614.26,
+      "current_value": 614.26,
+      "unrealized_pnl": 38.68,
+      "unrealized_pnl_pct": 6.72,
+      "hold_days": 13,
       "high_watermark": 645.72,
       "atr_at_entry": 34.83,
-      "earnings_days_away": 76
+      "earnings_days_away": 75
     },
     {
       "ticker": "GNRC",
@@ -69,14 +50,14 @@
       "stop_price": 204.13,
       "target_price": 259.44,
       "sector": "Technology",
-      "current_price": 210.81,
-      "current_value": 421.62,
-      "unrealized_pnl": -25.75,
-      "unrealized_pnl_pct": -5.76,
-      "hold_days": 7,
+      "current_price": 206.75,
+      "current_value": 413.5,
+      "unrealized_pnl": -33.87,
+      "unrealized_pnl_pct": -7.57,
+      "hold_days": 8,
       "high_watermark": 222.57,
       "atr_at_entry": 12.29,
-      "earnings_days_away": 70
+      "earnings_days_away": 69
     },
     {
       "ticker": "JKHY",
@@ -85,16 +66,35 @@
       "cost_basis": 1313.4,
       "brokerage_in": 5.0,
       "entry_date": "2026-08-19",
-      "stop_price": 155.63,
+      "stop_price": 157.16,
       "target_price": 179.39,
       "sector": "Technology",
-      "current_price": 163.55,
-      "current_value": 1308.4,
+      "current_price": 165.08,
+      "current_value": 1320.64,
+      "unrealized_pnl": 7.24,
+      "unrealized_pnl_pct": 0.55,
+      "hold_days": 1,
+      "high_watermark": 165.08,
+      "atr_at_entry": 5.28,
+      "earnings_days_away": 75
+    },
+    {
+      "ticker": "FANG",
+      "shares": 6,
+      "entry_price": 211.65,
+      "cost_basis": 1274.9,
+      "brokerage_in": 5.0,
+      "entry_date": "2026-08-20",
+      "stop_price": 202.46,
+      "target_price": 230.04,
+      "sector": "Energy",
+      "current_price": 211.65,
+      "current_value": 1269.9,
       "unrealized_pnl": -5.0,
-      "unrealized_pnl_pct": -0.38,
+      "unrealized_pnl_pct": -0.39,
       "hold_days": 0,
-      "high_watermark": 163.55,
-      "atr_at_entry": 5.28
+      "high_watermark": 211.65,
+      "atr_at_entry": 6.13
     }
   ],
   "closed_trades": [
@@ -167,13 +167,27 @@
       "exit_date": "2026-08-19",
       "hold_days": 2,
       "reason": "rsi_overbought (RSI=81 > 78.0, up 5.9%)"
+    },
+    {
+      "ticker": "BR",
+      "entry_price": 168.92,
+      "exit_price": 178.5,
+      "shares": 17,
+      "cost_basis": 2871.64,
+      "exit_value": 3029.5,
+      "realized_pnl": 157.86,
+      "realized_pnl_pct": 5.5,
+      "entry_date": "2026-08-04",
+      "exit_date": "2026-08-20",
+      "hold_days": 16,
+      "reason": "rsi_overbought (RSI=81 > 78.0, up 5.7%)"
     }
   ],
-  "total_realized_pnl": -17.95,
+  "total_realized_pnl": 139.91,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.59,
-  "last_updated": "2026-08-19 21:52",
+  "last_updated": "2026-08-20 21:57",
   "sharesies_month": "2026-08",
-  "sharesies_bought_usd": 11036.78,
-  "sharesies_sold_usd": 4567.18
+  "sharesies_bought_usd": 12306.68,
+  "sharesies_sold_usd": 7601.68
 }
