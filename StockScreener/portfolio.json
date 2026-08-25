@@ -1,5 +1,5 @@
 {
-  "cash": 8356.82,
+  "cash": 9551.16,
   "starting_capital": 10000.0,
   "positions": [
     {
@@ -19,25 +19,6 @@
       "hold_days": 17,
       "high_watermark": 645.72,
       "atr_at_entry": 34.83,
-      "earnings_days_away": 71
-    },
-    {
-      "ticker": "FANG",
-      "shares": 6,
-      "entry_price": 211.65,
-      "cost_basis": 1274.9,
-      "brokerage_in": 5.0,
-      "entry_date": "2026-08-20",
-      "stop_price": 202.46,
-      "target_price": 230.04,
-      "sector": "Energy",
-      "current_price": 205.6,
-      "current_value": 1233.6,
-      "unrealized_pnl": -41.3,
-      "unrealized_pnl_pct": -3.24,
-      "hold_days": 4,
-      "high_watermark": 211.65,
-      "atr_at_entry": 6.13,
       "earnings_days_away": 70
     }
   ],
@@ -167,13 +148,27 @@
       "exit_date": "2026-08-24",
       "hold_days": 5,
       "reason": "rsi_overbought (RSI=80 > 78.0, up 3.9%)"
+    },
+    {
+      "ticker": "FANG",
+      "entry_price": 211.65,
+      "exit_price": 199.89,
+      "shares": 6,
+      "cost_basis": 1274.9,
+      "exit_value": 1194.34,
+      "realized_pnl": -80.56,
+      "realized_pnl_pct": -6.32,
+      "entry_date": "2026-08-20",
+      "exit_date": "2026-08-25",
+      "hold_days": 5,
+      "reason": "stop_loss (curr=199.89 \u2264 stop=202.46)"
     }
   ],
-  "total_realized_pnl": 207.3,
+  "total_realized_pnl": 126.74,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.6,
-  "last_updated": "2026-08-24 21:44",
+  "last_updated": "2026-08-25 21:44",
   "sharesies_month": "2026-08",
   "sharesies_bought_usd": 12306.68,
-  "sharesies_sold_usd": 10729.36
+  "sharesies_sold_usd": 11928.7
 }
