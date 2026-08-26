@@ -1,0 +1,17 @@
+#,API / Service,Endpoint / Access,Purpose,Auth Required,How to Access
+1,NVIDIA NIM API,https://integrate.api.nvidia.com/v1/chat/completions,LLM reasoning layer - AI-driven analysis/ranking/commentary on candidate stocks,Yes - API key,Sign up free at build.nvidia.com > Get API Key. Set env var NVIDIA_API_KEY (free tier available).
+2,yfinance (Yahoo Finance),yf.download() / Ticker(),Bulk OHLCV market data for 375+ stocks + ETFs / fundamentals / per-ticker news,No,pip install yfinance. Keyless public data.
+3,Yahoo Finance RSS,finance.yahoo.com/rss/...,Macro market & earnings headlines,No,Public RSS - HTTP GET with a browser User-Agent header.
+4,CNBC RSS,cnbc.com/.../rss.html,US market + tech news headlines,No,Public RSS - HTTP GET.
+5,MarketWatch RSS,feeds.marketwatch.com/...,Top stories / bulletins / market pulse (sector),No,Public RSS - HTTP GET.
+6,BBC News RSS,feeds.bbci.co.uk/news/world/rss.xml,Geopolitical news,No,Public RSS - HTTP GET.
+7,NYTimes RSS,rss.nytimes.com/...,World / Politics / Business / Economy news,No,Public RSS - HTTP GET.
+8,EIA RSS (US Energy Info Admin),eia.gov/rss/news.xml,Official energy sector news,No,Public RSS - HTTP GET.
+9,OilPrice RSS,oilprice.com/rss/main,Energy / oil market news,No,Public RSS - HTTP GET.
+10,US Federal Reserve RSS,federalreserve.gov/feeds/press_all.xml,Official Fed press releases (rates/policy),No,Public RSS - HTTP GET.
+11,SEC EDGAR,sec.gov/files/company_tickers.json | data.sec.gov/submissions/CIK...json | sec.gov/cgi-bin/browse-edgar,Ticker->CIK mapping & recent SEC filings,No (User-Agent required),Public API. Must send a descriptive User-Agent header (SEC policy). No key.
+12,House Stock Watcher,house-stock-watcher-data.s3... | housestockwatcher.com/api/transactions,US House congressional trading disclosures,No,Public JSON/S3 - HTTP GET.
+13,Senate Stock Watcher,senate-stock-watcher-data.s3... | efts.us/...,US Senate congressional trading disclosures,No,Public JSON/S3 - HTTP GET.
+14,Wikipedia,en.wikipedia.org/wiki/List_of_S%26P_500_companies | List_of_S%26P_400_companies,Index constituent lists (S&P 500 / 400 universe),No,Public page scraped via pandas read_html.
+15,VADER (local),vaderSentiment library,Local NLP sentiment scoring on headlines,No,pip install vaderSentiment. Runs locally - no network/key.
+16,OpenAI Python SDK,library (installed),SDK present but code calls NVIDIA endpoint directly via requests,N/A,Not actively used for calls; NVIDIA path uses requests.
