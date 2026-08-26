@@ -372,15 +372,16 @@ _LLM_RATE_LOCK = threading.Lock()
 _LLM_BATCH_COOLDOWN_EVERY = 8      # pause less often for faster completion
 _LLM_BATCH_COOLDOWN_SECONDS = 8.0  # short reset aid without large runtime penalty
 _NVIDIA_FALLBACK_MODELS = [
-    # Ordered fallbacks verified against https://integrate.api.nvidia.com/v1/models
-    # on 2026-08-12. Keep this list in sync with the live catalog; ids that are not
-    # served return 404/410 and trigger rotation to the next entry.
+    # Offline fallback used only when the live /v1/models catalog can't be
+    # fetched (see _reconcile_models_with_catalog). These are well-established
+    # NVIDIA NIM chat ids, ordered best-reasoning first. When the API key is
+    # present the rotation is reconciled against the live catalog at startup,
+    # so stale ids here can no longer sink the whole run.
     'meta/llama-3.1-70b-instruct',
-    'deepseek-ai/deepseek-v4-flash-0731',
-    'z-ai/glm-5.2',
-    'moonshotai/kimi-k2.6',
-    'minimaxai/minimax-m3',
-    'mistralai/mistral-large-2-instruct',
+    'nvidia/llama-3.1-nemotron-70b-instruct',
+    'meta/llama-3.1-405b-instruct',
+    'mistralai/mixtral-8x22b-instruct-v0.1',
+    'google/gemma-2-27b-it',
     'meta/llama-3.1-8b-instruct',
 ]
 _NVIDIA_ACTIVE_MODEL = [NVIDIA_MODEL]
@@ -396,6 +397,65 @@ def _build_model_rotation():
 
 
 _NVIDIA_MODEL_ROTATION = _build_model_rotation()
+_NVIDIA_CATALOG_RECONCILED = [False]
+
+
+def _fetch_served_models():
+    """Return the set of model ids currently served by the NVIDIA endpoint.
+
+    Returns an empty set if the key is missing or the catalog call fails, so
+    callers can fall back to the hardcoded rotation.
+    """
+    if not NVIDIA_API_KEY:
+        return set()
+    try:
+        r = _REQUESTS_SESSION.get(
+            'https://integrate.api.nvidia.com/v1/models',
+            headers={'Authorization': f'Bearer {NVIDIA_API_KEY}'},
+            timeout=(10, 20),
+        )
+        r.raise_for_status()
+        data = r.json().get('data', [])
+        return {m.get('id') for m in data if m.get('id')}
+    except Exception as e:
+        print(f'  ⚠️  Could not fetch NVIDIA model catalog ({type(e).__name__}: {e}) — using hardcoded rotation.')
+        return set()
+
+
+def _reconcile_models_with_catalog():
+    """Filter the model rotation down to ids the endpoint actually serves.
+
+    Prevents the recurring 404 "model unavailable" failures when hardcoded ids
+    go stale. Safe no-op when the catalog cannot be fetched.
+    """
+    global _NVIDIA_MODEL_ROTATION
+    if _NVIDIA_CATALOG_RECONCILED[0]:
+        return
+    _NVIDIA_CATALOG_RECONCILED[0] = True
+
+    served = _fetch_served_models()
+    if not served:
+        return  # keep hardcoded rotation
+
+    # Keep our preferred order, but only ids that are actually served.
+    valid = [m for m in _NVIDIA_MODEL_ROTATION if m in served]
+
+    if not valid:
+        # None of our preferred ids exist anymore. Pick sensible served
+        # instruct chat models as a last-resort rotation.
+        preferred = sorted(
+            (m for m in served if 'instruct' in m.lower() or 'chat' in m.lower()),
+            key=lambda m: (('llama' not in m.lower()), ('70b' not in m.lower()), m),
+        )
+        valid = preferred[:6] or sorted(served)[:6]
+        print(f'  ⚠️  No preconfigured NVIDIA models are served — auto-selected: {", ".join(valid) or "none"}')
+
+    if valid:
+        _NVIDIA_MODEL_ROTATION = valid
+        _NVIDIA_ACTIVE_MODEL[0] = valid[0]
+        print(f'  ✅ NVIDIA model rotation reconciled to live catalog ({len(valid)} valid): active = {valid[0]}')
+    else:
+        print('  ⚠️  Live catalog returned no usable chat models — keeping hardcoded rotation.')
 
 
 def _switch_llm_model(reason=''):
@@ -4879,6 +4939,10 @@ def run_screener():
     print('='*65)
 
     load_config_overrides()
+
+    # Reconcile the LLM model list against the endpoint's live catalog so stale
+    # ids don't cause the whole run to fail with 404 "model unavailable".
+    _reconcile_models_with_catalog()
 
     # Weekend check — always use US Eastern time, not local time.
     # A user in NZ running Saturday 9 AM NZST is actually Friday 5 PM ET — valid trading day.
