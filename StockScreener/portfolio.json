@@ -1,27 +1,7 @@
 {
-  "cash": 9551.16,
+  "cash": 10155.6,
   "starting_capital": 10000.0,
-  "positions": [
-    {
-      "ticker": "AXON",
-      "shares": 1,
-      "entry_price": 572.72,
-      "cost_basis": 575.58,
-      "brokerage_in": 2.86,
-      "entry_date": "2026-08-07",
-      "stop_price": 593.48,
-      "target_price": 677.21,
-      "sector": "Technology",
-      "current_price": 597.59,
-      "current_value": 597.59,
-      "unrealized_pnl": 22.01,
-      "unrealized_pnl_pct": 3.82,
-      "hold_days": 17,
-      "high_watermark": 645.72,
-      "atr_at_entry": 34.83,
-      "earnings_days_away": 70
-    }
-  ],
+  "positions": [],
   "closed_trades": [
     {
       "ticker": "COR",
@@ -162,13 +142,27 @@
       "exit_date": "2026-08-25",
       "hold_days": 5,
       "reason": "stop_loss (curr=199.89 \u2264 stop=202.46)"
+    },
+    {
+      "ticker": "AXON",
+      "entry_price": 572.72,
+      "exit_price": 607.48,
+      "shares": 1,
+      "cost_basis": 575.58,
+      "exit_value": 604.44,
+      "realized_pnl": 28.86,
+      "realized_pnl_pct": 5.01,
+      "entry_date": "2026-08-07",
+      "exit_date": "2026-08-27",
+      "hold_days": 20,
+      "reason": "macd_bearish_cross (up 5.5%, momentum turned)"
     }
   ],
-  "total_realized_pnl": 126.74,
+  "total_realized_pnl": 155.6,
   "created": "2026-08-03",
-  "last_nzdusd_rate": 0.6,
-  "last_updated": "2026-08-25 21:44",
+  "last_nzdusd_rate": 0.59,
+  "last_updated": "2026-08-27 00:47",
   "sharesies_month": "2026-08",
   "sharesies_bought_usd": 12306.68,
-  "sharesies_sold_usd": 11928.7
+  "sharesies_sold_usd": 12536.18
 }
