@@ -422,6 +422,43 @@ def _fetch_served_models():
         return set()
 
 
+def _model_quality_rank(model_id):
+    """Best-first sort key ranking chat models by capability heuristics.
+
+    Prefers larger parameter counts and stronger reasoning families so the
+    probe settles on the most capable model that actually answers, instead of
+    whatever id happens to appear first. Lower tuple sorts earlier (better).
+    """
+    import re as _re
+    mid = (model_id or '').lower()
+
+    # Largest parameter count in billions found in the id (e.g. 405b, 70b, 27b).
+    sizes = _re.findall(r'(\d+(?:\.\d+)?)\s*b(?![a-z])', mid)
+    try:
+        size = max(float(s) for s in sizes) if sizes else 0.0
+    except ValueError:
+        size = 0.0
+
+    # Reasoning-strong families first (lower is better).
+    if 'nemotron' in mid:
+        family = 0
+    elif 'llama' in mid:
+        family = 1
+    elif 'qwen' in mid or 'deepseek' in mid:
+        family = 2
+    elif 'mixtral' in mid or 'mistral' in mid:
+        family = 3
+    elif 'gemma' in mid:
+        family = 4
+    else:
+        family = 5
+
+    instruct = 0 if ('instruct' in mid or 'chat' in mid) else 1
+    vision = 1 if 'vision' in mid else 0  # deprioritise vision-only tunes for text
+
+    return (-size, vision, family, instruct, mid)
+
+
 def _probe_chat_model(model, timeout=(10, 20)):
     """Verify a model actually answers /v1/chat/completions.
 
@@ -466,21 +503,23 @@ def _reconcile_models_with_catalog():
     if not NVIDIA_API_KEY:
         return  # keep hardcoded rotation
 
-    # Candidates: our preferred rotation first, then any extra instruct/chat
-    # ids advertised by the live catalog (so newly added models are discovered).
-    candidates = list(_NVIDIA_MODEL_ROTATION)
+    # Pool = our preferred rotation + any instruct/chat ids from the live
+    # catalog, de-duplicated. The catalog widens the pool so newly published
+    # models are discovered automatically as older ids are retired.
+    pool = list(_NVIDIA_MODEL_ROTATION)
     served = _fetch_served_models()
     if served:
-        extra = sorted(
-            (m for m in served
-             if ('instruct' in m.lower() or 'chat' in m.lower())
-             and m not in candidates),
-            key=lambda m: (('llama' not in m.lower()), ('70b' not in m.lower()), m),
-        )
-        candidates.extend(extra)
+        for m in served:
+            ml = m.lower()
+            if ('instruct' in ml or 'chat' in ml) and m not in pool:
+                pool.append(m)
+
+    # Probe the most capable models first so we settle on the strongest one
+    # that actually answers, not merely the first id in the list.
+    candidates = sorted(pool, key=_model_quality_rank)
 
     confirmed, soft = [], []
-    for m in candidates[:25]:
+    for m in candidates[:30]:
         status = _probe_chat_model(m)
         if status == 'ok':
             confirmed.append(m)
@@ -493,7 +532,7 @@ def _reconcile_models_with_catalog():
     if confirmed:
         _NVIDIA_MODEL_ROTATION = rotation
         _NVIDIA_ACTIVE_MODEL[0] = confirmed[0]
-        print(f'  ✅ NVIDIA models verified by probe ({len(confirmed)} answering chat): active = {confirmed[0]}')
+        print(f'  ✅ NVIDIA models verified by probe ({len(confirmed)} answering chat, best-first): active = {confirmed[0]}')
     elif soft:
         _NVIDIA_MODEL_ROTATION = rotation
         _NVIDIA_ACTIVE_MODEL[0] = soft[0]
