@@ -422,40 +422,84 @@ def _fetch_served_models():
         return set()
 
 
-def _reconcile_models_with_catalog():
-    """Filter the model rotation down to ids the endpoint actually serves.
+def _probe_chat_model(model, timeout=(10, 20)):
+    """Verify a model actually answers /v1/chat/completions.
 
-    Prevents the recurring 404 "model unavailable" failures when hardcoded ids
-    go stale. Safe no-op when the catalog cannot be fetched.
+    The NVIDIA catalog (/v1/models) advertises ids that still return 404 on the
+    chat endpoint, so catalog membership is not enough — we send a tiny real
+    request and inspect the status.
+
+    Returns 'ok' on HTTP 200, 'invalid' on 404/410 (model not callable here),
+    and 'uncertain' for auth/rate/transient errors (keep as a soft fallback).
+    """
+    if not NVIDIA_API_KEY:
+        return 'uncertain'
+    try:
+        r = _REQUESTS_SESSION.post(
+            'https://integrate.api.nvidia.com/v1/chat/completions',
+            headers={'Authorization': f'Bearer {NVIDIA_API_KEY}', 'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': 'ping'}]},
+            timeout=timeout,
+        )
+        if r.status_code == 200:
+            return 'ok'
+        if r.status_code in (404, 410):
+            return 'invalid'
+        return 'uncertain'
+    except Exception:
+        return 'uncertain'
+
+
+def _reconcile_models_with_catalog():
+    """Select LLM models that actually answer the chat endpoint.
+
+    Prevents the recurring 404 "model unavailable" failures. The live catalog
+    (/v1/models) lists ids that 404 on /v1/chat/completions, so it is used only
+    to widen the candidate pool; every candidate is then verified with a real
+    one-token probe. Safe no-op when the API key is missing.
     """
     global _NVIDIA_MODEL_ROTATION
     if _NVIDIA_CATALOG_RECONCILED[0]:
         return
     _NVIDIA_CATALOG_RECONCILED[0] = True
 
-    served = _fetch_served_models()
-    if not served:
+    if not NVIDIA_API_KEY:
         return  # keep hardcoded rotation
 
-    # Keep our preferred order, but only ids that are actually served.
-    valid = [m for m in _NVIDIA_MODEL_ROTATION if m in served]
-
-    if not valid:
-        # None of our preferred ids exist anymore. Pick sensible served
-        # instruct chat models as a last-resort rotation.
-        preferred = sorted(
-            (m for m in served if 'instruct' in m.lower() or 'chat' in m.lower()),
+    # Candidates: our preferred rotation first, then any extra instruct/chat
+    # ids advertised by the live catalog (so newly added models are discovered).
+    candidates = list(_NVIDIA_MODEL_ROTATION)
+    served = _fetch_served_models()
+    if served:
+        extra = sorted(
+            (m for m in served
+             if ('instruct' in m.lower() or 'chat' in m.lower())
+             and m not in candidates),
             key=lambda m: (('llama' not in m.lower()), ('70b' not in m.lower()), m),
         )
-        valid = preferred[:6] or sorted(served)[:6]
-        print(f'  ⚠️  No preconfigured NVIDIA models are served — auto-selected: {", ".join(valid) or "none"}')
+        candidates.extend(extra)
 
-    if valid:
-        _NVIDIA_MODEL_ROTATION = valid
-        _NVIDIA_ACTIVE_MODEL[0] = valid[0]
-        print(f'  ✅ NVIDIA model rotation reconciled to live catalog ({len(valid)} valid): active = {valid[0]}')
+    confirmed, soft = [], []
+    for m in candidates[:25]:
+        status = _probe_chat_model(m)
+        if status == 'ok':
+            confirmed.append(m)
+            if len(confirmed) >= 3:
+                break
+        elif status == 'uncertain':
+            soft.append(m)
+
+    rotation = confirmed + [m for m in soft if m not in confirmed]
+    if confirmed:
+        _NVIDIA_MODEL_ROTATION = rotation
+        _NVIDIA_ACTIVE_MODEL[0] = confirmed[0]
+        print(f'  ✅ NVIDIA models verified by probe ({len(confirmed)} answering chat): active = {confirmed[0]}')
+    elif soft:
+        _NVIDIA_MODEL_ROTATION = rotation
+        _NVIDIA_ACTIVE_MODEL[0] = soft[0]
+        print(f'  ⚠️  No NVIDIA model confirmed 200 (probes inconclusive) — trying: {soft[0]}')
     else:
-        print('  ⚠️  Live catalog returned no usable chat models — keeping hardcoded rotation.')
+        print('  ⚠️  No NVIDIA chat model answered the probe — keeping hardcoded rotation.')
 
 
 def _switch_llm_model(reason=''):
