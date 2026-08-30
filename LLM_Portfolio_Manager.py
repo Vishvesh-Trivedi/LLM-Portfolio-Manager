@@ -164,6 +164,13 @@ if not NVIDIA_API_KEY:
 else:
     print("✅ API key loaded successfully")
 
+# Optional OpenRouter backup provider (auto-failover when NVIDIA has no working
+# model). Reads the same env var used later by _call_openrouter.
+if os.getenv("OPENROUTER_API_KEY", "").strip():
+    print("✅ OpenRouter backup provider configured")
+else:
+    print("ℹ️  OpenRouter backup not set (optional) — add OPENROUTER_API_KEY secret to enable failover")
+
 # ── WHATSAPP (CallMeBot) ────────────────────────────────────
 # Store WHATSAPP_PHONE and CALLMEBOT_API_KEY in Colab Secrets (same panel as NVIDIA_API_KEY)
 # WHATSAPP_PHONE: your number in international format WITHOUT +, e.g. 447911123456 or 919876543210
@@ -589,6 +596,92 @@ def _llm_backoff_seconds(attempt, retry_after=None):
     return min(90.0, (2 ** (attempt + 2)) * jitter)
 
 
+# ── OpenRouter backup provider ─────────────────────────────
+# Automatic failover used only when NVIDIA has no working model (or every
+# NVIDIA attempt fails). OpenRouter is OpenAI-compatible and hosts strong free
+# models, so a stale/empty NVIDIA catalog can no longer sink the whole run.
+# Requires an OPENROUTER_API_KEY secret; silently inert when it is absent.
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '').strip()
+_OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions'
+_OPENROUTER_MODELS = [
+    # Best-reasoning free models first; :free ids that 404 are skipped at runtime.
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'deepseek/deepseek-chat-v3-0324:free',
+    'qwen/qwen-2.5-72b-instruct:free',
+    'meta-llama/llama-3.1-70b-instruct:free',
+    'google/gemma-2-9b-it:free',
+    'mistralai/mistral-7b-instruct:free',
+]
+_OPENROUTER_ACTIVE = [None]      # resolved working model id (lazy)
+_OPENROUTER_RECONCILED = [False]
+
+
+def _openrouter_headers():
+    return {
+        'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/Vishvesh-Trivedi/LLM-Portfolio-Manager',
+        'X-Title': 'LLM Portfolio Manager',
+    }
+
+
+def _reconcile_openrouter_once():
+    """Probe OpenRouter free models once and cache the first that answers."""
+    if _OPENROUTER_RECONCILED[0]:
+        return
+    _OPENROUTER_RECONCILED[0] = True
+    if not OPENROUTER_API_KEY:
+        return
+    for m in _OPENROUTER_MODELS:
+        try:
+            r = _REQUESTS_SESSION.post(
+                _OPENROUTER_ENDPOINT, headers=_openrouter_headers(),
+                json={'model': m, 'max_tokens': 1, 'messages': [{'role': 'user', 'content': 'ping'}]},
+                timeout=(10, 20),
+            )
+            if r.status_code == 200:
+                _OPENROUTER_ACTIVE[0] = m
+                print(f'  ✅ OpenRouter backup ready: {m}')
+                return
+        except Exception:
+            continue
+    print('  ⚠️  OpenRouter backup: no free model answered (or key invalid).')
+
+
+def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_timeout=60):
+    """Single-shot OpenRouter failover. Returns text, or '' if unavailable."""
+    if not OPENROUTER_API_KEY:
+        return ''
+    _reconcile_openrouter_once()
+    seen = set()
+    for m in [_OPENROUTER_ACTIVE[0]] + _OPENROUTER_MODELS:
+        if not m or m in seen:
+            continue
+        seen.add(m)
+        try:
+            _llm_acquire_rate_slot()
+            r = _REQUESTS_SESSION.post(
+                _OPENROUTER_ENDPOINT, headers=_openrouter_headers(),
+                json={'model': m, 'max_tokens': max_tokens,
+                      'messages': [{'role': 'system', 'content': system},
+                                   {'role': 'user', 'content': user}]},
+                timeout=(connect_timeout, read_timeout),
+            )
+            if r.status_code in (404, 410):
+                continue  # model retired — try the next free id
+            r.raise_for_status()
+            raw = r.json()['choices'][0]['message']['content'].strip()
+            if '</think>' in raw:
+                raw = raw[raw.index('</think>') + len('</think>'):].strip()
+            if raw:
+                _OPENROUTER_ACTIVE[0] = m
+                return raw
+        except Exception as e:
+            print(f'  OpenRouter fallback failed [{m}]: {type(e).__name__}: {e}')
+            continue
+    return ''
+
+
 def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=5,
              connect_timeout=15, read_timeout=60):
     """Call NVIDIA NIM with retry/backoff and optional fail-soft mode.
@@ -683,11 +776,25 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
             # Fail-soft callers (bulk scoring) should bail quickly on repeated throttling
             # so the run can finish instead of waiting through long retry chains.
             if not raise_on_failure and status in (429, 503, 504) and attempt >= 1:
+                if OPENROUTER_API_KEY:
+                    alt = _call_openrouter(system, user, max_tokens=max_tokens,
+                                           connect_timeout=connect_timeout, read_timeout=read_timeout)
+                    if alt:
+                        print('  ↩️  Answered via OpenRouter backup provider.')
+                        return alt
                 return ''
 
             if attempt < max_attempts - 1 and is_retryable:
                 time.sleep(_llm_backoff_seconds(attempt, retry_after=retry_after))
                 continue
+
+            # NVIDIA exhausted or hit a non-retryable error — try the backup provider.
+            if OPENROUTER_API_KEY:
+                alt = _call_openrouter(system, user, max_tokens=max_tokens,
+                                       connect_timeout=connect_timeout, read_timeout=read_timeout)
+                if alt:
+                    print('  ↩️  Answered via OpenRouter backup provider.')
+                    return alt
 
             if raise_on_failure:
                 raise
