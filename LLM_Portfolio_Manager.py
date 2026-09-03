@@ -940,6 +940,42 @@ def _parse_llm_json(raw):
     raise last if last is not None else ValueError('no JSON object in LLM response')
 
 
+def _llm_json_with_fallback(system, user, max_tokens=4000, read_timeout=90, max_attempts=2):
+    """Parseable JSON for a critical LLM call, with NVIDIA->OpenRouter->NVIDIA retry.
+
+    A single empty or non-JSON response no longer forces a NO PICK: try NVIDIA, then
+    the OpenRouter backup, then NVIDIA once more, returning the first valid dict.
+    Raises the last error if none yield JSON (caller maps that to a NO PICK).
+    """
+    last_err = None
+
+    def _nvidia():
+        return call_llm(system, user, max_tokens=max_tokens, max_attempts=max_attempts,
+                        read_timeout=read_timeout, raise_on_failure=False)
+
+    def _openrouter():
+        return _call_openrouter(system, user, max_tokens=max_tokens,
+                                read_timeout=read_timeout) if OPENROUTER_API_KEY else ''
+
+    for label, getter in (('NVIDIA', _nvidia), ('OpenRouter', _openrouter), ('NVIDIA-retry', _nvidia)):
+        try:
+            raw = getter()
+        except Exception as e:
+            last_err = e
+            continue
+        if not raw:
+            continue
+        try:
+            parsed = _parse_llm_json(raw)
+            if label != 'NVIDIA':
+                print(f'  \u21a9\ufe0f  Critical LLM call recovered via {label}.')
+            return parsed
+        except Exception as e:
+            last_err = e
+            print(f'  {label} response unparseable: {type(e).__name__}: {e}')
+    raise last_err if last_err is not None else ValueError('no JSON object in LLM response')
+
+
 # ── TWO-TIER RESCUE KEYWORDS ───────────────────────────────
 RESCUE_TIER1 = [
     'acquisition', 'merger', 'buyout', 'takeover',
@@ -3117,9 +3153,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     )
 
     try:
-        raw3 = call_llm(SYS, r3_user, max_tokens=4000, max_attempts=2, read_timeout=90)
-        if not raw3: raise RuntimeError('empty')
-        result = _parse_llm_json(raw3)
+        result = _llm_json_with_fallback(SYS, r3_user, max_tokens=4000, read_timeout=90, max_attempts=2)
         _LAST_LLM_FAILURE_REASON[0] = ''
         pick = result.get('top_pick', {})
         print(f'  Final pick: {pick.get("ticker")} | pre={pick.get("pre_score","?")} → {pick.get("confidence")}/100 | {pick.get("signal")} | {_LLM_CALL_COUNT[0]} LLM calls this run')
@@ -3148,13 +3182,14 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
                 'ticker': 'NONE',
                 'confidence': 0,
                 'signal': 'NO PICK',
-                'reasoning': f'LLM final scoring failed ({type(e).__name__}). No trade placed today.',
+                'reasoning': 'LLM scoring inconclusive this run — no trade placed.',
                 'key_risk': 'N/A',
                 'sector': 'N/A',
                 'source': 'N/A',
             },
             'watch_candidates': [],
-            'failure_reason': err,
+            'failure_reason': 'LLM scoring inconclusive this run (auto-retries next run).',
+            'failure_detail': err,
         }
 
 
