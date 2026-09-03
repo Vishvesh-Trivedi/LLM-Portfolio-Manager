@@ -614,12 +614,12 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '').strip()
 _OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions'
 _OPENROUTER_MODELS = [
     # Best-reasoning free models first; :free ids that 404 are skipped at runtime.
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'deepseek/deepseek-chat-v3-0324:free',
-    'qwen/qwen-2.5-72b-instruct:free',
-    'meta-llama/llama-3.1-70b-instruct:free',
-    'google/gemma-2-9b-it:free',
-    'mistralai/mistral-7b-instruct:free',
+    'nvidia/nemotron-3-super-120b-a12b:free',
+    'z-ai/glm-5.2:free',
+    'minimax/minimax-m3:free',
+    'google/gemma-4-31b-it:free',
+    'google/gemma-4-26b-a4b-it:free',
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
 ]
 _OPENROUTER_ACTIVE = [None]      # resolved working model id (lazy)
 _OPENROUTER_RECONCILED = [False]
@@ -641,6 +641,7 @@ def _reconcile_openrouter_once():
     _OPENROUTER_RECONCILED[0] = True
     if not OPENROUTER_API_KEY:
         return
+    last_diag = ''
     for m in _OPENROUTER_MODELS:
         try:
             r = _REQUESTS_SESSION.post(
@@ -652,9 +653,11 @@ def _reconcile_openrouter_once():
                 _OPENROUTER_ACTIVE[0] = m
                 print(f'  ✅ OpenRouter backup ready: {m}')
                 return
-        except Exception:
+            last_diag = f'{m} → HTTP {r.status_code}: {" ".join((r.text or "").split())[:160]}'
+        except Exception as e:
+            last_diag = f'{m} → {type(e).__name__}: {e}'
             continue
-    print('  ⚠️  OpenRouter backup: no free model answered (or key invalid).')
+    print(f'  ⚠️  OpenRouter backup: no free model answered. Last: {last_diag}')
 
 
 def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_timeout=60):
@@ -4150,7 +4153,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     def _num(x):
         return x if isinstance(x, (int, float)) else None
 
-    def _short(txt, n=180):
+    def _short(txt, n=400):
         txt = ' '.join(str(txt or '').split())
         return (txt[:n - 1] + '…') if len(txt) > n else txt
 
@@ -4248,7 +4251,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         if pick.get('reasoning'):
             m1.append(f'Why: {_short(pick.get("reasoning"))}')
         if pick.get('key_risk'):
-            m1.append(f'Risk: {_short(pick.get("key_risk"), 140)}')
+            m1.append(f'Risk: {_short(pick.get("key_risk"), 220)}')
     elif sig == 'WATCH' and tkr and tkr not in ('NONE', ''):
         m1.append(f'👀 WATCH ONLY: {tkr}  (conf {conf}, below buy bar)')
         if pick.get('reasoning'):
@@ -4257,7 +4260,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         m1.append(f'😐 NO BUY TODAY — nothing cleared confidence {BUY_THRESHOLD}.')
         _np_reason = str(no_pick_reason or pick.get('reasoning', '')).strip()
         if _np_reason:
-            m1.append(f'Reason: {_short(_np_reason, 220)}')
+            m1.append(f'Reason: {_short(_np_reason, 300)}')
         m1.append('Staying in cash is a position. Capital preserved.')
 
     # Closed today
@@ -4279,7 +4282,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         for w in sorted(_wl_named, key=lambda x: x.get('confidence', 0), reverse=True)[:3]:
             _wt = str(w.get('ticker', '?')).upper()
             _wc = w.get('confidence', 0)
-            _wr = _short(w.get('reasoning', ''), 90)
+            _wr = _short(w.get('reasoning', ''), 130)
             m1.append(f'• {_wt} ({_wc}) {("- " + _wr) if _wr else ""}'.rstrip())
 
     msg1 = '\n'.join(m1)
