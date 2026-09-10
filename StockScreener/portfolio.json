@@ -1,5 +1,5 @@
 {
-  "cash": 7617.96,
+  "cash": 5535.06,
   "starting_capital": 10000.0,
   "positions": [
     {
@@ -12,13 +12,32 @@
       "stop_price": 14.78,
       "target_price": 14.96,
       "sector": "Utilities",
-      "current_price": 14.84,
-      "current_value": 2537.64,
-      "unrealized_pnl": -0.0,
-      "unrealized_pnl_pct": -0.0,
+      "current_price": 14.8,
+      "current_value": 2530.8,
+      "unrealized_pnl": -6.84,
+      "unrealized_pnl_pct": -0.27,
       "hold_days": 0,
       "high_watermark": 14.84,
-      "atr_at_entry": 0.04
+      "atr_at_entry": 0.04,
+      "earnings_days_away": 55
+    },
+    {
+      "ticker": "FSLR",
+      "shares": 10,
+      "entry_price": 207.79,
+      "cost_basis": 2082.9,
+      "brokerage_in": 5.0,
+      "entry_date": "2026-09-10",
+      "stop_price": 195.59,
+      "target_price": 232.18,
+      "sector": "Technology",
+      "current_price": 207.79,
+      "current_value": 2077.9,
+      "unrealized_pnl": -5.0,
+      "unrealized_pnl_pct": -0.24,
+      "hold_days": 0,
+      "high_watermark": 207.79,
+      "atr_at_entry": 8.13
     }
   ],
   "closed_trades": [
@@ -180,8 +199,8 @@
   "total_realized_pnl": 155.6,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.58,
-  "last_updated": "2026-09-10 22:27",
+  "last_updated": "2026-09-10 22:57",
   "sharesies_month": "2026-09",
-  "sharesies_bought_usd": 2537.64,
+  "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 0.0
 }
