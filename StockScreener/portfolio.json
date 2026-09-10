@@ -31,13 +31,14 @@
       "stop_price": 195.59,
       "target_price": 232.18,
       "sector": "Technology",
-      "current_price": 207.79,
-      "current_value": 2077.9,
-      "unrealized_pnl": -5.0,
-      "unrealized_pnl_pct": -0.24,
+      "current_price": 207.17,
+      "current_value": 2071.7,
+      "unrealized_pnl": -11.2,
+      "unrealized_pnl_pct": -0.54,
       "hold_days": 0,
       "high_watermark": 207.79,
-      "atr_at_entry": 8.13
+      "atr_at_entry": 8.13,
+      "earnings_days_away": 49
     }
   ],
   "closed_trades": [
@@ -199,7 +200,7 @@
   "total_realized_pnl": 155.6,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.58,
-  "last_updated": "2026-09-10 22:57",
+  "last_updated": "2026-09-10 23:22",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 0.0
