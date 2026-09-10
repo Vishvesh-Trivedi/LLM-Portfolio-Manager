@@ -439,6 +439,24 @@ def _fetch_served_models():
         return set()
 
 
+# Model-id substrings marking a NON-chat model (translation/embedding/rerank/
+# speech/OCR/image/safety). These can carry "instruct" in the id (e.g.
+# riva-translate-4b-instruct) and pass a 1-token ping yet 400 on real chat/JSON
+# calls, so they must never enter the chat rotation.
+_NON_CHAT_MODEL_TOKENS = (
+    'riva', 'translate', 'embed', 'rerank', 'retriev', 'parakeet', 'canary',
+    'asr', 'tts', 'speech', 'audio', 'ocr', 'clip', 'vila', 'florence',
+    'paddle', 'diffusion', 'sdxl', 'sana', 'stable-diffusion', 'guard',
+    'safety', 'nemoguard', 'nemoretriever',
+)
+
+
+def _is_chat_model(model_id):
+    """False for translation/embedding/rerank/speech/OCR/image/safety model ids."""
+    mid = (model_id or '').lower()
+    return not any(tok in mid for tok in _NON_CHAT_MODEL_TOKENS)
+
+
 def _model_quality_rank(model_id):
     """Best-first sort key ranking chat models by capability heuristics.
 
@@ -523,12 +541,12 @@ def _reconcile_models_with_catalog():
     # Pool = our preferred rotation + any instruct/chat ids from the live
     # catalog, de-duplicated. The catalog widens the pool so newly published
     # models are discovered automatically as older ids are retired.
-    pool = list(_NVIDIA_MODEL_ROTATION)
+    pool = [m for m in _NVIDIA_MODEL_ROTATION if _is_chat_model(m)]
     served = _fetch_served_models()
     if served:
         for m in served:
             ml = m.lower()
-            if ('instruct' in ml or 'chat' in ml) and m not in pool:
+            if ('instruct' in ml or 'chat' in ml) and _is_chat_model(m) and m not in pool:
                 pool.append(m)
 
     # Probe the most capable models first so we settle on the strongest one
