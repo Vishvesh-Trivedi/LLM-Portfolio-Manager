@@ -1,7 +1,26 @@
 {
-  "cash": 10155.6,
+  "cash": 7617.96,
   "starting_capital": 10000.0,
-  "positions": [],
+  "positions": [
+    {
+      "ticker": "AES",
+      "shares": 171,
+      "entry_price": 14.84,
+      "cost_basis": 2537.64,
+      "brokerage_in": 0.0,
+      "entry_date": "2026-09-10",
+      "stop_price": 14.78,
+      "target_price": 14.96,
+      "sector": "Utilities",
+      "current_price": 14.84,
+      "current_value": 2537.64,
+      "unrealized_pnl": -0.0,
+      "unrealized_pnl_pct": -0.0,
+      "hold_days": 0,
+      "high_watermark": 14.84,
+      "atr_at_entry": 0.04
+    }
+  ],
   "closed_trades": [
     {
       "ticker": "COR",
@@ -161,8 +180,8 @@
   "total_realized_pnl": 155.6,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.58,
-  "last_updated": "2026-09-09 23:25",
-  "sharesies_month": "2026-08",
-  "sharesies_bought_usd": 12306.68,
-  "sharesies_sold_usd": 12536.18
+  "last_updated": "2026-09-10 22:27",
+  "sharesies_month": "2026-09",
+  "sharesies_bought_usd": 2537.64,
+  "sharesies_sold_usd": 0.0
 }
