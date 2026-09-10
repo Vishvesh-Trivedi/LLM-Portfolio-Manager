@@ -354,6 +354,7 @@ _CFG_RSI_CAP_CONF       = 70      # confidence ceiling when RSI_HARD_CAP is brea
 _CFG_UPSIDE_HARD_CAP    = -999    # analyst upside below this clamps confidence (-999 = disabled)
 _CFG_UPSIDE_CAP_CONF    = 65      # confidence ceiling when UPSIDE_HARD_CAP is breached
 _CFG_MAX_POSITIONS      = 5       # max simultaneous open positions (LLM configurable)
+_CFG_MIN_POSITION_PCT   = 15.0    # floor % of cash to deploy on a BUY (stops LLM under-sizing to $0)
 
 # ── NVIDIA MODEL SELECTION ─────────────────────────────────
 # Pick any one — all are free on NVIDIA NIM (build.nvidia.com)
@@ -3139,13 +3140,13 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         f'"top_pick":{{"ticker":"X","confidence":85,"signal":"BUY","tech_score":48,"news_score":32,'
         f'"pre_score":80,"catalyst_score":8,"catalyst_type":"BREAKOUT",'
         f'"score_breakdown":"Tech:48 | News:32 | Catalyst:8 | VIX:{mult}x = 85",'
-        f'"position_size_pct":0,'
+        f'"position_size_pct":25,'
         f'"reasoning":"2 sentences — specific 1-4 week thesis citing the bull case.",'
         f'"devils_advocate":"2 specific risks in the next 4 weeks.",'
         f'"key_risk":"One sentence.","sector":"X","source":"TECHNICAL"}},'
         f'"watch_candidates":[{{"ticker":"X","confidence":74,"signal":"WATCH","reasoning":"1 sentence.","key_risk":"1 sentence.","sector":"X","source":"TECHNICAL"}}]}}\n'
         f'If no stock clears {BUY_THRESHOLD} confidence, signal=NO PICK.\n'
-        f'position_size_pct: you decide what % of ${cash_avail:,.0f} available cash to deploy.\n'
+        f'position_size_pct: what % of ${cash_avail:,.0f} cash to deploy (whole number, typically 15-40; never below 15 on a BUY).\n'
         f'Context: {len(open_tickers)} positions currently open. VIX {mult}x regime.\n'
         f'Sector exposure in current portfolio: {sector_str}\n'
         f'Realized P&L this week: {week_str}\n'
@@ -5512,7 +5513,9 @@ def run_screener():
     # Open portfolio position — LLM chose position_size_pct
     _position_opened = False
     if sig == 'BUY' and conf >= BUY_THRESHOLD and isinstance(ep, (int, float)) and ep > 0:
-        pct    = min(float(pick.get('position_size_pct', 20)), 100)  # LLM sets this; 100% max is physics
+        pct    = min(float(pick.get('position_size_pct', 20) or 0), 100)  # LLM sets this; 100% max is physics
+        if pct < _CFG_MIN_POSITION_PCT:                 # guard: LLM under-sizing (e.g. ~0.4% -> $41) leaves cash idle
+            pct = _CFG_MIN_POSITION_PCT
         amount = round(portfolio['cash'] * pct / 100, 2)
         positions_before = len(portfolio['positions'])
         portfolio = open_position(portfolio, pick.get('ticker',''), ep, amount,
