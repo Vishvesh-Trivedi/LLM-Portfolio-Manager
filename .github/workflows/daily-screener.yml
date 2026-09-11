@@ -1,79 +1,88 @@
 name: Daily Stock Screener
 
-# Runs the LLM portfolio screener once per day.
-# The Python script itself self-skips US weekends and NYSE public holidays
-# (it exits early with a "market closed" message), so a plain daily cron is safe.
-
 on:
   schedule:
-    # 21:15 UTC every day = ~4:15-5:15 PM US Eastern (after the market close),
-    # which lands a little earlier in the NZ morning. The script decides whether it's a trading day.
     - cron: '15 21 * * *'
-  workflow_dispatch: {}   # allow manual "Run workflow" from the Actions tab
+  workflow_dispatch:
+    inputs:
+      qa_only:
+        description: 'Isolated QA: test real providers without changing portfolio or sending alerts'
+        type: boolean
+        default: false
 
-# Never let two runs overlap (portfolio state is committed back to the repo).
 concurrency:
   group: daily-screener
   cancel-in-progress: false
 
 permissions:
-  contents: write   # required to commit the updated portfolio/config state back
+  contents: write
 
 jobs:
   screen:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
-
+    timeout-minutes: 45
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v5
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-          cache: 'pip'
-
+          cache: pip
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
+        run: python -m pip install -r requirements.txt
       - name: Run regression tests
+        id: tests
         env:
           SCREENER_SKIP_UNIVERSE_FETCH: '1'
-        run: python -m unittest discover -s tests -p "test_*.py"
-
-      - name: Run screener
+          SCREENER_DISABLE_ALERTS: '1'
+          SCREENER_OUTPUT_DIR: ${{ runner.temp }}/screener-tests
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Isolated live QA
+        if: ${{ inputs.qa_only == true }}
         env:
-          NVIDIA_API_KEY:     ${{ secrets.NVIDIA_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          WHATSAPP_PHONE:     ${{ secrets.WHATSAPP_PHONE }}
-          CALLMEBOT_API_KEY:  ${{ secrets.CALLMEBOT_API_KEY }}
-          PYTHONUNBUFFERED:   '1'
+          SCREENER_SKIP_UNIVERSE_FETCH: '1'
+          SCREENER_DISABLE_ALERTS: '1'
+          SCREENER_OUTPUT_DIR: ${{ runner.temp }}/screener-qa
+          PYTHONUNBUFFERED: '1'
+        run: python qa_validate.py --live
+      - name: Run screener
+        id: screener
+        if: ${{ inputs.qa_only != true }}
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
+          PYTHONUNBUFFERED: '1'
         run: python -u LLM_Portfolio_Manager.py
-
-      - name: Commit updated portfolio state
-        if: always()   # persist state even if the screen step failed part-way
+      - name: Commit validated portfolio state
+        if: ${{ always() && inputs.qa_only != true && steps.tests.outcome == 'success' && steps.screener.outcome != 'skipped' }}
+        env:
+          SCREENER_SKIP_UNIVERSE_FETCH: '1'
+          SCREENER_DISABLE_ALERTS: '1'
+          SCREENER_OUTPUT_DIR: ${{ runner.temp }}/state-validation
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A StockScreener || true
-          if git diff --cached --quiet; then
-            echo "No state changes to commit."
-          else
-            git commit -m "chore: update portfolio state [skip ci] ($(date -u +'%Y-%m-%d'))"
+          python qa_validate.py --check-state StockScreener/portfolio.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- StockScreener
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update validated paper portfolio [skip ci] ($(date -u +'%Y-%m-%d'))"
             git push
           fi
-
       - name: Upload run artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: screener-output
           path: |
             StockScreener/*.html
             StockScreener/*.csv
             StockScreener/*.json
-          if-no-files-found: ignore
-          retention-days: 14
+            ${{ runner.temp }}/screener-qa/*.json
+            ${{ runner.temp }}/screener-qa/*.html
+          if-no-files-found: warn
+          retention-days: 30
