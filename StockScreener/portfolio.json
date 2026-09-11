@@ -1,26 +1,7 @@
 {
-  "cash": 5535.06,
+  "cash": 8062.44,
   "starting_capital": 10000.0,
   "positions": [
-    {
-      "ticker": "AES",
-      "shares": 171,
-      "entry_price": 14.84,
-      "cost_basis": 2537.64,
-      "brokerage_in": 0.0,
-      "entry_date": "2026-09-10",
-      "stop_price": 14.78,
-      "target_price": 14.96,
-      "sector": "Utilities",
-      "current_price": 14.8,
-      "current_value": 2530.8,
-      "unrealized_pnl": -6.84,
-      "unrealized_pnl_pct": -0.27,
-      "hold_days": 0,
-      "high_watermark": 14.84,
-      "atr_at_entry": 0.04,
-      "earnings_days_away": 55
-    },
     {
       "ticker": "FSLR",
       "shares": 10,
@@ -28,17 +9,25 @@
       "cost_basis": 2082.9,
       "brokerage_in": 5.0,
       "entry_date": "2026-09-10",
-      "stop_price": 195.59,
+      "stop_price": 196.83,
       "target_price": 232.18,
       "sector": "Technology",
-      "current_price": 207.17,
-      "current_value": 2071.7,
-      "unrealized_pnl": -11.2,
-      "unrealized_pnl_pct": -0.54,
-      "hold_days": 0,
-      "high_watermark": 207.79,
+      "current_price": 209.02999877929688,
+      "current_value": 2090.3,
+      "unrealized_pnl": 7.4,
+      "unrealized_pnl_pct": 0.3552738969705649,
+      "hold_days": 1,
+      "high_watermark": 209.02999877929688,
       "atr_at_entry": 8.13,
-      "earnings_days_away": 49
+      "earnings_days_away": 48,
+      "trade_id": "4dc54b3e8848e9f186953f6e090b2268094668c1ba821f419221b1bc0b44e4d3",
+      "cost_basis_basis": "legacy_estimate",
+      "hold_sessions": 10,
+      "quote_stale": false,
+      "quote_date": "2026-09-11",
+      "held_sessions": 1,
+      "last_evaluated_session": "2026-09-11",
+      "indicator_exit_note": ""
     }
   ],
   "closed_trades": [
@@ -54,7 +43,9 @@
       "entry_date": "2026-08-07",
       "exit_date": "2026-08-12",
       "hold_days": 5,
-      "reason": "stop_loss (curr=314.17 \u2264 stop=321.27)"
+      "reason": "stop_loss (curr=314.17 ≤ stop=321.27)",
+      "trade_id": "09eaf8010e3a72eb17ee71b126f4657928c1b912eb58b9c98b348a3fd2172bd2",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "DXCM",
@@ -68,7 +59,9 @@
       "entry_date": "2026-08-10",
       "exit_date": "2026-08-12",
       "hold_days": 2,
-      "reason": "rsi_overbought (RSI=85 > 78.0, up 2.8%)"
+      "reason": "rsi_overbought (RSI=85 > 78.0, up 2.8%)",
+      "trade_id": "e3e3c844b7bee289d414c90389b5250e65f5cd7d6f3796289a3a628c0053c894",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "MPC",
@@ -82,7 +75,9 @@
       "entry_date": "2026-08-14",
       "exit_date": "2026-08-17",
       "hold_days": 3,
-      "reason": "rsi_overbought (RSI=78 > 78.0, up 0.1%)"
+      "reason": "rsi_overbought (RSI=78 > 78.0, up 0.1%)",
+      "trade_id": "f9fd7585e37e99cb17a8117a6c3323242040084869091e1053ee99bb3f5eea15",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "AKAM",
@@ -96,7 +91,9 @@
       "entry_date": "2026-08-13",
       "exit_date": "2026-08-18",
       "hold_days": 5,
-      "reason": "stop_loss (curr=115.2 \u2264 stop=115.8)"
+      "reason": "stop_loss (curr=115.2 ≤ stop=115.8)",
+      "trade_id": "38f5fb90d913dbbb5bf0072026cc1c017a2a165b2b8992a318b1f3dc371703a2",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "CPRT",
@@ -110,7 +107,9 @@
       "entry_date": "2026-08-17",
       "exit_date": "2026-08-19",
       "hold_days": 2,
-      "reason": "rsi_overbought (RSI=81 > 78.0, up 5.9%)"
+      "reason": "rsi_overbought (RSI=81 > 78.0, up 5.9%)",
+      "trade_id": "b5daf2004ccb9f911ef8681a2302aacb2b1d9ee43c655b48fc1b5e9c4d6e00bb",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "BR",
@@ -124,7 +123,9 @@
       "entry_date": "2026-08-04",
       "exit_date": "2026-08-20",
       "hold_days": 16,
-      "reason": "rsi_overbought (RSI=81 > 78.0, up 5.7%)"
+      "reason": "rsi_overbought (RSI=81 > 78.0, up 5.7%)",
+      "trade_id": "1f807636deabda8be60b930e531ee32b0d34b7b8591865670d7d9c3a792f13a9",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "EXPE",
@@ -138,7 +139,9 @@
       "entry_date": "2026-08-05",
       "exit_date": "2026-08-24",
       "hold_days": 19,
-      "reason": "rsi_overbought (RSI=83 > 78.0, up 5.4%)"
+      "reason": "rsi_overbought (RSI=83 > 78.0, up 5.4%)",
+      "trade_id": "923ae13a7a01c15bc83d7145d8156379e95eb25fb52a7fff654a89a8127eb405",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "GNRC",
@@ -152,7 +155,9 @@
       "entry_date": "2026-08-12",
       "exit_date": "2026-08-24",
       "hold_days": 12,
-      "reason": "stop_loss (curr=203.56 \u2264 stop=204.13)"
+      "reason": "stop_loss (curr=203.56 ≤ stop=204.13)",
+      "trade_id": "56ad05b26f1a2689f4ac25afa21880d806877abfb7fc0e817a23910a2ccc3e13",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "JKHY",
@@ -166,7 +171,9 @@
       "entry_date": "2026-08-19",
       "exit_date": "2026-08-24",
       "hold_days": 5,
-      "reason": "rsi_overbought (RSI=80 > 78.0, up 3.9%)"
+      "reason": "rsi_overbought (RSI=80 > 78.0, up 3.9%)",
+      "trade_id": "941c5aeb8df75932ac892a9ae0f3dfdef3e2443085f1aea37a45220f3ee57d2f",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "FANG",
@@ -180,7 +187,9 @@
       "entry_date": "2026-08-20",
       "exit_date": "2026-08-25",
       "hold_days": 5,
-      "reason": "stop_loss (curr=199.89 \u2264 stop=202.46)"
+      "reason": "stop_loss (curr=199.89 ≤ stop=202.46)",
+      "trade_id": "77997b6341dfc512e87965b9c2fc4b68631f165f5e1f6f7f3bf87cb5873b796e",
+      "cost_basis_basis": "legacy_estimate"
     },
     {
       "ticker": "AXON",
@@ -194,14 +203,58 @@
       "entry_date": "2026-08-07",
       "exit_date": "2026-08-27",
       "hold_days": 20,
-      "reason": "macd_bearish_cross (up 5.5%, momentum turned)"
+      "reason": "macd_bearish_cross (up 5.5%, momentum turned)",
+      "trade_id": "1d28839b483e2f3c822f703fc87baf32f827c7c7fb978c11e9029e459a485e96",
+      "cost_basis_basis": "legacy_estimate"
+    },
+    {
+      "ticker": "AES",
+      "shares": 171,
+      "entry_price": 14.84,
+      "cost_basis": 2537.64,
+      "brokerage_in": 0.0,
+      "entry_date": "2026-09-10",
+      "stop_price": 14.78,
+      "target_price": 14.96,
+      "sector": "Utilities",
+      "current_price": 14.789999961853027,
+      "current_value": 2529.09,
+      "unrealized_pnl": -8.55,
+      "unrealized_pnl_pct": -0.336927223719663,
+      "hold_days": 1,
+      "high_watermark": 14.84,
+      "atr_at_entry": 0.04,
+      "earnings_days_away": 55,
+      "trade_id": "3d66098fa3970ba9c40d2b9e48b0136a6ffd42ed2f36b610472ebb859614287c",
+      "cost_basis_basis": "legacy_estimate",
+      "hold_sessions": 10,
+      "quote_stale": false,
+      "quote_date": "2026-09-11",
+      "held_sessions": 1,
+      "last_evaluated_session": "2026-09-11",
+      "exit_price": 14.78,
+      "exit_date": "2026-09-11",
+      "exit_value": 2527.38,
+      "brokerage_out": 0.0,
+      "realized_pnl": -10.26,
+      "realized_pnl_pct": -0.40431266846361186,
+      "realized_pct": -0.40431266846361186,
+      "net_realized_pct": -0.40431266846361186,
+      "reason": "stop_loss",
+      "result": "Loss",
+      "Result": "Loss",
+      "outcome_basis": "net_realized",
+      "fee_basis": "runner_estimate_at_exit_session"
     }
   ],
-  "total_realized_pnl": 155.6,
+  "total_realized_pnl": 145.34,
   "created": "2026-08-03",
-  "last_nzdusd_rate": 0.58,
-  "last_updated": "2026-09-10 23:22",
+  "last_nzdusd_rate": 0.5816,
+  "last_updated": "2026-09-11",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
-  "sharesies_sold_usd": 0.0
+  "sharesies_sold_usd": 2527.38,
+  "pending_orders": [],
+  "processed_sessions": [],
+  "equity_peak": 10152.74
 }
