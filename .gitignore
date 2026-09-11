@@ -1,6 +1,8 @@
-# Data files - never commit these
+# Local scratch data
 stock_picks.csv
 watch_list.csv
+!StockScreener/stock_picks.csv
+!StockScreener/watch_list.csv
 
 # API keys and secrets
 .env
