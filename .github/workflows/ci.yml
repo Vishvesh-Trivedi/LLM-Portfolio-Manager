@@ -22,7 +22,7 @@ jobs:
     env:
       SCREENER_SKIP_UNIVERSE_FETCH: '1'
       SCREENER_DISABLE_ALERTS: '1'
-      SCREENER_OUTPUT_DIR: ${{ runner.temp }}/screener-tests
+      SCREENER_OUTPUT_DIR: /tmp/screener-tests
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
