@@ -483,6 +483,110 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(first['closed_trades'], second['closed_trades'])
         self.assertEqual(second['processed_sessions'], [])
 
+    def test_run74_catalyst_errors_recover_without_repeating_healthy_batches(self):
+        self.pipeline(tuple(f'T{i:02d}' for i in range(30)))
+        self.mock('OPENROUTER_API_KEY', new='fake-backup-key')
+        calls = []
+        failures = iter((
+            '{"ratings":[{"ticker":"T12","catalyst_score":7,"catalyst_score":8}]}',
+            'No JSON available',
+            {'ratings': [{'ticker': 'RNR', 'catalyst_score': 7,
+                          'catalyst_type': 'BREAKOUT', 'auto_drop': False, 'reason': 'Wrong ticker.'}]},
+        ))
+
+        def provider(url, **kwargs):
+            user = kwargs['json']['messages'][-1]['content']
+            names = re.findall(r'^([A-Z][A-Z0-9.-]*) \[', user, re.M)
+            if names:
+                calls.append(names)
+                if names == [f'T{i:02d}' for i in range(12, 18)]:
+                    return response(next(failures))
+            return self.provider(url, **kwargs)
+
+        self.post.side_effect = provider
+        result = APP.run_screener()
+        health = APP.write_run_health(result)
+        self.assertEqual(result['order_status'], 'QUEUED')
+        self.assertTrue(health['trade_ready'])
+        self.assertEqual(health['status'], 'healthy')
+        self.assertEqual(health['stages']['catalysts']['detail'], '30/30 verified')
+        self.assertTrue(health['stages']['catalyst_3']['success'])
+        self.assertIn('Recovered', health['stages']['catalyst_3']['detail'])
+        self.assertEqual([len(names) for names in calls], [6, 6, 6, 6, 6, 3, 3, 6, 6])
+        self.assertEqual(calls[5], ['T12', 'T13', 'T14'])
+        self.assertEqual(calls[6], ['T15', 'T16', 'T17'])
+        self.assertEqual(self.ledger()['processed_sessions'], ['2026-09-11'])
+        self.assertEqual(len(self.ledger()['pending_orders']), 1)
+
+    def catalyst_fixture(self, count):
+        self.pipeline()
+        return [{'ticker': f'T{i:02d}', 'sector': 'Technology', 'rsi': 55.,
+                 'adx': 25., 'momentum_5d': 2., 'tech_score': 40} for i in range(count)]
+
+    def test_catalyst_prompt_names_exact_tickers_and_forbids_duplicate_keys(self):
+        candidates = self.catalyst_fixture(6)
+        APP.batch_catalyst_score(candidates, self.ctx, {'T00': ['RNR also appeared in this headline']})
+        prompt = self.prompts['catalysts'][0]
+        self.assertIn('Allowed tickers (exactly 6): T00, T01, T02, T03, T04, T05', prompt)
+        self.assertIn('Never repeat a JSON key', prompt)
+        self.assertNotIn('"ticker":"X"', prompt)
+        self.assertEqual(self.post.call_count, 1)
+        self.assertTrue(all(c['catalyst_verified'] for c in candidates))
+
+    def test_failed_split_does_not_accept_partial_or_unknown_ratings(self):
+        candidates = self.catalyst_fixture(6)
+
+        def provider(url, **kwargs):
+            user = kwargs['json']['messages'][-1]['content']
+            names = re.findall(r'^([A-Z][A-Z0-9.-]*) \[', user, re.M)
+            if len(names) == 6 or 'T05' in names:
+                return response({'ratings': [{'ticker': 'RNR'}]})
+            return self.provider(url, **kwargs)
+
+        self.post.side_effect = provider
+        APP.batch_catalyst_score(candidates, self.ctx, {})
+        self.assertFalse(any(c['catalyst_verified'] for c in candidates))
+        self.assertFalse(any('catalyst_score' in c for c in candidates))
+        stages = APP._HEALTH.as_dict()['stages']
+        self.assertFalse(stages['catalyst_1']['success'])
+        self.assertFalse(stages['catalysts']['success'])
+        self.assertFalse(APP._trade_readiness()['trade_ready'])
+
+    def test_catalyst_split_recovery_budget_is_run_wide(self):
+        candidates = self.catalyst_fixture(30)
+        sizes = []
+
+        def provider(url, **kwargs):
+            user = kwargs['json']['messages'][-1]['content']
+            names = re.findall(r'^([A-Z][A-Z0-9.-]*) \[', user, re.M)
+            sizes.append(len(names))
+            if len(names) == 6:
+                return response('{"invalid":')
+            return self.provider(url, **kwargs)
+
+        self.post.side_effect = provider
+        APP.batch_catalyst_score(candidates, self.ctx, {})
+        self.assertEqual(sizes.count(3), 4)
+        self.assertEqual(len(sizes), 12)  # Four primary attempts (two transports each), four recovery calls.
+        self.assertEqual(sum(c['catalyst_verified'] for c in candidates), 12)
+        self.assertFalse(APP._HEALTH.as_dict()['stages']['catalysts']['success'])
+
+    def test_catalyst_recovery_handles_short_final_batch(self):
+        candidates = self.catalyst_fixture(2)
+
+        def provider(url, **kwargs):
+            user = kwargs['json']['messages'][-1]['content']
+            names = re.findall(r'^([A-Z][A-Z0-9.-]*) \[', user, re.M)
+            if len(names) == 2:
+                return response('{"invalid":')
+            return self.provider(url, **kwargs)
+
+        self.post.side_effect = provider
+        APP.batch_catalyst_score(candidates, self.ctx, {})
+        self.assertTrue(all(c['catalyst_verified'] for c in candidates))
+        self.assertEqual(self.catalyst_inputs, ['T00', 'T01'])
+        self.assertEqual(self.post.call_count, 4)
+
     def test_catalyst_failure_cannot_be_hidden_by_final_success(self):
         self.pipeline()
         self.bad_stage = 'catalysts'
