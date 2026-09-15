@@ -1960,35 +1960,57 @@ def get_market_context():
 
 
 def batch_download(tickers):
-    """Download OHLCV for all tickers in ONE yf.download() call."""
-    print(f'\nBatch downloading {len(tickers)} tickers (1 API call)...')
-    try:
-        raw = yf.download(
-            tickers, period='6mo',
-            auto_adjust=False, progress=False, threads=True
-        )
-        if raw.empty:
-            print('  Batch returned empty'); return {}
+    """Download OHLCV for all tickers in bounded yf.download() chunks.
 
-        result = {}
-        if isinstance(raw.columns, pd.MultiIndex):
-            for t in tickers:
-                try:
-                    df = _clean_ohlcv(raw.xs(t, axis=1, level=1))
+    Large ticker lists can trigger Yahoo failures or partial empty responses even
+    when the screener is otherwise healthy. Splitting the request keeps the data
+    fresh without sacrificing the rest of the market scan.
+    """
+    tickers = [str(t).strip().upper() for t in tickers if str(t).strip()]
+    tickers = list(dict.fromkeys(tickers))
+    if not tickers:
+        return {}
+
+    chunk_size = 80
+    if len(tickers) <= chunk_size:
+        batches = [tickers]
+        print(f'\nBatch downloading {len(tickers)} tickers (1 API call)...')
+    else:
+        batches = [tickers[i:i + chunk_size] for i in range(0, len(tickers), chunk_size)]
+        print(f'\nBatch downloading {len(tickers)} tickers ({len(batches)} chunked API calls)...')
+
+    result = {}
+    for i, batch in enumerate(batches, start=1):
+        try:
+            raw = yf.download(
+                batch, period='6mo',
+                auto_adjust=False, progress=False, threads=True, group_by='ticker'
+            )
+            if raw.empty:
+                print(f'  Chunk {i}/{len(batches)} returned empty'); continue
+
+            if isinstance(raw.columns, pd.MultiIndex):
+                for t in batch:
+                    try:
+                        if t in raw.columns.get_level_values(0):
+                            df = _clean_ohlcv(raw[t])
+                        else:
+                            df = _clean_ohlcv(raw.xs(t, axis=1, level=0))
+                        if df is not None and len(df) >= 20:
+                            result[t] = df
+                    except Exception:
+                        continue
+            else:
+                if len(batch) == 1 and not raw.empty:
+                    df = _clean_ohlcv(raw)
                     if df is not None and len(df) >= 20:
-                        result[t] = df
-                except:
-                    continue
-        else:
-            if len(tickers) == 1 and not raw.empty:
-                df = _clean_ohlcv(raw)
-                if df is not None and len(df) >= 20:
-                    result[tickers[0]] = df
+                        result[batch[0]] = df
+        except Exception as e:
+            print(f'  Chunk {i}/{len(batches)} error: {e}')
+            continue
 
-        print(f'  Downloaded: {len(result)}/{len(tickers)} tickers')
-        return result
-    except Exception as e:
-        print(f'  Batch error: {e}'); return {}
+    print(f'  Downloaded: {len(result)}/{len(tickers)} tickers')
+    return result
 
 
 def _fetch_stock_news_single(ticker):
