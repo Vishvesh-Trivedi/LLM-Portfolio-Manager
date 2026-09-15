@@ -2716,8 +2716,13 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
 
 
 def batch_catalyst_score(candidates, ctx, all_stock_news):
-    """Validate a complete catalyst rating for every candidate, six per call."""
+    """Validate every ticker, retrying failed batches once in smaller groups.
+
+    Recovery is bounded to four extra requests per run (each retains the usual
+    provider failover). Never salvage invalid JSON or certify partial coverage.
+    """
     BATCH = 6
+    recovery_requests_left = 4
     for c in candidates:
         c['catalyst_verified'] = False
     batches = [candidates[i:i+BATCH] for i in range(0, len(candidates), BATCH)]
@@ -2731,7 +2736,8 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
     skipped_batches = 0
     consecutive_skips = 0
     max_consecutive_skips = 2
-    for bi, batch in enumerate(batches):
+
+    def request_ratings(batch, stage):
         lines = []
         for c in batch:
             news = ' | '.join((all_stock_news.get(c['ticker'], []))[:3]) or 'No news'
@@ -2739,25 +2745,51 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
                 f'{c["ticker"]} [{c["sector"]}] RSI={c["rsi"]:.0f} ADX={c["adx"]:.0f} '
                 f'mom5d={c["momentum_5d"]:+.1f}% tech={c.get("tech_score",0)} '
                 f'earnings_in={c.get("earnings_days_away","?")}d '
-                f'news="{news}"'
+                f'news={json.dumps(news)}'
             )
+        allowed = ', '.join(c['ticker'] for c in batch)
         user_msg = (
             f'Market: VIX={ctx["vix_level"]:.1f} ({ctx["vix_regime"][:10]}) | '
             f'QQQ={ctx["qqq_trend"]} | SPY={ctx["spy_return_today"]:+.2f}%\n\n'
+            f'Allowed tickers (exactly {len(batch)}): {allowed}\n'
+            'Rate ONLY these tickers, exactly once each. Other companies mentioned in news are NOT candidates.\n'
             f'Rate each for SHORT-TERM trading (1-4 weeks):\n' + '\n'.join(lines) + '\n\n'
             f'For each:\n'
             f'- catalyst_score: 1-10 (10=strong specific near-term catalyst, 1=no reason to buy now)\n'
             f'- catalyst_type: EARNINGS_CATALYST|UPGRADE|BREAKOUT|SECTOR_ROTATION|MOMENTUM|NEWS_HYPE|NONE\n'
             f'- auto_drop: true if news is clearly negative or there is zero short-term reason to buy\n'
             f'- reason: one sentence — the specific 1-4 week thesis or why dropping\n\n'
-            f'Return ONLY: {{"ratings":[{{"ticker":"X","catalyst_score":7,"catalyst_type":"BREAKOUT",'
-            f'"auto_drop":false,"reason":"..."}}]}}'
+            'Never repeat a JSON key within an object. Do not add tickers, commentary, or reasoning outside JSON.\n'
+            f'Return ONLY this structure, with exactly {len(batch)} ratings for {allowed}: '
+            f'{{"ratings":[{{"ticker":"{batch[0]["ticker"]}","catalyst_score":7,"catalyst_type":"BREAKOUT",'
+            f'"auto_drop":false,"reason":"One concise sentence."}}]}}'
         )
+        return _llm_json_with_fallback(
+            sys_msg, user_msg, max_tokens=1600, max_attempts=1, read_timeout=45,
+            validator=lambda p: validate_catalysts(p, batch), stage=stage,
+        )
+
+    for bi, batch in enumerate(batches):
+        stage = f'catalyst_{bi+1}'
         try:
-            payload = _llm_json_with_fallback(
-                sys_msg, user_msg, max_tokens=1600, max_attempts=1, read_timeout=45,
-                validator=lambda p: validate_catalysts(p, batch), stage=f'catalyst_{bi+1}',
-            )
+            try:
+                payload = request_ratings(batch, stage)
+            except ValueError as initial_error:
+                if len(batch) < 2 or recovery_requests_left < 2:
+                    raise
+                recovery_requests_left -= 2
+                midpoint = (len(batch) + 1) // 2
+                parts = (batch[:midpoint], batch[midpoint:])
+                initial_detail = _safe_llm_error(initial_error)
+                print(f'    Batch {bi+1}/{n_calls}: retrying as {len(parts[0])}+{len(parts[1])} tickers')
+                ratings = []
+                for part_index, part in enumerate(parts, 1):
+                    recovered = request_ratings(part, f'{stage}_recovery_{part_index}')
+                    ratings.extend(recovered['ratings'])
+                # Validate the combined coverage BEFORE applying any recovered
+                # rating, so one successful half cannot certify the failed batch.
+                payload = validate_catalysts({'ratings': ratings}, batch)
+                _HEALTH.stage(stage, True, detail='Recovered with smaller batches after: ' + initial_detail)
             by_ticker = {c['ticker']: c for c in batch}
             for r in payload['ratings']:
                 match = by_ticker[r['ticker']]
@@ -2785,7 +2817,7 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
                     skipped_batches += rem
                     print(f'  Catalyst scoring paused: {consecutive_skips} consecutive failures; skipping remaining {rem} batches')
                 break
-        _HEALTH.stage('catalysts', skipped_batches == 0,
+        _HEALTH.stage('catalysts', bool(candidates) and all(c['catalyst_verified'] for c in candidates),
                                     detail=f'{n_calls - skipped_batches}/{n_calls} batches validated; {skipped_batches} skipped')
     dropped = sum(1 for c in candidates if c.get('auto_drop'))
     if skipped_batches:
