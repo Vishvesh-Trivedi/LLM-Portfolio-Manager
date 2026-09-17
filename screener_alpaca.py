@@ -40,6 +40,7 @@ _MAX_RETRIES = 4
 _STREAM_THREAD = None
 _STREAM_LOCK = threading.Lock()
 _TRADE_UPDATES = []
+_ORDER_LEDGER = []
 ALPACA_STREAM_UPDATES = os.environ.get('ALPACA_STREAM_UPDATES', '0').strip().lower() in ('1', 'true', 'yes', 'on')
 
 _SYMBOLS_PER_REQUEST = 100
@@ -263,6 +264,60 @@ def _client_order_id(symbol, side):
     return f'lpm-{prefix}-{cleaned}-{int(time.time())}-{uuid.uuid4().hex[:8]}'
 
 
+def _order_key(snapshot):
+    return snapshot.get("client_order_id") or snapshot.get("order_id") or snapshot.get("symbol") or ""
+
+
+def _order_snapshot(order, source):
+    return {
+        "source": source,
+        "event": str(order.get("status", "") or order.get("event", "") or "").lower(),
+        "timestamp": order.get("updated_at") or order.get("submitted_at") or order.get("timestamp"),
+        "order_id": str(order.get("id", "") or ""),
+        "client_order_id": order.get("client_order_id"),
+        "symbol": order.get("symbol"),
+        "status": str(order.get("status", "") or "").lower(),
+        "filled_qty": str(order.get("filled_qty", "") or ""),
+        "filled_avg_price": str(order.get("filled_avg_price", "") or ""),
+        "qty": str(order.get("qty", "") or ""),
+        "side": str(order.get("side", "") or "").lower(),
+    }
+
+
+def _upsert_order_ledger(snapshot):
+    key = _order_key(snapshot)
+    if not key:
+        return snapshot
+    for idx, existing in enumerate(_ORDER_LEDGER):
+        if _order_key(existing) == key:
+            merged = dict(existing)
+            merged.update(snapshot)
+            _ORDER_LEDGER[idx] = merged
+            return merged
+    _ORDER_LEDGER.append(dict(snapshot))
+    return snapshot
+
+
+def order_ledger():
+    """Return a copy of the last known order ledger."""
+    return [dict(item) for item in _ORDER_LEDGER]
+
+
+def sync_order_statuses(existing_ledger=None):
+    """Poll Alpaca for current order states and merge them into the ledger."""
+    if isinstance(existing_ledger, list):
+        for item in existing_ledger:
+            if isinstance(item, dict):
+                _upsert_order_ledger(item)
+    for order in list_orders(status="all", limit=500):
+        try:
+            snapshot = _order_snapshot(order, "poll")
+        except Exception:
+            continue
+        _upsert_order_ledger(snapshot)
+    return order_ledger()
+
+
 def trade_updates():
     """Return a copy of recent Alpaca trade update snapshots."""
     return list(_TRADE_UPDATES)
@@ -283,6 +338,7 @@ async def _trade_update_handler(update):
     }
     _TRADE_UPDATES.append(snapshot)
     del _TRADE_UPDATES[:-50]
+    _upsert_order_ledger(snapshot)
     print(f"  Alpaca update: {snapshot['symbol']} {snapshot['event']} status={snapshot['status'] or 'unknown'} qty={snapshot['filled_qty'] or snapshot['qty'] or '?'}")
 
 
