@@ -1990,12 +1990,17 @@ def batch_download(tickers):
                 print(f'  Chunk {i}/{len(batches)} returned empty'); continue
 
             if isinstance(raw.columns, pd.MultiIndex):
+                # yfinance may key tickers on either level depending on group_by; detect it.
+                level0 = set(raw.columns.get_level_values(0))
+                level1 = set(raw.columns.get_level_values(1))
                 for t in batch:
                     try:
-                        if t in raw.columns.get_level_values(0):
-                            df = _clean_ohlcv(raw[t])
-                        else:
+                        if t in level0:
                             df = _clean_ohlcv(raw.xs(t, axis=1, level=0))
+                        elif t in level1:
+                            df = _clean_ohlcv(raw.xs(t, axis=1, level=1))
+                        else:
+                            continue
                         if df is not None and len(df) >= 20:
                             result[t] = df
                     except Exception:
