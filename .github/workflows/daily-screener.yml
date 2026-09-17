@@ -62,7 +62,7 @@ jobs:
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           APCA_API_BASE_URL: https://paper-api.alpaca.markets
           SCREENER_LIVE_BROKER: ${{ secrets.SCREENER_LIVE_BROKER }}
-          SCREENER_FORCE_SESSION: ${{ inputs.force_session }}
+          SCREENER_FORCE_SESSION: ${{ github.event_name == 'workflow_dispatch' || inputs.force_session == true }}
           WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
           CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
           PYTHONUNBUFFERED: '1'
