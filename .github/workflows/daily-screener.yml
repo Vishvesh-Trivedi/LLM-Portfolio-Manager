@@ -9,6 +9,10 @@ on:
         description: 'Isolated QA: test real providers without changing portfolio or sending alerts'
         type: boolean
         default: false
+      force_session:
+        description: 'Allow a manual rerun for the current US session even if it was already processed'
+        type: boolean
+        default: false
 
 concurrency:
   group: daily-screener
@@ -54,6 +58,11 @@ jobs:
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          APCA_API_BASE_URL: https://paper-api.alpaca.markets
+          SCREENER_LIVE_BROKER: ${{ secrets.SCREENER_LIVE_BROKER }}
+          SCREENER_FORCE_SESSION: ${{ inputs.force_session }}
           WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
           CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
           PYTHONUNBUFFERED: '1'
