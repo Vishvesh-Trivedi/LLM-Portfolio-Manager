@@ -1,4 +1,4 @@
-"""Offline regression tests: injected app/yf only, no main import or credentials."""
+﻿"""Offline regression tests: injected app/yf only, no main import or credentials."""
 
 import ast
 import copy
@@ -361,6 +361,15 @@ class PortfolioTests(unittest.TestCase):
         order = pf['pending_orders'][0]
         self.assertEqual(order['amount_usd'], 200)
         self.assertEqual(order['shares'], 1)
+
+    def test_queue_uses_current_cash_snapshot(self):
+        pf = self.new()
+        pf['cash'] = 100000.0
+        self.assertTrue(self.queue(pf, pct=25, entry=1382.83,
+                                   stop=1327.9, target=1492.69))
+        order = pf['pending_orders'][0]
+        self.assertEqual(order['amount_usd'], 25000.0)
+        self.assertEqual(order['shares'], 18)
 
     def test_one_queue_per_session_including_other_ticker(self):
         pf = self.new()
