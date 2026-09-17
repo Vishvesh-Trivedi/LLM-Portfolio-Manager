@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Daily_Stock_Screener_v6_2.py
 ======================================
@@ -4982,8 +4982,51 @@ def load_portfolio():
             pf['broker_equity'] = float(account.get('equity', ALPACA_PAPER_CAPITAL) or ALPACA_PAPER_CAPITAL)
         elif not pf.get('positions'):
             pf['cash'] = ALPACA_PAPER_CAPITAL
+        _resize_legacy_pending_orders(pf)
         save_portfolio(pf)
     return pf
+
+
+def _resize_legacy_pending_orders(pf):
+    """Resize pre-Alpaca-baseline pending orders from live paper cash.
+
+    Pending orders store an absolute ``amount_usd``. After moving from the old
+    10k local ledger baseline to Alpaca's 100k paper account, an already queued
+    pending order can remain under-sized unless it is recomputed from the live
+    broker cash snapshot.
+    """
+    pending = pf.get('pending_orders', [])
+    if not pending:
+        return False
+    live_cash = finite_number(pf.get('cash', 0), 'cash', minimum=0)
+    changed = False
+    for order in pending:
+        try:
+            pct = finite_number(order.get('position_size_pct'), 'position_size_pct', minimum=0)
+            amount = finite_number(order.get('amount_usd', 0), 'amount_usd', minimum=0)
+            entry = finite_number(order.get('estimated_entry'), 'estimated_entry', minimum=0)
+            if pct <= 0 or entry <= 0:
+                continue
+            implied_cash = amount * 100.0 / pct
+            if implied_cash <= 0 or live_cash <= implied_cash * 2.0:
+                continue
+            sector = str(order.get('sector', '') or 'Unknown')
+            stop = entry - finite_number(order.get('stop_distance', 0), 'stop_distance', minimum=0)
+            target = entry + finite_number(order.get('target_distance', 0), 'target_distance', minimum=0)
+            quote = _portfolio._fee_quote(sys.modules[__name__], pf, pf.get('last_nzdusd_rate'))
+            plan = _portfolio._plan(sys.modules[__name__], pf, str(order.get('ticker', '')).strip().upper(),
+                                    entry, live_cash * pct / 100.0, stop, target, sector, quote)
+            current_shares = int(order.get('shares', 0) or 0)
+            if plan['shares'] <= current_shares:
+                continue
+            order['amount_usd'] = round(live_cash * pct / 100.0, 3)
+            order['shares'] = int(plan['shares'])
+            order['legacy_cash_basis'] = round(implied_cash, 2)
+            changed = True
+            print(f'  Resized legacy pending order {order.get("ticker", "?")}: {current_shares} -> {order["shares"]} shares from live cash ${live_cash:,.2f}')
+        except Exception:
+            continue
+    return changed
 
 
 def save_portfolio(pf):
@@ -5079,7 +5122,7 @@ def reconcile_broker(portfolio):
             _HEALTH.stage('broker', True, 'Alpaca account unavailable; skipped mirror')
             return
         ledger_shares = _ledger_share_map(portfolio)
-        broker_shares = _alpaca.positions_by_symbol()
+        broker_shares = _alpaca.effective_shares_by_symbol()
         actions = _alpaca.plan_reconciliation(ledger_shares, broker_shares)
         if not actions:
             _HEALTH.stage('broker', True,
@@ -5395,6 +5438,7 @@ def _report_existing_session_order(ctx, portfolio, session_date, closed_today=No
         'order_reason': reason,
     }
     print(f'  Existing session order: {result["top_pick"]["ticker"]} already queued for {order.get("execution_session", "next session")}.')
+    reconcile_broker(portfolio)
     save_html_report(result, ctx, {}, entry or 'N/A', [], portfolio=portfolio,
                      position_opened=False, stop_price=stop, target_price=target)
     _RUN_REPORT = os.path.join(DRIVE_FOLDER, 'report_latest.html')
