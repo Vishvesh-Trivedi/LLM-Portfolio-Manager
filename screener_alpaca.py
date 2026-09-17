@@ -1,4 +1,4 @@
-﻿"""Alpaca integration: reliable market data + paper-trade execution.
+"""Alpaca integration: reliable market data + paper-trade execution.
 
 This module is deliberately dependency-free beyond ``requests``/``pandas`` (both
 already required by the screener) so it works under restrictive environments and
@@ -22,10 +22,13 @@ Environment variables
 
 import os
 import time
+import threading
+import uuid
 
 import numpy as np
 import pandas as pd
 import requests
+from alpaca.trading.stream import TradingStream
 
 _DATA_BASE = 'https://data.alpaca.markets'
 _PAPER_TRADE_BASE = 'https://paper-api.alpaca.markets'
@@ -34,6 +37,11 @@ _LIVE_TRADE_BASE = 'https://api.alpaca.markets'
 _OHLCV_COLUMNS = ['Open', 'High', 'Low', 'Close', 'Volume']
 _REQUEST_TIMEOUT = 30
 _MAX_RETRIES = 4
+_STREAM_THREAD = None
+_STREAM_LOCK = threading.Lock()
+_TRADE_UPDATES = []
+ALPACA_STREAM_UPDATES = os.environ.get('ALPACA_STREAM_UPDATES', '0').strip().lower() in ('1', 'true', 'yes', 'on')
+
 _SYMBOLS_PER_REQUEST = 100
 
 
@@ -249,6 +257,57 @@ def effective_shares_by_symbol():
     return effective
 
 
+def _client_order_id(symbol, side):
+    cleaned = ''.join(ch for ch in str(symbol).upper() if ch.isalnum() or ch in ('-', '_'))[:12] or 'UNK'
+    prefix = 'B' if str(side).lower() == 'buy' else 'S'
+    return f'lpm-{prefix}-{cleaned}-{int(time.time())}-{uuid.uuid4().hex[:8]}'
+
+
+def trade_updates():
+    """Return a copy of recent Alpaca trade update snapshots."""
+    return list(_TRADE_UPDATES)
+
+
+async def _trade_update_handler(update):
+    order = getattr(update, "order", None)
+    snapshot = {
+        "event": str(getattr(update, "event", "") or "").lower(),
+        "timestamp": getattr(update, "timestamp", None).isoformat() if getattr(update, "timestamp", None) else None,
+        "order_id": str(getattr(order, "id", "") or ""),
+        "client_order_id": getattr(order, "client_order_id", None),
+        "symbol": getattr(order, "symbol", None),
+        "status": str(getattr(order, "status", "") or "").lower(),
+        "filled_qty": str(getattr(order, "filled_qty", "") or ""),
+        "filled_avg_price": str(getattr(order, "filled_avg_price", "") or ""),
+        "qty": str(getattr(order, "qty", "") or ""),
+    }
+    _TRADE_UPDATES.append(snapshot)
+    del _TRADE_UPDATES[:-50]
+    print(f"  Alpaca update: {snapshot['symbol']} {snapshot['event']} status={snapshot['status'] or 'unknown'} qty={snapshot['filled_qty'] or snapshot['qty'] or '?'}")
+
+
+def _start_trade_updates_stream():
+    global _STREAM_THREAD
+    if not ALPACA_STREAM_UPDATES or not trading_enabled() or TradingStream is None:
+        return False
+    with _STREAM_LOCK:
+        if _STREAM_THREAD and _STREAM_THREAD.is_alive():
+            return True
+
+        def _runner():
+            try:
+                stream = TradingStream(api_key=_key(), secret_key=_secret(), paper=os.environ.get("ALPACA_PAPER", "1").strip() != "0")
+                stream.subscribe_trade_updates(_trade_update_handler)
+                print('  Alpaca trade_updates stream started')
+                stream.run()
+            except Exception as exc:
+                print(f'  Alpaca trade_updates stream error: {exc}')
+
+        _STREAM_THREAD = threading.Thread(target=_runner, name='alpaca-trade-updates', daemon=True)
+        _STREAM_THREAD.start()
+    return True
+
+
 def submit_market_order(symbol, qty, side):
     """Submit a market DAY order. Returns the order dict or None.
 
@@ -261,8 +320,10 @@ def submit_market_order(symbol, qty, side):
         return None
     if qty <= 0 or side not in ('buy', 'sell'):
         return None
+    _start_trade_updates_stream()
     body = {'symbol': str(symbol).strip().upper(), 'qty': str(qty),
-            'side': side, 'type': 'market', 'time_in_force': 'day'}
+            'side': side, 'type': 'market', 'time_in_force': 'day',
+            'client_order_id': _client_order_id(symbol, side)}
     return _request('POST', _trade_base() + '/v2/orders', body=body)
 
 
