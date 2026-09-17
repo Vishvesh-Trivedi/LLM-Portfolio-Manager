@@ -65,6 +65,8 @@ jobs:
           SCREENER_FORCE_SESSION: ${{ github.event_name == 'workflow_dispatch' || inputs.force_session == true }}
           WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
           CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
           PYTHONUNBUFFERED: '1'
         run: python -u LLM_Portfolio_Manager.py
       - name: Commit validated portfolio state

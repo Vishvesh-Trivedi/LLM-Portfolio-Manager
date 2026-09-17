@@ -230,6 +230,130 @@ def list_orders(status='all', limit=100):
     return data if isinstance(data, list) else []
 
 
+# ── Authoritative reads ────────────────────────────────────────────────────
+# The helpers above flatten a transport failure into an empty list, which is
+# indistinguishable from a genuinely empty account. That is safe for the
+# best-effort mirror but NOT for broker-authoritative reconciliation: rewriting
+# a ledger from a failed read would silently delete real positions. The fetch_*
+# helpers below return None on failure and only ever return a container when
+# Alpaca actually answered.
+
+def _number(value, default=None):
+    try:
+        if value is None or value == '':
+            return default
+        result = float(value)
+    except (TypeError, ValueError):
+        return default
+    return result if np.isfinite(result) else default
+
+
+def _whole(value, default=0):
+    number = _number(value)
+    return default if number is None else int(round(number))
+
+
+def fetch_account():
+    """Account dict, or None when Alpaca could not be read."""
+    data = _get(_trade_base() + '/v2/account')
+    return data if isinstance(data, dict) else None
+
+
+def fetch_positions():
+    """Open positions list, or None when Alpaca could not be read."""
+    data = _get(_trade_base() + '/v2/positions')
+    return data if isinstance(data, list) else None
+
+
+def fetch_orders(status='all', limit=500):
+    """Recent orders list, or None when Alpaca could not be read."""
+    data = _get(_trade_base() + '/v2/orders',
+                {'status': status, 'limit': limit, 'direction': 'desc'})
+    return data if isinstance(data, list) else None
+
+
+def normalize_position(position):
+    """Reduce an Alpaca position payload to the fields reconciliation needs."""
+    symbol = str(position.get('symbol', '') or '').strip().upper()
+    if not symbol:
+        return None
+    qty = _whole(position.get('qty'))
+    if qty == 0:
+        return None
+    return {
+        'symbol': symbol,
+        'qty': qty,
+        'avg_entry_price': _number(position.get('avg_entry_price')),
+        'market_value': _number(position.get('market_value')),
+        'current_price': _number(position.get('current_price')),
+    }
+
+
+def normalize_order(order):
+    """Reduce an Alpaca order payload to the fields reconciliation needs."""
+    symbol = str(order.get('symbol', '') or '').strip().upper()
+    if not symbol:
+        return None
+    return {
+        'order_id': str(order.get('id', '') or ''),
+        'client_order_id': str(order.get('client_order_id', '') or ''),
+        'symbol': symbol,
+        'side': str(order.get('side', '') or '').strip().lower(),
+        'status': str(order.get('status', '') or '').strip().lower(),
+        'qty': _whole(order.get('qty')),
+        'filled_qty': _whole(order.get('filled_qty')),
+        'filled_avg_price': _number(order.get('filled_avg_price')),
+        'submitted_at': order.get('submitted_at'),
+        'filled_at': order.get('filled_at'),
+        'updated_at': order.get('updated_at'),
+        'canceled_at': order.get('canceled_at'),
+        'expired_at': order.get('expired_at'),
+    }
+
+
+def broker_snapshot(order_limit=500):
+    """Authoritative account/positions/orders read for reconciliation.
+
+    ``ok`` is True only when ALL THREE reads succeeded. A partial read is
+    reported as a failure rather than a half-truth, because a caller that
+    rewrites a ledger from it would corrupt real holdings. Never raises.
+    """
+    try:
+        if not trading_enabled():
+            return {'ok': False, 'error': 'trading_disabled', 'positions': {}, 'orders': []}
+        account = fetch_account()
+        positions = fetch_positions()
+        orders = fetch_orders(limit=order_limit)
+        missing = [name for name, value in (('account', account), ('positions', positions),
+                                            ('orders', orders)) if value is None]
+        if missing:
+            return {'ok': False, 'error': 'unreadable: ' + ', '.join(missing),
+                    'positions': {}, 'orders': []}
+        held = {}
+        for raw in positions:
+            normalized = normalize_position(raw) if isinstance(raw, dict) else None
+            if normalized is not None:
+                held[normalized['symbol']] = normalized
+        recent = []
+        for raw in orders:
+            normalized = normalize_order(raw) if isinstance(raw, dict) else None
+            if normalized is not None:
+                recent.append(normalized)
+        return {
+            'ok': True,
+            'cash': _number(account.get('cash')),
+            'equity': _number(account.get('equity')),
+            'buying_power': _number(account.get('buying_power')),
+            'account_blocked': bool(account.get('account_blocked')
+                                    or account.get('trading_blocked')),
+            'positions': held,
+            'orders': recent,
+        }
+    except Exception as exc:  # defensive: a read must never abort the run
+        return {'ok': False, 'error': 'snapshot error: ' + type(exc).__name__,
+                'positions': {}, 'orders': []}
+
+
 def open_order_shares_by_symbol():
     """Map of open-order share deltas by symbol (buy positive, sell negative)."""
     committed = {}
@@ -261,10 +385,42 @@ def effective_shares_by_symbol():
     return effective
 
 
-def _client_order_id(symbol, side):
+_CLIENT_ORDER_PREFIX = 'lpm'
+
+
+def _client_order_id(symbol, side, ref=''):
+    """Build a client_order_id that carries the ledger identity of the order.
+
+    ``ref`` is the ledger's pending-order id (buys) or the position trade_id
+    (sells). Embedding it makes broker→ledger matching exact instead of guessing
+    from symbol and side, which is ambiguous as soon as a symbol is re-entered.
+    Alpaca allows 128 characters; this stays well under that.
+    """
     cleaned = ''.join(ch for ch in str(symbol).upper() if ch.isalnum() or ch in ('-', '_'))[:12] or 'UNK'
     prefix = 'B' if str(side).lower() == 'buy' else 'S'
-    return f'lpm-{prefix}-{cleaned}-{int(time.time())}-{uuid.uuid4().hex[:8]}'
+    tag = ''.join(ch for ch in str(ref or '') if ch.isalnum())[:32]
+    if not tag:
+        tag = f'{int(time.time())}{uuid.uuid4().hex[:8]}'
+    return f'{_CLIENT_ORDER_PREFIX}-{prefix}-{cleaned}-{tag}'
+
+
+def parse_client_order_id(client_order_id):
+    """Return ``{'side', 'symbol', 'ref'}`` for our own ids, else None.
+
+    Orders placed by hand or by an older build simply do not parse; callers fall
+    back to symbol/side matching for those rather than assuming ownership.
+    """
+    parts = str(client_order_id or '').split('-')
+    if len(parts) != 4 or parts[0] != _CLIENT_ORDER_PREFIX or parts[1] not in ('B', 'S'):
+        return None
+    return {'side': 'buy' if parts[1] == 'B' else 'sell',
+            'symbol': parts[2].upper(), 'ref': parts[3]}
+
+
+def ledger_ref(order):
+    """Ledger id embedded in a (normalized or raw) order, or '' when absent."""
+    parsed = parse_client_order_id(order.get('client_order_id'))
+    return parsed['ref'] if parsed else ''
 
 
 def _order_key(snapshot):
@@ -367,11 +523,13 @@ def _start_trade_updates_stream():
     return True
 
 
-def submit_market_order(symbol, qty, side):
+def submit_market_order(symbol, qty, side, ref=''):
     """Submit a market DAY order. Returns the order dict or None.
 
     Submitted after the close, Alpaca accepts the order and queues it for the
-    next session open — matching the screener's next-open fill model.
+    next session open — matching the screener's next-open fill model. ``ref``
+    carries the ledger id so the next run can match this order back to the
+    record that requested it.
     """
     try:
         qty = int(qty)
@@ -382,7 +540,7 @@ def submit_market_order(symbol, qty, side):
     _start_trade_updates_stream()
     body = {'symbol': str(symbol).strip().upper(), 'qty': str(qty),
             'side': side, 'type': 'market', 'time_in_force': 'day',
-            'client_order_id': _client_order_id(symbol, side)}
+            'client_order_id': _client_order_id(symbol, side, ref)}
     order = _request('POST', _trade_base() + '/v2/orders', body=body)
     if isinstance(order, dict):
         try:

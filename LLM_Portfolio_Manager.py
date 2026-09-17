@@ -267,6 +267,8 @@ import json
 import os
 import sys
 import screener_portfolio as _portfolio
+import screener_broker_sync as _broker_sync
+import screener_discord as _discord
 from screener_contracts import (
     parse_object, validate_catalysts, validate_news, validate_decision,
     validate_config, RunHealth, self_tuning_enabled,
@@ -277,7 +279,7 @@ import threading
 import requests
 import xml.etree.ElementTree as ET
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import warnings
 import logging
@@ -286,6 +288,7 @@ _HEALTH = RunHealth()
 _ORDER_REASON = ['']
 _RUN_MODE = 'not_started'
 _RUN_REPORT = None
+_EXECUTION_EVENTS = []
 
 
 def _degrade(reason):
@@ -4173,8 +4176,8 @@ def _recent_picks_summary(days=10):
 
 
 def _wa_no_pick(ctx, portfolio, reason='No qualifying candidates today'):
-    """Send a brief WhatsApp notification when the screener finds no pick."""
-    if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
+    """Notify every configured channel when the screener finds no pick."""
+    if not _alerts_configured():
         return
     ctx = ctx or {}
     pf  = portfolio or {}
@@ -4197,7 +4200,7 @@ def _wa_no_pick(ctx, portfolio, reason='No qualifying candidates today'):
         f'Portfolio: ${total_val:,.0f} ({sign}{total_pct}%) | '
         f'Cash ${cash:,.0f} | {n_open} open position(s)'
     )
-    _wa_send(msg, label='no-pick')
+    _notify(msg, label='no-pick')
 
 
 def _wa_send(text, label=''):
@@ -4230,6 +4233,301 @@ def _wa_send(text, label=''):
         return False
 
 
+# ── Multi-channel delivery ─────────────────────────────────
+# Discord is the primary channel; WhatsApp stays wired and simply no-ops when
+# its secrets are absent. Delivery is best-effort on BOTH sides: a failure in
+# one channel never suppresses the other and never reaches the trading path.
+
+# Execution alerts are modelled on a broker's push notification, not on a diff
+# report: the headline alone carries action, quantity, symbol and price, and the
+# supporting numbers sit in a three-across stat row underneath. Colours follow
+# the usual trading conventions (green filled, red rejected/loss, amber partial).
+_GREEN, _RED, _AMBER, _GREY, _BLUE = 0x00C805, 0xFF3B30, 0xFFB300, 0x8E8E93, 0x0A84FF
+
+_EVENT_COLORS = {
+    _broker_sync.INFO: _GREEN,
+    _broker_sync.WARN: _AMBER,
+    _broker_sync.ERROR: _RED,
+}
+# Every order outcome is pushed, executed or not — an order still sitting
+# unfilled at Alpaca is exactly the case a trader needs to hear about, and it is
+# rare in practice because a market DAY order resolves at the next open. Only
+# 'cash_drift' and 'cash_unreadable' stay out: they are balance bookkeeping
+# rather than an order outcome, and they ride the daily digest instead.
+_ALERTING_EVENTS = frozenset({
+    'fill', 'partial_fill', 'working', 'rejected', 'canceled', 'order_missing',
+    'fill_unpriced', 'exit_filled', 'position_vanished', 'qty_drift',
+    'price_drift', 'adopted', 'account_blocked', 'snapshot_failed',
+})
+_MAX_EVENT_EMBEDS = 8
+
+
+def _pct(value, places=1):
+    return 'n/a' if value is None else f'{float(value):+.{places}f}%'
+
+
+def _qty(value):
+    return 'n/a' if value is None else f'{int(value):,}'
+
+
+def _dollars(value):
+    """Whole dollars for narrative text; cents are noise in a sentence."""
+    return 'n/a' if value is None else f'${abs(float(value)):,.0f}'
+
+
+# Raw enum values are not self-explanatory to a person reading a phone alert.
+_EXIT_REASONS = {
+    'profit_target': 'it hit the target price',
+    'stop_loss': 'it hit the stop price',
+    'hold_period': 'the holding period ended',
+    'rsi_overbought': 'it looked overbought',
+    'macd_bearish_cross': 'momentum turned negative',
+    'broker_confirmed_exit': 'the sale completed',
+}
+_REJECT_REASONS = {
+    'rejected': 'Alpaca refused it',
+    'canceled': 'it was canceled',
+    'cancelled': 'it was canceled',
+    'expired': 'it expired before filling',
+    'done_for_day': 'the trading day ended first',
+    'suspended': 'trading was suspended',
+    'stopped': 'it was stopped',
+    'replaced': 'it was replaced',
+}
+
+
+def _versus_plan(event):
+    """Plain sentence comparing what was paid to what the screener budgeted."""
+    expected, price = event.get('expected_price'), event.get('price')
+    shares, change = event.get('shares'), event.get('slippage_pct')
+    if not expected or not price or change is None or abs(change) < 0.1:
+        return ''
+    total = abs(price - expected) * (shares or 0)
+    word = 'more' if change > 0 else 'less'
+    return (f'That is {_dollars(total)} {word} than planned '
+            f'({_dollars(expected)} a share was expected, {_money(price)} was paid).')
+
+
+def _execution_card(event):
+    """Render one notification in plain language: (title, body, colour, stats).
+
+    Anyone reading this on a phone should understand it without knowing the
+    codebase or trading jargon, so the body is a sentence and the stat row only
+    carries numbers that explain themselves.
+    """
+    symbol = event.get('symbol') or '—'
+    kind = event['kind']
+    price, shares = event.get('price'), event.get('shares')
+
+    if kind in ('fill', 'partial_fill'):
+        partial = kind == 'partial_fill'
+        requested = event.get('requested_shares')
+        title = (f'🟡  PART OF YOUR BUY WENT THROUGH · {_qty(shares)} of '
+                 f'{_qty(requested)} {symbol} @ {_money(price)}' if partial else
+                 f'🟢  BOUGHT {_qty(shares)} {symbol} @ {_money(price)}')
+        body = (f'Only {_qty(shares)} of the {_qty(requested)} shares were bought; '
+                f'the other {_qty(event.get("unfilled"))} were not. '
+                if partial else '')
+        body += _versus_plan(event)
+        stats = [('Total cost', _money(event.get('notional')), True),
+                 ('Sell if it falls to', _money(event.get('stop')), True),
+                 ('Sell if it rises to', _money(event.get('target')), True)]
+        return title, body.strip() or 'Bought and recorded.', (_AMBER if partial else _GREEN), stats
+
+    if kind == 'exit_filled':
+        pnl, pnl_pct = event.get('pnl'), event.get('pnl_pct')
+        won = pnl is not None and pnl >= 0
+        title = f'🔴  SOLD {_qty(shares)} {symbol} @ {_money(price)}'
+        if pnl is None:
+            body = 'The position was sold and recorded.'
+        else:
+            body = (f'You made {_dollars(pnl)} ({_pct(pnl_pct)}) on this trade.'
+                    if won else
+                    f'You lost {_dollars(pnl)} ({_pct(pnl_pct)}) on this trade.')
+        held = event.get('held_sessions')
+        if held not in (None, '?'):
+            body += f' Held for {held} trading day{"" if held == 1 else "s"}.'
+        reason = _EXIT_REASONS.get(str(event.get('exit_reason') or ''))
+        if reason:
+            body += f' Sold because {reason}.'
+        stats = [('Sold for', _money(event.get('notional')), True),
+                 ('Originally cost', _money(event.get('cost_basis')), True)]
+        return title, body, (_GREEN if won else _RED), stats
+
+    if kind == 'working':
+        requested = _qty(event.get('requested_shares'))
+        return (f'⏳  WAITING TO BUY · {requested} {symbol}',
+                f'Your order to buy {requested} {symbol} is sitting at Alpaca and has '
+                f'not gone through yet. Nothing has been bought and no money has been '
+                f'spent. It should go through when the market next opens.',
+                _BLUE, [])
+
+    if kind in ('rejected', 'canceled', 'order_missing'):
+        requested = _qty(event.get('requested_shares'))
+        if kind == 'order_missing':
+            title = f'⚠️  YOUR BUY ORDER NEVER REACHED ALPACA · {symbol}'
+            body = (f'The order to buy {requested} {symbol} was not found at Alpaca, '
+                    f'so nothing was bought and no money was spent.')
+            color = _AMBER
+        else:
+            why = _REJECT_REASONS.get(str(event.get('status') or ''), 'it did not go through')
+            title = (f'⛔  YOUR BUY ORDER WAS REJECTED · {symbol}' if kind == 'rejected'
+                     else f'⚪  YOUR BUY ORDER WAS CANCELLED · {symbol}')
+            body = (f'The order to buy {requested} {symbol} did not complete because '
+                    f'{why}. Nothing was bought and no money was spent.')
+            color = _RED if kind == 'rejected' else _GREY
+        return title, body, color, []
+
+    if kind == 'fill_unpriced':
+        return (f'⛔  CHECK THIS ONE · {symbol}',
+                f'Alpaca says the {symbol} order was bought but did not say at what '
+                f'price, so nothing was recorded. Open Alpaca and check this position.',
+                _RED, [])
+
+    if kind == 'position_vanished':
+        return (f'⛔  CHECK THIS ONE · {symbol}',
+                f'Your records show {_qty(event.get("ledger_shares"))} {symbol}, but '
+                f'Alpaca shows none and there is no sale that explains it. '
+                f'Open Alpaca and check this position.',
+                _RED, [])
+
+    if kind == 'qty_drift':
+        return (f'🔧  SHARE COUNT FIXED · {symbol}',
+                f'Your records said {_qty(event.get("ledger_shares"))} shares but '
+                f'Alpaca holds {_qty(event.get("broker_shares"))}. '
+                f'The records now match Alpaca.',
+                _AMBER, [])
+
+    if kind == 'price_drift':
+        return (f'🔧  BUY PRICE FIXED · {symbol}',
+                f'Your records said you paid {_money(event.get("ledger_price"))} a share '
+                f'but Alpaca says {_money(event.get("broker_price"))}. '
+                f'The records now match Alpaca.',
+                _AMBER, [])
+
+    if kind == 'adopted':
+        return (f'📥  FOUND A POSITION YOU ALREADY OWNED · {symbol}',
+                f'Alpaca holds {_qty(event.get("broker_shares"))} {symbol} at '
+                f'{_money(event.get("broker_price"))} a share that these records did not '
+                f'know about, so it has been added. It has no sell price set yet.',
+                _BLUE, [])
+
+    if kind == 'account_blocked':
+        return ('⛔  YOUR ALPACA ACCOUNT IS BLOCKED',
+                'Alpaca has restricted this account, so no trades can go through. '
+                'Check your Alpaca account.', _RED, [])
+
+    if kind == 'snapshot_failed':
+        return ('⛔  COULD NOT REACH ALPACA',
+                'Your account could not be read this run, so nothing was changed and '
+                'no new trade was placed. This usually fixes itself next run.',
+                _RED, [])
+
+    return (kind.replace('_', ' ').upper() + (f' · {symbol}' if symbol != '—' else ''),
+            event.get('summary', ''), _EVENT_COLORS.get(event.get('severity'), _GREY), [])
+
+
+def _alerts_configured():
+    """True when at least one delivery channel is usable."""
+    return _discord.enabled() or bool(WHATSAPP_PHONE and CALLMEBOT_API_KEY)
+
+
+def _notify(text, label='', discord_text=None):
+    """Fan one message out to every configured channel. Never raises.
+
+    Discord marks its own test messages inside screener_discord; WhatsApp has no
+    such choke point, so the banner is applied here for that channel.
+    """
+    delivered = False
+    try:
+        delivered = bool(_discord.send(
+            text if discord_text is None else discord_text, label)) or delivered
+    except Exception as exc:
+        print(f'  Discord {label} error: {type(exc).__name__}')
+    try:
+        wa_text = ('TEST MESSAGE - not a real trade\n' + text
+                   if _discord.test_mode() else text)
+        delivered = bool(_wa_send(wa_text, label)) or delivered
+    except Exception as exc:
+        print(f'  WhatsApp {label} error: {type(exc).__name__}')
+    return delivered
+
+
+def _money(value):
+    return 'n/a' if value is None else f'${float(value):,.2f}'
+
+
+def send_execution_alerts(events):
+    """Post what Alpaca actually did with our orders: fills, rejects, drift.
+
+    This is the payoff of broker-authoritative reconciliation — previously the
+    run could book a position the broker never opened and nobody was told.
+    """
+    try:
+        events = [e for e in (events or []) if e.get('kind') in _ALERTING_EVENTS]
+        if not events or not _discord.enabled():
+            return False
+        order = {_broker_sync.ERROR: 0, _broker_sync.WARN: 1, _broker_sync.INFO: 2}
+        events = sorted(events, key=lambda e: order.get(e.get('severity'), 3))
+        overflow = len(events) - _MAX_EVENT_EMBEDS
+        account = 'Alpaca Paper' if os.environ.get('ALPACA_PAPER', '1').strip() != '0' else 'Alpaca Live'
+        stamp = datetime.now(timezone.utc).isoformat()
+        sent = 0
+        for event in events[:_MAX_EVENT_EMBEDS]:
+            title, body, color, stats = _execution_card(event)
+            reference = str(event.get('broker_order_id') or '')[:20]
+            footer = f'{account} · session {_session_date()}'
+            if reference:
+                footer += f' · order {reference}'
+            sent += bool(_discord.send_embed(
+                title=title, description=body, color=color, fields=stats,
+                author=f'{account} · Portfolio Manager', footer=footer,
+                timestamp=stamp, label='execution:' + event['kind']))
+        if overflow > 0:
+            _discord.send(f'…and {overflow} more execution event(s) — see the run report.',
+                          label='execution-overflow')
+        return sent > 0
+    except Exception as exc:
+        print(f'  Discord execution alert error: {type(exc).__name__}')
+        return False
+
+
+def send_health_alert(health):
+    """Post a degraded/failed run with the stages and blockers that caused it."""
+    try:
+        if not _discord.enabled() or not isinstance(health, dict):
+            return False
+        status = health.get('status', 'unknown')
+        ready = health.get('trade_ready')
+        if status == 'healthy' and ready:
+            return False
+        failed = [f'`{name}` — {stage.get("detail", "")}'
+                  for name, stage in (health.get('stages') or {}).items()
+                  if not stage.get('success')]
+        fields = []
+        if failed:
+            fields.append(('Failed stages', '\n'.join(failed[:8]), False))
+        if health.get('trade_blockers'):
+            fields.append(('Trade blockers',
+                           '\n'.join(f'• {b}' for b in health['trade_blockers'][:10]), False))
+        if health.get('degraded_reasons'):
+            fields.append(('Degraded',
+                           '\n'.join(f'• {r}' for r in health['degraded_reasons'][:10]), False))
+        fields.append(('Order status', str(health.get('order_status', 'NO ORDER')), True))
+        fields.append(('Mode', str(health.get('mode', '?')), True))
+        return bool(_discord.send_embed(
+            title=f'RUN {status.upper()} — {"NOT TRADE READY" if not ready else "trade ready"}',
+            description=('No new order was queued; the screener failed closed.'
+                         if not ready else
+                         'The run completed with degradations but core validation held.'),
+            color=_EVENT_COLORS[_broker_sync.ERROR if not ready else _broker_sync.WARN],
+            fields=fields, footer=f'session {health.get("date", "?")}',
+            label='run-health'))
+    except Exception as exc:
+        print(f'  Discord health alert error: {type(exc).__name__}')
+        return False
+
+
 def send_weekly_summary(reason='weekly'):
     """Send a portfolio snapshot on a non-trading day.
 
@@ -4237,7 +4535,7 @@ def send_weekly_summary(reason='weekly'):
     reason=<holiday> -> 'MARKET CLOSED' snapshot for a NYSE holiday.
     reason='Weekend' -> 'MARKET CLOSED' snapshot for US Sunday.
     """
-    if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
+    if not _alerts_configured():
         return
     pf = load_portfolio()
     pf = update_portfolio_prices(pf)
@@ -4357,14 +4655,14 @@ def send_weekly_summary(reason='weekly'):
     msg = '\n'.join(l for l in lines if l is not None)
     _label = 'weekly-summary' if reason == 'weekly' else 'closed-summary'
     print(f'  {_label} preview ({len(msg)} chars):\n{msg}\n')
-    _wa_send(msg, _label)
+    _notify(msg, _label)
 
 
 def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None,
                   position_opened=False, closed_today=None, no_pick_reason=''):
     """Send 2 compact WhatsApp messages per daily run via CallMeBot."""
-    if not WHATSAPP_PHONE or not CALLMEBOT_API_KEY:
-        print('  WhatsApp skipped — WHATSAPP_PHONE or CALLMEBOT_API_KEY not set')
+    if not _alerts_configured():
+        print('  Alerts skipped — no Discord or WhatsApp channel configured')
         return
 
     pick      = pick or {}
@@ -4392,169 +4690,164 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         return (txt[:n - 1] + '…') if len(txt) > n else txt
 
     # ── Open positions sorted by P/L (worst first so risk is visible up top) ──
+    # These are read on a phone, so they are short sentences rather than packed
+    # one-line records. No abbreviations and no trading jargon: a reader should
+    # never need to know what "R:R", "tgt", "conf" or "8sh" means.
     open_positions = sorted(positions, key=lambda p: p.get('unrealized_pnl_pct', 0))
 
-    def _health(p):
-        cur  = _num(p.get('current_price', p.get('entry_price')))
-        stop = _num(p.get('stop_price'))
-        tgt  = _num(p.get('target_price'))
-        if cur and stop and cur <= stop * 1.02:
-            return 'NEAR STOP'
-        if cur and tgt and cur >= tgt * 0.98:
-            return 'NEAR TARGET'
-        days = p.get('hold_days', 0)
-        if days >= _CFG_HOLD_DAYS:
-            return 'HOLD DONE'
-        return 'ok'
+    def _usd(value, cents=False):
+        if not isinstance(value, (int, float)):
+            return 'n/a'
+        return f'${abs(value):,.2f}' if cents else f'${abs(value):,.0f}'
 
-    def _pos_line(p):
-        upc     = p.get('unrealized_pnl_pct', 0)
-        upl     = p.get('unrealized_pnl', 0)
-        hdays   = p.get('hold_days', 0)
-        entry   = _num(p.get('entry_price')) or 0
+    def _health(p):
+        cur = _num(p.get('current_price', p.get('entry_price')))
+        stop = _num(p.get('stop_price'))
+        tgt = _num(p.get('target_price'))
+        if cur and stop and cur <= stop * 1.02:
+            return 'Close to its sell price - watch this one'
+        if cur and tgt and cur >= tgt * 0.98:
+            return 'Almost at its target price'
+        if p.get('hold_days', 0) >= _CFG_HOLD_DAYS:
+            return 'Holding period is up - due to be sold'
+        return ''
+
+    def _pos_lines(p):
+        pnl = p.get('unrealized_pnl', 0)
+        pct = p.get('unrealized_pnl_pct', 0)
+        entry = _num(p.get('entry_price')) or 0
         current = _num(p.get('current_price')) or entry
-        shares  = p.get('shares', 0)
-        stop_p  = _num(p.get('stop_price'))
-        tgt_p   = _num(p.get('target_price'))
-        stop_s  = f'{stop_p:.2f}' if stop_p is not None else 'N/A'
-        tgt_s   = f'{tgt_p:.2f}' if tgt_p is not None else 'N/A'
-        arrow   = '▲' if upc >= 0 else '▼'
-        return (
-            f'{arrow} {p["ticker"]} {int(shares)}sh {entry:.2f}->{current:.2f} '
-            f'| {upl:+,.0f} ({upc:+.1f}%) | stop {stop_s} tgt {tgt_s} '
-            f'| day {hdays}/{_CFG_HOLD_DAYS} | {_health(p)}'
-        )
+        lines = [f'{p["ticker"]} - {"up" if pnl >= 0 else "down"} {_usd(pnl)} ({pct:+.1f}%)',
+                 f'{int(p.get("shares", 0))} shares bought at {_usd(entry, True)}, '
+                 f'now {_usd(current, True)}']
+        note = _health(p)
+        if note:
+            lines.append(note)
+        return lines
 
     _reason_map = {
-        'stop_loss': 'stop hit', 'profit_target': 'target hit', 'rsi_overbought': 'RSI exit',
-        'macd_bearish_cross': 'momentum exit', 'hold_period': 'hold done', 'pre_earnings': 'pre-earnings exit',
+        'stop_loss': 'it fell to the sell price',
+        'profit_target': 'it reached the target price',
+        'rsi_overbought': 'it looked overbought',
+        'macd_bearish_cross': 'momentum turned negative',
+        'hold_period': 'the holding period ended',
+        'pre_earnings': 'earnings were coming up',
     }
+
     def _clean_reason(raw):
         key = str(raw or '').split(' ')[0].lower()
-        return _reason_map.get(key, key.replace('_', ' ') or 'closed')
+        return _reason_map.get(key, key.replace('_', ' ') or 'it was closed')
 
-    # ═══ MESSAGE 1: TODAY'S DECISION (the part that was missing) ═══
-    sig      = str(pick.get('signal', 'NO PICK')).upper()
-    tkr      = str(pick.get('ticker', '') or '').upper()
-    conf     = pick.get('confidence', 0)
-    ep_num   = _num(ep)
+    # ═══ MESSAGE 1: WHAT HAPPENED TODAY ═══
+    sig = str(pick.get('signal', 'NO PICK')).upper()
+    tkr = str(pick.get('ticker', '') or '').upper()
+    conf = pick.get('confidence', 0)
+    ep_num = _num(ep)
     stop_num = _num(stop_price)
-    tgt_num  = _num(target_price)
+    tgt_num = _num(target_price)
+    queued_shares = next((int(o.get('shares', 0) or 0) for o in pf.get('pending_orders', [])
+                          if str(o.get('ticker', '')).upper() == tkr), 0)
 
-    # Market read
-    vix   = ctx.get('vix_level')
-    vixr  = str(ctx.get('vix_regime', '') or '').split(' ')[0]
-    qqq   = ctx.get('qqq_trend', '?')
-    spy   = ctx.get('spy_return_today')
-    mkt_bits = [f'QQQ {qqq}']
-    if isinstance(vix, (int, float)):
-        mkt_bits.append(f'VIX {vix:.1f}{(" " + vixr) if vixr else ""}')
-    if isinstance(spy, (int, float)):
-        mkt_bits.append(f'SPY {spy:+.1f}%')
-
-    m1 = [f'DAILY SCREEN — {date_str}', f'Broker: {broker_label}', 'Market: ' + ' | '.join(mkt_bits), '']
-
-    def _rr():
-        if ep_num and stop_num and tgt_num and (ep_num - stop_num) > 0:
-            return f'1:{round((tgt_num - ep_num) / (ep_num - stop_num), 1)}'
-        return 'N/A'
+    m1 = [f'Daily screen - {date_str}', '']
 
     if sig == 'BUY' and tkr and tkr not in ('NONE', ''):
-        _opened_pos = next((p for p in positions if str(p.get('ticker', '')).upper() == tkr), {})
-        _shares = int(_opened_pos.get('shares', 0)) if position_opened else 0
-        if pick.get('order_status') == 'QUEUED':
-            m1.append(f'QUEUED {tkr} (conf {conf}) — next session Open; no cash debited.')
-            m1.append(_short(pick.get('order_reason'), 300))
-        elif pick.get('order_status') == 'REJECTED':
-            m1.append(f'REJECTED {tkr} (conf {conf}) — no order queued.')
+        _opened = next((p for p in positions if str(p.get('ticker', '')).upper() == tkr), {})
+        status = pick.get('order_status')
+        if status == 'QUEUED':
+            m1.append(f'Order placed: buy {queued_shares} shares of {tkr}.'
+                      if queued_shares else f'Order placed: buy {tkr}.')
+            m1.append('Waiting for the market to open. Nothing has been bought yet '
+                      'and no money has been spent.')
+            if ep_num:
+                total = ep_num * queued_shares if queued_shares else None
+                m1.append(f'Expected price about {_usd(ep_num, True)} a share'
+                          + (f', {_usd(total)} in total.' if total else '.'))
+        elif status == 'REJECTED':
+            m1.append(f'No order was placed for {tkr}.')
             m1.append(f'Reason: {_short(pick.get("order_reason"), 300)}')
         elif position_opened:
-            m1.append(f'✅ BOUGHT {tkr}  (conf {conf}, {pick.get("catalyst_type", "setup")})')
-            head = f'{_shares}sh'
-            if ep_num:
-                head += f' @ ${ep_num:.2f}'
-            head += f'  ({pick.get("position_size_pct", 0):.0f}% of cash)'
-            m1.append(head)
+            m1.append(f'Bought {int(_opened.get("shares", 0))} shares of {tkr}'
+                      + (f' at {_usd(ep_num, True)} a share.' if ep_num else '.'))
         else:
-            m1.append(f'NO ORDER for {tkr} (conf {conf})')
-            m1.append(f'Reason: {_short(pick.get("order_reason") or "No execution authorized", 300)}')
-        lvl = []
-        if stop_num:
-            _sp = f'-{abs((stop_num/ep_num-1)*100):.1f}%' if ep_num else ''
-            lvl.append(f'stop ${stop_num:.2f} {_sp}'.strip())
-        if tgt_num:
-            _tp = f'+{abs((tgt_num/ep_num-1)*100):.1f}%' if ep_num else ''
-            lvl.append(f'target ${tgt_num:.2f} {_tp}'.strip())
-        lvl.append(f'R:R {_rr()}')
-        m1.append(' | '.join(lvl))
+            m1.append(f'No order was placed for {tkr}.')
+            m1.append(f'Reason: {_short(pick.get("order_reason") or "no order was authorised", 300)}')
+        if stop_num or tgt_num:
+            sell = []
+            if stop_num:
+                sell.append(f'falls to {_usd(stop_num, True)}'
+                            + (f' ({(stop_num / ep_num - 1) * 100:+.1f}%)' if ep_num else ''))
+            if tgt_num:
+                sell.append(f'rises to {_usd(tgt_num, True)}'
+                            + (f' ({(tgt_num / ep_num - 1) * 100:+.1f}%)' if ep_num else ''))
+            m1.append('It will be sold if it ' + ' or '.join(sell) + '.')
         if pick.get('reasoning'):
-            m1.append(f'Why: {_short(pick.get("reasoning"))}')
+            m1 += ['', f'Why this one: {_short(pick.get("reasoning"))}']
         if pick.get('key_risk'):
-            m1.append(f'Risk: {_short(pick.get("key_risk"), 220)}')
+            m1.append(f'Main risk: {_short(pick.get("key_risk"), 220)}')
     elif sig == 'WATCH' and tkr and tkr not in ('NONE', ''):
-        m1.append(f'👀 WATCH ONLY: {tkr}  (conf {conf}, below buy bar)')
+        m1.append(f'Nothing bought today. {tkr} is worth watching but was not strong '
+                  f'enough to buy (scored {conf} out of 100, needs {BUY_THRESHOLD}).')
         if pick.get('reasoning'):
-            m1.append(f'Why: {_short(pick.get("reasoning"))}')
+            m1 += ['', f'Why it is interesting: {_short(pick.get("reasoning"))}']
     else:
-        m1.append(f'😐 NO BUY TODAY — nothing cleared confidence {BUY_THRESHOLD}.')
+        m1.append(f'Nothing bought today - no stock scored the {BUY_THRESHOLD} '
+                  f'out of 100 needed.')
         _np_reason = str(no_pick_reason or pick.get('reasoning', '')).strip()
         if _np_reason:
             m1.append(f'Reason: {_short(_np_reason, 300)}')
-        m1.append('Staying in cash is a position. Capital preserved.')
+        m1.append('Your money stays in cash.')
 
-    # Closed today
     if closed_today:
-        m1.append('')
         _net = sum(float(t.get('realized_pnl', 0) or 0) for t in closed_today)
-        m1.append(f'CLOSED TODAY ({len(closed_today)}, net ${_net:+,.0f}):')
+        m1 += ['', f'Sold today ({len(closed_today)}, '
+                   f'{"made" if _net >= 0 else "lost"} {_usd(_net)} overall):']
         for t in closed_today[:4]:
             _pnl = float(t.get('realized_pnl', 0) or 0)
             _pct = float(t.get('realized_pnl_pct', 0) or 0)
-            _ar  = '▲' if _pnl >= 0 else '▼'
-            m1.append(f'{_ar} {str(t.get("ticker","?")).upper()} {_pnl:+,.0f} ({_pct:+.1f}%) — {_clean_reason(t.get("reason"))}')
+            m1.append(f'{str(t.get("ticker", "?")).upper()} - '
+                      f'{"made" if _pnl >= 0 else "lost"} {_usd(_pnl)} ({_pct:+.1f}%), '
+                      f'sold because {_clean_reason(t.get("reason"))}.')
 
-    # Watchlist (top few, with a one-liner each)
     _wl_named = [w for w in wl if str(w.get('ticker', '')).upper() not in ('', 'NONE')]
     if _wl_named:
-        m1.append('')
-        m1.append('WATCHING NEXT:')
-        for w in sorted(_wl_named, key=lambda x: x.get('confidence', 0), reverse=True)[:3]:
-            _wt = str(w.get('ticker', '?')).upper()
-            _wc = w.get('confidence', 0)
-            _wr = _short(w.get('reasoning', ''), 130)
-            m1.append(f'• {_wt} ({_wc}) {("- " + _wr) if _wr else ""}'.rstrip())
+        top = sorted(_wl_named, key=lambda x: x.get('confidence', 0), reverse=True)[:3]
+        m1 += ['', 'Watching next: '
+               + ', '.join(str(w.get('ticker', '?')).upper() for w in top) + '.']
+
+    vix = ctx.get('vix_level')
+    vixr = str(ctx.get('vix_regime', '') or '').split(' ')[0].upper()
+    spy = ctx.get('spy_return_today')
+    calm = {'LOW': 'calm', 'MODERATE': 'normal', 'HIGH': 'jumpy', 'EXTREME': 'very jumpy'}
+    mkt = ['the Nasdaq is trending '
+           + ('up' if str(ctx.get('qqq_trend', '')).upper() == 'BULLISH' else 'down')]
+    if isinstance(vix, (int, float)):
+        mkt.append(f'markets are {calm.get(vixr, "steady")}')
+    if isinstance(spy, (int, float)):
+        mkt.append(f'the S&P 500 finished {spy:+.1f}% today')
+    m1 += ['', 'Market: ' + ', '.join(mkt) + '.']
 
     msg1 = '\n'.join(m1)
 
-    # ═══ MESSAGE 2: YOUR PORTFOLIO + HOLDINGS ═══
-    green_count = sum(1 for p in open_positions if p.get('unrealized_pnl', 0) > 0)
-    red_count   = sum(1 for p in open_positions if p.get('unrealized_pnl', 0) < 0)
-
-    m2 = [
-        f'PORTFOLIO — {date_str}',
-        (f'Broker: {broker_label} | Paper baseline ${ALPACA_PAPER_CAPITAL:,.0f}'
-         if _alpaca.trading_enabled() else f'Broker: {broker_label}'),
-        f'Value USD {total_val:,.0f}  ({portfolio_state} ${abs(total_pnl):,.0f} / {total_pct:+.1f}%)',
-        f'Cash USD {cash:,.0f}  |  {len(open_positions)} open ({green_count} green / {red_count} red)',
-        '',
-    ]
-
+    # ═══ MESSAGE 2: WHAT YOU HOLD ═══
+    m2 = [f'Your portfolio - {date_str}', '',
+          f'Total value {_usd(total_val)} '
+          f'({"up" if total_pnl >= 0 else "down"} {_usd(total_pnl)}, {total_pct:+.1f}%)',
+          f'Cash available {_usd(cash)}']
     if open_positions:
-        m2.append('HOLDINGS (worst first):')
+        m2.append(f'{len(open_positions)} holding'
+                  f'{"" if len(open_positions) == 1 else "s"}, worst first:')
         for p in open_positions[:6]:
-            m2.append(_pos_line(p))
+            m2 += [''] + _pos_lines(p)
         remaining = len(open_positions) - 6
         if remaining > 0:
-            m2.append(f'... and {remaining} more.')
-        # Flag any at-risk positions explicitly at the bottom
-        _risk = [p['ticker'] for p in open_positions if _health(p) == 'NEAR STOP']
-        if _risk:
-            m2.append(f'⚠ Watch closely (near stop): {", ".join(_risk)}')
+            m2 += ['', f'...and {remaining} more.']
     else:
-        m2.append('No open holdings — 100% cash.')
+        m2.append('You hold no shares right now - everything is in cash.')
     pending = pf.get('pending_orders', [])
     if pending:
-        m2.append('PENDING (not filled; no cash debited): ' + ', '.join(p['ticker'] for p in pending))
+        m2 += ['', 'Waiting to be bought (no money spent yet): '
+               + ', '.join(f'{int(o.get("shares", 0) or 0)} {o["ticker"]}'
+                           for o in pending) + '.']
 
     msg2 = '\n'.join(m2)
 
@@ -4566,13 +4859,14 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         nl = hard.rfind('\n')
         return (hard[:nl] if nl > int(WA_MAX_CHARS * 0.6) else hard).rstrip() + '\n…'
 
+    msg1_full, msg2_full = msg1, msg2
     msg1, msg2 = _cap(msg1), _cap(msg2)
 
     print(f'  WhatsApp Message 1 ({len(msg1)} chars):\n{msg1}\n')
     print(f'  WhatsApp Message 2 ({len(msg2)} chars):\n{msg2}\n')
 
-    _wa_send(msg1, 'daily-decision')
-    _wa_send(msg2, 'daily-portfolio')
+    _notify(msg1, 'daily-decision', discord_text=msg1_full)
+    _notify(msg2, 'daily-portfolio', discord_text=msg2_full)
 
 
 # ============================================================
@@ -5094,13 +5388,27 @@ def close_position(pf, ticker, exit_price, reason='hold_period', nzdusd_rate=Non
     )
 
 
+def _broker_authoritative():
+    """True when Alpaca is the source of truth for fills, holdings and cash.
+
+    Read by screener_portfolio to stop simulating next-open fills and to turn
+    mechanical exits into sell requests that only settle once Alpaca confirms.
+    """
+    return _alpaca.trading_enabled()
+
+
 def _ledger_share_map(portfolio):
     """Desired whole-share holdings from the ledger: filled positions plus
     next-session pending orders, as {SYMBOL: int}. Pending orders are included
     so a fresh BUY is placed at the broker the same evening it is queued (Alpaca
-    accepts it after close and fills at the next open, matching the ledger)."""
+    accepts it after close and fills at the next open, matching the ledger).
+
+    A position flagged ``exit_requested`` is deliberately omitted so the
+    desired-state diff produces the sell that realizes the exit."""
     shares = {}
     for record in list(portfolio.get('positions', [])) + list(portfolio.get('pending_orders', [])):
+        if record.get('exit_requested'):
+            continue
         try:
             qty = int(record.get('shares', 0))
         except (TypeError, ValueError):
@@ -5109,6 +5417,100 @@ def _ledger_share_map(portfolio):
             symbol = str(record['ticker']).strip().upper()
             shares[symbol] = shares.get(symbol, 0) + qty
     return shares
+
+
+def _ledger_refs_by_symbol(portfolio):
+    """Map SYMBOL -> ledger id to stamp on outgoing orders.
+
+    Buys carry the pending order's id and sells the position's trade_id, so the
+    next run matches Alpaca's execution back to the exact record that asked for
+    it instead of guessing from symbol and side.
+    """
+    refs = {}
+    for order in portfolio.get('pending_orders', []) or []:
+        symbol = str(order.get('ticker', '')).strip().upper()
+        if symbol and order.get('id'):
+            refs[('buy', symbol)] = str(order['id'])
+    for position in portfolio.get('positions', []) or []:
+        symbol = str(position.get('ticker', '')).strip().upper()
+        if symbol and position.get('trade_id'):
+            refs[('sell', symbol)] = str(position['trade_id'])
+    return refs
+
+
+def _resolve_sector(symbol):
+    """Best-effort sector for a broker position the screener did not originate.
+
+    plan_order calls _sector() on every open position, so an adopted holding
+    with an unknown sector would raise there and block every future order. When
+    the sector cannot be resolved the adoption is skipped and the run degrades,
+    which is the honest outcome: unknown sector means unknown exposure.
+    """
+    try:
+        info = _fetch_fundamentals_single(symbol) or {}
+        sector = str(info.get('sector') or '').strip()
+        if sector and sector.casefold() not in ('unknown', 'n/a', 'none'):
+            return sector
+    except Exception:
+        pass
+    return ''
+
+
+def sync_with_broker(portfolio):
+    """Rewrite the ledger from Alpaca's actual execution state. Broker wins.
+
+    No-op unless live-broker mode is on. The ledger is only ever rewritten from
+    a snapshot Alpaca actually answered: a transport failure degrades the run
+    (blocking new orders) and leaves every existing record untouched.
+
+    Returns the list of execution events for downstream alerting.
+    """
+    if not _alpaca.trading_enabled():
+        return []
+    try:
+        snapshot = _alpaca.broker_snapshot()
+        plan = _broker_sync.plan_broker_sync(portfolio, snapshot, _session_date())
+    except Exception as exc:
+        _HEALTH.stage('broker_sync', False, 'planning failed: ' + type(exc).__name__)
+        _degrade('broker_sync_unavailable')
+        return []
+
+    if not plan['ok']:
+        _HEALTH.stage('broker_sync', False, plan['summary'])
+        _degrade('broker_state_unreadable')
+        print('  Broker sync: ' + plan['summary'] + ' — ledger untouched')
+        return plan['events']
+
+    # Resolve sectors before adopting, or drop the adoption entirely.
+    actions = []
+    for action in plan['actions']:
+        if action['op'] == 'adopt_position' and not action.get('sector'):
+            sector = _resolve_sector(action['symbol'])
+            if not sector:
+                _degrade('broker_adopt_unknown_sector:' + action['symbol'])
+                print(f'  Broker sync: cannot resolve sector for {action["symbol"]}; not adopted')
+                continue
+            action = dict(action, sector=sector)
+        actions.append(action)
+    plan = dict(plan, actions=actions)
+
+    outcome = _portfolio.apply_broker_state(sys.modules[__name__], portfolio, plan)
+    for note in outcome['notes']:
+        print('  Broker sync: ' + note)
+    for failure in outcome['failed']:
+        print(f'  Broker sync FAILED {failure["action"].get("op")} '
+              f'{failure["action"].get("symbol", "")}: {failure["error"]}')
+
+    # A disagreement the broker could not substantiate must stop new orders
+    # rather than let the screener trade on a ledger it knows is wrong.
+    for reason in plan['blocked']:
+        _degrade('broker_discrepancy:' + reason[:80])
+
+    healthy = not outcome['failed'] and not plan['blocked']
+    _HEALTH.stage('broker_sync', healthy,
+                  f'{len(outcome["applied"])} applied, {len(outcome["failed"])} failed; '
+                  + plan['summary'])
+    return plan['events']
 
 
 def reconcile_broker(portfolio):
@@ -5134,12 +5536,18 @@ def reconcile_broker(portfolio):
                           f'In sync: {len(ledger_shares)} position(s) match Alpaca')
             print(f'  Broker: in sync ({len(ledger_shares)} position(s))')
             return
+        refs = _ledger_refs_by_symbol(portfolio)
         submitted, failed = 0, 0
         for side, symbol, qty in actions:
+            ref = refs.get((side, symbol), '')
             if side == 'sell' and symbol not in ledger_shares:
-                ok = _alpaca.close_position(symbol) is not None
+                # A full liquidation carries no client_order_id, so the ledger
+                # id is stamped via an explicit sell order when we know the
+                # position it belongs to; otherwise fall back to close-all.
+                ok = (_alpaca.submit_market_order(symbol, qty, side, ref=ref) is not None
+                      if ref else _alpaca.close_position(symbol) is not None)
             else:
-                ok = _alpaca.submit_market_order(symbol, qty, side) is not None
+                ok = _alpaca.submit_market_order(symbol, qty, side, ref=ref) is not None
             if ok:
                 submitted += 1
                 print(f'  Broker {side.upper()} {qty} {symbol}: submitted')
@@ -5495,6 +5903,9 @@ def write_run_health(result=None):
         lines += ['- Trade blocker: ' + escape(reason) for reason in health['trade_blockers']]
         with open(summary, 'a', encoding='utf-8') as stream:
             stream.write('\n' + '\n'.join(lines) + '\n')
+    # Surface fail-closed outcomes that previously only reached run_health.json
+    # and the Actions summary, where nobody sees them until something is wrong.
+    send_health_alert(health)
     return health
 
 
@@ -5543,6 +5954,11 @@ def run_screener():
 
     # Monitoring is canonical and idempotent per trade, even if new-pick work fails.
     _closed_before = len(portfolio.get('closed_trades', []))
+    # Reconcile against the broker BEFORE replaying, so the ledger reflects what
+    # Alpaca actually executed rather than a simulated fill at the opening print.
+    global _EXECUTION_EVENTS
+    _EXECUTION_EVENTS = sync_with_broker(portfolio)
+    send_execution_alerts(_EXECUTION_EVENTS)
     portfolio = update_portfolio_prices(portfolio)
     _closed_today = portfolio['closed_trades'][_closed_before:]
     save_portfolio(portfolio)

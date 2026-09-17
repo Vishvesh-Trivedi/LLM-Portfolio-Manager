@@ -30,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
       - run: python -m pip install -r requirements.txt
-      - run: python -m compileall -q LLM_Portfolio_Manager.py screener_safety.py screener_portfolio.py screener_contracts.py qa_validate.py
+      - run: python -m compileall -q LLM_Portfolio_Manager.py screener_safety.py screener_portfolio.py screener_contracts.py screener_alpaca.py screener_broker_sync.py screener_discord.py qa_validate.py
       - run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Validate committed legacy ledger without mutation
         run: python qa_validate.py --check-state StockScreener/portfolio.json

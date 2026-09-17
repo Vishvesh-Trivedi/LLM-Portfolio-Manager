@@ -1179,10 +1179,14 @@ class IntegrationTests(unittest.TestCase):
                 self.assertNotIn('BOUGHT AAA', html)
                 self.real_whatsapp(result['top_pick'], self.ctx, 110., [], 106., 118., portfolio=pf)
             messages = '\n'.join(call.args[0] for call in send.call_args_list)
-            self.assertIn('QUEUED AAA', messages)
-            self.assertIn('REJECTED AAA', messages)
-            self.assertIn('next session Open; no cash debited', messages)
+            # A queued order must read as "not yet bought", and a rejected one as
+            # "no order placed" — neither may ever look like a completed purchase.
+            self.assertIn('Order placed: buy', messages)
+            self.assertIn('Nothing has been bought yet and no money has been spent',
+                          messages)
+            self.assertIn('No order was placed for AAA', messages)
             self.assertIn('<denied> & limit', messages)
+            self.assertNotIn('Bought', messages)
             self.assertNotIn('BOUGHT', messages)
             self.assertNotIn('likely no cash', messages)
 
