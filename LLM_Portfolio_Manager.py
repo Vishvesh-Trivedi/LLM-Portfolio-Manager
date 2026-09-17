@@ -236,6 +236,7 @@ PICKS_CSV        = f'{DRIVE_FOLDER}/stock_picks.csv'
 WATCH_CSV        = f'{DRIVE_FOLDER}/watch_list.csv'
 PORTFOLIO_JSON   = f'{DRIVE_FOLDER}/portfolio.json'
 STARTING_CAPITAL = 10_000.00
+ALPACA_PAPER_CAPITAL = 100_000.00
 
 # ── SHARESIES $15/MONTH PLAN (NZ broker — buys NYSE/NASDAQ in USD) ──────────
 # Plan:  $5,000 NZD free buys + $5,000 NZD free sells per month
@@ -4966,7 +4967,20 @@ Keep unchanged values as-is; do not add unknown keys or invent missing data.
 # ============================================================
 
 def load_portfolio():
-    return _portfolio.load_portfolio(sys.modules[__name__])
+    pf = _portfolio.load_portfolio(sys.modules[__name__])
+    if _alpaca.trading_enabled():
+        pf['starting_capital'] = ALPACA_PAPER_CAPITAL
+        account = _alpaca.get_account()
+        if account:
+            try:
+                pf['cash'] = float(account.get('cash', account.get('buying_power', pf.get('cash', ALPACA_PAPER_CAPITAL))))
+            except (TypeError, ValueError):
+                pf['cash'] = ALPACA_PAPER_CAPITAL
+            pf['broker_equity'] = float(account.get('equity', ALPACA_PAPER_CAPITAL) or ALPACA_PAPER_CAPITAL)
+        elif not pf.get('positions'):
+            pf['cash'] = ALPACA_PAPER_CAPITAL
+        save_portfolio(pf)
+    return pf
 
 
 def save_portfolio(pf):
@@ -5094,9 +5108,12 @@ def reconcile_closed_picks(pf):
 
 def portfolio_summary_str(pf):
     """One-block text summary for the LLM — shown before Round 1."""
+    broker_mode = _alpaca.trading_enabled()
+    start_cap = float(pf.get('starting_capital', ALPACA_PAPER_CAPITAL if broker_mode else STARTING_CAPITAL)
+                      or (ALPACA_PAPER_CAPITAL if broker_mode else STARTING_CAPITAL))
     total_value = round(pf['cash'] + sum(p.get('current_value', p['cost_basis']) for p in pf['positions']), 2)
-    total_pnl   = round(total_value - pf['starting_capital'], 2)
-    total_pct   = round(total_pnl / pf['starting_capital'] * 100, 2)
+    total_pnl   = round(total_value - start_cap, 2)
+    total_pct   = round(total_pnl / start_cap * 100, 2)
 
     # Drawdown severity — inform the LLM; it decides how to respond
     if total_pct <= _CFG_DD_CRITICAL_PCT:
@@ -5140,10 +5157,13 @@ def portfolio_summary_str(pf):
     week_str = f'${week_pnl:+,.2f} from {len(week_trades)} trades this week' if week_trades else 'no closed trades this week'
 
     lines = [
-        f'PORTFOLIO: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs ${pf["starting_capital"]:,.0f} starting)',
-        f'Cash: ${pf["cash"]:,.2f}  |  Positions: {len(pf["positions"])}/{_CFG_MAX_POSITIONS}  |  Deployed: {deploy_pct:.0f}%  |  Idle: {idle_pct:.0f}%',
+        (f'ALPACA PAPER ACCOUNT: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs '
+         f'${start_cap:,.0f} starting)' if broker_mode
+         else f'PORTFOLIO: ${total_value:,.2f} ({total_pnl:+,.2f} / {total_pct:+.1f}% vs ${start_cap:,.0f} starting)'),
+        f'Cash: ${pf["cash"]:,.2f}  |  Positions: {len(pf["positions"] )}/{_CFG_MAX_POSITIONS}  |  Deployed: {deploy_pct:.0f}%  |  Idle: {idle_pct:.0f}%',
         f'Sector exposure: {sector_str}',
-        f'Realized P&L: ${pf.get("total_realized_pnl", 0):+,.2f} all-time  |  {week_str}',
+        (f'Broker P&L: ${total_pnl:+,.2f} all-time  |  {week_str}' if broker_mode
+         else f'Realized P&L: ${pf.get("total_realized_pnl", 0):+,.2f} all-time  |  {week_str}'),
     ]
 
     # ── Open positions — full detail ──────────────────────────────────────────
