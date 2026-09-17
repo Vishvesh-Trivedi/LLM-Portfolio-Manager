@@ -3945,7 +3945,7 @@ tr:last-child td{{border-bottom:none}}
 <body>
 <div class="wrap">
   <h1>LLM Portfolio Manager</h1>
-    <p class="sub">{datetime.now().strftime("%A %B %d %Y  %H:%M")} &nbsp;·&nbsp; {__import__('html').escape(_HEALTH.label())}</p>
+        <p class="sub">{datetime.now().strftime("%A %B %d %Y  %H:%M")} &nbsp;·&nbsp; {__import__('html').escape(_HEALTH.label())} &nbsp;·&nbsp; {'Alpaca paper' if _alpaca.trading_enabled() else 'Ledger mode'}</p>
 
   <div class="mkt">
     <div class="mi"><div class="ml">VIX</div><div class="mv">{vix:.1f} &nbsp;{vix_r}</div></div>
@@ -3989,7 +3989,7 @@ tr:last-child td{{border-bottom:none}}
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
         <div style="font-size:28px;font-weight:700">USD {total_val:,.0f}</div>
-        <div style="color:{pf_color};font-size:15px;margin-top:2px">{total_pct:+.1f}% vs starting capital</div>
+                <div style="color:{pf_color};font-size:15px;margin-top:2px">{total_pct:+.1f}% vs {'Alpaca paper capital' if _alpaca.trading_enabled() else 'starting capital'}</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
@@ -4379,6 +4379,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     total_pnl = round(total_val - start_cap, 0)
     total_pct = round((total_pnl / start_cap) * 100, 1) if start_cap else 0.0
     portfolio_state = 'UP' if total_pnl >= 0 else 'DOWN'
+    broker_label = 'Alpaca paper' if _alpaca.trading_enabled() else 'Ledger only'
 
     date_str = datetime.now().strftime('%b %d %Y')
     WA_MAX_CHARS = 1600  # Hard limit for CallMeBot per message
@@ -4451,7 +4452,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     if isinstance(spy, (int, float)):
         mkt_bits.append(f'SPY {spy:+.1f}%')
 
-    m1 = [f'DAILY SCREEN — {date_str}', 'Market: ' + ' | '.join(mkt_bits), '']
+    m1 = [f'DAILY SCREEN — {date_str}', f'Broker: {broker_label}', 'Market: ' + ' | '.join(mkt_bits), '']
 
     def _rr():
         if ep_num and stop_num and tgt_num and (ep_num - stop_num) > 0:
@@ -4531,6 +4532,8 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
 
     m2 = [
         f'PORTFOLIO — {date_str}',
+        (f'Broker: {broker_label} | Paper baseline ${ALPACA_PAPER_CAPITAL:,.0f}'
+         if _alpaca.trading_enabled() else f'Broker: {broker_label}'),
         f'Value USD {total_val:,.0f}  ({portfolio_state} ${abs(total_pnl):,.0f} / {total_pct:+.1f}%)',
         f'Cash USD {cash:,.0f}  |  {len(open_positions)} open ({green_count} green / {red_count} red)',
         '',
@@ -5424,10 +5427,15 @@ def run_screener():
     load_config_overrides()
     portfolio = load_portfolio()
     cutoff_date = _session_date()
-    if cutoff_date in portfolio.get('processed_sessions', []):
+    force_session = os.getenv('SCREENER_FORCE_SESSION', '').strip().lower() in ('1', 'true', 'yes', 'on')
+    if cutoff_date in portfolio.get('processed_sessions', []) and not force_session:
         _RUN_MODE = 'already_processed'
         _HEALTH.stage('session', True, 'already processed')
         return None
+    if force_session and cutoff_date in portfolio.get('processed_sessions', []):
+        _RUN_MODE = 'forced_session_rerun'
+        _HEALTH.stage('session', True, 'manual rerun forced for already processed session')
+        print(f'  Manual rerun enabled for session {cutoff_date}')
 
     # Monitoring is canonical and idempotent per trade, even if new-pick work fails.
     _closed_before = len(portfolio.get('closed_trades', []))
