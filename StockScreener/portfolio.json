@@ -1,5 +1,5 @@
 {
-  "cash": 100000.0,
+  "cash": 74740.92,
   "starting_capital": 100000.0,
   "positions": [],
   "closed_trades": [
@@ -261,12 +261,47 @@
   ],
   "total_realized_pnl": 25.74,
   "created": "2026-08-03",
-  "last_nzdusd_rate": 0.5723,
-  "last_updated": "2026-09-16",
+  "last_nzdusd_rate": 0.5732,
+  "last_updated": "2026-09-17",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
-  "pending_orders": [
+  "pending_orders": [],
+  "processed_sessions": [
+    "2026-09-16",
+    "2026-09-17"
+  ],
+  "equity_peak": 100000.0,
+  "broker_equity": 100128.84,
+  "alpaca_order_ledger": [
+    {
+      "source": "poll",
+      "event": "filled",
+      "timestamp": "2026-09-17T13:32:55.089178Z",
+      "order_id": "f1ad629b-10c6-492d-a790-2863f6a4300d",
+      "client_order_id": "14d8f068-1215-4fb0-9842-57ee96a15569",
+      "symbol": "MTD",
+      "status": "filled",
+      "filled_qty": "17",
+      "filled_avg_price": "1402.987647",
+      "qty": "17",
+      "side": "buy"
+    },
+    {
+      "source": "poll",
+      "event": "filled",
+      "timestamp": "2026-09-17T13:31:21.202015Z",
+      "order_id": "f22e804f-76c4-410b-9248-33674de613a1",
+      "client_order_id": "bfe6288f-4ab4-485a-be72-01c277a1bec9",
+      "symbol": "MTD",
+      "status": "filled",
+      "filled_qty": "1",
+      "filled_avg_price": "1408.29",
+      "qty": "1",
+      "side": "buy"
+    }
+  ],
+  "expired_orders": [
     {
       "source": "BOTH",
       "reasoning": "MTD's recent 7.7% 5-day gain and RSI at 46 indicate momentum, and its AI-powered Sonus platform is driving near-term growth. Additionally, the company's strong financials and growing demand for maternal health solutions make it an attractive option.",
@@ -294,13 +329,10 @@
       "amount_usd": 25000.0,
       "shares": 18,
       "hold_sessions": 10,
-      "status": "PENDING",
-      "legacy_cash_basis": 10025.74
+      "status": "EXPIRED",
+      "legacy_cash_basis": 10025.74,
+      "reason": "execution rejected: Order rejected: equity drawdown is at least 20%",
+      "expired_date": "2026-09-17"
     }
-  ],
-  "processed_sessions": [
-    "2026-09-16"
-  ],
-  "equity_peak": 100000.0,
-  "broker_equity": 100000.0
+  ]
 }

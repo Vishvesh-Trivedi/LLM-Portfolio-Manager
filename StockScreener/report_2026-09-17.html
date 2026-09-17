@@ -33,14 +33,14 @@ tr:last-child td{border-bottom:none}
 <body>
 <div class="wrap"><section role="status" style="background:white;border-left:5px solid #16803c;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: HEALTHY</b><br>No recorded stage failures<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Thursday September 17 2026  03:35 &nbsp;·&nbsp; No successful LLM response &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Thursday September 17 2026  23:40 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
-    <div class="mi"><div class="ml">VIX</div><div class="mv">17.7 &nbsp;MODERATE (p59 </div></div>
+    <div class="mi"><div class="ml">VIX</div><div class="mv">15.4 &nbsp;LOW (p15 risk-</div></div>
     <div class="mi"><div class="ml">SPY Today</div>
-        <div class="mv" style="color:#f44336">-0.44%</div></div>
-    <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BEARISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px"></div>
+        <div class="mv" style="color:#00c853">+1.14%</div></div>
+    <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BULLISH</div></div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US market news: US market ends higher as drop in oil prices allays inflationary concerns; VIX=15.44, QQQ=BULLISH, SPY today=+1.14%</div>
   </div>
 
   <div class="tabs">
@@ -52,32 +52,37 @@ tr:last-child td{border-bottom:none}
 
   <!-- ═══ BUY ═══ -->
   <div id="t-buy" class="tp on">
-    
+    <div class="section" style="border-left:4px solid #1565c0">
+    <h2>🧠 What the AI Learned from Your Trade History</h2>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that stocks with strong technical indicators, insider signals, and analyst consensus are more likely to outperform in the next 1-4 weeks.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=5, wr=80%, HIGH confidence): Stocks with a 5-day momentum &gt; 5% and a tech score &gt; 40 are more likely to outperform in the next 1-4 weeks.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=3, wr=67%, MEDIUM confidence): Stocks with a VIX-adjusted RSI &gt; 60 and a strong insider signal are more likely to outperform in the next 1-4 weeks.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule (n=2, wr=50%, LOW confidence): Stocks with a high analyst consensus and a strong options signal are more likely to outperform in the next 1-4 weeks.</li></ul>
+    <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-14 23:57</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with a tech score above 30 and a news score above 30 have a win rate of 80% in the past.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-11 23:25</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with tech_score > 30 and news_score > 25 and rsi > 50 tend to perform well in the next 4 weeks.</li><li style="padding:2px 0">Rule (n=5, wr=100%, HIGH confidence): Stocks with insider_signal = 2 and news_score > 20 tend to perform well in the next 4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-10 23:22</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-10 22:57</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-10 22:27</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated.</li></ul></div></details>
+  </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
-                margin-bottom:14px;border-left:8px solid #2196f3">
-      <div style="font-size:28px;font-weight:800;color:#2196f3;margin-bottom:6px">
-        QUEUED MTD — next session Open
+                margin-bottom:14px;border-left:8px solid #ff9800">
+      <div style="font-size:28px;font-weight:800;color:#ff9800;margin-bottom:6px">
+        REJECTED IQV
       </div>
       <div style="color:#aaa;font-size:13px">
-        2026-09-17 &nbsp;·&nbsp; Healthcare &nbsp;·&nbsp; BOTH
+        2026-09-17 &nbsp;·&nbsp; Healthcare &nbsp;·&nbsp; TECHNICAL
       </div>
             
-      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>QUEUED</b>: Existing session order already queued for next session Open; no new order created.<br>Next session Open, subject to execution checks; no cash debited.</div>
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>REJECTED</b>: Order not queued: equity drawdown is at least 20%</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
           <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">LLM score (uncalibrated)</div>
           <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">85/100</div>
           <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
-            <div style="background:#2196f3;border-radius:99px;height:6px;width:85%"></div>
+            <div style="background:#ff9800;border-radius:99px;height:6px;width:85%"></div>
           </div>
         </div>
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
           <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Reference price (not a fill)</div>
-          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1382.83</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">270.22</div>
         </div>
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
           <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
-          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">1327.9 / 1492.69</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">261.27 / 288.13</div>
         </div>
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
           <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
@@ -87,16 +92,27 @@ tr:last-child td{border-bottom:none}
       <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
                   font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
           <b>LLM narrative (not verified facts)</b><br>
-          MTD&#x27;s recent 7.7% 5-day gain and RSI at 46 indicate momentum, and its AI-powered Sonus platform is driving near-term growth. Additionally, the company&#x27;s strong financials and growing demand for maternal health solutions make it an attractive option.
+          IQV&#x27;s strong 5-day momentum (2.82%) and tech score (40) make it a promising candidate for the next 1-4 weeks. Additionally, its strong insider signal and high analyst consensus support its bull case.
       </div>
       <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
                   border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
-          Risk (LLM narrative): N/A
-      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-16)</b><br>Rerun reused the existing queued order for this session.</div>
+          Risk (LLM narrative): A decline in R&amp;D spending could impact IQV&#x27;s growth prospects and lead to a decline in its stock price.
+      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-17)</b><br>ticker=IQV; sector=Healthcare; source=TECHNICAL; rsi=58.0; short_ratio=3.0; short_pct_float=2.7</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
-      <p style="color:#aaa;padding:8px 0">No watch picks today.</p>
+      
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">CNC</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Healthcare</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">LLM narrative: CNC&#x27;s strong 5-day momentum (1.02%) and high analyst consensus make it a candidate to watch in the next 1-4 weeks.</div>
+      </div>
     </div>
   </div>
 
@@ -106,12 +122,12 @@ tr:last-child td{border-bottom:none}
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
-        <div style="font-size:28px;font-weight:700">USD 100,000</div>
-                <div style="color:#00c853;font-size:15px;margin-top:2px">+0.0% vs Alpaca paper capital</div>
+        <div style="font-size:28px;font-weight:700">USD 74,741</div>
+                <div style="color:#f44336;font-size:15px;margin-top:2px">-25.3% vs Alpaca paper capital</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
-        <div style="font-size:22px;font-weight:600">USD 100,000</div>
+        <div style="font-size:22px;font-weight:600">USD 74,741</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Slots Used</div>
