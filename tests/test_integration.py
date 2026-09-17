@@ -1,4 +1,4 @@
-"""Offline main-module integration: real contracts, ledger, screening and queue.
+﻿"""Offline main-module integration: real contracts, ledger, screening and queue.
 
 Only provider/market I/O and presentation boundaries are mocked. Import and all
 test outputs are isolated before main is loaded; no credentials are discovered.
@@ -18,6 +18,7 @@ import types
 import unittest
 from contextlib import ExitStack, redirect_stdout
 from datetime import datetime
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 from zoneinfo import ZoneInfo
 
@@ -334,6 +335,50 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(before, Path(APP.PORTFOLIO_JSON).read_bytes())
         for mock in (self.monitor, self.context, self.download, self.probe, self.post, self.queue, self.alert, self.report):
             mock.assert_not_called()
+
+    def test_forced_rerun_reports_existing_pending_order_without_new_pick(self):
+        self.pipeline()
+        first = APP.run_screener()
+        self.assertEqual(first['order_status'], 'QUEUED')
+        for mock in (self.download, self.probe, self.post, self.queue, self.alert, self.report):
+            mock.reset_mock()
+        with patch.dict(os.environ, {'SCREENER_FORCE_SESSION': '1'}):
+            result = APP.run_screener()
+        self.assertEqual(result['order_status'], 'QUEUED')
+        self.assertEqual(result['top_pick']['ticker'], 'AAA')
+        self.assertIn('Existing session order already queued', result['order_reason'])
+        self.assertEqual(APP._RUN_MODE, 'existing_session_order')
+        self.download.assert_not_called()
+        self.probe.assert_not_called()
+        self.post.assert_not_called()
+        self.queue.assert_not_called()
+        self.report.assert_called_once()
+        self.alert.assert_called_once()
+
+    def test_alpaca_pending_order_resizes_from_live_cash_baseline(self):
+        self.pipeline()
+        self.mock('_alpaca', new=SimpleNamespace(
+            trading_enabled=lambda: True,
+            data_enabled=lambda: True,
+            get_account=lambda: {'cash': 100000.0, 'equity': 100000.0},
+            effective_shares_by_symbol=lambda: {'MTD': 1},
+            plan_reconciliation=lambda want, have: [('buy', 'MTD', want['MTD'] - have.get('MTD', 0))] if want.get('MTD', 0) > have.get('MTD', 0) else [],
+            submit_market_order=lambda symbol, qty, side: {'symbol': symbol, 'qty': qty, 'side': side},
+            close_position=lambda symbol: None,
+        ))
+        pf = APP.load_portfolio()
+        pf['pending_orders'] = [{
+            'id': 'pending-legacy-order', 'trade_id': 'pending-legacy-order',
+            'ticker': 'MTD', 'signal_date': '2026-09-16', 'execution_session': '2026-09-17',
+            'estimated_entry': 1382.83, 'stop_distance': 54.93, 'target_distance': 109.86,
+            'sector': 'Healthcare', 'atr': 36.62, 'amount_usd': 2506.435, 'shares': 1,
+            'hold_sessions': 10, 'status': 'PENDING', 'position_size_pct': 25,
+        }]
+        APP.save_portfolio(pf)
+        resized = APP.load_portfolio()
+        order = resized['pending_orders'][0]
+        self.assertEqual(order['amount_usd'], 25000.0)
+        self.assertEqual(order['shares'], 18)
 
     def test_forced_rerun_reports_existing_pending_order_without_new_pick(self):
         self.pipeline()
