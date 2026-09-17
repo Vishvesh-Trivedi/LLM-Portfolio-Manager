@@ -31,16 +31,16 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="wrap"><section role="status" style="background:white;border-left:5px solid #b42318;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: FAILED</b><br>market_data; final; catalysts; news; stale_quote:FSLR<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #16803c;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: HEALTHY</b><br>No recorded stage failures<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-    <p class="sub">Thursday September 17 2026  00:55 &nbsp;·&nbsp; No successful LLM response</p>
+    <p class="sub">Thursday September 17 2026  01:32 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free</p>
 
   <div class="mkt">
     <div class="mi"><div class="ml">VIX</div><div class="mv">17.7 &nbsp;MODERATE (p59 </div></div>
     <div class="mi"><div class="ml">SPY Today</div>
-        <div class="mv" style="color:#f44336">-0.46%</div></div>
+        <div class="mv" style="color:#f44336">-0.44%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BEARISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px"></div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">Market sentiment remains neutral with the VIX at 17.71 and the QQQ in a bearish trend. The S&amp;P 500 and Nasdaq futures are inching higher as investors digest the</div>
   </div>
 
   <div class="tabs">
@@ -52,21 +52,78 @@ tr:last-child td{border-bottom:none}
 
   <!-- ═══ BUY ═══ -->
   <div id="t-buy" class="tp on">
-    
+    <div class="section" style="border-left:4px solid #1565c0">
+    <h2>🧠 What the AI Learned from Your Trade History</h2>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that stocks with strong technical and news scores tend to outperform in the next 4 weeks, especially when combined with a strong 5-day momentum.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=7, wr=71%, HIGH confidence): Stocks with a 5-day momentum above 5% and a RSI above 40 tend to outperform in the next 4 weeks.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=5, wr=80%, HIGH confidence): Stocks with a strong technical score (above 30) and a news score above 30 tend to have a higher win rate in the next 4 weeks.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule (n=3, wr=67%, LOW confidence): Stocks with a short ratio above 3 and a short pct float above 2 tend to have a lower win rate in the next 4 weeks.</li></ul>
+    <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-14 23:57</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with a tech score above 30 and a news score above 30 have a win rate of 80% in the past.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-11 23:25</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with tech_score > 30 and news_score > 25 and rsi > 50 tend to perform well in the next 4 weeks.</li><li style="padding:2px 0">Rule (n=5, wr=100%, HIGH confidence): Stocks with insider_signal = 2 and news_score > 20 tend to perform well in the next 4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-10 23:22</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-10 22:57</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-10 22:27</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">No history yet (n=0) — using baseline judgment. Rules will emerge after first picks are evaluated.</li></ul></div></details>
+  </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
-                margin-bottom:14px;border-left:8px solid #546e7a">
-      <div style="font-size:28px;font-weight:800;color:#546e7a;margin-bottom:6px">
-        NO PICK TODAY
+                margin-bottom:14px;border-left:8px solid #2196f3">
+      <div style="font-size:28px;font-weight:800;color:#2196f3;margin-bottom:6px">
+        QUEUED MTD — next session Open
       </div>
       <div style="color:#aaa;font-size:13px">
-        2026-09-17 &nbsp;·&nbsp;  &nbsp;·&nbsp; 
+        2026-09-17 &nbsp;·&nbsp; Healthcare &nbsp;·&nbsp; BOTH
       </div>
-            <div style="margin-top:10px;color:#ffb3b3;font-size:12px">LLM failure reason: Data/LLM validation incomplete; no new order queued.</div>
-      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: Data/LLM validation incomplete; no new order queued.</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div>
+            
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>QUEUED</b>: Queued MTD for the next session Open; not filled<br>Next session Open, subject to execution checks; no cash debited.</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">LLM score (uncalibrated)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">85/100</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
+            <div style="background:#2196f3;border-radius:99px;height:6px;width:85%"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Reference price (not a fill)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1382.83</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">1327.9 / 1492.69</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1:2.0</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
+                  font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
+          <b>LLM narrative (not verified facts)</b><br>
+          MTD&#x27;s recent 7.7% 5-day gain and RSI at 46 indicate momentum, and its AI-powered Sonus platform is driving near-term growth. Additionally, the company&#x27;s strong financials and growing demand for maternal health solutions make it an attractive option.
+      </div>
+      <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
+                  border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
+          Risk (LLM narrative): A decline in R&amp;D bookings could impact the company&#x27;s growth prospects.
+      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-16)</b><br>ticker=MTD; sector=Healthcare; source=BOTH; rsi=46.2; short_ratio=3.6; short_pct_float=3.6</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
-      <p style="color:#aaa;padding:8px 0">No watch picks today.</p>
+      
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">AFL</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Financial Services</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">LLM narrative: AFL&#x27;s recent 29% revenue surge and record revenue make it an attractive option, but a decline in revenue growth or a fai</div>
+      </div>
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">DHR</span>
+          <span style="color:#888;font-size:13px">72/100 &nbsp;·&nbsp; Healthcare</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:72%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">LLM narrative: DHR&#x27;s recent 3.9% 5-day momentum could sustain near-term growth, but a decline in revenue growth or a failure to meet ea</div>
+      </div>
     </div>
   </div>
 
@@ -76,65 +133,34 @@ tr:last-child td{border-bottom:none}
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
-        <div style="font-size:28px;font-weight:700">USD 10,133</div>
-        <div style="color:#00c853;font-size:15px;margin-top:2px">+1.3% vs starting capital</div>
+        <div style="font-size:28px;font-weight:700">USD 10,026</div>
+        <div style="color:#00c853;font-size:15px;margin-top:2px">+0.3% vs starting capital</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
-        <div style="font-size:22px;font-weight:600">USD 8,062</div>
+        <div style="font-size:22px;font-weight:600">USD 10,026</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Slots Used</div>
-        <div style="font-size:22px;font-weight:600">1 / 5</div>
+        <div style="font-size:22px;font-weight:600">0 / 5</div>
       </div>
     </div>
-    
-      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
-                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div>
-            <span style="font-size:20px;font-weight:700">FSLR</span>
-            <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
-          </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -0.6%</span>
-        </div>
-        <div style="color:#555;font-size:13px;margin-top:4px">
-          10 shares &nbsp;·&nbsp; Value USD 2,070
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-12</span>
-        </div>
-        
-          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 196.83</span><span>Target 232.18</span>
-          </div>
-          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:29%;background:#f44336;
-                        border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:31%;width:3px;height:14px;top:-3px;
-                        background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:29%;width:4px;height:16px;top:-4px;
-                        background:#f44336;border-radius:2px"></div>
-          </div>
-          <div style="font-size:11px;color:#999">Entry 207.79 &nbsp;·&nbsp; Current 207.0399932861328</div>
-        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:20%"></div>
-        </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 2 of 10</div>
-      </div>
+    <p style="color:#aaa;padding:12px 0">No open positions.</p>
   </div>
 
   <!-- ═══ HOLD ═══ -->
   <div id="t-hold" class="tp">
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
       <div class="sec" style="padding:16px;text-align:center">
-        <div style="font-size:26px;font-weight:700;color:#00c853">+145</div>
+        <div style="font-size:26px;font-weight:700;color:#00c853">+26</div>
         <div style="font-size:12px;color:#888;margin-top:4px">Realized P&amp;L (USD)</div>
       </div>
       <div class="sec" style="padding:16px;text-align:center">
-        <div style="font-size:26px;font-weight:700">58%</div>
-        <div style="font-size:12px;color:#888;margin-top:4px">Win Rate &nbsp;(7W / 5L)</div>
+        <div style="font-size:26px;font-weight:700">54%</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Win Rate &nbsp;(7W / 6L)</div>
       </div>
       <div class="sec" style="padding:16px;text-align:center">
-        <div style="font-size:26px;font-weight:700">12</div>
+        <div style="font-size:26px;font-weight:700">13</div>
         <div style="font-size:12px;color:#888;margin-top:4px">Trades Closed</div>
       </div>
     </div>
@@ -142,7 +168,7 @@ tr:last-child td{border-bottom:none}
       <table>
         <tr><th>Closed</th><th>Ticker</th><th>Entry</th><th>Exit</th>
             <th>P&amp;L USD</th><th>Return</th><th>Days</th><th>Reason</th></tr>
-        <tr style="background:#fff1f1"><td>2026-09-11</td><td><b>AES</b></td><td>14.84</td><td>14.78</td><td style="color:#f44336;font-weight:600">-10</td><td style="color:#f44336">-0.4%</td><td>1d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-27</td><td><b>AXON</b></td><td>572.72</td><td>607.48</td><td style="color:#00c853;font-weight:600">+29</td><td style="color:#00c853">+5.0%</td><td>20d</td><td style="font-size:11px;color:#666">macd_bearish_cross</td></tr><tr style="background:#fff1f1"><td>2026-08-25</td><td><b>FANG</b></td><td>211.65</td><td>199.89</td><td style="color:#f44336;font-weight:600">-81</td><td style="color:#f44336">-6.3%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-24</td><td><b>EXPE</b></td><td>320.62</td><td>339.12</td><td style="color:#00c853;font-weight:600">+64</td><td style="color:#00c853">+5.0%</td><td>19d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-24</td><td><b>GNRC</b></td><td>222.57</td><td>203.56</td><td style="color:#f44336;font-weight:600">-42</td><td style="color:#f44336">-9.4%</td><td>12d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-24</td><td><b>JKHY</b></td><td>163.55</td><td>170.51</td><td style="color:#00c853;font-weight:600">+46</td><td style="color:#00c853">+3.5%</td><td>5d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#f1fff6"><td>2026-08-20</td><td><b>BR</b></td><td>168.92</td><td>178.5</td><td style="color:#00c853;font-weight:600">+158</td><td style="color:#00c853">+5.5%</td><td>16d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#f1fff6"><td>2026-08-19</td><td><b>CPRT</b></td><td>31.8</td><td>33.85</td><td style="color:#00c853;font-weight:600">+46</td><td style="color:#00c853">+5.4%</td><td>2d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-18</td><td><b>AKAM</b></td><td>125.67</td><td>115.2</td><td style="color:#f44336;font-weight:600">-47</td><td style="color:#f44336">-9.2%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-17</td><td><b>MPC</b></td><td>356.49</td><td>358.18</td><td style="color:#00c853;font-weight:600">+1</td><td style="color:#00c853">+0.0%</td><td>3d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-12</td><td><b>COR</b></td><td>325.99</td><td>314.17</td><td style="color:#f44336;font-weight:600">-40</td><td style="color:#f44336">-4.1%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-12</td><td><b>DXCM</b></td><td>87.91</td><td>90.8</td><td style="color:#00c853;font-weight:600">+22</td><td style="color:#00c853">+2.8%</td><td>2d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr>
+        <tr style="background:#fff1f1"><td>2026-09-16</td><td><b>FSLR</b></td><td>207.79</td><td>196.83</td><td style="color:#f44336;font-weight:600">-120</td><td style="color:#f44336">-5.7%</td><td>4d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#fff1f1"><td>2026-09-11</td><td><b>AES</b></td><td>14.84</td><td>14.78</td><td style="color:#f44336;font-weight:600">-10</td><td style="color:#f44336">-0.4%</td><td>1d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-27</td><td><b>AXON</b></td><td>572.72</td><td>607.48</td><td style="color:#00c853;font-weight:600">+29</td><td style="color:#00c853">+5.0%</td><td>20d</td><td style="font-size:11px;color:#666">macd_bearish_cross</td></tr><tr style="background:#fff1f1"><td>2026-08-25</td><td><b>FANG</b></td><td>211.65</td><td>199.89</td><td style="color:#f44336;font-weight:600">-81</td><td style="color:#f44336">-6.3%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-24</td><td><b>EXPE</b></td><td>320.62</td><td>339.12</td><td style="color:#00c853;font-weight:600">+64</td><td style="color:#00c853">+5.0%</td><td>19d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-24</td><td><b>GNRC</b></td><td>222.57</td><td>203.56</td><td style="color:#f44336;font-weight:600">-42</td><td style="color:#f44336">-9.4%</td><td>12d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-24</td><td><b>JKHY</b></td><td>163.55</td><td>170.51</td><td style="color:#00c853;font-weight:600">+46</td><td style="color:#00c853">+3.5%</td><td>5d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#f1fff6"><td>2026-08-20</td><td><b>BR</b></td><td>168.92</td><td>178.5</td><td style="color:#00c853;font-weight:600">+158</td><td style="color:#00c853">+5.5%</td><td>16d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#f1fff6"><td>2026-08-19</td><td><b>CPRT</b></td><td>31.8</td><td>33.85</td><td style="color:#00c853;font-weight:600">+46</td><td style="color:#00c853">+5.4%</td><td>2d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-18</td><td><b>AKAM</b></td><td>125.67</td><td>115.2</td><td style="color:#f44336;font-weight:600">-47</td><td style="color:#f44336">-9.2%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-17</td><td><b>MPC</b></td><td>356.49</td><td>358.18</td><td style="color:#00c853;font-weight:600">+1</td><td style="color:#00c853">+0.0%</td><td>3d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-12</td><td><b>COR</b></td><td>325.99</td><td>314.17</td><td style="color:#f44336;font-weight:600">-40</td><td style="color:#f44336">-4.1%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-12</td><td><b>DXCM</b></td><td>87.91</td><td>90.8</td><td style="color:#00c853;font-weight:600">+22</td><td style="color:#00c853">+2.8%</td><td>2d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr>
       </table>
     </div>
   </div>
@@ -156,26 +182,11 @@ tr:last-child td{border-bottom:none}
     </div>
     
     <div class="sec">
-      <div class="sh" style="color:#e65100">Approaching Stop (&lt;5%)</div>
-      
-      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
-                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <span style="font-size:17px;font-weight:700">FSLR</span>
-          <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">4.9% above stop</div>
-          <div style="font-size:12px;color:#888">Current 207.0399932861328 &nbsp;·&nbsp; Stop 196.83</div>
-        </div>
-      </div>
-    </div>
-    <div class="sec">
       <div class="sh" style="color:#c62828">Stop Loss History</div>
       <table>
         <tr><th>Date</th><th>Ticker</th><th>Entry</th><th>Exit</th>
             <th>Loss USD</th><th>Return</th><th>Days</th></tr>
-        <tr style="background:#fff1f1"><td>2026-09-11</td><td><b>AES</b></td><td>14.84</td><td>14.78</td><td style="color:#f44336;font-weight:600">-10</td><td style="color:#f44336">-0.4%</td><td>1d</td></tr><tr style="background:#fff1f1"><td>2026-08-25</td><td><b>FANG</b></td><td>211.65</td><td>199.89</td><td style="color:#f44336;font-weight:600">-81</td><td style="color:#f44336">-6.3%</td><td>5d</td></tr><tr style="background:#fff1f1"><td>2026-08-24</td><td><b>GNRC</b></td><td>222.57</td><td>203.56</td><td style="color:#f44336;font-weight:600">-42</td><td style="color:#f44336">-9.4%</td><td>12d</td></tr><tr style="background:#fff1f1"><td>2026-08-18</td><td><b>AKAM</b></td><td>125.67</td><td>115.2</td><td style="color:#f44336;font-weight:600">-47</td><td style="color:#f44336">-9.2%</td><td>5d</td></tr><tr style="background:#fff1f1"><td>2026-08-12</td><td><b>COR</b></td><td>325.99</td><td>314.17</td><td style="color:#f44336;font-weight:600">-40</td><td style="color:#f44336">-4.1%</td><td>5d</td></tr>
+        <tr style="background:#fff1f1"><td>2026-09-16</td><td><b>FSLR</b></td><td>207.79</td><td>196.83</td><td style="color:#f44336;font-weight:600">-120</td><td style="color:#f44336">-5.7%</td><td>4d</td></tr><tr style="background:#fff1f1"><td>2026-09-11</td><td><b>AES</b></td><td>14.84</td><td>14.78</td><td style="color:#f44336;font-weight:600">-10</td><td style="color:#f44336">-0.4%</td><td>1d</td></tr><tr style="background:#fff1f1"><td>2026-08-25</td><td><b>FANG</b></td><td>211.65</td><td>199.89</td><td style="color:#f44336;font-weight:600">-81</td><td style="color:#f44336">-6.3%</td><td>5d</td></tr><tr style="background:#fff1f1"><td>2026-08-24</td><td><b>GNRC</b></td><td>222.57</td><td>203.56</td><td style="color:#f44336;font-weight:600">-42</td><td style="color:#f44336">-9.4%</td><td>12d</td></tr><tr style="background:#fff1f1"><td>2026-08-18</td><td><b>AKAM</b></td><td>125.67</td><td>115.2</td><td style="color:#f44336;font-weight:600">-47</td><td style="color:#f44336">-9.2%</td><td>5d</td></tr><tr style="background:#fff1f1"><td>2026-08-12</td><td><b>COR</b></td><td>325.99</td><td>314.17</td><td style="color:#f44336;font-weight:600">-40</td><td style="color:#f44336">-4.1%</td><td>5d</td></tr>
       </table>
     </div>
   </div>

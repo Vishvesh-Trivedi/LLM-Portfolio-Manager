@@ -1,6 +1,17 @@
 {
-  "status": "failed",
-  "providers": {},
+  "status": "healthy",
+  "providers": {
+    "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
+      "attempts": 11,
+      "successes": 11,
+      "failures": 0
+    },
+    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
+      "attempts": 1,
+      "successes": 1,
+      "failures": 0
+    }
+  },
   "stages": {
     "session": {
       "success": true,
@@ -11,40 +22,64 @@
       "detail": "Exact-session VIX available"
     },
     "market_data": {
-      "success": false,
-      "detail": "1/926 exact-session quotes; missing: MMM, AOS, ABT, ABBV, ACN, ADBE, AMD, AES, AFL, A, APD, ABNB, AKAM, ALB, ARE, ALGN, ALLE, LNT, ALL, GOOGL, GOOG, MO, AMZN, AMCR, AEE, AEP, AXP, AIG, AMT, AWK, AMP, AME, AMGN, APH, ADI, AON, APA, APO, AAPL, AMAT, APP, APTV, ACGL, ADM, ARES, ANET, AJG, AIZ, T, ATO, ADSK, ADP, AZO, AVY, AXON, BKR, BALL, BAC, BAX, BDX, BRK-B, BBY, TECH, BIIB, BLK, BX, XYZ, BNY, BA, BKNG, BSX, BMY, AVGO, BR, BRO, BF-B, BLDR, BG, BXP, CHRW, CDNS, CPT, COF, CAH, CCL, CARR, CVNA, CASY, CAT, CBOE, CBRE, CDW, COR, CNC, CNP, CF, CRL, SCHW, CHTR, CVX, CMG, CB, CHD, CIEN, CI, CINF, CTAS, CSCO, C, CFG, CLX, CME, CMS, KO, CTSH, COHR, COIN, CL, CMCSA, FIX, COP, ED, STZ, CEG, COO, CPRT, GLW, CPAY, CTVA, CSGP, COST, CRH, CRWD, CCI, CSX, CMI, CVS, DHR, DRI, DDOG, DVA, DECK, DE, DELL, DAL, DVN, DXCM, FANG, DLR, DG, DLTR, D, DPZ, DASH, DOV, DOW, DHI, DTE, DUK, DD, ETN, EBAY, ECHO, ECL, EIX, EW, ELV, EME, EMR, ETR, EOG, EQT, EFX, EQIX, ERIE, ESS, EL, EG, EVRG, ES, EXC, EXE, EXPE, EXPD, EXR, XOM, FFIV, FDS, FICO, FAST, FRT, FDX, FDXF, FERG, FIS, FITB, FSLR, FE, FISV, FLEX, F, FTNT, FTV, FOXA, FOX, BEN, FCX, GRMN, IT, GE, GEHC, GEV, GEN, GNRC, GD, GIS, GM, GPC, GILD, GPN, GL, GDDY, GS, HAL, HIG, HAS, HCA, DOC, HSIC, HSY, HPE, HLT, HD, HONA, HON, HRL, HST, HWM, HPQ, HUM, HBAN, HII, IBM, IEX, IDXX, ITW, INCY, IR, PODD, INTC, IBKR, ICE, IFF, IP, INTU, ISRG, IVZ, INVH, IQV, IRM, JBHT, JBL, JKHY, J, JNJ, JCI, JPM, KVUE, KDP, KEY, KEYS, KMB, KIM, KMI, KKR, KLAC, KHC, KR, LHX, LH, LRCX, LVS, LDOS, LEN, LII, LLY, LIN, LYV, LMT, L, LOW, LULU, LITE, LYB, MTB, MPC, MAR, MRSH, MLM, MRVL, MAS, MA, MKC, MCD, MCK, MDT, MRK, META, MET, MTD, MGM, MCHP, MU, MSFT, MAA, MRNA, TAP, MDLZ, MPWR, MNST, MCO, MS, MOS, MSI, MSCI, NDAQ, NTAP, NFLX, NEM, NWSA, NWS, NEE, NKE, NI, NDSN, NSC, NTRS, NOC, NCLH, NRG, NUE, NVDA, NVR, NXPI, ORLY, OXY, ODFL, OMC, ON, OKE, ORCL, OTIS, PCAR, PKG, PLTR, PANW, PSKY, PH, PAYX, PYPL, PNR, PEP, PFE, PCG, PM, PSX, PNW, PNC, PPG, PPL, PFG, PG, PGR, PLD, PRU, PEG, PTC, PSA, PHM, PWR, QCOM, DGX, Q, RL, RJF, RDDT, RTX, O, REG, REGN, RF, RSG, RMD, RVTY, HOOD, ROK, ROL, ROP, ROST, RCL, SPGI, CRM, SNDK, SBAC, SLB, STX, SRE, NOW, SHW, SPG, SWKS, SJM, SW, SNA, SOLV, SO, LUV, SWK, SBUX, STT, STLD, STE, SYK, SMCI, SYF, SNPS, SYY, TMUS, TROW, TTWO, TPR, TRGP, TGT, TEL, TDY, TER, TSLA, TXN, TPL, TXT, TMO, TJX, TKO, TTD, TSCO, TT, TDG, TRV, TRMB, TFC, TYL, TSN, USB, UBER, UDR, ULTA, UNP, UAL, UPS, URI, UNH, UHS, VLO, VEEV, VTR, VLTO, VRSN, VRSK, VZ, VRTX, VRT, VTRS, VICI, V, VST, VMRK, VMC, WRB, GWW, WAB, WMT, DIS, WBD, WM, WAT, WEC, WFC, WELL, WST, WDC, WY, WSM, WMB, WTW, WDAY, WYNN, XEL, XYL, YUM, ZBRA, ZBH, ZTS, AA, AAL, AAON, ACI, ACM, ADC, AEIS, AFG, AGCO, AHR, AIT, ALGM, ALK, ALLY, ALSN, ALV, AM, AMG, AMH, AMKR, AN, ANF, APG, APPF, AR, ARMK, ARW, ARWR, ASB, ASH, ATI, ATR, AVAV, AVNT, AVT, AVTR, AXTA, AYI, BAH, BBWI, BC, BCO, BDC, BHF, BILL, BIO, BJ, BKH, BMRN, BRKR, BROS, BRX, BSY, BTSG, BURL, BWA, BWXT, BYD, CACI, CAR, CART, CAVA, CBSH, CBT, CCK, CDE, CDP, CELH, CFR, CG, CGNX, CHDN, CHE, CHH, CHRD, CHWY, CLF, CLH, CMC, CNH, CNM, CNO, CNX, COKE, COLB, COLM, CPRI, CR, CRBG, CROX, CRS, CRUS, CSL, CTRE, CUBE, CUZ, CVLT, CW, CXT, CYTK, DAR, DBX, DCI, DINO, DKS, DLB, DOCN, DOCS, DOCU, DT, DTM, DUOL, DY, EEFT, EGP, EHC, ELAN, ELF, ELS, ENS, ENSG, ENTG, EPR, EQH, ESAB, ESNT, EVR, EWBC, EXEL, EXLS, EXP, EXPO, FAF, FBIN, FCFS, FCN, FFIN, FHI, FHN, FIVE, FLG, FLR, FLS, FN, FNB, FND, FNF, FOUR, FR, FTI, G, GAP, GATX, GBCI, GEF, GGG, GHC, GLPI, GME, GMED, GNTX, GPK, GWRE, GXO, H, HAE, HALO, HGV, HIMS, HL, HLI, HLNE, HOG, HOMB, HQY, HR, HRB, HWC, HXL, IBOC, IDA, IDCC, IESC, ILMN, INGR, IPGP, IRT, ITT, JAZZ, JEF, JLL, KBH, KBR, KD, KEX, KNF, KNSL, KNX, KRC, KRG, KRYS, KTOS, LAD, LAMR, LEA, LECO, LFUS, LIVN, LNTH, LOPE, LPX, LSCC, LSTR, M, MANH, MAT, MEDP, MIDD, MKSI, MLI, MMS, MOG-A, MOH, MORN, MP, MSA, MSM, MTDR, MTG, MTN, MTSI, MTZ, MUR, MUSA, MZTI, NBIX, NEU, NFG, NJR, NLY, NNN, NOV, NOVT, NTNX, NVST, NVT, NWE, NXST, NXT, NYT, OC, OGE, OGS, OHI, OKTA, OLED, OLLI, OLN, ONB, ONTO, OPCH, ORA, ORI, OSK, OVV, OZK, P, PAG, PATH, PB, PBF, PCTY, PEGA, PEN, PFGC, PII, PINS, PK, PLNT, PNFP, POR, POST, PPC, PR, PRI, PSN, PVH, QLYS, R, RBA, RBC, REXR, RGA, RGEN, RGLD, RH, RLI, RMBS, RNR, ROIV, ROKU, RPM, RRC, RRX, RS, RYAN, RYN, SAIA, SAIC, SAM, SANM, SARO, SBRA, SCI, SEIC, SF, SFM, SGI, SHC, SIGI, SIRI, SITM, SLAB, SLGN, SLM, SMG, SMTC, SN, SNX, SOLS, SON, SPXC, SR, SSB, SSD, ST, STAG, STRL, STWD, SUI, SWX, SYNA, TCBI, TEX, THC, THG, THO, TKR, TLN, TNL, TOL, TOST, TREX, TRU, TTC, TTEK, TTMI, TWLO, TXNM, TXRH, UBSI, UFPI, UGI, ULS, UMBF, UNM, USFD, UTHR, VAL, VC, VFC, VIAV, VICR, VLY, VMI, VNO, VNOM, VNT, VOYA, VVV, WAL, WCC, WEX, WFRD, WH, WHR, WING, WLK, WMG, WMS, WPC, WSO, WTFC, WTRG, WTS, WWD, XPO, SPY, QQQ, IWM, DIA, VTI, VOO, XLK, XLF, XLE, XLV, XLI, XLY, XLP, XLU, XLB, XLRE, XLC, ARKK, SOXX, SMH, IBB, GLD, SLV, USO, VXX, UVXY"
+      "success": true,
+      "detail": "740/926 exact-session quotes; missing: ABBV, ABNB, ALLE, GOOG, AMCR, APP, ARES, ANET, XYZ, CARR, CVNA, CDW, CFG, COIN, CEG, CTVA, CRWD, DDOG, DELL, FANG, DASH, DOW, EXE, FDXF, FTV, FOXA, FOX, GEHC, GEV, GDDY, HPE, HLT, HONA, IR, INVH, IQV, KVUE, KEYS, KHC, LITE, META, MRNA, NWSA, NWS, NCLH, OTIS, PLTR, PANW, PYPL, PSX, Q, RDDT, HOOD, SNDK, NOW, SW, SOLV, SYF, TTD, UBER, VEEV, VLTO, VRT, VICI, VST, WDAY, ZTS, AA, ACI, AHR, ALGM, ALLY, ALSN, AM, AMH, APG, APPF, AR, ARMK, AVTR, AXTA, BHF, BILL, BJ, BROS, BRX, BSY, BTSG, BURL, CART, CAVA, CG, CHWY, CNH, CNM, CR, CRBG, CTRE, DBX, DOCN, DOCS, DOCU, DT, DTM, DUOL, ELAN, ELF, EQH, ESAB, ESNT, FIVE, FND, FOUR, GLPI, GMED, GXO, HGV, HIMS, HLI, HLNE, HQY, HR, IRT, KD, KNF, KNSL, KRYS, LIVN, LNTH, MEDP, MP, MTDR, MTSI, MUSA, NTNX, NVST, NVT, NXT, OGS, OKTA, OLLI, ONTO, P, PATH, PBF, PCTY, PEN, PFGC, PINS, PK, PLNT, PR, PSN, QLYS, REXR, RH, ROIV, ROKU, RYAN, SAIC, SARO, SFM, SHC, SITM, SN, SOLS, TLN, TOST, TRU, TWLO, ULS, USFD, VAL, VNOM, VNT, VOYA, VVV, WFRD, WH, WING, WMG, WMS, XLRE, XLC, ARKK, VXX"
     },
-    "final": {
-      "success": false,
-      "detail": "Missing exact-session SPY/QQQ data"
+    "fundamental_coverage": {
+      "success": true,
+      "detail": "137/140 covered; missing: ILMN, PEGA, FISV; selected sector checked by order planner"
+    },
+    "catalyst_1": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "catalysts": {
-      "success": false,
-      "detail": "Required validation did not complete"
+      "success": true,
+      "detail": "30/30 verified"
+    },
+    "catalyst_2": {
+      "success": true,
+      "detail": "NVIDIA-retry: JSON and contract accepted"
+    },
+    "catalyst_3": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalyst_4": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalyst_5": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "news": {
-      "success": false,
-      "detail": "Required validation did not complete"
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "round1": {
+      "success": true,
+      "detail": "Optional ranking context available; not a decision contract"
+    },
+    "round2": {
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
+    },
+    "final": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
     }
   },
-  "degraded_reasons": [
-    "stale_quote:FSLR"
-  ],
-  "label": "No successful LLM response",
-  "attempts": 0,
-  "successes": 0,
+  "degraded_reasons": [],
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
+  "attempts": 12,
+  "successes": 12,
   "failures": 0,
   "date": "2026-09-16",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
-  "trade_ready": false,
-  "trade_blockers": [
-    "failed:market_data",
-    "failed:catalysts",
-    "failed:news",
-    "failed:final",
-    "stale_quote:FSLR"
-  ],
-  "order_status": "NO ORDER"
+  "trade_ready": true,
+  "trade_blockers": [],
+  "order_status": "QUEUED"
 }
