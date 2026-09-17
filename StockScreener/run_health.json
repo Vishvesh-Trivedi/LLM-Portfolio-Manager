@@ -13,6 +13,10 @@
     "final": {
       "success": true,
       "detail": "Existing session order already queued; rerun reported current state"
+    },
+    "broker": {
+      "success": true,
+      "detail": "1 order(s) submitted, 0 failed (equity $100000)"
     }
   },
   "degraded_reasons": [],

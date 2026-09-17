@@ -261,7 +261,7 @@
   ],
   "total_realized_pnl": 25.74,
   "created": "2026-08-03",
-  "last_nzdusd_rate": 0.5722,
+  "last_nzdusd_rate": 0.5723,
   "last_updated": "2026-09-16",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
@@ -291,10 +291,11 @@
       "target_distance": 109.86,
       "sector": "Healthcare",
       "atr": 36.62,
-      "amount_usd": 2506.435,
-      "shares": 1,
+      "amount_usd": 25000.0,
+      "shares": 18,
       "hold_sessions": 10,
-      "status": "PENDING"
+      "status": "PENDING",
+      "legacy_cash_basis": 10025.74
     }
   ],
   "processed_sessions": [
