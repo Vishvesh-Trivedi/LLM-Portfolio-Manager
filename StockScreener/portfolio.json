@@ -1,6 +1,6 @@
 {
-  "cash": 10025.74,
-  "starting_capital": 10000.0,
+  "cash": 100000.0,
+  "starting_capital": 100000.0,
   "positions": [],
   "closed_trades": [
     {
@@ -300,5 +300,6 @@
   "processed_sessions": [
     "2026-09-16"
   ],
-  "equity_peak": 10152.74
+  "equity_peak": 100000.0,
+  "broker_equity": 100000.0
 }
