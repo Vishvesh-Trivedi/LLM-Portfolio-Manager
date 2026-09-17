@@ -214,6 +214,14 @@ request*, and the position stays open in the ledger until Alpaca confirms the
 sale. Outgoing orders carry the ledger id in their `client_order_id`, so a fill
 is matched back to the exact record that requested it.
 
+**Reconciliation runs on every invocation, session or not.** Screening, model
+probes and new orders require a completed session, but an execution at Alpaca is
+a fact regardless — so a weekend, holiday or pre-close run still reads the
+account, reconciles the ledger and alerts you, then stops without screening or
+trading. Fills are dated by Alpaca's own `filled_at` timestamp rather than the
+local calendar date, so a Friday fill reconciled on Saturday is still recorded as
+Friday.
+
 > The ledger is only ever rewritten from a snapshot Alpaca actually answered.
 > If the account, positions or orders cannot be read, **nothing is changed** and
 > the run degrades — a transport failure must never be read as "you hold nothing."

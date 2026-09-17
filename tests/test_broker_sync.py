@@ -301,6 +301,37 @@ class BrokerSyncTests(unittest.TestCase):
         self.assertAlmostEqual(event['slippage_pct'], 1.4788, places=3)
         self.assertFalse(plan['blocked'])
 
+    # ── Fill dating comes from Alpaca, not the local calendar ───────
+
+    def test_fill_is_dated_by_the_brokers_own_timestamp(self):
+        # Reconciling on a Saturday must still date a Friday fill as Friday;
+        # otherwise holding periods and the replay window are corrupted.
+        ledger = {'positions': [], 'pending_orders': [pending()], 'cash': 1.0}
+        plan = self.plan(ledger, snapshot(orders=[
+            order(filled_at='2026-09-18T13:31:00Z')]))
+        self.assertEqual(only(plan, 'fill_pending')['session'], '2026-09-18')
+
+    def test_utc_timestamp_converts_to_the_new_york_session(self):
+        # 01:30 UTC on the 19th is still the 18th in New York.
+        ledger = {'positions': [], 'pending_orders': [pending()], 'cash': 1.0}
+        plan = self.plan(ledger, snapshot(orders=[
+            order(filled_at='2026-09-19T01:30:00Z')]))
+        self.assertEqual(only(plan, 'fill_pending')['session'], '2026-09-18')
+
+    def test_missing_or_invalid_timestamp_falls_back_to_the_run_session(self):
+        for stamp in (None, '', 'not-a-date'):
+            ledger = {'positions': [], 'pending_orders': [pending()], 'cash': 1.0}
+            plan = self.plan(ledger, snapshot(orders=[
+                order(filled_at=stamp, updated_at=None)]))
+            self.assertEqual(only(plan, 'fill_pending')['session'], self.SESSION)
+
+    def test_exit_is_dated_by_the_sell_fill_timestamp(self):
+        ledger = {'positions': [position()], 'pending_orders': [], 'cash': 1.0}
+        plan = self.plan(ledger, snapshot(orders=[
+            order(side='sell', status='filled', filled_qty=10,
+                  filled_avg_price=110.0, filled_at='2026-09-18T19:45:00Z')]))
+        self.assertEqual(only(plan, 'close_position')['session'], '2026-09-18')
+
 
 if __name__ == '__main__':
     unittest.main()

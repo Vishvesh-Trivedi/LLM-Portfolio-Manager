@@ -21,6 +21,8 @@ fill price) is reported as blocked rather than guessed at.
 """
 
 import math
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 # Alpaca order lifecycle. Anything unrecognized is treated as still working, so
@@ -68,6 +70,31 @@ def _symbol(value):
 def _norm_ref(value):
     """Normalize a ledger id the same way the client_order_id tag is built."""
     return ''.join(ch for ch in str(value or '') if ch.isalnum())[:32]
+
+
+_NEW_YORK = ZoneInfo('America/New_York')
+
+
+def _fill_session(order, fallback):
+    """Trading date of the actual execution, from Alpaca's own timestamp.
+
+    Reconciliation can run outside a session — a weekend catch-up, or a run
+    before the close — so the local calendar date is not the date the trade
+    happened. Dating a Friday fill as Saturday would corrupt holding-period
+    counting and the replay window, so the broker's timestamp wins whenever it
+    can be read.
+    """
+    raw = order.get('filled_at') or order.get('updated_at')
+    if not raw:
+        return fallback
+    try:
+        text = str(raw).strip().replace('Z', '+00:00')
+        stamp = datetime.fromisoformat(text)
+    except (TypeError, ValueError):
+        return fallback
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=ZoneInfo('UTC'))
+    return stamp.astimezone(_NEW_YORK).date().isoformat()
 
 
 def _event(kind, severity, symbol, summary, **fields):
@@ -174,7 +201,8 @@ def _plan_pending(ledger, by_ref, by_symbol_side, used, session, actions, events
                             'symbol': symbol, 'shares': filled_qty,
                             'price': round(fill_price, 4),
                             'broker_order_id': broker_order_id,
-                            'partial': partial, 'session': session})
+                            'partial': partial,
+                            'session': _fill_session(broker_order, session)})
             expected = _positive(order.get('estimated_entry'))
             slippage = ((fill_price / expected - 1) * 100) if expected else None
             # Display context so the alert can read like a broker fill notice
@@ -216,14 +244,15 @@ def _plan_pending(ledger, by_ref, by_symbol_side, used, session, actions, events
             broker_order_id=broker_order_id))
 
 
-def _sell_fill_for(trade_id, symbol, by_ref, by_symbol_side, used):
+def _sell_fill_for(trade_id, symbol, by_ref, by_symbol_side, used, session):
     order, _ = _match_order(trade_id, symbol, 'sell', by_ref, by_symbol_side, used)
     if order is None:
-        return None, None, ''
+        return None, None, '', session
     qty, price = _fill_of(order)
+    oid = str(order.get('order_id', '') or '')
     if qty <= 0 or price is None:
-        return None, None, str(order.get('order_id', '') or '')
-    return qty, price, str(order.get('order_id', '') or '')
+        return None, None, oid, session
+    return qty, price, oid, _fill_session(order, session)
 
 
 def _plan_positions(ledger, broker, by_ref, by_symbol_side, used, session,
@@ -240,8 +269,8 @@ def _plan_positions(ledger, broker, by_ref, by_symbol_side, used, session,
         broker_position = held.get(symbol)
 
         if broker_position is None:
-            qty, price, broker_order_id = _sell_fill_for(
-                trade_id, symbol, by_ref, by_symbol_side, used)
+            qty, price, broker_order_id, sell_session = _sell_fill_for(
+                trade_id, symbol, by_ref, by_symbol_side, used, session)
             if price is None:
                 # Gone from the account with no sell fill we can price. Closing
                 # at a stale quote would fabricate a P&L number, so this is
@@ -254,7 +283,8 @@ def _plan_positions(ledger, broker, by_ref, by_symbol_side, used, session,
             actions.append({'op': 'close_position', 'trade_id': trade_id,
                             'symbol': symbol, 'price': round(price, 4),
                             'shares': qty, 'reason': 'broker_confirmed_exit',
-                            'broker_order_id': broker_order_id, 'session': session})
+                            'broker_order_id': broker_order_id,
+                            'session': sell_session})
             proceeds = round(price * qty, 2)
             basis = _positive(position.get('cost_basis'))
             pnl = round(proceeds - basis, 2) if basis else None

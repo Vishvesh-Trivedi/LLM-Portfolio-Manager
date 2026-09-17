@@ -5922,18 +5922,15 @@ def run_screener():
     print(f'   Stocks: {len(STOCK_UNIVERSE)} | ETFs: {len(KEY_ETFS)}')
     print('='*65)
 
-    # No model probes, portfolio updates, weekly-summary transactions or alerts
-    # before a completed exchange session. Never guess the timezone on failure.
+    # Screening, model probes and new orders require a completed exchange
+    # session. Broker reconciliation does NOT: an execution at Alpaca is a fact
+    # whether or not this run is allowed to trade, and the ledger must never be
+    # left believing something different. A run that exited at this gate is
+    # exactly how the 2026-09-17 MTD fill went unrecorded.
     from zoneinfo import ZoneInfo
     _et_now = datetime.now(ZoneInfo('America/New_York'))
     reason = _session_gate(_et_now)
-    if reason:
-        _RUN_MODE = 'no_session'
-        _HEALTH.stage('session', True, reason)
-        print(f'  No completed trading session: {reason}')
-        return None
 
-    _HEALTH.stage('session', True, 'Completed session after 16:15 ET')
     load_config_overrides()
     portfolio = load_portfolio()
     try:
@@ -5941,11 +5938,32 @@ def run_screener():
             portfolio['alpaca_order_ledger'] = _alpaca.sync_order_statuses(portfolio.get('alpaca_order_ledger'))
     except Exception:
         pass
+
+    # Counted before reconciliation so a broker-confirmed sale still shows up in
+    # today's "sold today" summary alongside any locally evaluated exit.
+    _closed_before = len(portfolio.get('closed_trades', []))
+
+    # Always ask Alpaca what actually happened, then tell the operator.
+    global _EXECUTION_EVENTS
+    _EXECUTION_EVENTS = sync_with_broker(portfolio)
+    send_execution_alerts(_EXECUTION_EVENTS)
+
+    if reason:
+        # Outside a session we reconcile and report, but never screen, price a
+        # replay off incomplete bars, or place an order.
+        _RUN_MODE = 'no_session'
+        _HEALTH.stage('session', True, reason)
+        save_portfolio(portfolio)
+        print(f'  No completed trading session ({reason}); broker state reconciled only')
+        return None
+
+    _HEALTH.stage('session', True, 'Completed session after 16:15 ET')
     cutoff_date = _session_date()
     force_session = os.getenv('SCREENER_FORCE_SESSION', '').strip().lower() in ('1', 'true', 'yes', 'on')
     if cutoff_date in portfolio.get('processed_sessions', []) and not force_session:
         _RUN_MODE = 'already_processed'
         _HEALTH.stage('session', True, 'already processed')
+        save_portfolio(portfolio)
         return None
     if force_session and cutoff_date in portfolio.get('processed_sessions', []):
         _RUN_MODE = 'forced_session_rerun'
@@ -5953,12 +5971,6 @@ def run_screener():
         print(f'  Manual rerun enabled for session {cutoff_date}')
 
     # Monitoring is canonical and idempotent per trade, even if new-pick work fails.
-    _closed_before = len(portfolio.get('closed_trades', []))
-    # Reconcile against the broker BEFORE replaying, so the ledger reflects what
-    # Alpaca actually executed rather than a simulated fill at the opening print.
-    global _EXECUTION_EVENTS
-    _EXECUTION_EVENTS = sync_with_broker(portfolio)
-    send_execution_alerts(_EXECUTION_EVENTS)
     portfolio = update_portfolio_prices(portfolio)
     _closed_today = portfolio['closed_trades'][_closed_before:]
     save_portfolio(portfolio)

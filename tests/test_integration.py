@@ -284,16 +284,50 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(APP._current_config(), before)
         self.assertIn('invalid_config', APP._HEALTH.as_dict()['degraded_reasons'])
 
-    def test_market_gate_precedes_config_monitoring_probes_and_alerts(self):
+    def test_market_gate_precedes_screening_probes_and_alerts(self):
+        # Outside a completed session nothing may screen, probe a model, price a
+        # replay off incomplete bars, or place an order. Broker reconciliation is
+        # deliberately NOT in that list — see the weekend test below.
         self.pipeline()
         for instant in (datetime(2026, 9, 12, 17), datetime(2026, 9, 7, 17), datetime(2026, 9, 11, 16, 14)):
             with self.subTest(instant=instant):
                 Clock.instant = instant.replace(tzinfo=ZoneInfo('America/New_York'))
                 self.assertIsNone(APP.run_screener())
                 self.assertEqual(APP._HEALTH.as_dict()['status'], 'healthy')
-        for mock in (self.config, self.monitor, self.probe, self.context, self.download, self.post, self.alert, self.weekly):
+        for mock in (self.monitor, self.probe, self.context, self.download,
+                     self.post, self.alert, self.weekly):
             mock.assert_not_called()
-        self.assertFalse(Path(APP.PORTFOLIO_JSON).exists())
+
+    def test_weekend_run_reconciles_the_broker_but_never_trades(self):
+        """A fill is a fact even when this run may not screen.
+
+        The 2026-09-17 MTD fill went unrecorded precisely because the gate
+        returned before anything asked Alpaca what had happened.
+        """
+        self.pipeline()
+        Clock.instant = datetime(2026, 9, 12, 17, tzinfo=ZoneInfo('America/New_York'))
+        events = [{'kind': 'fill', 'severity': 'info', 'symbol': 'AAA',
+                   'summary': 'AAA filled', 'shares': 5, 'price': 10.0}]
+        with patch.object(APP, 'sync_with_broker', return_value=events) as sync, \
+                patch.object(APP, 'send_execution_alerts') as alerts:
+            self.assertIsNone(APP.run_screener())
+        sync.assert_called_once()
+        alerts.assert_called_once_with(events)
+        self.assertEqual(APP._HEALTH.as_dict()['status'], 'healthy')
+        self.assertEqual(APP._RUN_MODE, 'no_session')
+        # Reconciled state is persisted, but nothing was screened or ordered.
+        self.assertTrue(Path(APP.PORTFOLIO_JSON).exists())
+        for mock in (self.monitor, self.probe, self.context, self.download,
+                     self.post, self.alert, self.weekly):
+            mock.assert_not_called()
+
+    def test_already_processed_session_still_reconciles_the_broker(self):
+        self.pipeline()
+        APP.run_screener()
+        with patch.object(APP, 'sync_with_broker', return_value=[]) as sync:
+            self.assertIsNone(APP.run_screener())
+        sync.assert_called_once()
+        self.assertEqual(APP._RUN_MODE, 'already_processed')
 
     def test_healthy_pipeline_queues_and_persists_without_spending_cash(self):
         self.pipeline()
