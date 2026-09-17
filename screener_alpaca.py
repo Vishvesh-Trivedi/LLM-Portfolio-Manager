@@ -1,4 +1,4 @@
-"""Alpaca integration: reliable market data + paper-trade execution.
+﻿"""Alpaca integration: reliable market data + paper-trade execution.
 
 This module is deliberately dependency-free beyond ``requests``/``pandas`` (both
 already required by the screener) so it works under restrictive environments and
@@ -216,6 +216,37 @@ def list_positions():
 def list_orders(status='all', limit=100):
     data = _get(_trade_base() + '/v2/orders', {'status': status, 'limit': limit})
     return data if isinstance(data, list) else []
+
+
+def open_order_shares_by_symbol():
+    """Map of open-order share deltas by symbol (buy positive, sell negative)."""
+    committed = {}
+    for order in list_orders(status='open'):
+        try:
+            symbol = str(order['symbol']).strip().upper()
+            side = str(order.get('side', '')).strip().lower()
+            qty = int(float(order.get('qty', 0) or 0))
+            filled = int(float(order.get('filled_qty', 0) or 0))
+        except (KeyError, TypeError, ValueError):
+            continue
+        remaining = max(0, qty - filled)
+        if remaining == 0:
+            continue
+        if side == 'buy':
+            committed[symbol] = committed.get(symbol, 0) + remaining
+        elif side == 'sell':
+            committed[symbol] = committed.get(symbol, 0) - remaining
+    return committed
+
+
+def effective_shares_by_symbol():
+    """Broker positions plus outstanding open-order share deltas."""
+    effective = dict(positions_by_symbol())
+    for symbol, delta in open_order_shares_by_symbol().items():
+        effective[symbol] = effective.get(symbol, 0) + delta
+        if effective[symbol] == 0:
+            effective.pop(symbol, None)
+    return effective
 
 
 def submit_market_order(symbol, qty, side):
