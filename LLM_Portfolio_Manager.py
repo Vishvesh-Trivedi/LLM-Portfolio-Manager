@@ -5427,10 +5427,7 @@ def run_screener():
     load_config_overrides()
     portfolio = load_portfolio()
     cutoff_date = _session_date()
-    force_session = (
-        os.getenv('SCREENER_FORCE_SESSION', '').strip().lower() in ('1', 'true', 'yes', 'on')
-        or os.getenv('GITHUB_EVENT_NAME') == 'workflow_dispatch'
-    )
+    force_session = os.getenv('SCREENER_FORCE_SESSION', '').strip().lower() in ('1', 'true', 'yes', 'on')
     if cutoff_date in portfolio.get('processed_sessions', []) and not force_session:
         _RUN_MODE = 'already_processed'
         _HEALTH.stage('session', True, 'already processed')
