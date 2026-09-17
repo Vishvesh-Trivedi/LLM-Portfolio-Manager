@@ -95,6 +95,7 @@ Version History:
 from collections import deque
 import threading
 import time
+import screener_alpaca as _alpaca
 
 _LLM_LAST_CALL = [0.0]
 _LLM_REQUEST_TIMESTAMPS = deque()
@@ -184,6 +185,16 @@ if os.getenv("OPENROUTER_API_KEY", "").strip():
     print("✅ OpenRouter backup provider configured")
 else:
     print("ℹ️  OpenRouter backup not set (optional) — add OPENROUTER_API_KEY secret to enable failover")
+
+# Optional Alpaca provider. On GitHub Actions this is the primary market-data
+# path because Yahoo/yfinance is commonly throttled from datacenter IPs.
+if _alpaca.data_enabled():
+    if _alpaca.trading_enabled():
+        print("✅ Alpaca configured — data provider + LIVE paper broker (SCREENER_LIVE_BROKER=1)")
+    else:
+        print("✅ Alpaca data provider configured (paper broker OFF — set SCREENER_LIVE_BROKER=1 to mirror the ledger)")
+else:
+    print("ℹ️  Alpaca not set (optional) — add ALPACA_API_KEY + ALPACA_SECRET_KEY secrets for reliable CI market data")
 
 # ── WHATSAPP (CallMeBot) ────────────────────────────────────
 # Store WHATSAPP_PHONE and CALLMEBOT_API_KEY in Colab Secrets (same panel as NVIDIA_API_KEY)
@@ -1971,15 +1982,38 @@ def batch_download(tickers):
     if not tickers:
         return {}
 
-    chunk_size = 80
-    if len(tickers) <= chunk_size:
-        batches = [tickers]
-        print(f'\nBatch downloading {len(tickers)} tickers (1 API call)...')
-    else:
-        batches = [tickers[i:i + chunk_size] for i in range(0, len(tickers), chunk_size)]
-        print(f'\nBatch downloading {len(tickers)} tickers ({len(batches)} chunked API calls)...')
-
     result = {}
+
+    # Primary source: Alpaca market data. Yahoo Finance is routinely throttled
+    # on shared/datacenter IPs (e.g. GitHub Actions), which starves the whole
+    # pipeline; Alpaca serves the same daily bars reliably. yfinance below then
+    # only fills whatever Alpaca did not return, so behaviour is unchanged when
+    # Alpaca credentials are absent.
+    if _alpaca.data_enabled():
+        try:
+            start = (pd.Timestamp.utcnow() - pd.Timedelta(days=260)).date().isoformat()
+            alpaca_bars = _alpaca.daily_bars(tickers, start=start)
+            for t, df in alpaca_bars.items():
+                if df is not None and len(df) >= 20:
+                    result[t] = df
+            if result:
+                print(f'  Alpaca: {len(result)}/{len(tickers)} tickers')
+        except Exception as e:
+            print(f'  Alpaca data error (falling back to Yahoo): {e}')
+
+    remaining = [t for t in tickers if t not in result]
+    if not remaining:
+        print(f'  Downloaded: {len(result)}/{len(tickers)} tickers')
+        return result
+
+    chunk_size = 80
+    if len(remaining) <= chunk_size:
+        batches = [remaining]
+        print(f'\nBatch downloading {len(remaining)} tickers (1 API call)...')
+    else:
+        batches = [remaining[i:i + chunk_size] for i in range(0, len(remaining), chunk_size)]
+        print(f'\nBatch downloading {len(remaining)} tickers ({len(batches)} chunked API calls)...')
+
     for i, batch in enumerate(batches, start=1):
         try:
             raw = yf.download(
@@ -4995,6 +5029,65 @@ def close_position(pf, ticker, exit_price, reason='hold_period', nzdusd_rate=Non
     )
 
 
+def _ledger_share_map(portfolio):
+    """Desired whole-share holdings from the ledger: filled positions plus
+    next-session pending orders, as {SYMBOL: int}. Pending orders are included
+    so a fresh BUY is placed at the broker the same evening it is queued (Alpaca
+    accepts it after close and fills at the next open, matching the ledger)."""
+    shares = {}
+    for record in list(portfolio.get('positions', [])) + list(portfolio.get('pending_orders', [])):
+        try:
+            qty = int(record.get('shares', 0))
+        except (TypeError, ValueError):
+            continue
+        if qty > 0:
+            symbol = str(record['ticker']).strip().upper()
+            shares[symbol] = shares.get(symbol, 0) + qty
+    return shares
+
+
+def reconcile_broker(portfolio):
+    """Mirror the paper ledger onto the Alpaca paper account (opt-in).
+
+    Idempotent desired-state sync: submit buys for holdings the broker is short,
+    sells for holdings the ledger has exited. No-op unless SCREENER_LIVE_BROKER=1
+    and Alpaca credentials are configured, so default runs and the offline test
+    suite are unaffected. Never raises — a broker outage must not fail the run.
+    """
+    if not _alpaca.trading_enabled():
+        return
+    try:
+        account = _alpaca.get_account()
+        if not account:
+            _HEALTH.stage('broker', True, 'Alpaca account unavailable; skipped mirror')
+            return
+        ledger_shares = _ledger_share_map(portfolio)
+        broker_shares = _alpaca.positions_by_symbol()
+        actions = _alpaca.plan_reconciliation(ledger_shares, broker_shares)
+        if not actions:
+            _HEALTH.stage('broker', True,
+                          f'In sync: {len(ledger_shares)} position(s) match Alpaca')
+            print(f'  Broker: in sync ({len(ledger_shares)} position(s))')
+            return
+        submitted, failed = 0, 0
+        for side, symbol, qty in actions:
+            if side == 'sell' and symbol not in ledger_shares:
+                ok = _alpaca.close_position(symbol) is not None
+            else:
+                ok = _alpaca.submit_market_order(symbol, qty, side) is not None
+            if ok:
+                submitted += 1
+                print(f'  Broker {side.upper()} {qty} {symbol}: submitted')
+            else:
+                failed += 1
+                print(f'  Broker {side.upper()} {qty} {symbol}: FAILED')
+        _HEALTH.stage('broker', failed == 0,
+                      f'{submitted} order(s) submitted, {failed} failed '
+                      f'(equity ${account.get("equity", "?")})')
+    except Exception as exc:  # defensive: mirroring is best-effort only
+        _HEALTH.stage('broker', True, 'reconcile skipped: ' + type(exc).__name__)
+
+
 def reconcile_closed_picks(pf):
     return _portfolio.reconcile_closed_picks(sys.modules[__name__], pf)
 
@@ -5200,6 +5293,7 @@ def _persist_session(portfolio):
         if session not in portfolio['processed_sessions']:
             portfolio['processed_sessions'].append(session)
     save_portfolio(portfolio)
+    reconcile_broker(portfolio)
 
 
 def _finish_no_pick(ctx, portfolio, reason, closed_today=None, not_required=(), nd=None):
