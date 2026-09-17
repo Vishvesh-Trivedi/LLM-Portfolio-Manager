@@ -23,11 +23,12 @@
       "trade_id": "4dc54b3e8848e9f186953f6e090b2268094668c1ba821f419221b1bc0b44e4d3",
       "cost_basis_basis": "legacy_estimate",
       "hold_sessions": 10,
-      "quote_stale": false,
+      "quote_stale": true,
       "quote_date": "2026-09-14",
       "held_sessions": 2,
       "last_evaluated_session": "2026-09-14",
-      "indicator_exit_note": ""
+      "indicator_exit_note": "",
+      "update_error": "quote gap: missing/invalid exact session 2026-09-16"
     }
   ],
   "closed_trades": [
@@ -249,8 +250,8 @@
   ],
   "total_realized_pnl": 145.34,
   "created": "2026-08-03",
-  "last_nzdusd_rate": 0.5777,
-  "last_updated": "2026-09-14",
+  "last_nzdusd_rate": 0.5713,
+  "last_updated": "2026-09-16",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 2527.38,
