@@ -265,22 +265,22 @@ def _client_order_id(symbol, side):
 
 
 def _order_key(snapshot):
-    return snapshot.get("client_order_id") or snapshot.get("order_id") or snapshot.get("symbol") or ""
+    return snapshot.get('client_order_id') or snapshot.get('order_id') or snapshot.get('symbol') or ''
 
 
 def _order_snapshot(order, source):
     return {
-        "source": source,
-        "event": str(order.get("status", "") or order.get("event", "") or "").lower(),
-        "timestamp": order.get("updated_at") or order.get("submitted_at") or order.get("timestamp"),
-        "order_id": str(order.get("id", "") or ""),
-        "client_order_id": order.get("client_order_id"),
-        "symbol": order.get("symbol"),
-        "status": str(order.get("status", "") or "").lower(),
-        "filled_qty": str(order.get("filled_qty", "") or ""),
-        "filled_avg_price": str(order.get("filled_avg_price", "") or ""),
-        "qty": str(order.get("qty", "") or ""),
-        "side": str(order.get("side", "") or "").lower(),
+        'source': source,
+        'event': str(order.get('status', '') or order.get('event', '') or '').lower(),
+        'timestamp': order.get('updated_at') or order.get('submitted_at') or order.get('timestamp'),
+        'order_id': str(order.get('id', '') or ''),
+        'client_order_id': order.get('client_order_id'),
+        'symbol': order.get('symbol'),
+        'status': str(order.get('status', '') or '').lower(),
+        'filled_qty': str(order.get('filled_qty', '') or ''),
+        'filled_avg_price': str(order.get('filled_avg_price', '') or ''),
+        'qty': str(order.get('qty', '') or ''),
+        'side': str(order.get('side', '') or '').lower(),
     }
 
 
@@ -309,9 +309,9 @@ def sync_order_statuses(existing_ledger=None):
         for item in existing_ledger:
             if isinstance(item, dict):
                 _upsert_order_ledger(item)
-    for order in list_orders(status="all", limit=500):
+    for order in list_orders(status='all', limit=500):
         try:
-            snapshot = _order_snapshot(order, "poll")
+            snapshot = _order_snapshot(order, 'poll')
         except Exception:
             continue
         _upsert_order_ledger(snapshot)
@@ -380,7 +380,13 @@ def submit_market_order(symbol, qty, side):
     body = {'symbol': str(symbol).strip().upper(), 'qty': str(qty),
             'side': side, 'type': 'market', 'time_in_force': 'day',
             'client_order_id': _client_order_id(symbol, side)}
-    return _request('POST', _trade_base() + '/v2/orders', body=body)
+    order = _request('POST', _trade_base() + '/v2/orders', body=body)
+    if isinstance(order, dict):
+        try:
+            _upsert_order_ledger(_order_snapshot(order, 'submit'))
+        except Exception:
+            pass
+    return order
 
 
 def close_position(symbol):
