@@ -28,7 +28,10 @@ import uuid
 import numpy as np
 import pandas as pd
 import requests
-from alpaca.trading.stream import TradingStream
+try:
+    from alpaca.trading.stream import TradingStream
+except Exception:
+    TradingStream = None
 
 _DATA_BASE = 'https://data.alpaca.markets'
 _PAPER_TRADE_BASE = 'https://paper-api.alpaca.markets'
