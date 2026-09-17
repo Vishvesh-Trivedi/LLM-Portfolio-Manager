@@ -5354,6 +5354,56 @@ def _finish_no_pick(ctx, portfolio, reason, closed_today=None, not_required=(), 
     return result
 
 
+def _current_session_pending_order(portfolio, session_date):
+    for order in portfolio.get('pending_orders', []):
+        if str(order.get('signal_date', ''))[:10] == str(session_date)[:10]:
+            return order
+    return None
+
+
+def _report_existing_session_order(ctx, portfolio, session_date, closed_today=None):
+    """Render the already-queued session order instead of inventing a new rerun pick."""
+    global _RUN_MODE, _RUN_REPORT
+    order = _current_session_pending_order(portfolio, session_date)
+    if not order:
+        return None
+    _RUN_MODE = 'existing_session_order'
+    _HEALTH.stage('final', True, 'Existing session order already queued; rerun reported current state')
+    entry = round(float(order.get('estimated_entry', 0) or 0), 2)
+    stop = round(entry - float(order.get('stop_distance', 0) or 0), 2) if entry else 'N/A'
+    target = round(entry + float(order.get('target_distance', 0) or 0), 2) if entry else 'N/A'
+    reason = 'Existing session order already queued for next session Open; no new order created.'
+    result = {
+        'top_pick': {
+            'ticker': str(order.get('ticker', 'NONE')).upper(),
+            'confidence': order.get('confidence', 0),
+            'signal': 'BUY',
+            'reasoning': order.get('reasoning', 'Existing session order already queued.'),
+            'key_risk': order.get('key_risk', 'N/A'),
+            'sector': order.get('sector', ''),
+            'source': order.get('source', ''),
+            'position_size_pct': order.get('position_size_pct', 0),
+            'order_status': 'QUEUED',
+            'order_reason': reason,
+            'facts_as_of': str(session_date),
+            'factual_summary': 'Rerun reused the existing queued order for this session.',
+        },
+        'watch_candidates': [],
+        'derived_rules': [],
+        'learning_summary': '',
+        'order_status': 'QUEUED',
+        'order_reason': reason,
+    }
+    print(f'  Existing session order: {result["top_pick"]["ticker"]} already queued for {order.get("execution_session", "next session")}.')
+    save_html_report(result, ctx, {}, entry or 'N/A', [], portfolio=portfolio,
+                     position_opened=False, stop_price=stop, target_price=target)
+    _RUN_REPORT = os.path.join(DRIVE_FOLDER, 'report_latest.html')
+    display_scorecard()
+    send_whatsapp(result['top_pick'], ctx, entry or 'N/A', [], stop, target,
+                  portfolio=portfolio, position_opened=False, closed_today=closed_today or [])
+    return result
+
+
 def write_run_health(result=None):
     """Atomically publish run diagnostics and append a secret-free CI summary."""
     import re
@@ -5487,6 +5537,11 @@ def run_screener():
     if _nzdusd:
         portfolio['last_nzdusd_rate'] = float(_nzdusd)
         save_portfolio(portfolio)
+
+    if force_session and cutoff_date in portfolio.get('processed_sessions', []):
+        existing = _report_existing_session_order(ctx, portfolio, cutoff_date, closed_today=_closed_today)
+        if existing is not None:
+            return existing
 
     print('\nStep 3/8: Fetching all data (parallel)...')
     requested = list(dict.fromkeys(scan_universe + KEY_ETFS + ['SPY', 'QQQ']))
