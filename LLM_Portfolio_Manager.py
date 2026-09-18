@@ -4299,6 +4299,7 @@ _ALERTING_EVENTS = frozenset({
     'fill', 'partial_fill', 'working', 'rejected', 'canceled', 'order_missing',
     'fill_unpriced', 'exit_filled', 'position_vanished', 'qty_drift',
     'price_drift', 'adopted', 'account_blocked', 'snapshot_failed',
+    'protected', 'unprotected', 'protection_failed',
 })
 _MAX_EVENT_EMBEDS = 8
 
@@ -4461,6 +4462,29 @@ def _execution_card(event):
                 body + ' **It has no sell prices, so it will not be sold '
                 'automatically - set them yourself.**',
                 _AMBER, [])
+
+    if kind == 'protected':
+        moved = event.get('moved')
+        return (f'🛡️  {"SELL PRICES MOVED" if moved else "SELL PRICES SET AT ALPACA"} · {symbol}',
+                (f'Alpaca will now sell your {_qty(event.get("broker_shares"))} {symbol} '
+                 f'automatically, even while nothing is running. '
+                 + ('The levels moved as the position rose.' if moved else '')),
+                _GREEN,
+                [('Sell if it falls to', _money(event.get('stop')), True),
+                 ('Sell if it rises to', _money(event.get('target')), True)])
+
+    if kind == 'unprotected':
+        return (f'⚠️  NO SELL PRICES · {symbol}',
+                f'Your {_qty(event.get("broker_shares"))} {symbol} has no usable sell '
+                f'prices, so Alpaca will not sell it automatically. Set them yourself.',
+                _AMBER, [])
+
+    if kind == 'protection_failed':
+        return (f'⛔  COULD NOT SET SELL PRICES · {symbol}',
+                f'Alpaca would not accept the sell prices for {symbol} '
+                f'({_money(event.get("stop"))} / {_money(event.get("target"))}), so it is '
+                f'**not protected automatically**. Check it in Alpaca.',
+                _RED, [])
 
     if kind == 'account_blocked':
         return ('⛔  YOUR ALPACA ACCOUNT IS BLOCKED',
@@ -5520,6 +5544,90 @@ def _resolve_sector(symbol):
     return ''
 
 
+def protect_positions(portfolio):
+    """Rest a stop-loss / take-profit at Alpaca for every open position.
+
+    stop_price and target_price in the ledger are only evaluated once a day,
+    AFTER the close: a position could fall 20% at 10am and nothing would happen
+    until that evening, which then submitted a market sell that filled at the
+    NEXT open. A resting GTC OCO is an instruction the broker acts on the moment
+    the level trades, which is the difference between a number in a file and
+    actual protection.
+
+    Idempotent: matching protection is left alone, a changed stop (the trailing
+    ratchet) replaces it, and a position already queued for a market exit is
+    skipped. Returns notification events.
+    """
+    if not _alpaca.trading_enabled():
+        return []
+    if not _BROKER_SYNC_OK[0]:
+        # A stop derived from a ledger we know is wrong could sell at the wrong
+        # level. Protection is only as trustworthy as the position record.
+        return []
+    events = []
+    try:
+        existing = _alpaca.protective_orders_by_symbol()
+        held = _alpaca.positions_by_symbol()
+    except Exception as exc:
+        _HEALTH.stage('protection', False, 'could not read: ' + type(exc).__name__)
+        _degrade('protection_unreadable')
+        return []
+
+    placed = replaced = skipped = 0
+    for position in portfolio.get('positions', []) or []:
+        symbol = str(position.get('ticker', '')).strip().upper()
+        if not symbol or position.get('exit_requested'):
+            continue  # a market exit is already on its way
+        quantity = int(held.get(symbol, 0) or 0)
+        if quantity <= 0:
+            continue  # nothing at the broker to protect
+        stop, target = position.get('stop_price'), position.get('target_price')
+        try:
+            stop = round(finite_number(stop, 'stop', minimum=0), 2)
+            target = round(finite_number(target, 'target', minimum=0), 2)
+        except Exception:
+            stop = target = 0
+        if not 0 < stop < target:
+            skipped += 1
+            _degrade('position_unprotected:' + symbol)
+            events.append({'kind': 'unprotected', 'severity': 'warning', 'symbol': symbol,
+                           'summary': symbol + ' has no usable stop/target',
+                           'broker_shares': quantity})
+            continue
+        current = existing.get(symbol)
+        if current and (current.get('qty'), current.get('stop'), current.get('limit')) == (quantity, stop, target):
+            continue  # already exactly right
+        if current:
+            if not _alpaca.cancel_order(current.get('order_id')):
+                _degrade('protection_stale:' + symbol)
+                events.append({'kind': 'protection_failed', 'severity': 'error', 'symbol': symbol,
+                               'summary': 'could not replace the old stop for ' + symbol,
+                               'stop': stop, 'target': target})
+                continue
+        order = _alpaca.submit_protective_oco(symbol, quantity, stop, target,
+                                              ref=position.get('trade_id', ''))
+        if order is None:
+            _degrade('protection_rejected:' + symbol)
+            events.append({'kind': 'protection_failed', 'severity': 'error', 'symbol': symbol,
+                           'summary': 'Alpaca refused the stop/target for ' + symbol,
+                           'stop': stop, 'target': target})
+            continue
+        if current:
+            replaced += 1
+        else:
+            placed += 1
+        events.append({'kind': 'protected', 'severity': 'info', 'symbol': symbol,
+                       'summary': symbol + ' protected at the broker',
+                       'broker_shares': quantity, 'stop': stop, 'target': target,
+                       'moved': bool(current)})
+        print(f'  Protection: {symbol} {quantity} sh  stop ${stop:,.2f} / target ${target:,.2f}'
+              + (' (replaced)' if current else ''))
+
+    _HEALTH.stage('protection', skipped == 0,
+                  f'{placed} placed, {replaced} moved, {skipped} without levels')
+    return events
+
+
 def _resolve_risk_levels(symbol, entry_price):
     """Derive a stop and target for an adopted position from its own ATR.
 
@@ -6079,10 +6187,12 @@ def run_screener():
     send_execution_alerts(_EXECUTION_EVENTS)
 
     if reason:
-        # Outside a session we reconcile and report, but never screen, price a
-        # replay off incomplete bars, or place an order.
+        # Outside a session we reconcile, protect and report, but never screen,
+        # price a replay off incomplete bars, or place a new order. Protection
+        # is not screening: a position must not sit unguarded until Monday.
         _RUN_MODE = 'no_session'
         _HEALTH.stage('session', True, reason)
+        send_execution_alerts(protect_positions(portfolio))
         save_portfolio(portfolio)
         print(f'  No completed trading session ({reason}); broker state reconciled only')
         return None
@@ -6102,6 +6212,8 @@ def run_screener():
 
     # Monitoring is canonical and idempotent per trade, even if new-pick work fails.
     portfolio = update_portfolio_prices(portfolio)
+    # Trailing stops ratchet during the replay, so push the new levels out now.
+    send_execution_alerts(protect_positions(portfolio))
     _closed_today = portfolio['closed_trades'][_closed_before:]
     save_portfolio(portfolio)
 

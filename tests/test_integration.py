@@ -309,10 +309,14 @@ class IntegrationTests(unittest.TestCase):
         events = [{'kind': 'fill', 'severity': 'info', 'symbol': 'AAA',
                    'summary': 'AAA filled', 'shares': 5, 'price': 10.0}]
         with patch.object(APP, 'sync_with_broker', return_value=events) as sync, \
+                patch.object(APP, 'protect_positions', return_value=[]) as protect, \
                 patch.object(APP, 'send_execution_alerts') as alerts:
             self.assertIsNone(APP.run_screener())
         sync.assert_called_once()
-        alerts.assert_called_once_with(events)
+        # Protection runs on a gated run too: a position must not sit unguarded
+        # over a weekend just because there is nothing to screen.
+        protect.assert_called_once()
+        self.assertIn(events, [call.args[0] for call in alerts.call_args_list])
         self.assertEqual(APP._HEALTH.as_dict()['status'], 'healthy')
         self.assertEqual(APP._RUN_MODE, 'no_session')
         # Reconciled state is persisted, but nothing was screened or ordered.
@@ -1278,6 +1282,97 @@ class IntegrationTests(unittest.TestCase):
             self.assertNotIn('BOUGHT', messages)
             self.assertNotIn('likely no cash', messages)
 
+
+    def protect(self, positions, held=None, existing=None, submit=None, cancel=True):
+        """Run protect_positions against a fake broker; return (events, calls)."""
+        APP._BROKER_SYNC_OK[0] = True
+        calls = []
+
+        def _submit(symbol, qty, stop, target, ref=''):
+            calls.append(('submit', symbol, qty, stop, target))
+            return None if submit == 'reject' else {'id': 'oco-1'}
+
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(APP._alpaca, 'positions_by_symbol',
+                             return_value=held if held is not None else {'MTD': 18}), \
+                patch.object(APP._alpaca, 'protective_orders_by_symbol',
+                             return_value=existing or {}), \
+                patch.object(APP._alpaca, 'submit_protective_oco', side_effect=_submit), \
+                patch.object(APP._alpaca, 'cancel_order',
+                             side_effect=lambda oid: calls.append(('cancel', oid)) or cancel), \
+                redirect_stdout(io.StringIO()):
+            events = APP.protect_positions({'positions': positions})
+        return events, calls
+
+    POS = {'ticker': 'MTD', 'shares': 18, 'trade_id': 'tid-1',
+           'stop_price': 1353.69, 'target_price': 1502.46}
+
+    def test_an_open_position_gets_a_resting_stop_at_the_broker(self):
+        # The whole point: the stop must be an instruction Alpaca acts on
+        # intraday, not a number checked once a day after the close.
+        events, calls = self.protect([dict(self.POS)])
+        self.assertEqual(calls, [('submit', 'MTD', 18, 1353.69, 1502.46)])
+        self.assertEqual([e['kind'] for e in events], ['protected'])
+        self.assertFalse(events[0]['moved'])
+
+    def test_matching_protection_is_left_alone(self):
+        existing = {'MTD': {'order_id': 'o1', 'qty': 18, 'stop': 1353.69, 'limit': 1502.46}}
+        events, calls = self.protect([dict(self.POS)], existing=existing)
+        self.assertEqual(calls, [], 'must not churn an already-correct order')
+        self.assertEqual(events, [])
+
+    def test_a_ratcheted_trailing_stop_replaces_the_old_order(self):
+        existing = {'MTD': {'order_id': 'o1', 'qty': 18, 'stop': 1300.00, 'limit': 1502.46}}
+        events, calls = self.protect([dict(self.POS)], existing=existing)
+        self.assertEqual(calls[0], ('cancel', 'o1'))
+        self.assertEqual(calls[1], ('submit', 'MTD', 18, 1353.69, 1502.46))
+        self.assertTrue(events[0]['moved'])
+
+    def test_a_failed_cancel_does_not_leave_two_live_orders(self):
+        existing = {'MTD': {'order_id': 'o1', 'qty': 18, 'stop': 1300.00, 'limit': 1502.46}}
+        events, calls = self.protect([dict(self.POS)], existing=existing, cancel=False)
+        self.assertNotIn('submit', [c[0] for c in calls])
+        self.assertEqual([e['kind'] for e in events], ['protection_failed'])
+
+    def test_quantity_comes_from_the_broker_not_the_ledger(self):
+        # Alpaca is the source of truth; protecting 18 when 15 are held would
+        # be rejected or would oversell.
+        events, calls = self.protect([dict(self.POS)], held={'MTD': 15})
+        self.assertEqual(calls[0][2], 15)
+
+    def test_a_position_without_levels_is_reported_not_guessed(self):
+        events, calls = self.protect([{'ticker': 'MTD', 'shares': 18,
+                                       'needs_risk_levels': True}])
+        self.assertEqual(calls, [])
+        self.assertEqual([e['kind'] for e in events], ['unprotected'])
+
+    def test_an_inverted_stop_and_target_is_refused(self):
+        bad = dict(self.POS, stop_price=1502.46, target_price=1353.69)
+        events, calls = self.protect([bad])
+        self.assertEqual(calls, [])
+        self.assertEqual([e['kind'] for e in events], ['unprotected'])
+
+    def test_a_position_already_queued_for_a_market_exit_is_skipped(self):
+        exiting = dict(self.POS, exit_requested={'reason': 'stop_loss',
+                                                 'session': '2026-09-18'})
+        events, calls = self.protect([exiting])
+        self.assertEqual(calls, [])
+        self.assertEqual(events, [])
+
+    def test_nothing_held_at_the_broker_means_nothing_to_protect(self):
+        events, calls = self.protect([dict(self.POS)], held={})
+        self.assertEqual(calls, [])
+
+    def test_a_rejected_order_is_reported_as_unprotected(self):
+        events, calls = self.protect([dict(self.POS)], submit='reject')
+        self.assertEqual([e['kind'] for e in events], ['protection_failed'])
+
+    def test_protection_is_skipped_when_reconciliation_is_untrustworthy(self):
+        APP._BROKER_SYNC_OK[0] = False
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(APP._alpaca, 'protective_orders_by_symbol',
+                             side_effect=AssertionError('must not touch the broker')):
+            self.assertEqual(APP.protect_positions({'positions': [dict(self.POS)]}), [])
 
     def test_sector_resolution_unpacks_the_fundamentals_tuple(self):
         # _fetch_fundamentals_single returns (ticker, data). Calling .get() on

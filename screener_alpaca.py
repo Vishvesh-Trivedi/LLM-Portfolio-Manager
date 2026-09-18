@@ -234,8 +234,13 @@ def list_positions():
     return data if isinstance(data, list) else []
 
 
-def list_orders(status='all', limit=100):
-    data = _get(_trade_base() + '/v2/orders', {'status': status, 'limit': limit})
+def list_orders(status='all', limit=100, nested=False):
+    params = {'status': status, 'limit': limit}
+    if nested:
+        # Return OCO/bracket legs nested under their parent instead of as
+        # separate rows, so a single top-level check can identify them.
+        params['nested'] = 'true'
+    data = _get(_trade_base() + '/v2/orders', params)
     return data if isinstance(data, list) else []
 
 
@@ -363,10 +368,34 @@ def broker_snapshot(order_limit=500):
                 'positions': {}, 'orders': []}
 
 
+_PROTECTIVE_CLASSES = frozenset({'oco', 'bracket', 'oto'})
+
+
+def is_protective(order):
+    """True for a resting stop/target order rather than a sizing instruction.
+
+    A protective sell sits open for the whole life of a position. Counting it as
+    a negative share delta makes a fully protected holding look like zero shares
+    held, and the desired-state mirror then BUYS the position a second time.
+    """
+    if str(order.get('order_class', '') or '').strip().lower() in _PROTECTIVE_CLASSES:
+        return True
+    if order.get('legs'):
+        return True
+    parsed = parse_client_order_id(order.get('client_order_id'))
+    return bool(parsed and parsed.get('protective'))
+
+
 def open_order_shares_by_symbol():
-    """Map of open-order share deltas by symbol (buy positive, sell negative)."""
+    """Map of open-order share deltas by symbol (buy positive, sell negative).
+
+    Resting protective orders are excluded: they express where to exit, not how
+    much to hold.
+    """
     committed = {}
-    for order in list_orders(status='open'):
+    for order in list_orders(status='open', nested=True):
+        if is_protective(order):
+            continue
         try:
             symbol = str(order['symbol']).strip().upper()
             side = str(order.get('side', '')).strip().lower()
@@ -397,16 +426,20 @@ def effective_shares_by_symbol():
 _CLIENT_ORDER_PREFIX = 'lpm'
 
 
-def _client_order_id(symbol, side, ref=''):
+def _client_order_id(symbol, side, ref='', protective=False):
     """Build a client_order_id that carries the ledger identity of the order.
 
     ``ref`` is the ledger's pending-order id (buys) or the position trade_id
     (sells). Embedding it makes broker→ledger matching exact instead of guessing
     from symbol and side, which is ambiguous as soon as a symbol is re-entered.
     Alpaca allows 128 characters; this stays well under that.
+
+    ``protective`` marks a resting stop/target order with a 'P' prefix. Those
+    must never be read as an intent to change the position size - see
+    open_order_shares_by_symbol.
     """
     cleaned = ''.join(ch for ch in str(symbol).upper() if ch.isalnum() or ch in ('-', '_'))[:12] or 'UNK'
-    prefix = 'B' if str(side).lower() == 'buy' else 'S'
+    prefix = 'P' if protective else ('B' if str(side).lower() == 'buy' else 'S')
     tag = ''.join(ch for ch in str(ref or '') if ch.isalnum())[:32]
     if not tag:
         tag = f'{int(time.time())}{uuid.uuid4().hex[:8]}'
@@ -420,10 +453,11 @@ def parse_client_order_id(client_order_id):
     back to symbol/side matching for those rather than assuming ownership.
     """
     parts = str(client_order_id or '').split('-')
-    if len(parts) != 4 or parts[0] != _CLIENT_ORDER_PREFIX or parts[1] not in ('B', 'S'):
+    if len(parts) != 4 or parts[0] != _CLIENT_ORDER_PREFIX or parts[1] not in ('B', 'S', 'P'):
         return None
     return {'side': 'buy' if parts[1] == 'B' else 'sell',
-            'symbol': parts[2].upper(), 'ref': parts[3]}
+            'symbol': parts[2].upper(), 'ref': parts[3],
+            'protective': parts[1] == 'P'}
 
 
 def ledger_ref(order):
@@ -557,6 +591,76 @@ def submit_market_order(symbol, qty, side, ref=''):
         except Exception:
             pass
     return order
+
+
+def _price(value):
+    return f'{round(float(value), 2):.2f}'
+
+
+def submit_protective_oco(symbol, qty, stop_price, limit_price, ref=''):
+    """Rest a GTC one-cancels-other stop-loss / take-profit on a held long.
+
+    Whichever leg triggers cancels the other. Good-till-cancelled so it protects
+    the position continuously, not only when this program happens to be running.
+    Returns the order dict or None; never raises.
+    """
+    try:
+        qty = int(qty)
+        stop = round(float(stop_price), 2)
+        limit = round(float(limit_price), 2)
+    except (TypeError, ValueError):
+        return None
+    if qty <= 0 or not 0 < stop < limit:
+        return None
+    body = {
+        'symbol': str(symbol).strip().upper(), 'qty': str(qty), 'side': 'sell',
+        'type': 'limit', 'time_in_force': 'gtc', 'order_class': 'oco',
+        'limit_price': _price(limit),
+        'take_profit': {'limit_price': _price(limit)},
+        'stop_loss': {'stop_price': _price(stop)},
+        'client_order_id': _client_order_id(symbol, 'sell', ref, protective=True),
+    }
+    return _request('POST', _trade_base() + '/v2/orders', body=body)
+
+
+def protective_orders_by_symbol():
+    """Resting protection per symbol: ``{SYMBOL: {order_id, qty, stop, limit}}``."""
+    found = {}
+    for order in list_orders(status='open', limit=500, nested=True):
+        if not is_protective(order):
+            continue
+        symbol = str(order.get('symbol', '') or '').strip().upper()
+        if not symbol:
+            continue
+        stop = limit = None
+        for leg in list(order.get('legs') or []) + [order]:
+            if leg.get('stop_price') is not None:
+                stop = _number(leg.get('stop_price'), stop)
+            elif leg.get('limit_price') is not None:
+                limit = _number(leg.get('limit_price'), limit)
+        found[symbol] = {'order_id': str(order.get('id', '') or ''),
+                         'qty': _whole(order.get('qty')),
+                         'stop': stop, 'limit': limit}
+    return found
+
+
+def cancel_order(order_id):
+    """Cancel one order. True when Alpaca accepted it."""
+    order_id = str(order_id or '').strip()
+    if not order_id:
+        return False
+    for attempt in range(_MAX_RETRIES):
+        try:
+            resp = requests.delete(_trade_base() + '/v2/orders/' + order_id,
+                                   headers=_headers(), timeout=_REQUEST_TIMEOUT)
+        except requests.exceptions.RequestException:
+            if attempt == _MAX_RETRIES - 1:
+                return False
+            time.sleep(min(2 ** attempt, 8))
+            continue
+        # 204 accepted; 404 means it is already gone, which is the same outcome.
+        return resp.status_code in (200, 204, 404)
+    return False
 
 
 def close_position(symbol):
