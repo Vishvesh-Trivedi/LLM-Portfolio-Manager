@@ -40,6 +40,23 @@ ACCOUNT = {'cash': '74740.92', 'equity': '100128.84',
            'trading_blocked': False, 'account_blocked': False}
 
 
+def ledger(**kwargs):
+    base = {'cash': 74740.92, 'starting_capital': 100000.0, 'positions': [],
+            'closed_trades': [], 'pending_orders': [], 'processed_sessions': [],
+            'total_realized_pnl': 0.0, 'equity_peak': 100000.0}
+    base.update(kwargs)
+    return base
+
+
+PENDING_MTD = {'id': 'e904bd8b-ef79-4a81-bfd2-a61eb4a563d9',
+               'trade_id': 'e904bd8b-ef79-4a81-bfd2-a61eb4a563d9',
+               'ticker': 'MTD', 'signal_date': '2026-09-16',
+               'execution_session': '2026-09-17', 'estimated_entry': 1382.83,
+               'stop_distance': 54.93, 'target_distance': 109.86,
+               'amount_usd': 25000.0, 'shares': 18, 'sector': 'Healthcare',
+               'atr': 36.62, 'hold_sessions': 10, 'status': 'PENDING'}
+
+
 def snapshot(**kwargs):
     base = {'ok': True, 'cash': 74740.92, 'equity': 100128.84, 'account_blocked': False,
             'positions': {}, 'orders': []}
@@ -78,9 +95,12 @@ class PreflightTests(unittest.TestCase):
         p.start()
         self.addCleanup(p.stop)
 
-    def run_preflight(self, *, keys=True, live=True, account=ACCOUNT, snap=None):
+    def run_preflight(self, *, keys=True, live=True, account=ACCOUNT, snap=None,
+                      book=None):
         snap = snapshot() if snap is None else snap
-        with patch.object(app._alpaca, 'data_enabled', return_value=keys), \
+        book = ledger() if book is None else book
+        with patch.object(qa_validate, 'check_state', return_value=book), \
+                patch.object(app._alpaca, 'data_enabled', return_value=keys), \
                 patch.object(app._alpaca, 'trading_enabled', return_value=keys and live), \
                 patch.object(app._alpaca, 'fetch_account', return_value=account), \
                 patch.object(app._alpaca, 'broker_snapshot', return_value=snap), \
@@ -159,11 +179,12 @@ class PreflightTests(unittest.TestCase):
     # -- The headline feature: what will the next run actually do? ---------
 
     def test_in_sync_ledger_reports_that_nothing_will_change(self):
-        # The real ledger has a pending MTD order; in sync means Alpaca is
-        # still working it, so there is nothing for the next run to change.
+        # Ledger holds a pending order that Alpaca is still working: nothing
+        # for the next run to change yet.
         working = snapshot(orders=[dict(FILLED_ORDER, status='accepted',
                                         filled_qty=0, filled_avg_price=None)])
-        code, text = self.run_preflight(snap=working)
+        code, text = self.run_preflight(snap=working,
+                                        book=ledger(pending_orders=[PENDING_MTD]))
         self.assertEqual(code, 0)
         self.assertIn('in sync', text)
         self.assertIn('READY', text)
@@ -172,7 +193,8 @@ class PreflightTests(unittest.TestCase):
         snap = snapshot(orders=[FILLED_ORDER], positions={
             'MTD': {'symbol': 'MTD', 'qty': 18, 'avg_entry_price': 1403.2822,
                     'market_value': 25387.92, 'current_price': 1410.44}})
-        code, text = self.run_preflight(snap=snap)
+        code, text = self.run_preflight(snap=snap,
+                                        book=ledger(pending_orders=[PENDING_MTD]))
         self.assertEqual(code, 0, 'a pending fill is expected news, not a blocker')
         self.assertIn('next run will', text)
         self.assertIn('MTD', text)
@@ -181,16 +203,36 @@ class PreflightTests(unittest.TestCase):
     def test_rejected_order_surfaces_as_a_blocking_conflict(self):
         snap = snapshot(orders=[dict(FILLED_ORDER, status='rejected', filled_qty=0,
                                      filled_avg_price=None)])
-        code, text = self.run_preflight(snap=snap)
+        code, text = self.run_preflight(snap=snap,
+                                        book=ledger(pending_orders=[PENDING_MTD]))
         self.assertEqual(code, 1)
         self.assertIn('NOT READY', text)
 
     # -- Safety ------------------------------------------------------------
 
     def test_preflight_never_modifies_the_canonical_ledger(self):
+        # Deliberately reads the real file: this is the guarantee that matters.
         before = hashlib.sha256(LEDGER.read_bytes()).hexdigest()
-        self.run_preflight(snap=snapshot(orders=[FILLED_ORDER]))
+        with patch.object(app._alpaca, 'data_enabled', return_value=True), \
+                patch.object(app._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(app._alpaca, 'fetch_account', return_value=ACCOUNT), \
+                patch.object(app._alpaca, 'broker_snapshot',
+                             return_value=snapshot(orders=[FILLED_ORDER])), \
+                redirect_stdout(io.StringIO()):
+            qa_validate.preflight()
         self.assertEqual(hashlib.sha256(LEDGER.read_bytes()).hexdigest(), before)
+
+    def test_a_position_held_only_at_alpaca_is_reported_for_adoption(self):
+        # The live situation on 2026-09-17: Alpaca filled MTD, the ledger's
+        # pending order was expired by the drawdown guard, and the ledger ended
+        # up holding nothing while the broker held 18 shares.
+        orphan = snapshot(positions={'MTD': {'symbol': 'MTD', 'qty': 18,
+                                             'avg_entry_price': 1403.28,
+                                             'current_price': 1410.44}})
+        code, text = self.run_preflight(snap=orphan, book=ledger())
+        self.assertIn('adopt', text)
+        self.assertIn('MTD', text)
+        self.assertEqual(code, 0)
 
     def test_preflight_never_sends_a_message_or_places_an_order(self):
         with patch.object(app._discord, 'send', side_effect=AssertionError('must not send')), \
