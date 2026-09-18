@@ -1,7 +1,37 @@
 {
   "cash": 74740.92,
   "starting_capital": 100000.0,
-  "positions": [],
+  "positions": [
+    {
+      "trade_id": "ca256419-3510-4322-9cfd-47f86089d05c",
+      "ticker": "MTD",
+      "shares": 18,
+      "entry_price": 1403.282222,
+      "entry_date": "2026-09-18",
+      "signal_date": "2026-09-18",
+      "sector": "Healthcare",
+      "cost_basis": 25259.08,
+      "brokerage_in": 0.0,
+      "current_price": 1410.44,
+      "current_value": 25387.92,
+      "unrealized_pnl": 128.84,
+      "unrealized_pnl_pct": 0.5100740011116711,
+      "hold_days": 0,
+      "held_sessions": 0,
+      "hold_sessions": 10,
+      "high_watermark": 1410.44,
+      "atr_at_entry": 33.06,
+      "filled_at_open": false,
+      "quote_stale": false,
+      "cost_basis_basis": "broker_adopted",
+      "source": "BROKER_ADOPTED",
+      "reasoning": "Adopted from the Alpaca account; not originated by the screener.",
+      "needs_risk_levels": false,
+      "stop_price": 1353.69,
+      "target_price": 1502.46,
+      "risk_levels_basis": "atr_derived_at_adoption"
+    }
+  ],
   "closed_trades": [
     {
       "ticker": "COR",
@@ -262,7 +292,7 @@
   "total_realized_pnl": 25.74,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.5732,
-  "last_updated": "2026-09-17",
+  "last_updated": "2026-09-18",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
@@ -271,7 +301,7 @@
     "2026-09-16",
     "2026-09-17"
   ],
-  "equity_peak": 100000.0,
+  "equity_peak": 100128.84,
   "broker_equity": 100128.84,
   "alpaca_order_ledger": [
     {
@@ -299,6 +329,19 @@
       "filled_avg_price": "1408.29",
       "qty": "1",
       "side": "buy"
+    },
+    {
+      "source": "poll",
+      "event": "canceled",
+      "timestamp": "2026-09-18T01:24:37.345558Z",
+      "order_id": "3ae5d5cf-3853-4f8c-b264-4e34cc4afc82",
+      "client_order_id": "da526eba-cdcd-4bb1-a41e-444bc6f34806",
+      "symbol": "MTD",
+      "status": "canceled",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "18",
+      "side": "sell"
     }
   ],
   "expired_orders": [
@@ -334,5 +377,6 @@
       "reason": "execution rejected: Order rejected: equity drawdown is at least 20%",
       "expired_date": "2026-09-17"
     }
-  ]
+  ],
+  "cash_basis": "broker_actual"
 }
