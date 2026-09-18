@@ -216,7 +216,8 @@ def _check_alerts(results, app):
         _row(results, WARN, 'Discord alerts', 'silenced by SCREENER_DISABLE_ALERTS=1')
     else:
         _row(results, WARN, 'Discord alerts',
-             'not configured - you will not be told what executed')
+             'NOT configured - the run will trade but tell you nothing. This is a '
+             'warning, not a trading blocker, so the verdict can still be READY')
     if app.WHATSAPP_PHONE and app.CALLMEBOT_API_KEY:
         _row(results, OK, 'WhatsApp alerts', 'configured')
 

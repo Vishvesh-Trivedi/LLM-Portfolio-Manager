@@ -851,7 +851,9 @@ class IntegrationTests(unittest.TestCase):
         raw = (self.output / 'run_health.json').read_text(encoding='utf-8')
         self.assertTrue(text.startswith('Existing summary'))
         self.assertIn('NVIDIA:actual-model', text)
-        self.assertIn('Stages: 0/1', text)
+        # The alerts stage now also reports, so the count is 1 of 2.
+        self.assertIn('Stages: 1/2', text)
+        self.assertIn('alerts: OK', text)
         self.assertIn('Provider attempts: 2; successes: 1; failures: 1', text)
         self.assertNotIn('fake-private-key', text + raw)
         self.assertNotIn('private.invalid', text + raw)

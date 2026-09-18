@@ -4501,6 +4501,42 @@ def _execution_card(event):
             event.get('summary', ''), _EVENT_COLORS.get(event.get('severity'), _GREY), [])
 
 
+# Delivery accounting. Written into run_health.json so "did the notification
+# actually go out?" is answerable from the committed record rather than from
+# Actions logs, which need credentials to read.
+_ALERT_STATS = {'discord_sent': 0, 'discord_failed': 0,
+                'whatsapp_sent': 0, 'whatsapp_failed': 0}
+
+
+def _reset_alert_stats():
+    for key in _ALERT_STATS:
+        _ALERT_STATS[key] = 0
+
+
+def _record_alert(channel, delivered):
+    _ALERT_STATS[channel + ('_sent' if delivered else '_failed')] += 1
+
+
+def _alert_health():
+    """(ok, detail) describing what was delivered on each channel this run."""
+    parts = []
+    failed = False
+    for channel, configured in (('discord', _discord.enabled()),
+                                ('whatsapp', bool(WHATSAPP_PHONE and CALLMEBOT_API_KEY))):
+        sent = _ALERT_STATS[channel + '_sent']
+        lost = _ALERT_STATS[channel + '_failed']
+        if not configured:
+            parts.append(channel + ': not configured')
+            continue
+        parts.append(f'{channel}: {sent} sent, {lost} failed')
+        failed = failed or lost > 0
+    if os.environ.get('SCREENER_DISABLE_ALERTS') == '1':
+        parts.append('silenced by SCREENER_DISABLE_ALERTS')
+    # Not configuring a channel is a choice; failing to deliver on one that IS
+    # configured is a fault worth surfacing.
+    return not failed, '; '.join(parts)
+
+
 def _alerts_configured():
     """True when at least one delivery channel is usable."""
     return _discord.enabled() or bool(WHATSAPP_PHONE and CALLMEBOT_API_KEY)
@@ -4513,17 +4549,24 @@ def _notify(text, label='', discord_text=None):
     such choke point, so the banner is applied here for that channel.
     """
     delivered = False
-    try:
-        delivered = bool(_discord.send(
-            text if discord_text is None else discord_text, label)) or delivered
-    except Exception as exc:
-        print(f'  Discord {label} error: {type(exc).__name__}')
-    try:
-        wa_text = ('TEST MESSAGE - not a real trade\n' + text
-                   if _discord.test_mode() else text)
-        delivered = bool(_wa_send(wa_text, label)) or delivered
-    except Exception as exc:
-        print(f'  WhatsApp {label} error: {type(exc).__name__}')
+    if _discord.enabled():
+        try:
+            ok = bool(_discord.send(text if discord_text is None else discord_text, label))
+        except Exception as exc:
+            ok = False
+            print(f'  Discord {label} error: {type(exc).__name__}')
+        _record_alert('discord', ok)
+        delivered = ok or delivered
+    if WHATSAPP_PHONE and CALLMEBOT_API_KEY:
+        try:
+            wa_text = ('TEST MESSAGE - not a real trade\n' + text
+                       if _discord.test_mode() else text)
+            ok = bool(_wa_send(wa_text, label))
+        except Exception as exc:
+            ok = False
+            print(f'  WhatsApp {label} error: {type(exc).__name__}')
+        _record_alert('whatsapp', ok)
+        delivered = ok or delivered
     return delivered
 
 
@@ -4553,10 +4596,12 @@ def send_execution_alerts(events):
             footer = f'{account} · session {_session_date()}'
             if reference:
                 footer += f' · order {reference}'
-            sent += bool(_discord.send_embed(
+            ok = bool(_discord.send_embed(
                 title=title, description=body, color=color, fields=stats,
                 author=f'{account} · Portfolio Manager', footer=footer,
                 timestamp=stamp, label='execution:' + event['kind']))
+            _record_alert('discord', ok)
+            sent += ok
         if overflow > 0:
             _discord.send(f'…and {overflow} more execution event(s) — see the run report.',
                           label='execution-overflow')
@@ -6120,6 +6165,8 @@ def write_run_health(result=None):
             return re.sub(r'(?i)bearer\s+\S+', 'Bearer [redacted]', value)
         return value
 
+    ok, detail = _alert_health()
+    _HEALTH.stage('alerts', ok, detail)
     health = clean(dict(_HEALTH.as_dict(), date=_session_date(), output=DRIVE_FOLDER,
                         mode=_RUN_MODE, report=_RUN_REPORT,
                         **_trade_readiness(),
@@ -6154,6 +6201,7 @@ def run_screener():
     _ORDER_REASON[0] = ''
     _LLM_CALL_COUNT[0] = 0
     _LAST_LLM_FAILURE_REASON[0] = ''
+    _reset_alert_stats()
     print('DAILY STOCK SCREENER v6.2')
     print(f'   Time:   {datetime.now().strftime("%Y-%m-%d %H:%M")}')
     print(f'   Folder: {DRIVE_FOLDER}')

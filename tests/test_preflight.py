@@ -174,7 +174,8 @@ class PreflightTests(unittest.TestCase):
                 patch.dict(os.environ, {'SCREENER_DISABLE_ALERTS': '0'}):
             code, text = self.run_preflight()
         self.assertEqual(code, 0)
-        self.assertIn('will not be told what executed', text)
+        self.assertIn('tell you nothing', text)
+        self.assertIn('not a trading blocker', text)
 
     # -- The headline feature: what will the next run actually do? ---------
 
