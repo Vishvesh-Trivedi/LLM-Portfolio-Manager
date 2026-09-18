@@ -2731,8 +2731,11 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
     )
 
     try:
+        # This is the only core, trade-blocking stage, and it carries the
+        # largest schema: every stock and sector signal plus four macro blocks.
+        # It was the one call given a single attempt per provider.
         nd = _llm_json_with_fallback(
-            system, user, max_tokens=4000, read_timeout=60, max_attempts=1,
+            system, user, max_tokens=4000, read_timeout=90, max_attempts=2,
             validator=lambda p: validate_news(p, candidates), stage='news',
         )
         print(f'  Sentiment: {nd.get("market_sentiment","?")} | Adj: {int(nd.get("overall_market_adjustment",0)):+d}')
@@ -6034,14 +6037,28 @@ def _session_gate(et_now):
     return holiday or ('before 16:15 ET' if (et_now.hour, et_now.minute) < (16, 15) else '')
 
 
-_CORE_STAGES = ('market_data', 'catalysts', 'news', 'final')
+# Stages that must succeed before ANY order is queued. Each earns its place by
+# making a trade unsafe if it fails: prices must be real, a catalyst must be
+# verified rather than invented, and there must be an actual decision.
+#
+# News enrichment is deliberately NOT here. apply_news only adds score
+# adjustments and auto-drops, so losing it leaves the final model less informed,
+# not wrong - while being the largest schema in the system and therefore the
+# most likely to fail validation. Gating execution on it meant one brittle LLM
+# response could stop the screener trading indefinitely, which is what happened
+# on 2026-09-18. It still reports, still degrades the run and still alerts.
+_CORE_STAGES = ('market_data', 'catalysts', 'final')
+
+# Degradations that are informational rather than dangerous. They keep the run
+# marked degraded (and the job red) without blocking execution.
+_NON_BLOCKING_DEGRADATIONS = ('paper_horizon_', 'advisory_')
 
 
 def _blocking_degraded_reasons():
-    # Hypothetical CSV horizon evaluation is reporting-only. Unknown reasons
-    # stay blocking, including stale quotes/VIX, invalid config and ledger risk.
+    # Reporting-only degradations do not stop execution. Everything else stays
+    # blocking, including stale quotes/VIX, invalid config and ledger risk.
     return [reason for reason in _HEALTH.as_dict()['degraded_reasons']
-            if not reason.startswith('paper_horizon_')]
+            if not reason.startswith(_NON_BLOCKING_DEGRADATIONS)]
 
 
 def _trade_readiness():
@@ -6449,13 +6466,24 @@ def run_screener():
 
     print('\nStep 5/8: News intelligence (3 layers + analyst actions + SEC filings)...')
     nd         = get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_news, sec_filings=sec_filings)
-    if nd.get('_unavailable') or not _HEALTH.as_dict()['stages'].get('news', {}).get('success'):
-        _HEALTH.stage('news', False, 'News data unavailable; display defaults are not validation')
-    candidates = apply_news(candidates, nd)
-
-    if not candidates:
-        return _finish_no_pick(ctx, portfolio, 'All candidates dropped by news filter', _closed_today,
-                               not_required=('final',), nd=nd)
+    news_stage = _HEALTH.as_dict()['stages'].get('news', {})
+    if nd.get('_unavailable') or not news_stage.get('success'):
+        # Keep the validator's own message: 'News data unavailable' alone cannot
+        # distinguish a timeout from a missing field.
+        reason = news_stage.get('detail') or 'News data unavailable'
+        _HEALTH.stage('news', False, reason + ' (sentiment enrichment skipped)')
+        _degrade('advisory_news_unavailable')
+        print('  News enrichment unavailable - trading continues on verified '
+              'prices, verified catalysts and the final decision.')
+        # Do NOT apply a response the validator rejected. Its auto-drops could
+        # eliminate every candidate, and the run would report "all candidates
+        # dropped by news" - a failure to evaluate disguised as a decision.
+        nd = {}
+    else:
+        candidates = apply_news(candidates, nd)
+        if not candidates:
+            return _finish_no_pick(ctx, portfolio, 'All candidates dropped by news filter',
+                                   _closed_today, not_required=('final',), nd=nd)
 
     market_sentiment = nd.get('market_sentiment','NEUTRAL')
     candidates = enrich_with_scores(candidates, ctx, market_sentiment, sector_ranks, options_data, insider_data, congress_data)

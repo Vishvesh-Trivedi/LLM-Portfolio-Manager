@@ -437,29 +437,33 @@ class IntegrationTests(unittest.TestCase):
         self.report.assert_called_once()
         self.alert.assert_called_once()
 
-    def test_news_failure_blocks_confident_buy_and_remains_retryable(self):
+    def test_news_failure_is_loud_but_does_not_block_the_trade(self):
+        # Trading continues on verified prices, verified catalysts and the final
+        # decision. The loss is recorded, degrades the run and is alerted - it
+        # simply no longer stops execution.
         self.pipeline()
         self.bad_stage = 'news'
         result = APP.run_screener()
-        self.assertEqual(result['top_pick']['signal'], 'NO PICK')
-        self.assertEqual(result['top_pick']['confidence'], 0)
-        self.assertEqual(result['failure_reason'], 'Data/LLM validation incomplete; no new order queued.')
-        self.queue.assert_not_called()
-        self.assertEqual(self.ledger()['pending_orders'], [])
-        self.assertEqual(self.ledger()['processed_sessions'], [])
-        self.report.assert_called_once()
-        self.bad_stage = None
-        self.assertEqual(APP.run_screener()['order_status'], 'QUEUED')
+        self.assertEqual(result['order_status'], 'QUEUED')
+        health = APP._HEALTH.as_dict()
+        self.assertFalse(health['stages']['news']['success'], 'the loss must be recorded')
+        self.assertIn('advisory_news_unavailable', health['degraded_reasons'])
+        self.assertEqual(health['status'], 'degraded', 'the run must not look clean')
+        self.assertTrue(APP._trade_readiness()['trade_ready'])
 
-    def test_unvalidated_news_defaults_cannot_certify_empty_candidate_exit(self):
+    def test_a_rejected_news_response_is_never_applied_to_candidates(self):
+        # The original hazard: apply_news ran on whatever came back, so a bad
+        # response could auto-drop every candidate and the run would report
+        # 'all candidates dropped by news' - a failure to evaluate disguised as
+        # a decision. A rejected response must now be discarded outright.
         self.pipeline()
-        self.mock('get_news_intelligence', return_value={})
-        self.mock('apply_news', return_value=[])
+        self.bad_stage = 'news'
+        applied = self.mock('apply_news', side_effect=AssertionError(
+            'a rejected news response must never reach apply_news'))
         result = APP.run_screener()
-        self.assertIn('failure_reason', result)
+        applied.assert_not_called()
+        self.assertEqual(result['order_status'], 'QUEUED')
         self.assertFalse(APP._HEALTH.as_dict()['stages']['news']['success'])
-        self.assertEqual(self.ledger()['processed_sessions'], [])
-        self.queue.assert_not_called()
 
     def test_invalid_config_degrades_full_pipeline_without_queueing(self):
         self.pipeline()
@@ -992,11 +996,15 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(pf, {})
 
     def test_missing_or_failed_required_stage_is_not_ready(self):
-        for required in ('market_data', 'catalysts', 'news', 'final'):
+        # Each of these makes a trade unsafe if it fails: prices must be real, a
+        # catalyst must be verified rather than invented, and there must be a
+        # decision. News is deliberately absent - see the test below.
+        self.assertEqual(APP._CORE_STAGES, ('market_data', 'catalysts', 'final'))
+        for required in APP._CORE_STAGES:
             for missing in (True, False):
                 with self.subTest(required=required, missing=missing):
                     health = APP.RunHealth()
-                    for name in ('market_data', 'catalysts', 'news', 'final'):
+                    for name in APP._CORE_STAGES:
                         if name != required:
                             health.stage(name, True, 'validated')
                         elif not missing:
@@ -1006,6 +1014,17 @@ class IntegrationTests(unittest.TestCase):
                         self.assertFalse(health.as_dict()['stages'][required]['success'])
                         if required != 'final':
                             self.assertTrue(health.as_dict()['stages']['final']['success'])
+
+    def test_failed_news_does_not_make_the_run_unready(self):
+        # News enrichment only adds score adjustments; losing it leaves the
+        # final model less informed, not wrong. Gating execution on it let one
+        # brittle LLM response stop the screener trading indefinitely.
+        health = APP.RunHealth()
+        for name in APP._CORE_STAGES:
+            health.stage(name, True, 'validated')
+        health.stage('news', False, 'schema rejected')
+        with patch.object(APP, '_HEALTH', health):
+            self.assertTrue(APP._require_core_health())
 
     def test_optional_stage_and_provider_failures_preserve_final_validation(self):
         for name in ('market_data', 'catalysts', 'news', 'final'):
