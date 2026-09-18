@@ -204,5 +204,33 @@ class RoutingTests(BudgetTests):
         self.router.assert_not_called()
 
 
+class ModelRankingTests(unittest.TestCase):
+    """Run #93 did strict-JSON financial reasoning on an 11B VISION model."""
+
+    def rank(self, models):
+        return sorted(models, key=app._model_quality_rank)
+
+    def test_a_text_model_beats_a_bigger_vision_model(self):
+        order = self.rank(['meta/llama-3.2-90b-vision-instruct',
+                           'meta/llama-3.3-70b-instruct'])
+        self.assertEqual(order[0], 'meta/llama-3.3-70b-instruct')
+
+    def test_a_large_vision_model_still_beats_a_tiny_text_model(self):
+        # Discounted, not banned: 90B/4 = 22.5 effective, ahead of an 8B text.
+        order = self.rank(['meta/llama-3.1-8b-instruct',
+                           'meta/llama-3.2-90b-vision-instruct'])
+        self.assertEqual(order[0], 'meta/llama-3.2-90b-vision-instruct')
+
+    def test_the_model_that_failed_run_93_now_ranks_last(self):
+        models = ['meta/llama-3.2-90b-vision-instruct', 'meta/llama-3.3-70b-instruct',
+                  'meta/llama-3.2-11b-vision-instruct', 'qwen/qwen2.5-72b-instruct',
+                  'meta/llama-3.1-8b-instruct']
+        self.assertEqual(self.rank(models)[-1], 'meta/llama-3.2-11b-vision-instruct')
+
+    def test_bigger_text_models_still_come_first(self):
+        order = self.rank(['meta/llama-3.1-8b-instruct', 'qwen/qwen2.5-72b-instruct'])
+        self.assertEqual(order[0], 'qwen/qwen2.5-72b-instruct')
+
+
 if __name__ == '__main__':
     unittest.main()

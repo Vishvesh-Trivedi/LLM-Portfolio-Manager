@@ -67,6 +67,19 @@ def test_mode():
     return os.environ.get(ALERT_TEST_ENV, '').strip().lower() in ('1', 'true', 'yes', 'on')
 
 
+_LAST_ERROR = ['']
+
+
+def last_error():
+    """Why the most recent send failed, for the run's health record."""
+    return _LAST_ERROR[0]
+
+
+def _fail(reason):
+    _LAST_ERROR[0] = str(reason)[:120]
+    return False
+
+
 def _redact(text):
     """Strip the bot token from any string before it can reach a log."""
     detail = str(text)
@@ -138,11 +151,15 @@ def _post(payload, label):
             time.sleep(min(2 ** attempt, 4))
             continue
         if response.status_code >= 400:
+            hint = {401: 'bad DISCORD_BOT_TOKEN', 403: 'bot lacks Send Messages here',
+                    404: 'wrong DISCORD_CHANNEL_ID'}.get(response.status_code, '')
             print('  Discord ' + label + ' HTTP ' + str(response.status_code)
                   + ': ' + _redact(response.text)[:160])
-            return False
+            return _fail('HTTP ' + str(response.status_code)
+                         + (' - ' + hint if hint else ''))
+        _LAST_ERROR[0] = ''
         return True
-    return False
+    return _fail('gave up after ' + str(_MAX_ATTEMPTS) + ' attempts')
 
 
 def check_access():

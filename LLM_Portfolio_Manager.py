@@ -469,9 +469,17 @@ def _model_quality_rank(model_id):
         family = 5
 
     instruct = 0 if ('instruct' in mid or 'chat' in mid) else 1
-    vision = 1 if 'vision' in mid else 0  # deprioritise vision-only tunes for text
+    vision = 1 if 'vision' in mid else 0
 
-    return (-size, vision, family, instruct, mid)
+    # Vision tunes are discounted rather than banned. Ranking on raw size alone
+    # let a 90B vision model outrank a 70B text model, and when that failed run
+    # #93 did its strict-JSON financial reasoning on an 11B VISION model: the
+    # news stage failed and no trade was placed. Parameter count does not make a
+    # vision tune good at text, but a large one still beats a tiny text model,
+    # so quarter its effective size instead of pushing it below everything.
+    effective = size / 4 if vision else size
+
+    return (-effective, family, instruct, mid)
 
 
 def _probe_chat_model(model, timeout=(10, 20)):
@@ -4528,7 +4536,12 @@ def _alert_health():
         if not configured:
             parts.append(channel + ': not configured')
             continue
-        parts.append(f'{channel}: {sent} sent, {lost} failed')
+        detail = f'{channel}: {sent} sent, {lost} failed'
+        if lost and channel == 'discord':
+            reason = _discord.last_error()
+            if reason:
+                detail += ' (' + reason + ')'
+        parts.append(detail)
         failed = failed or lost > 0
     if os.environ.get('SCREENER_DISABLE_ALERTS') == '1':
         parts.append('silenced by SCREENER_DISABLE_ALERTS')
