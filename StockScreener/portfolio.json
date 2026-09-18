@@ -12,10 +12,10 @@
       "sector": "Healthcare",
       "cost_basis": 25259.08,
       "brokerage_in": 0.0,
-      "current_price": 1410.44,
-      "current_value": 25387.92,
-      "unrealized_pnl": 128.84,
-      "unrealized_pnl_pct": 0.5100740011116711,
+      "current_price": 1392.3199462890625,
+      "current_value": 25061.76,
+      "unrealized_pnl": -197.32,
+      "unrealized_pnl_pct": -0.7811844295200099,
       "hold_days": 0,
       "held_sessions": 0,
       "hold_sessions": 10,
@@ -29,7 +29,9 @@
       "needs_risk_levels": false,
       "stop_price": 1353.69,
       "target_price": 1502.46,
-      "risk_levels_basis": "atr_derived_at_adoption"
+      "risk_levels_basis": "atr_derived_at_adoption",
+      "quote_date": "2026-09-18",
+      "last_evaluated_session": "2026-09-18"
     }
   ],
   "closed_trades": [
@@ -291,7 +293,7 @@
   ],
   "total_realized_pnl": 25.74,
   "created": "2026-08-03",
-  "last_nzdusd_rate": 0.5732,
+  "last_nzdusd_rate": 0.5724,
   "last_updated": "2026-09-18",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
@@ -302,7 +304,7 @@
     "2026-09-17"
   ],
   "equity_peak": 100128.84,
-  "broker_equity": 100128.84,
+  "broker_equity": 99802.68,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -338,6 +340,32 @@
       "client_order_id": "da526eba-cdcd-4bb1-a41e-444bc6f34806",
       "symbol": "MTD",
       "status": "canceled",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "18",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-09-18T22:57:00.973251587Z",
+      "order_id": "f642cae5-1c70-4fd2-aba4-c67fd62c597e",
+      "client_order_id": "fdb59c08-e03c-4ba1-83b8-7dd9737ec82f",
+      "symbol": "MTD",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "18",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-09-18T22:57:00.973222063Z",
+      "order_id": "15bc87ff-0bf3-4401-8b01-b2a5c74d0609",
+      "client_order_id": "lpm-P-MTD-ca256419351043229cfd47f86089d05c",
+      "symbol": "MTD",
+      "status": "accepted",
       "filled_qty": "0",
       "filled_avg_price": "",
       "qty": "18",
