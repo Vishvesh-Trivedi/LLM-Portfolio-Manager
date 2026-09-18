@@ -12,7 +12,6 @@ import socket
 import tempfile
 import types
 import unittest
-from collections import deque
 from contextlib import ExitStack, redirect_stdout
 from pathlib import Path
 from unittest.mock import Mock, patch

@@ -4784,8 +4784,10 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     total_val = round(cash + sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions), 0)
     total_pnl = round(total_val - start_cap, 0)
     total_pct = round((total_pnl / start_cap) * 100, 1) if start_cap else 0.0
-    portfolio_state = 'UP' if total_pnl >= 0 else 'DOWN'
-    broker_label = 'Alpaca paper' if _alpaca.trading_enabled() else 'Ledger only'
+    # Whether these numbers reflect a real broker account or a local simulation
+    # is the single most important qualifier on the whole message.
+    broker_label = ('Trading through your Alpaca account.' if _alpaca.trading_enabled()
+                    else 'Simulated only - no orders are sent to Alpaca.')
 
     date_str = datetime.now().strftime('%b %d %Y')
     WA_MAX_CHARS = 1600  # Hard limit for CallMeBot per message
@@ -4856,7 +4858,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     queued_shares = next((int(o.get('shares', 0) or 0) for o in pf.get('pending_orders', [])
                           if str(o.get('ticker', '')).upper() == tkr), 0)
 
-    m1 = [f'Daily screen - {date_str}', '']
+    m1 = [f'Daily screen - {date_str}', broker_label, '']
 
     if sig == 'BUY' and tkr and tkr not in ('NONE', ''):
         _opened = next((p for p in positions if str(p.get('ticker', '')).upper() == tkr), {})
@@ -4937,7 +4939,7 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     msg1 = '\n'.join(m1)
 
     # ═══ MESSAGE 2: WHAT YOU HOLD ═══
-    m2 = [f'Your portfolio - {date_str}', '',
+    m2 = [f'Your portfolio - {date_str}', broker_label, '',
           f'Total value {_usd(total_val)} '
           f'({"up" if total_pnl >= 0 else "down"} {_usd(total_pnl)}, {total_pct:+.1f}%)',
           f'Cash available {_usd(cash)}']
