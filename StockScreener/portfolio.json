@@ -301,7 +301,8 @@
   "pending_orders": [],
   "processed_sessions": [
     "2026-09-16",
-    "2026-09-17"
+    "2026-09-17",
+    "2026-09-18"
   ],
   "equity_peak": 100128.84,
   "broker_equity": 99802.68,

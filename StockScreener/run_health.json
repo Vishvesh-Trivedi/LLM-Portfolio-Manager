@@ -3,18 +3,8 @@
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
       "attempts": 11,
-      "successes": 9,
-      "failures": 2
-    },
-    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
-      "attempts": 2,
-      "successes": 2,
+      "successes": 11,
       "failures": 0
-    },
-    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
     }
   },
   "stages": {
@@ -28,7 +18,7 @@
     },
     "protection": {
       "success": true,
-      "detail": "1 placed, 0 moved, 0 without levels"
+      "detail": "0 placed, 0 moved, 0 without levels"
     },
     "market_context": {
       "success": true,
@@ -40,7 +30,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "100/109 covered; missing: DT, ILMN, MEDP, NTNX, OKTA, REXR, RGEN, ZTS, NLY; selected sector checked by order planner"
+      "detail": "140/152 covered; missing: ILMN, MEDP, NTNX, OKTA, KTOS, MANH, KRG, MTN, LAD, MTDR, OHI, NLY; selected sector checked by order planner"
     },
     "exit:MTD": {
       "success": true,
@@ -71,16 +61,16 @@
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "news": {
-      "success": false,
-      "detail": "News data unavailable; display defaults are not validation"
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
+      "success": false,
+      "detail": "ValueError: ranking contains invalid candidate tickers"
     },
     "round2": {
-      "success": false,
-      "detail": "ValueError: no usable deep-dive context"
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
       "success": true,
@@ -92,21 +82,19 @@
     },
     "alerts": {
       "success": false,
-      "detail": "discord: 0 sent, 3 failed; whatsapp: 2 sent, 0 failed"
+      "detail": "discord: 0 sent, 2 failed; whatsapp: 2 sent, 0 failed"
     }
   },
   "degraded_reasons": [],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
-  "attempts": 15,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
+  "attempts": 11,
   "successes": 11,
-  "failures": 4,
+  "failures": 0,
   "date": "2026-09-18",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
-  "trade_ready": false,
-  "trade_blockers": [
-    "failed:news"
-  ],
-  "order_status": "NO ORDER"
+  "trade_ready": true,
+  "trade_blockers": [],
+  "order_status": "REJECTED"
 }

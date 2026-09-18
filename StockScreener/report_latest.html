@@ -31,16 +31,16 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>news; round2<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round1<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Friday September 18 2026  23:06 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Friday September 18 2026  23:43 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
     <div class="mi"><div class="ml">VIX</div><div class="mv">14.8 &nbsp;LOW (p7 risk-o</div></div>
     <div class="mi"><div class="ml">SPY Today</div>
         <div class="mv" style="color:#f44336">-0.13%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BULLISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">Unavailable</div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">The US market saw a mixed day with some stocks rising and others falling, amidst a backdrop of geopolitical tensions and economic uncertainty. The VIX index ros</div>
   </div>
 
   <div class="tabs">
@@ -54,20 +54,50 @@ tr:last-child td{border-bottom:none}
   <div id="t-buy" class="tp on">
     <div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
-    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that stocks with strong momentum and insider buying activity tend to outperform in the next 4 weeks.</p>
-    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=7, wr=57%, HIGH confidence): Stocks with VIX &gt; 13 and momentum &gt; 5% in the last 5 days tend to outperform in the next 4 weeks.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=4, wr=75%, HIGH confidence): Stocks with insider buying activity and momentum &gt; 5% in the last 5 days tend to outperform in the next 4 weeks.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule (n=3, wr=67%, MEDIUM confidence): Stocks with RSI &gt; 50 and ADX &gt; 15 tend to outperform in the next 4 weeks.</li></ul>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that stocks with a VIX multiplier greater than 1 and QQQ bullish tend to outperform in the next 1-4 weeks, especially when combined with recent strong organic growth and AI adoption.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=10, wr=80%, HIGH confidence): Stocks with VIX multiplier &gt; 1 and QQQ bullish tend to outperform.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=5, wr=90%, HIGH confidence): Stocks with recent strong organic growth and AI adoption tend to outperform.</li></ul>
     <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-17 23:40</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with a 5-day momentum > 5% and a tech score > 40 are more likely to outperform in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=3, wr=67%, MEDIUM confidence): Stocks with a VIX-adjusted RSI > 60 and a strong insider signal are more likely to outperform in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=2, wr=50%, LOW confidence): Stocks with a high analyst consensus and a strong options signal are more likely to outperform in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-17 03:02</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with VIX-adjusted RSI above 50 and MACD_bull=true have a 80% win rate with an average return of 10%.</li><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with insider buying and analyst consensus above 1.5 have a 80% win rate with an average return of 12%.</li><li style="padding:2px 0">Rule (n=3, wr=67%, LOW confidence): Stocks with vader_sentiment above 12 and news_significance above 6 have a 67% win rate with an average return of 8%.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-17 01:32</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=7, wr=71%, HIGH confidence): Stocks with a 5-day momentum above 5% and a RSI above 40 tend to outperform in the next 4 weeks.</li><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with a strong technical score (above 30) and a news score above 30 tend to have a higher win rate in the next 4 weeks.</li><li style="padding:2px 0">Rule (n=3, wr=67%, LOW confidence): Stocks with a short ratio above 3 and a short pct float above 2 tend to have a lower win rate in the next 4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-14 23:57</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with a tech score above 30 and a news score above 30 have a win rate of 80% in the past.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-11 23:25</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with tech_score > 30 and news_score > 25 and rsi > 50 tend to perform well in the next 4 weeks.</li><li style="padding:2px 0">Rule (n=5, wr=100%, HIGH confidence): Stocks with insider_signal = 2 and news_score > 20 tend to perform well in the next 4 weeks.</li></ul></div></details>
   </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
-                margin-bottom:14px;border-left:8px solid #546e7a">
-      <div style="font-size:28px;font-weight:800;color:#546e7a;margin-bottom:6px">
-        NO PICK TODAY
+                margin-bottom:14px;border-left:8px solid #ff9800">
+      <div style="font-size:28px;font-weight:800;color:#ff9800;margin-bottom:6px">
+        REJECTED ANET
       </div>
       <div style="color:#aaa;font-size:13px">
-        2026-09-18 &nbsp;·&nbsp; Communication Services &nbsp;·&nbsp; NEWS
+        2026-09-18 &nbsp;·&nbsp; Technology &nbsp;·&nbsp; NEWS
       </div>
-            <div style="margin-top:10px;color:#ffb3b3;font-size:12px">LLM failure reason: Data/LLM validation incomplete; no new order queued.</div>
-      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: Data/LLM validation incomplete; no new order queued.</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-18)</b><br>ticker=GOOG; sector=Communication Services; source=NEWS; rsi=53.5; short_ratio=2.6</div>
+            
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>REJECTED</b>: Order not queued: session already has a decision/order</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">LLM score (uncalibrated)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">85/100</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
+            <div style="background:#ff9800;border-radius:99px;height:6px;width:85%"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Reference price (not a fill)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">199.99</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">188.35 / 223.27</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1:2.0</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
+                  font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
+          <b>LLM narrative (not verified facts)</b><br>
+          ANET is a strong pick due to its recent price gap and strong momentum, which may attract buyers. Additionally, the stock&#x27;s revenue growth of 37.7% and earnings growth of 35.7% make it an attractive play.
+      </div>
+      <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
+                  border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
+          Risk (LLM narrative): The stock&#x27;s high short ratio and short pct float may lead to a short squeeze, which could negatively impact the stock&#x27;s price.
+      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-18)</b><br>ticker=ANET; sector=Technology; source=NEWS; rsi=55.8; short_ratio=2.0; short_pct_float=1.4</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
@@ -75,13 +105,13 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
                   border-radius:6px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <span style="font-weight:700;font-size:16px">ANET</span>
-          <span style="color:#888;font-size:13px">82/100 &nbsp;·&nbsp; Technology</span>
+          <span style="font-weight:700;font-size:16px">GILD</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Healthcare</span>
         </div>
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
-          <div style="background:#f9a825;border-radius:4px;height:4px;width:82%"></div>
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
         </div>
-        <div style="font-size:13px;color:#555">LLM narrative: ANET is a strong momentum stock with a 5-day momentum of 13.46% and insider buying activity. However, the stock&#x27;s RSI is</div>
+        <div style="font-size:13px;color:#555">LLM narrative: GILD is a good candidate due to its recent HIV growth platform expansion and takeover rumors, which may support the stoc</div>
       </div>
     </div>
   </div>
