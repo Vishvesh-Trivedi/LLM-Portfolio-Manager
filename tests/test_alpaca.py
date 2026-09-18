@@ -105,6 +105,39 @@ class RedactionTest(unittest.TestCase):
             os.environ.pop('ALPACA_SECRET_KEY', None)
 
 
+class LiveBrokerFlagTest(unittest.TestCase):
+    """The costliest misconfiguration in the system deserves a forgiving parse."""
+
+    def setUp(self):
+        self._saved = {k: os.environ.get(k) for k in
+                       ('ALPACA_API_KEY', 'ALPACA_SECRET_KEY', 'SCREENER_LIVE_BROKER')}
+        os.environ.update(ALPACA_API_KEY='k', ALPACA_SECRET_KEY='s')
+
+    def tearDown(self):
+        for k, v in self._saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    def test_every_affirmative_spelling_enables_broker_mode(self):
+        for value in ('1', 'true', 'TRUE', 'True', 'yes', 'YES', 'on', ' on '):
+            os.environ['SCREENER_LIVE_BROKER'] = value
+            self.assertTrue(alpaca.trading_enabled(), repr(value))
+
+    def test_anything_else_leaves_broker_mode_off(self):
+        for value in ('0', 'false', 'no', 'off', '', '   ', 'maybe', '2'):
+            os.environ['SCREENER_LIVE_BROKER'] = value
+            self.assertFalse(alpaca.trading_enabled(), repr(value))
+
+    def test_flag_alone_is_not_enough_without_credentials(self):
+        os.environ['SCREENER_LIVE_BROKER'] = '1'
+        for missing in ('ALPACA_API_KEY', 'ALPACA_SECRET_KEY'):
+            saved = os.environ.pop(missing)
+            self.assertFalse(alpaca.trading_enabled())
+            os.environ[missing] = saved
+
+
 class ClientOrderIdTest(unittest.TestCase):
     """The id carries the ledger record so a fill can be matched back exactly."""
 

@@ -13,6 +13,10 @@ on:
         description: 'Allow a manual rerun for the current US session even if it was already processed'
         type: boolean
         default: false
+      preflight_only:
+        description: 'Only check that the secrets, Alpaca, LLM and Discord are wired, then stop'
+        type: boolean
+        default: false
 
 concurrency:
   group: daily-screener
@@ -52,9 +56,27 @@ jobs:
           SCREENER_OUTPUT_DIR: ${{ runner.temp }}/screener-qa
           PYTHONUNBUFFERED: '1'
         run: python qa_validate.py --live
+      - name: Preflight readiness check
+        id: preflight
+        if: ${{ inputs.qa_only != true }}
+        continue-on-error: true
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          SCREENER_LIVE_BROKER: ${{ secrets.SCREENER_LIVE_BROKER }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
+          SCREENER_OUTPUT_DIR: ${{ runner.temp }}/screener-preflight
+          PYTHONUNBUFFERED: '1'
+        run: python -u qa_validate.py --preflight
+
       - name: Run screener
         id: screener
-        if: ${{ inputs.qa_only != true }}
+        if: ${{ inputs.qa_only != true && inputs.preflight_only != true }}
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -70,7 +92,7 @@ jobs:
           PYTHONUNBUFFERED: '1'
         run: python -u LLM_Portfolio_Manager.py
       - name: Commit validated portfolio state
-        if: ${{ always() && inputs.qa_only != true && steps.tests.outcome == 'success' && steps.screener.outcome != 'skipped' }}
+        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && steps.tests.outcome == 'success' && steps.screener.outcome != 'skipped' }}
         env:
           SCREENER_SKIP_UNIVERSE_FETCH: '1'
           SCREENER_DISABLE_ALERTS: '1'

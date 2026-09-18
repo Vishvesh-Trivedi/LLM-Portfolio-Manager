@@ -72,6 +72,11 @@ class PreflightTests(unittest.TestCase):
         p = patch.object(app._discord, 'enabled', return_value=True)
         p.start()
         self.addCleanup(p.stop)
+        # Read-only probe against Discord; stubbed so the suite stays offline.
+        p = patch.object(app._discord, 'check_access',
+                         return_value=(True, 'bot can post to #alpaca-bot-1'))
+        p.start()
+        self.addCleanup(p.stop)
 
     def run_preflight(self, *, keys=True, live=True, account=ACCOUNT, snap=None):
         snap = snapshot() if snap is None else snap
@@ -134,6 +139,15 @@ class PreflightTests(unittest.TestCase):
             code, text = self.run_preflight()
         self.assertEqual(code, 0)
         self.assertIn('no trade that day', text)
+
+    def test_discord_configured_but_bot_not_invited_is_a_blocker(self):
+        # A valid token with no channel access only shows up as a failed
+        # send otherwise - by which point the alert is already lost.
+        with patch.object(app._discord, 'check_access',
+                          return_value=(False, 'bot cannot see this channel (403)')):
+            code, text = self.run_preflight()
+        self.assertEqual(code, 1)
+        self.assertIn('403', text)
 
     def test_unconfigured_discord_warns_that_you_will_not_be_told(self):
         with patch.object(app._discord, 'enabled', return_value=False), \

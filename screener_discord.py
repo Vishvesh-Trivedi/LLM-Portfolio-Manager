@@ -145,6 +145,37 @@ def _post(payload, label):
     return False
 
 
+def check_access():
+    """Verify the bot can see the channel. Read-only: posts nothing.
+
+    Returns ``(ok, detail)``. A token can be valid while the bot has never been
+    invited to the server, which only shows up as a failed send otherwise.
+    """
+    try:
+        if not _token() or not _channel_id():
+            return False, 'DISCORD_BOT_TOKEN / DISCORD_CHANNEL_ID not set'
+        response = requests.get(
+            API + '/channels/' + _channel_id(),
+            headers={'Authorization': 'Bot ' + _token()}, timeout=_REQUEST_TIMEOUT)
+        if response.status_code == 200:
+            try:
+                name = (response.json() or {}).get('name') or _channel_id()
+            except ValueError:
+                name = _channel_id()
+            return True, 'bot can post to #' + str(name)
+        if response.status_code == 401:
+            return False, 'token rejected by Discord (401) - rotate and update the secret'
+        if response.status_code == 403:
+            return False, 'bot cannot see this channel (403) - invite it and grant Send Messages'
+        if response.status_code == 404:
+            return False, 'channel not found (404) - check DISCORD_CHANNEL_ID'
+        return False, 'Discord returned HTTP ' + str(response.status_code)
+    except requests.exceptions.RequestException as exc:
+        return False, 'could not reach Discord: ' + type(exc).__name__
+    except Exception as exc:
+        return False, 'check failed: ' + _redact(type(exc).__name__)
+
+
 def send(text, label=''):
     """Send a plain message, splitting when over Discord's 2000-char limit.
 
@@ -216,4 +247,4 @@ def send_embed(title, description, color=0x5865F2, fields=None, footer='',
         return False
 
 
-__all__ = ['enabled', 'send', 'send_embed', 'API']
+__all__ = ['enabled', 'test_mode', 'check_access', 'send', 'send_embed', 'API']

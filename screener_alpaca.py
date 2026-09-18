@@ -10,14 +10,16 @@ Two independent capabilities, each gated by its own switch:
   Data API. Used as the PRIMARY source in ``batch_download`` with yfinance as an
   automatic fallback, so nothing changes when Alpaca keys are absent.
 * Paper execution (``trading_enabled``): mirrors the validated paper ledger onto
-  an Alpaca (paper) brokerage account. OFF unless ``SCREENER_LIVE_BROKER=1`` so
+  an Alpaca (paper) brokerage account, and makes Alpaca the source of truth for
+  fills, share counts and cash. OFF unless ``SCREENER_LIVE_BROKER`` is set, so
   the default screener behaviour and the offline test-suite are never affected.
 
 Environment variables
     ALPACA_API_KEY / ALPACA_SECRET_KEY   credentials (never logged)
     ALPACA_DATA_FEED                     'iex' (free, default) or 'sip' (paid)
     ALPACA_PAPER                         '1' (default) paper endpoint, '0' live
-    SCREENER_LIVE_BROKER                 '1' enables order submission/reconcile
+    SCREENER_LIVE_BROKER                 1/true/yes/on enables order submission
+                                         and broker-authoritative reconciliation
 """
 
 import os
@@ -63,8 +65,15 @@ def data_enabled():
 
 
 def trading_enabled():
-    """True only when credentials exist AND live-broker mirroring is opted in."""
-    return data_enabled() and os.environ.get('SCREENER_LIVE_BROKER', '').strip() == '1'
+    """True only when credentials exist AND live-broker mirroring is opted in.
+
+    Accepts 1/true/yes/on, matching every other switch in this project. A strict
+    '1' compare made SCREENER_LIVE_BROKER=true read as OFF, which is the single
+    most expensive way to misconfigure this system: the run would not read the
+    Alpaca account and would sell holdings its ledger had lost track of.
+    """
+    return data_enabled() and os.environ.get(
+        'SCREENER_LIVE_BROKER', '').strip().lower() in ('1', 'true', 'yes', 'on')
 
 
 def _feed():

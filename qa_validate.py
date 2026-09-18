@@ -208,9 +208,10 @@ def _check_llm(results, app):
 def _check_alerts(results, app):
     discord = app._discord
     if discord.enabled():
-        _row(results, OK, 'Discord alerts',
-             'channel ' + os.environ.get('DISCORD_CHANNEL_ID', '?')
-             + (' [TEST MODE - every message marked as a test]' if discord.test_mode() else ''))
+        reachable, detail = discord.check_access()
+        _row(results, OK if reachable else BAD, 'Discord alerts',
+             detail + (' [TEST MODE - every message marked as a test]'
+                       if discord.test_mode() else ''))
     elif os.environ.get('SCREENER_DISABLE_ALERTS') == '1':
         _row(results, WARN, 'Discord alerts', 'silenced by SCREENER_DISABLE_ALERTS=1')
     else:
@@ -251,12 +252,24 @@ def preflight():
     failures = [r for r in results if r[0] == BAD]
     warnings = [r for r in results if r[0] == WARN]
     if failures:
-        print(f'  VERDICT: NOT READY - {len(failures)} blocking issue(s) above.')
+        verdict = f'NOT READY - {len(failures)} blocking issue(s)'
     elif warnings:
-        print(f'  VERDICT: READY, with {len(warnings)} thing(s) worth a look.')
+        verdict = f'READY, with {len(warnings)} thing(s) worth a look'
     else:
-        print('  VERDICT: READY.')
+        verdict = 'READY'
+    print(f'  VERDICT: {verdict}.')
     print()
+
+    # Surface the verdict on the Actions run page. Nothing here can leak a
+    # secret: only names, and whether a value is present, are ever reported.
+    summary = os.environ.get('GITHUB_STEP_SUMMARY')
+    if summary:
+        from html import escape
+        lines = ['### Preflight: ' + verdict, '', '| | Check | Detail |', '|---|---|---|']
+        lines += [f'| {status} | {escape(name)} | {escape(detail)} |'
+                  for status, name, detail in results]
+        with open(summary, 'a', encoding='utf-8') as stream:
+            stream.write('\n' + '\n'.join(lines) + '\n')
     return 1 if failures else 0
 
 

@@ -234,5 +234,43 @@ class DiscordTests(unittest.TestCase):
         self.assertNotIn('footer', embed)
 
 
+    # -- Read-only access probe -------------------------------------------
+
+    def test_access_check_reports_the_channel_name_on_success(self):
+        response = Response(200, payload={'name': 'alpaca-bot-1'})
+        with patch.object(discord.requests, 'get', return_value=response) as get:
+            ok, detail = discord.check_access()
+        self.assertTrue(ok)
+        self.assertIn('alpaca-bot-1', detail)
+        # Read-only: it must query the channel, never post to it.
+        self.assertNotIn('/messages', get.call_args.args[0])
+
+    def test_access_check_explains_each_failure_in_actionable_terms(self):
+        cases = {401: 'rotate', 403: 'invite it', 404: 'DISCORD_CHANNEL_ID'}
+        for status, expected in cases.items():
+            with patch.object(discord.requests, 'get', return_value=Response(status)):
+                ok, detail = discord.check_access()
+            self.assertFalse(ok, status)
+            self.assertIn(expected, detail)
+
+    def test_access_check_handles_an_unreachable_discord(self):
+        with patch.object(discord.requests, 'get',
+                          side_effect=requests.exceptions.ConnectionError('down')):
+            ok, detail = discord.check_access()
+        self.assertFalse(ok)
+        self.assertIn('could not reach', detail)
+
+    def test_access_check_without_configuration_names_the_missing_secrets(self):
+        with patch.dict(os.environ, {'DISCORD_BOT_TOKEN': '', 'DISCORD_CHANNEL_ID': ''}):
+            ok, detail = discord.check_access()
+        self.assertFalse(ok)
+        self.assertIn('DISCORD_BOT_TOKEN', detail)
+
+    def test_access_check_never_raises(self):
+        with patch.object(discord.requests, 'get', side_effect=RuntimeError('boom')):
+            ok, _ = discord.check_access()
+        self.assertFalse(ok)
+
+
 if __name__ == '__main__':
     unittest.main()
