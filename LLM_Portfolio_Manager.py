@@ -1,94 +1,47 @@
 ﻿# -*- coding: utf-8 -*-
 """
-Daily_Stock_Screener_v6_2.py
-======================================
-Version 6.2 - Runtime Fixes
+LLM Portfolio Manager - daily end-of-day US equity screener and paper ledger.
 
 Built by Vishvesh Trivedi
 OSS Architect | AI/ML Automation | 12 Patents
 LinkedIn: https://www.linkedin.com/in/vishvesh-trivedi
 
-─────────────────────────────────────────────────────────────
-⚠️  IMPORTANT: HOW TO SET YOUR API KEY (READ THIS FIRST)
-─────────────────────────────────────────────────────────────
+HOW IT RUNS
+    GitHub Actions runs this once a day at 21:15 UTC (after the US close) and
+    on manual dispatch. It also runs locally: `python LLM_Portfolio_Manager.py`.
+    Configuration comes from environment variables, or a local .env file - see
+    .env.example. There is no notebook and no Google Drive; output goes to
+    StockScreener/ beside this file, or SCREENER_OUTPUT_DIR when set.
 
-Option A - Google Colab (Recommended):
-  1. Click the 🔑 Secrets icon in the left sidebar
-  2. Add a new secret:
-       Name:  NVIDIA_API_KEY
-       Value: your-key-here (get it free from build.nvidia.com → sign up → "Get API Key")
-  3. Enable the secret for this notebook
-  4. The code below will read it automatically
+WHAT IT DOES EACH SESSION
+    1. Reconciles the ledger against Alpaca - whatever actually executed wins.
+    2. Replays open positions for stop / target / hold-period exits.
+    3. Downloads 2 years of OHLCV for the universe (Alpaca first, yfinance
+       fallback) - long enough for a real MA200 and 52-week high.
+    4. Screens technically and rescues news catalysts in parallel.
+    5. Pre-scores deterministically: technical 0-60 plus news 0-40.
+    6. Sends the top 30 to the LLM for catalyst scoring, news intelligence and
+       a three-round final decision.
+    7. Queues at most one order, to fill at the next session's open.
+    8. Writes HTML/CSV/JSON reports and notifies Discord and WhatsApp.
 
-Option B - Local Python:
-  1. Create a file called .env in the same folder as this script
-  2. Add this line:  NVIDIA_API_KEY=your-key-here
-  3. Install python-dotenv:  pip install python-dotenv
-  4. The code below will read it automatically
+LLM PROVIDERS
+    NVIDIA NIM is primary and OpenRouter is the backup. Both are free tiers with
+    their own request limits, so each has its own rolling-window budget and a
+    circuit breaker; traffic moves to the backup as soon as the primary is
+    throttled rather than after exhausting retries. Either provider alone is
+    enough to complete a run.
 
-Option C - Paste directly (Colab only, NOT for GitHub):
-  Find the line:  NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
-  Replace with:   NVIDIA_API_KEY = "your-key-here"
-  ⚠️  Never upload this version to GitHub!
+SAFETY MODEL
+    Fail-closed. market_data, catalysts, news and final must all succeed and
+    validate before any order is queued. Position sizing and risk caps live in
+    screener_safety.plan_order, not in the prompt: the LLM proposes a size, that
+    function decides. With SCREENER_LIVE_BROKER set, Alpaca is the source of
+    truth for fills, share counts and cash.
 
-─────────────────────────────────────────────────────────────
-WHAT THIS SCREENER DOES
-─────────────────────────────────────────────────────────────
-
-Every evening after market close:
-  → Downloads OHLCV for 375+ stocks in a single API call
-  → Runs bidirectional screening — technical filters AND news rescue in parallel
-  → Computes deterministic pre-scores:
-       RSI, MACD, ADX, CMF, StochRSI, VWAP, OBV,
-       Options P/C ratio, Insider flow, VADER NLP sentiment
-  → Feeds top 30 candidates to the LLM (NVIDIA NIM) with full context:
-       Macro headlines, sector rotation, earnings risk,
-       self-calibration from past picks
-  → Gets back BUY / WATCH / NO PICK with:
-       Stop zones, price targets, R:R ratio,
-       devil's advocate, full score breakdown
-  → Saves everything to Google Drive
-  → Auto-updates 10-day and 30-day returns over time
-
-Tech Stack (100% free):
-  • yfinance       — market data
-  • VADER          — free NLP sentiment (no API key needed)
-  • 16 RSS feeds   — macro news (Reuters, CNBC, MarketWatch, BBC...)
-  • NVIDIA NIM API — AI reasoning layer (free tier at build.nvidia.com)
-  • Google Colab + Drive — zero-infrastructure deployment
-
-Cost per run:  ~$0.00 (NVIDIA NIM free tier)
-Runtime:       ~7 - 9 minutes
-
-─────────────────────────────────────────────────────────────
-DAILY ROUTINE
-─────────────────────────────────────────────────────────────
-  Cell 1  Mount Google Drive        → run every session
-  Cell 2  Install dependencies      → first time only
-  Cell 3  API key + config          → first time only
-  Cell 4  Load functions            → run every session
-  Cell 5  Run screener              → run every day after market close
-
-─────────────────────────────────────────────────────────────
 DISCLAIMER
-─────────────────────────────────────────────────────────────
-This is a personal learning project built out of curiosity.
-It is NOT financial advice. Past screener performance does
-not guarantee future results. Always do your own research.
-
-─────────────────────────────────────────────────────────────
-Version History:
-  FIX 1  enrich_with_scores() is now actually called in run_screener
-  FIX 2  load_performance_history() called and passed to analyze_with_nvidia
-  FIX 3  Stream B now runs BEFORE options/insider fetch
-  FIX 4  Hard caps clamped post-hoc instead of trusted to the LLM
-  FIX 5  FI ticker removed (Yahoo Finance delisted - was FISV)
-  FIX 6  Sector bonus reduced from 3 to 2 (sum cleanly to 60 max)
-  FIX 7  Model unified to one valid NVIDIA NIM id (meta/llama-3.3-70b-instruct)
-  FIX 8  compute_indicators logs exception when SCREENER_DEBUG env set
-  FIX 9  ETFs included in batch_download so sector ranks + ETF news work
-  FIX 10 Candidates trimmed to top 30 by pre_score before the LLM call
-  FIX 11 LLM output tokens raised from 1200 to 2000 (round 2 now 4000)
+    A personal learning project. NOT financial advice. Past performance does not
+    guarantee future results. Always do your own research.
 """
 
 # --- restored compatibility helpers for the GitHub Action test suite ---
@@ -102,63 +55,33 @@ _LLM_REQUEST_TIMESTAMPS = deque()
 _LLM_RATE_LOCK = threading.Lock()
 
 # ============================================================
-# CELL 1 - MOUNT GOOGLE DRIVE (run every session)
+# OUTPUT LOCATION
 # ============================================================
 import os
-try:
-    if os.environ.get('SCREENER_OUTPUT_DIR') or os.environ.get('SCREENER_SKIP_UNIVERSE_FETCH') == '1':
-        raise ImportError('Isolated local run')
-    from google.colab import drive
-    drive.mount('/content/drive')
-    IN_COLAB = True
-    DRIVE_FOLDER = '/content/drive/MyDrive/StockScreener'
-    print('✅ Google Drive mounted')
-except ImportError:
-    IN_COLAB = False
-    DRIVE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'StockScreener')
 
-DRIVE_FOLDER = os.path.abspath(os.environ.get('SCREENER_OUTPUT_DIR') or DRIVE_FOLDER)
+# Portfolio state and reports live beside this file. SCREENER_OUTPUT_DIR
+# redirects them, which the tests and QA rely on to stay off the real ledger.
+DRIVE_FOLDER = os.path.abspath(
+    os.environ.get('SCREENER_OUTPUT_DIR')
+    or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'StockScreener'))
 os.makedirs(DRIVE_FOLDER, exist_ok=True)
-print(f'📁 Output folder: {DRIVE_FOLDER}')
-if os.listdir(DRIVE_FOLDER):
-    print(f'📄 Files:  {os.listdir(DRIVE_FOLDER)}')
+print(f'Output folder: {DRIVE_FOLDER}')
 
 # ============================================================
-# CELL 2 - INSTALL DEPENDENCIES (first time only)
-# ============================================================
-# In Colab: uncomment the line below and run it once
-# !pip install yfinance pandas openai requests vaderSentiment python-dotenv --quiet
-#
-# Locally: run this once in your terminal instead:
-#   pip install yfinance pandas openai requests vaderSentiment python-dotenv
-print('✅ Dependencies assumed installed')
-
-# ============================================================
-# CELL 3 - CONFIGURATION
+# CONFIGURATION
 # ============================================================
 
-# ── API KEY (reads from Colab Secrets or .env file) ────────
+# ── API KEY (repository secret, or .env locally) ────────
 # Follow the instructions at the top of this file to set your key safely.
 # Get your free NVIDIA NIM API key at: build.nvidia.com → sign up → "Get API Key"
 # Never paste your real key here if you plan to share or upload this file.
 
 import os
 
-# 1. Try Colab Secrets (userdata API — works in newer Colab)
-NVIDIA_API_KEY = ""
-try:
-    if os.environ.get('SCREENER_SKIP_UNIVERSE_FETCH') == '1':
-        raise ImportError('Secret discovery disabled for offline runs')
-    from google.colab import userdata
-    NVIDIA_API_KEY = (userdata.get("NVIDIA_API_KEY") or "").strip()
-except Exception:
-    pass
-
-# 2. Fall back to os.environ (older Colab / local)
-if not NVIDIA_API_KEY:
-    NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "").strip()
-
-# 3. Fall back to .env file (local only)
+# GitHub Actions injects repository secrets as environment variables; a local
+# run falls back to .env. Offline runs skip .env so tests cannot pick up a
+# developer's real credentials.
+NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "").strip()
 if not NVIDIA_API_KEY and os.environ.get('SCREENER_SKIP_UNIVERSE_FETCH') != '1':
     try:
         from dotenv import load_dotenv
@@ -175,52 +98,41 @@ NVIDIA_MODEL = 'meta/llama-3.3-70b-instruct'  # solid free-tier default, valid N
 if not NVIDIA_API_KEY:
     print("WARNING: No API key found!")
     print("   Get your FREE key at: build.nvidia.com -> sign up -> 'Get API Key'")
-    print("   In Colab: use the Secrets panel on the left sidebar.")
+    print("   Set it as the NVIDIA_API_KEY repository secret, or in .env locally.")
 else:
-    print("✅ API key loaded successfully")
+    print("OK: API key loaded successfully")
 
 # Optional OpenRouter backup provider (auto-failover when NVIDIA has no working
 # model). Reads the same env var used later by _call_openrouter.
 if os.getenv("OPENROUTER_API_KEY", "").strip():
-    print("✅ OpenRouter backup provider configured")
+    print("OK: OpenRouter backup provider configured")
 else:
-    print("ℹ️  OpenRouter backup not set (optional) — add OPENROUTER_API_KEY secret to enable failover")
+    print("note: OpenRouter backup not set (optional) — add OPENROUTER_API_KEY secret to enable failover")
 
 # Optional Alpaca provider. On GitHub Actions this is the primary market-data
 # path because Yahoo/yfinance is commonly throttled from datacenter IPs.
 if _alpaca.data_enabled():
     if _alpaca.trading_enabled():
-        print("✅ Alpaca configured — data provider + LIVE paper broker (SCREENER_LIVE_BROKER=1)")
+        print("OK: Alpaca configured — data provider + LIVE paper broker (SCREENER_LIVE_BROKER=1)")
     else:
-        print("✅ Alpaca data provider configured (paper broker OFF — set SCREENER_LIVE_BROKER=1 to mirror the ledger)")
+        print("OK: Alpaca data provider configured (paper broker OFF — set SCREENER_LIVE_BROKER=1 to mirror the ledger)")
 else:
-    print("ℹ️  Alpaca not set (optional) — add ALPACA_API_KEY + ALPACA_SECRET_KEY secrets for reliable CI market data")
+    print("note: Alpaca not set (optional) — add ALPACA_API_KEY + ALPACA_SECRET_KEY secrets for reliable CI market data")
 
 # ── WHATSAPP (CallMeBot) ────────────────────────────────────
-# Store WHATSAPP_PHONE and CALLMEBOT_API_KEY in Colab Secrets (same panel as NVIDIA_API_KEY)
-# WHATSAPP_PHONE: your number in international format WITHOUT +, e.g. 447911123456 or 919876543210
+# WHATSAPP_PHONE: international format WITHOUT +, e.g. 447911123456 or 919876543210
 WHATSAPP_PHONE      = ""
 CALLMEBOT_API_KEY   = ""
-for _secret in ["WHATSAPP_PHONE", "CALLMEBOT_API_KEY"]:
-    try:
-        if os.environ.get('SCREENER_SKIP_UNIVERSE_FETCH') == '1':
-            raise ImportError('Secret discovery disabled for offline runs')
-        from google.colab import userdata as _ud
-        _val = (_ud.get(_secret) or "").strip()
-    except Exception:
-        _val = os.environ.get(_secret, "").strip()
-    if _secret == "WHATSAPP_PHONE":
-        WHATSAPP_PHONE = _val
-    else:
-        CALLMEBOT_API_KEY = _val
+WHATSAPP_PHONE = os.environ.get("WHATSAPP_PHONE", "").strip()
+CALLMEBOT_API_KEY = os.environ.get("CALLMEBOT_API_KEY", "").strip()
 
 if WHATSAPP_PHONE and CALLMEBOT_API_KEY:
-    print(f"✅ WhatsApp configured (phone ...{WHATSAPP_PHONE[-4:]})")
+    print(f"OK: WhatsApp configured (phone ...{WHATSAPP_PHONE[-4:]})")
 else:
     missing = []
     if not WHATSAPP_PHONE:    missing.append("WHATSAPP_PHONE")
     if not CALLMEBOT_API_KEY: missing.append("CALLMEBOT_API_KEY")
-    print(f"⚠️  WhatsApp disabled — missing Colab Secrets: {', '.join(missing)}")
+    print(f"note: WhatsApp disabled - missing {', '.join(missing)}")
     print("   Add them in the Secrets panel (key icon, left sidebar) then re-run Cell 1.")
 
 # ── SCREENER SETTINGS ──────────────────────────────────────
@@ -250,13 +162,13 @@ BROKERAGE_FEE          = 0.00      # $0 within coverage, max $5 USD over
 # Optional: set to '1' to see why tickers fail compute_indicators
 # os.environ['SCREENER_DEBUG'] = '1'
 
-print('\n✅ Configuration ready')
+print('\nOK: Configuration ready')
 print(f'   BUY threshold:   {BUY_THRESHOLD}')
 print(f'   WATCH threshold: {WATCH_THRESHOLD}')
 print(f'   Sample size:     {SAMPLE_SIZE}')
 
 # ============================================================
-# CELL 4 - ALL FUNCTIONS (run once per session)
+# CORE FUNCTIONS
 # ============================================================
 
 import yfinance as yf
@@ -274,11 +186,8 @@ from screener_contracts import (
     validate_config, RunHealth, self_tuning_enabled,
 )
 from screener_safety import atomic_json, finite_number, fresh_bar
-import time
-import threading
 import requests
 import xml.etree.ElementTree as ET
-from collections import deque
 from datetime import datetime, timedelta, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import warnings
@@ -506,7 +415,7 @@ def _fetch_served_models():
         data = r.json().get('data', [])
         return {m.get('id') for m in data if m.get('id')}
     except Exception as e:
-        print(f'  ⚠️  Could not fetch NVIDIA model catalog ({_safe_llm_error(e)}) — using hardcoded rotation.')
+        print(f'  WARNING: Could not fetch NVIDIA model catalog ({_safe_llm_error(e)}) — using hardcoded rotation.')
         return set()
 
 
@@ -654,13 +563,13 @@ def _reconcile_models_with_catalog():
     if confirmed:
         _NVIDIA_MODEL_ROTATION = rotation
         _NVIDIA_ACTIVE_MODEL[0] = confirmed[0]
-        print(f'  ✅ NVIDIA models verified by JSON probe ({len(confirmed)} answering chat): active = {confirmed[0]}')
+        print(f'  OK: NVIDIA models verified by JSON probe ({len(confirmed)} answering chat): active = {confirmed[0]}')
     elif soft:
         _NVIDIA_MODEL_ROTATION = rotation
         _NVIDIA_ACTIVE_MODEL[0] = soft[0]
-        print(f'  ⚠️  No NVIDIA model confirmed 200 (probes inconclusive) — trying: {soft[0]}')
+        print(f'  WARNING: No NVIDIA model confirmed 200 (probes inconclusive) — trying: {soft[0]}')
     else:
-        print('  ⚠️  No NVIDIA chat model answered the probe — keeping hardcoded rotation.')
+        print('  WARNING: No NVIDIA chat model answered the probe — keeping hardcoded rotation.')
 
 
 def _switch_llm_model(reason=''):
@@ -904,7 +813,7 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
         alt = _call_openrouter(system, user, max_tokens=max_tokens,
                                connect_timeout=connect_timeout, read_timeout=read_timeout)
         if alt:
-            print('  ↪️  NVIDIA unavailable; answered via OpenRouter.')
+            print('  -> NVIDIA unavailable; answered via OpenRouter.')
             return alt
 
     headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
@@ -998,7 +907,7 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
                     alt = _call_openrouter(system, user, max_tokens=max_tokens,
                                            connect_timeout=connect_timeout, read_timeout=read_timeout)
                     if alt:
-                        print('  ↩️  Answered via OpenRouter backup provider.')
+                        print('  -> Answered via OpenRouter backup provider.')
                         return alt
                 return ''
 
@@ -1010,7 +919,7 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
                                            connect_timeout=connect_timeout,
                                            read_timeout=read_timeout)
                     if alt:
-                        print('  ↪️  NVIDIA throttled; answered via OpenRouter.')
+                        print('  -> NVIDIA throttled; answered via OpenRouter.')
                         return alt
                 time.sleep(_llm_backoff_seconds(attempt, retry_after=retry_after))
                 continue
@@ -1020,7 +929,7 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
                 alt = _call_openrouter(system, user, max_tokens=max_tokens,
                                        connect_timeout=connect_timeout, read_timeout=read_timeout)
                 if alt:
-                    print('  ↩️  Answered via OpenRouter backup provider.')
+                    print('  -> Answered via OpenRouter backup provider.')
                     return alt
 
             if raise_on_failure:
@@ -1530,7 +1439,7 @@ def fetch_congress_trades(days=60):
     """
     Fetch recent US congressional stock PURCHASES (House + Senate STOCK Act disclosures).
     Tries 4 sources in order — stops at first success:
-      1. House S3 bucket  (bypasses DNS issues in Colab)
+      1. House S3 bucket  (bypasses DNS issues on some hosts)
       2. Senate S3 bucket
       3. housestockwatcher.com API  (fallback)
       4. senate-stock-watcher API   (fallback)
@@ -1610,7 +1519,7 @@ def fetch_congress_trades(days=60):
     _cache_path = os.path.join(DRIVE_FOLDER, 'congress_cache.json')
 
     if not result:
-        # Try Drive cache from last successful fetch (survives Colab network blocks)
+        # Try the on-disk cache from the last successful fetch
         try:
             if os.path.exists(_cache_path):
                 with open(_cache_path) as f:
@@ -1950,7 +1859,7 @@ UNIVERSE_SET     = set(TICKER_UNIVERSE)
 ETF_SET          = set(KEY_ETFS)
 STOCK_UNIVERSE   = [t for t in TICKER_UNIVERSE if t not in ETF_SET]
 
-print('✅ Universe loaded:')
+print('OK: Universe loaded:')
 print(f'   Stocks:    {len(STOCK_UNIVERSE)}')
 print(f'   ETFs:      {len(ETF_SET)}')
 print(f'   TOTAL:     {len(TICKER_UNIVERSE)}')
@@ -2999,7 +2908,7 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
                     match['auto_drop'] = True
                     match['news_notes'] = f'AUTO DROP: {r["reason"]}'
             consecutive_skips = 0
-            print(f'    Batch {bi+1}/{n_calls} ✓')
+            print(f'    Batch {bi+1}/{n_calls} ')
             if (bi + 1) % _LLM_BATCH_COOLDOWN_EVERY == 0 and (bi + 1) < n_calls:
                 print(f'    Cooldown: pausing {_LLM_BATCH_COOLDOWN_SECONDS:.0f}s to avoid free-tier throttling')
                 time.sleep(_LLM_BATCH_COOLDOWN_SECONDS)
@@ -3008,7 +2917,7 @@ def batch_catalyst_score(candidates, ctx, all_stock_news):
             consecutive_skips += 1
             detail = _safe_llm_error(e)
             _HEALTH.stage(f'catalyst_{bi+1}', False, detail=detail)
-            print(f'    Batch {bi+1}/{n_calls} ⚠ skipped ({detail})')
+            print(f'    Batch {bi+1}/{n_calls} WARNING: skipped ({detail})')
             if consecutive_skips >= max_consecutive_skips:
                 rem = n_calls - (bi + 1)
                 if rem > 0:
@@ -3656,7 +3565,7 @@ def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=
     }
     if watch_score is not None: row['Watch_Score'] = watch_score
     atomic_csv(fp, pd.concat([df, pd.DataFrame([row])], ignore_index=True))
-    print(f'  ✅ Saved {ticker} | Stop:{stop_p} Target:{tgt_p}')
+    print(f'  OK: Saved {ticker} | Stop:{stop_p} Target:{tgt_p}')
 
 
 def update_results(fp, cols):
@@ -4219,7 +4128,7 @@ function sw(id,btn){{
         with open(fp, 'w', encoding='utf-8') as f:
             f.write(html)
 
-    # Render directly in Colab via iframe (base64 data URI bypasses Colab's style sandbox)
+    # Inline render for an interactive session; absent outside a notebook.
     try:
         import base64
         from IPython.display import display as _ipy_display, HTML as _IPyHTML
@@ -4250,12 +4159,11 @@ def display_scorecard():
         avg_return = pd.to_numeric(done['Return_Pct'], errors='coerce').mean()
         avg_return_str = f'{avg_return:+.1f}%' if pd.notna(avg_return) else 'n/a'
         print(f'  {label}: {wins}/{len(done)} wins ({wr}%) | avg {_CFG_HOLD_DAYS}d {avg_return_str} | {len(pend)} pending')
-    print(f'  📁 Full report → {DRIVE_FOLDER}/report_latest.html')
+    print(f'  Full report → {DRIVE_FOLDER}/report_latest.html')
     print('─' * 60)
 
 
-print('\n✅ All functions loaded - v6.2')
-print('▶  Run Cell 5 to start the screener')
+print('\nOK: All functions loaded')
 
 
 def _recent_picks_summary(days=10):
@@ -4539,11 +4447,20 @@ def _execution_card(event):
                 _AMBER, [])
 
     if kind == 'adopted':
-        return (f'📥  FOUND A POSITION YOU ALREADY OWNED · {symbol}',
-                f'Alpaca holds {_qty(event.get("broker_shares"))} {symbol} at '
+        stop, target = event.get('stop'), event.get('target')
+        body = (f'Alpaca holds {_qty(event.get("broker_shares"))} {symbol} at '
                 f'{_money(event.get("broker_price"))} a share that these records did not '
-                f'know about, so it has been added. It has no sell price set yet.',
-                _BLUE, [])
+                f'know about, so it has been added.')
+        if stop is not None and target is not None:
+            return (f'📥  FOUND A POSITION YOU ALREADY OWNED · {symbol}',
+                    body + ' Sell prices have been set for it automatically.',
+                    _BLUE,
+                    [('Sell if it falls to', _money(stop), True),
+                     ('Sell if it rises to', _money(target), True)])
+        return (f'⚠️  FOUND AN UNPROTECTED POSITION · {symbol}',
+                body + ' **It has no sell prices, so it will not be sold '
+                'automatically - set them yourself.**',
+                _AMBER, [])
 
     if kind == 'account_blocked':
         return ('⛔  YOUR ALPACA ACCOUNT IS BLOCKED',
@@ -5088,13 +5005,13 @@ def load_config_overrides():
             approved = validate_config(merged)
             updates = {name: approved[key] for key, names in _CONFIG_GLOBALS.items() for name in names}
         except Exception as e:
-            print(f'⚠️  Invalid manual configuration ignored; all globals unchanged ({_safe_llm_error(e)})')
+            print(f'WARNING: Invalid manual configuration ignored; all globals unchanged ({_safe_llm_error(e)})')
             _HEALTH.degrade('invalid_config')
             return
         globals().update(updates)
-        print(f'✅ Validated manual overrides loaded  RSI {RSI_MIN}-{RSI_MAX}  ADX≥{ADX_MIN}  BUY≥{BUY_THRESHOLD}')
+        print(f'OK: Validated manual overrides loaded  RSI {RSI_MIN}-{RSI_MAX}  ADX≥{ADX_MIN}  BUY≥{BUY_THRESHOLD}')
         return
-    print('ℹ️  No config_overrides.json — using defaults')
+    print('note: No config_overrides.json — using defaults')
 
 
 def save_config_overrides(cfg: dict):
@@ -5523,6 +5440,12 @@ def close_position(pf, ticker, exit_price, reason='hold_period', nzdusd_rate=Non
     )
 
 
+# False until a broker reconciliation completes cleanly. The mirror refuses to
+# act while this is False, because an incomplete ledger makes every broker
+# holding look like something to sell.
+_BROKER_SYNC_OK = [False]
+
+
 def _broker_authoritative():
     """True when Alpaca is the source of truth for fills, holdings and cash.
 
@@ -5582,8 +5505,10 @@ def _resolve_sector(symbol):
     which is the honest outcome: unknown sector means unknown exposure.
     """
     try:
-        info = _fetch_fundamentals_single(symbol) or {}
-        sector = str(info.get('sector') or '').strip()
+        # _fetch_fundamentals_single returns (ticker, data), not data.
+        result = _fetch_fundamentals_single(symbol)
+        info = result[1] if isinstance(result, tuple) and len(result) == 2 else result
+        sector = str((info or {}).get('sector') or '').strip()
         if sector and sector.casefold() not in ('unknown', 'n/a', 'none'):
             # Only a sector the order planner can map is usable: an unmappable
             # one would be accepted here and then raise inside plan_order on
@@ -5593,6 +5518,36 @@ def _resolve_sector(symbol):
     except Exception:
         pass
     return ''
+
+
+def _resolve_risk_levels(symbol, entry_price):
+    """Derive a stop and target for an adopted position from its own ATR.
+
+    A holding the screener never planned carries no stop or target, so
+    mechanical_exit can never fire on it and the position sits unprotected
+    indefinitely. Levels are anchored to the broker's average entry using the
+    same ATR multipliers the screener applies to its own orders.
+
+    Returns ``(stop, target, atr)``, or ``(None, None, atr)`` when they cannot
+    be derived. Deriving nothing is better than inventing a level.
+    """
+    try:
+        entry = finite_number(entry_price, 'entry_price', minimum=0)
+        if entry <= 0:
+            return None, None, 0.0
+        frame = batch_download([symbol]).get(symbol)
+        if frame is None:
+            return None, None, 0.0
+        indicators = compute_indicators(frame) or {}
+        atr = float(indicators.get('atr') or 0.0)
+        if atr <= 0:
+            return None, None, 0.0
+        stop = round(entry - ATR_STOP_MULT * atr, 2)
+        target = round(entry + ATR_TARGET_MULT * atr, 2)
+        return (stop, target, atr) if 0 < stop < target else (None, None, atr)
+    except Exception as exc:
+        print(f'  Broker sync: cannot derive risk levels for {symbol}: {type(exc).__name__}')
+        return None, None, 0.0
 
 
 def sync_with_broker(portfolio):
@@ -5610,11 +5565,13 @@ def sync_with_broker(portfolio):
         snapshot = _alpaca.broker_snapshot()
         plan = _broker_sync.plan_broker_sync(portfolio, snapshot, _session_date())
     except Exception as exc:
+        _BROKER_SYNC_OK[0] = False
         _HEALTH.stage('broker_sync', False, 'planning failed: ' + type(exc).__name__)
         _degrade('broker_sync_unavailable')
         return []
 
     if not plan['ok']:
+        _BROKER_SYNC_OK[0] = False
         _HEALTH.stage('broker_sync', False, plan['summary'])
         _degrade('broker_state_unreadable')
         print('  Broker sync: ' + plan['summary'] + ' — ledger untouched')
@@ -5623,13 +5580,21 @@ def sync_with_broker(portfolio):
     # Resolve sectors before adopting, or drop the adoption entirely.
     actions = []
     for action in plan['actions']:
-        if action['op'] == 'adopt_position' and not action.get('sector'):
-            sector = _resolve_sector(action['symbol'])
+        if action['op'] == 'adopt_position':
+            sector = action.get('sector') or _resolve_sector(action['symbol'])
             if not sector:
                 _degrade('broker_adopt_unknown_sector:' + action['symbol'])
                 print(f'  Broker sync: cannot resolve sector for {action["symbol"]}; not adopted')
                 continue
-            action = dict(action, sector=sector)
+            stop, target, atr = _resolve_risk_levels(action['symbol'], action.get('entry_price'))
+            action = dict(action, sector=sector, stop_price=stop,
+                          target_price=target, atr=atr)
+            if stop is None:
+                _degrade('broker_adopt_no_risk_levels:' + action['symbol'])
+            # The alert must say which of the two outcomes actually happened.
+            for event in plan['events']:
+                if event.get('kind') == 'adopted' and event.get('symbol') == action['symbol']:
+                    event.update(stop=stop, target=target)
         actions.append(action)
     plan = dict(plan, actions=actions)
 
@@ -5646,6 +5611,7 @@ def sync_with_broker(portfolio):
         _degrade('broker_discrepancy:' + reason[:80])
 
     healthy = not outcome['failed'] and not plan['blocked']
+    _BROKER_SYNC_OK[0] = healthy
     _HEALTH.stage('broker_sync', healthy,
                   f'{len(outcome["applied"])} applied, {len(outcome["failed"])} failed; '
                   + plan['summary'])
@@ -5662,6 +5628,15 @@ def reconcile_broker(portfolio):
     """
     if not _alpaca.trading_enabled():
         return
+    if not _BROKER_SYNC_OK[0]:
+        # The ledger is knowingly incomplete, so every broker holding it failed
+        # to record would be diffed as "sell". Doing nothing is recoverable;
+        # liquidating a position we simply failed to read is not.
+        _HEALTH.stage('broker', True,
+                      'Skipped: broker reconciliation did not complete, so the '
+                      'ledger cannot be trusted to drive orders')
+        print('  Broker: mirror skipped — reconciliation incomplete, no orders sent')
+        return
     try:
         account = _alpaca.get_account()
         if not account:
@@ -5670,6 +5645,22 @@ def reconcile_broker(portfolio):
         ledger_shares = _ledger_share_map(portfolio)
         broker_shares = _alpaca.effective_shares_by_symbol()
         actions = _alpaca.plan_reconciliation(ledger_shares, broker_shares)
+        # A holding the ledger has never heard of is an adoption that did not
+        # happen, not a position to exit. Selling it would destroy exactly what
+        # broker-authoritative reconciliation exists to protect.
+        known = {str(r['ticker']).strip().upper()
+                 for key in ('positions', 'pending_orders')
+                 for r in portfolio.get(key, []) or []}
+        unknown = [a for a in actions if a[0] == 'sell' and a[1] not in known]
+        for _, symbol, qty in unknown:
+            _degrade('broker_unadopted_holding:' + symbol)
+            print(f'  Broker: NOT selling {qty} {symbol} — held at Alpaca but missing '
+                  f'from the ledger; adopt it first')
+        actions = [a for a in actions if a not in unknown]
+        if not actions and unknown:
+            _HEALTH.stage('broker', False,
+                          f'{len(unknown)} broker holding(s) not in the ledger; no orders sent')
+            return
         if not actions:
             _HEALTH.stage('broker', True,
                           f'In sync: {len(ledger_shares)} position(s) match Alpaca')
@@ -5787,7 +5778,7 @@ def portfolio_summary_str(pf):
 
 
 # ============================================================
-# CELL 5 - RUN DAILY SCREENER
+# DAILY RUN
 # ============================================================
 
 def _nth_weekday(year, month, weekday, n):
@@ -6055,7 +6046,7 @@ def run_screener():
     _ORDER_REASON[0] = ''
     _LLM_CALL_COUNT[0] = 0
     _LAST_LLM_FAILURE_REASON[0] = ''
-    print('🚀 DAILY STOCK SCREENER v6.2')
+    print('DAILY STOCK SCREENER v6.2')
     print(f'   Time:   {datetime.now().strftime("%Y-%m-%d %H:%M")}')
     print(f'   Folder: {DRIVE_FOLDER}')
     print(f'   Stocks: {len(STOCK_UNIVERSE)} | ETFs: {len(KEY_ETFS)}')

@@ -689,7 +689,15 @@ def _apply_adopt_position(app, work, action):
     current = _positive(action.get('current_price') or entry, 'current_price')
     cost = round(entry * shares, 2)
     value = round(current * shares, 2)
-    work['positions'].append({
+    # Only accept levels that cannot fire on the very next bar. A stop already
+    # above the market would liquidate, at market, a position the owner never
+    # asked this system to manage - a far worse surprise than no stop at all.
+    stop = action.get('stop_price')
+    target = action.get('target_price')
+    protected = (isinstance(stop, (int, float)) and isinstance(target, (int, float))
+                 and not isinstance(stop, bool) and not isinstance(target, bool)
+                 and 0 < stop < current < target)
+    record = {
         'trade_id': str(uuid4()), 'ticker': symbol, 'shares': shares,
         'entry_price': entry, 'entry_date': action['session'],
         'signal_date': action['session'], 'sector': sector,
@@ -699,15 +707,21 @@ def _apply_adopt_position(app, work, action):
         'unrealized_pnl_pct': (value / cost - 1) * 100,
         'hold_days': 0, 'held_sessions': 0,
         'hold_sessions': _hold(getattr(app, '_CFG_HOLD_DAYS', 10)),
-        'high_watermark': current, 'atr_at_entry': 0, 'filled_at_open': False,
+        'high_watermark': current,
+        'atr_at_entry': finite_number(action.get('atr', 0) or 0, 'atr', minimum=0),
+        'filled_at_open': False,
         'quote_stale': False, 'cost_basis_basis': 'broker_adopted',
         'source': 'BROKER_ADOPTED',
         'reasoning': 'Adopted from the Alpaca account; not originated by the screener.',
-        # No stop/target is known for a position the screener did not plan, so
-        # mechanical_exit cannot fire until a human sets them.
-        'needs_risk_levels': True,
-    })
-    return 'Adopted ' + symbol + ': ' + str(shares) + ' @ ' + str(entry)
+        'needs_risk_levels': not protected,
+    }
+    if protected:
+        record.update({'stop_price': stop, 'target_price': target,
+                       'risk_levels_basis': 'atr_derived_at_adoption'})
+    work['positions'].append(record)
+    note = 'Adopted ' + symbol + ': ' + str(shares) + ' @ ' + str(entry)
+    return note + (' (stop ' + str(stop) + ', target ' + str(target) + ')'
+                   if protected else ' (NO stop/target - needs review)')
 
 
 def _apply_set_cash(app, work, action):

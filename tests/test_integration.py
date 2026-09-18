@@ -1279,6 +1279,70 @@ class IntegrationTests(unittest.TestCase):
             self.assertNotIn('likely no cash', messages)
 
 
+    def test_sector_resolution_unpacks_the_fundamentals_tuple(self):
+        # _fetch_fundamentals_single returns (ticker, data). Calling .get() on
+        # the tuple raised, the bare except swallowed it, and EVERY adoption was
+        # silently skipped - which then let the mirror sell the real position.
+        with patch.object(APP, '_fetch_fundamentals_single',
+                          return_value=('MTD', {'sector': 'Healthcare'})):
+            self.assertEqual(APP._resolve_sector('MTD'), 'Healthcare')
+
+    def test_sector_resolution_rejects_a_sector_the_planner_cannot_map(self):
+        with patch.object(APP, '_fetch_fundamentals_single',
+                          return_value=('XYZ', {'sector': 'Biotechnology'})):
+            self.assertEqual(APP._resolve_sector('XYZ'), '')
+
+    def test_sector_resolution_survives_a_provider_failure(self):
+        with patch.object(APP, '_fetch_fundamentals_single',
+                          side_effect=RuntimeError('yahoo down')):
+            self.assertEqual(APP._resolve_sector('MTD'), '')
+
+    def test_mirror_never_sells_a_holding_the_ledger_failed_to_adopt(self):
+        # plan_reconciliation({}, {'MTD': 18}) returns [('sell','MTD',18)]. When
+        # adoption fails, obeying that diff liquidates a real position.
+        APP._BROKER_SYNC_OK[0] = True
+        submitted = []
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(APP._alpaca, 'get_account', return_value={'equity': '100000'}), \
+                patch.object(APP._alpaca, 'effective_shares_by_symbol',
+                             return_value={'MTD': 18}), \
+                patch.object(APP._alpaca, 'submit_market_order',
+                             side_effect=lambda *a, **k: submitted.append(a)), \
+                patch.object(APP._alpaca, 'close_position',
+                             side_effect=lambda *a: submitted.append(a)), \
+                redirect_stdout(io.StringIO()):
+            APP.reconcile_broker({'positions': [], 'pending_orders': []})
+        self.assertEqual(submitted, [], 'an unadopted holding must never be sold')
+
+    def test_mirror_does_nothing_at_all_when_reconciliation_did_not_complete(self):
+        APP._BROKER_SYNC_OK[0] = False
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(APP._alpaca, 'get_account',
+                             side_effect=AssertionError('must not touch the broker')), \
+                redirect_stdout(io.StringIO()):
+            APP.reconcile_broker({'positions': [], 'pending_orders': []})
+
+    def test_mirror_still_sells_a_position_the_ledger_knows_and_has_exited(self):
+        APP._BROKER_SYNC_OK[0] = True
+        submitted = []
+        # A real position carries a trade_id, which the mirror stamps onto the
+        # sell so the next run can match the fill back to this record.
+        ledger = {'positions': [{'ticker': 'MTD', 'shares': 18,
+                                 'trade_id': 'tid-1',
+                                 'exit_requested': {'reason': 'stop_loss',
+                                                    'session': '2026-09-18'}}],
+                  'pending_orders': []}
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(APP._alpaca, 'get_account', return_value={'equity': '100000'}), \
+                patch.object(APP._alpaca, 'effective_shares_by_symbol',
+                             return_value={'MTD': 18}), \
+                patch.object(APP._alpaca, 'submit_market_order',
+                             side_effect=lambda *a, **k: submitted.append(a) or {'id': 'x'}), \
+                redirect_stdout(io.StringIO()):
+            APP.reconcile_broker(ledger)
+        self.assertEqual([(a[0], a[2]) for a in submitted], [('MTD', 'sell')])
+
+
 IntegrationTests.real_report = staticmethod(APP.save_html_report)
 IntegrationTests.real_whatsapp = staticmethod(APP.send_whatsapp)
 IntegrationTests.real_context = staticmethod(APP.get_market_context)

@@ -335,7 +335,11 @@ def _plan_positions(ledger, broker, by_ref, by_symbol_side, used, session,
                         'shares': broker_position.get('qty'),
                         'entry_price': broker_position.get('avg_entry_price'),
                         'current_price': broker_position.get('current_price'),
-                        'sector': None, 'session': session})
+                        # Resolved by the caller, which has market data: a
+                        # position the screener never planned has no sector and
+                        # no risk levels to inherit.
+                        'sector': None, 'stop_price': None, 'target_price': None,
+                        'atr': 0.0, 'session': session})
         events.append(_event(
             'adopted', WARN, symbol,
             f'{symbol}: {broker_position.get("qty")} shares held at Alpaca but missing from the ledger — adopting',

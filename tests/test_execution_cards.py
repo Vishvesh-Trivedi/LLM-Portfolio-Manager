@@ -136,6 +136,21 @@ class ExecutionCardTests(unittest.TestCase):
         self.assertIn('no money was spent', body)
         self.assertEqual(color, app._RED)
 
+    def test_adopted_card_states_whether_sell_prices_were_set(self):
+        protected = self.card(kind='adopted', symbol='XYZ', broker_shares=5,
+                              broker_price=50.0, stop=47.0, target=56.0)
+        self.assertIn('FOUND A POSITION YOU ALREADY OWNED', protected[0])
+        self.assertIn('automatically', protected[1])
+        self.assertEqual([n for n, _, _ in protected[3]],
+                         ['Sell if it falls to', 'Sell if it rises to'])
+
+    def test_unprotected_adoption_is_flagged_not_quietly_accepted(self):
+        bare = self.card(kind='adopted', symbol='XYZ', broker_shares=5,
+                         broker_price=50.0, stop=None, target=None)
+        self.assertIn('UNPROTECTED', bare[0])
+        self.assertIn('will not be sold', bare[1])
+        self.assertEqual(bare[2], app._AMBER)
+
     def test_every_alerting_kind_renders_without_raising(self):
         for kind in sorted(app._ALERTING_EVENTS):
             title, body, color, stats = self.card(kind=kind)

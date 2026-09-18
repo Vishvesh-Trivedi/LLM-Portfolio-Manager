@@ -221,6 +221,62 @@ class BrokerApplyTests(_LedgerFixture, unittest.TestCase):
                            lambda n: 0.0, max_positions=5, cash_floor=500.0)
         self.assertGreater(order['shares'], 0)
 
+    def test_adopt_sets_atr_derived_sell_prices_when_they_are_safe(self):
+        pf = self.ledger()
+        engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 100.0, 'current_price': 102.0, 'sector': 'Technology',
+             'stop_price': 94.0, 'target_price': 112.0, 'atr': 4.0,
+             'session': self.SESSION}))
+        pos = pf['positions'][0]
+        self.assertEqual((pos['stop_price'], pos['target_price']), (94.0, 112.0))
+        self.assertFalse(pos['needs_risk_levels'])
+        self.assertEqual(pos['risk_levels_basis'], 'atr_derived_at_adoption')
+        self.assertEqual(pos['atr_at_entry'], 4.0)
+
+    def test_adopt_refuses_a_stop_that_would_fire_immediately(self):
+        # A stop already above the market would liquidate, at market, a position
+        # the owner never asked this system to manage.
+        pf = self.ledger()
+        engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 100.0, 'current_price': 90.0, 'sector': 'Technology',
+             'stop_price': 94.0, 'target_price': 112.0, 'atr': 4.0,
+             'session': self.SESSION}))
+        pos = pf['positions'][0]
+        self.assertNotIn('stop_price', pos)
+        self.assertTrue(pos['needs_risk_levels'], 'must be flagged, not auto-sold')
+
+    def test_adopt_refuses_a_target_already_reached(self):
+        pf = self.ledger()
+        engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 100.0, 'current_price': 120.0, 'sector': 'Technology',
+             'stop_price': 94.0, 'target_price': 112.0, 'atr': 4.0,
+             'session': self.SESSION}))
+        self.assertTrue(pf['positions'][0]['needs_risk_levels'])
+
+    def test_adopt_without_levels_still_succeeds_but_is_flagged(self):
+        pf = self.ledger()
+        engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 100.0, 'current_price': 102.0, 'sector': 'Technology',
+             'stop_price': None, 'target_price': None, 'atr': 0.0,
+             'session': self.SESSION}))
+        self.assertTrue(pf['positions'][0]['needs_risk_levels'])
+
+    def test_a_protected_adopted_position_can_actually_exit(self):
+        from screener_safety import mechanical_exit
+        pf = self.ledger()
+        engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 100.0, 'current_price': 102.0, 'sector': 'Technology',
+             'stop_price': 94.0, 'target_price': 112.0, 'atr': 4.0,
+             'session': self.SESSION}))
+        pos = pf['positions'][0]
+        bar = {'Open': 96.0, 'High': 97.0, 'Low': 93.0, 'Close': 95.0}
+        self.assertEqual(mechanical_exit(pos, bar), (94.0, 'stop_loss'))
+
     def test_adopt_with_a_sector_creates_a_flagged_position(self):
         pf = self.ledger()
         engine.apply_broker_state(self.app, pf, plan(
