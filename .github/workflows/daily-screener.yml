@@ -97,7 +97,15 @@ jobs:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
           PYTHONUNBUFFERED: '1'
-        run: python -u LLM_Portfolio_Manager.py
+        run: |
+          set -o pipefail
+          python -u LLM_Portfolio_Manager.py 2>&1 | tee ${{ runner.temp }}/screener.log
+
+      - name: Publish a redacted console log
+        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true }}
+        run: |
+          python qa_validate.py --redact-log \
+            ${{ runner.temp }}/screener.log StockScreener/last_run.log
       - name: Commit validated portfolio state
         if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && steps.tests.outcome == 'success' && steps.screener.outcome != 'skipped' }}
         env:

@@ -274,17 +274,56 @@ def preflight():
     return 1 if failures else 0
 
 
+SECRET_ENV = ('NVIDIA_API_KEY', 'OPENROUTER_API_KEY', 'ALPACA_API_KEY',
+              'ALPACA_SECRET_KEY', 'DISCORD_BOT_TOKEN', 'CALLMEBOT_API_KEY',
+              'WHATSAPP_PHONE')
+LOG_TAIL_LINES = 1500
+
+
+def redact_log(source, destination):
+    """Copy a console log, stripping anything that could be a credential.
+
+    Deliberately paranoid: every secret value from the environment, any URL
+    (which can carry a key in a query string), and any bearer token. Only the
+    tail is kept so the repo does not grow without bound.
+    """
+    import re
+
+    secrets = sorted({v for name in SECRET_ENV for v in [os.environ.get(name, '')] if v and len(v) > 6},
+                     key=len, reverse=True)
+    try:
+        text = Path(source).read_text(encoding='utf-8', errors='replace')
+    except FileNotFoundError:
+        text = '(no console output captured)'
+    for secret in secrets:
+        text = text.replace(secret, '[redacted]')
+    text = re.sub(r'https?://\S+', '[redacted URL]', text)
+    text = re.sub(r'(?i)bearer\s+\S+', 'Bearer [redacted]', text)
+    lines = text.splitlines()
+    if len(lines) > LOG_TAIL_LINES:
+        lines = [f'(truncated: showing the last {LOG_TAIL_LINES} of {len(lines)} lines)'] + lines[-LOG_TAIL_LINES:]
+    out = Path(destination)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    for secret in secrets:
+        assert secret not in out.read_text(encoding='utf-8'), 'redaction failed'
+    print(f'Redacted log written: {out} ({len(lines)} lines)')
+
+
 def main():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--check-state')
     group.add_argument('--live', action='store_true')
     group.add_argument('--preflight', action='store_true')
+    group.add_argument('--redact-log', nargs=2, metavar=('SOURCE', 'DESTINATION'))
     args = parser.parse_args()
     if args.check_state:
         check_state(args.check_state)
     elif args.preflight:
         raise SystemExit(preflight())
+    elif args.redact_log:
+        redact_log(*args.redact_log)
     else:
         live_qa()
 
