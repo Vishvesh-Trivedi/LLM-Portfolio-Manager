@@ -129,11 +129,18 @@ Get a free NVIDIA NIM API key at **build.nvidia.com → sign up → "Get API Key
 
 ### Environment Variables
 
+See [`.env.example`](.env.example) for the full list.
+
 | Variable | Required | Purpose |
 |----------|:--------:|---------|
 | `NVIDIA_API_KEY` | ✅ | LLM analysis (free key from build.nvidia.com) |
-| `WHATSAPP_PHONE` | — | WhatsApp alerts (E.164, e.g. `+64211234567`) |
-| `CALLMEBOT_API_KEY` | — | WhatsApp alerts (via CallMeBot) |
+| `OPENROUTER_API_KEY` | — | Second LLM provider with its own rate budget; used as soon as NVIDIA is throttled |
+| `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` | — | Primary market data; required for any broker feature |
+| `SCREENER_LIVE_BROKER` | — | `1` mirrors orders to Alpaca and makes it the source of truth |
+| `DISCORD_BOT_TOKEN` / `DISCORD_CHANNEL_ID` | — | Discord alerts (primary channel) |
+| `WHATSAPP_PHONE` / `CALLMEBOT_API_KEY` | — | WhatsApp alerts (via CallMeBot) |
+| `SCREENER_DISABLE_ALERTS` | — | `1` silences every notification channel |
+| `SCREENER_ALERT_TEST` | — | `1` marks every alert as a TEST (messages only; does **not** stop orders) |
 
 ---
 
@@ -150,32 +157,117 @@ at **21:30 UTC** (after US close) and on manual dispatch.
 
 ---
 
-## 📲 WhatsApp Alerts (optional)
+## 🔔 Alerts — Discord & WhatsApp (optional)
 
-When configured, each run sends two concise messages:
+Both channels are independent: each activates only when its own variables are
+set, and a failure in one never suppresses the other or the trading path.
+Discord is the primary channel and receives the full message (it splits at
+Discord's 2000-char limit); WhatsApp keeps its 1600-char cap.
 
-1. **Daily decision** — market read (QQQ/VIX/SPY), the action taken
-   (bought / picked but not opened / watch only / no buy), entry/stop/target and
-   risk:reward, reasoning and key risk, positions closed today, and the next watchlist.
-2. **Portfolio** — total value, P&L, cash, and each holding worst-first with a health tag
-   (near stop / near target / hold done / ok).
+**Discord** (`DISCORD_BOT_TOKEN` + `DISCORD_CHANNEL_ID`) posts four things:
+
+1. **Execution events** — every order outcome confirmed against Alpaca, executed
+   or not: filled, partially filled, still waiting, rejected, cancelled, never
+   received, plus any share-count or price correction. See *Broker-authoritative
+   execution* below. Set `SCREENER_ALERT_TEST=1` while testing and every message
+   is retitled `🧪 TEST`, greyed out and footnoted, so a rehearsal can never be
+   mistaken for a real fill.
+2. **Daily decision** — market read (QQQ/VIX/SPY), the action taken, entry/stop/target
+   and risk:reward, reasoning and key risk, positions closed today, next watchlist.
+3. **Portfolio** — total value, P&L, cash, each holding worst-first with a health tag.
+4. **Degraded runs** — which stage failed and which trade blockers fired whenever a
+   run finishes not trade-ready, plus the weekly / market-closed summary.
+
+Setup: discord.com/developers → New Application → Bot → copy token; invite the bot
+to your server with **Send Messages**; enable Developer Mode in Discord and
+right-click the channel → **Copy Channel ID**. Add both as repository Secrets.
+
+**WhatsApp** (`WHATSAPP_PHONE` + `CALLMEBOT_API_KEY`) sends messages 2 and 3 via CallMeBot.
+
+---
+
+## ✅ Preflight — check before you trade
+
+```bash
+python qa_validate.py --preflight
+```
+
+Read-only: no orders, no ledger writes, no messages. It reports whether the next
+run will work and **exactly what it will do to your ledger**, then exits non-zero
+if anything is blocking:
+
+```
+  [OK  ] Ledger file          0 open, 13 closed, 1 pending, cash $100,000.00
+  [OK  ] Alpaca account       PAPER - cash $74,740.92, equity $100,128.84
+  [OK  ] Live broker mode     ON - Alpaca is the source of truth
+  [WARN] Ledger vs Alpaca     next run will: fill pending MTD 18 @ $1,403.28
+  [OK  ] OpenRouter key       present - failover available
+  VERDICT: READY, with 1 thing(s) worth a look.
+```
+
+Run it after changing any secret, and before the first live session.
+
+---
+
+## 🏦 Broker-Authoritative Execution (Alpaca)
+
+Alpaca serves two independent purposes, each behind its own switch:
+
+| Switch | Effect |
+|---|---|
+| `ALPACA_API_KEY` + `ALPACA_SECRET_KEY` | Alpaca becomes the **primary market-data** source, with yfinance as automatic fallback. No orders are placed. |
+| `SCREENER_LIVE_BROKER=1` (plus the keys) | Orders are mirrored to the Alpaca account **and Alpaca becomes the source of truth** for fills, share counts and cash. |
+
+With live-broker mode on, the ledger no longer simulates a fill at the next
+session's opening print. Each run reads the account, positions and orders, then
+reconciles:
+
+- **Filled** → booked at Alpaca's real `filled_avg_price`, with the stop and
+  target re-anchored to the actual fill rather than the estimate.
+- **Partially filled** → only the executed shares are booked.
+- **Rejected / canceled / missing** → no position is opened, and the run is
+  marked degraded so no new order is queued until it is resolved.
+- **Share or cost-basis drift** → corrected to the broker's numbers.
+- **Held at Alpaca but absent from the ledger** → adopted, once its sector
+  resolves (an unknown sector means unknown exposure, so it fails closed).
+- **Cash** → taken from the account, never re-derived locally.
+
+Exits work the same way: a stop, target or hold-period exit becomes a *sell
+request*, and the position stays open in the ledger until Alpaca confirms the
+sale. Outgoing orders carry the ledger id in their `client_order_id`, so a fill
+is matched back to the exact record that requested it.
+
+**Reconciliation runs on every invocation, session or not.** Screening, model
+probes and new orders require a completed session, but an execution at Alpaca is
+a fact regardless — so a weekend, holiday or pre-close run still reads the
+account, reconciles the ledger and alerts you, then stops without screening or
+trading. Fills are dated by Alpaca's own `filled_at` timestamp rather than the
+local calendar date, so a Friday fill reconciled on Saturday is still recorded as
+Friday.
+
+> The ledger is only ever rewritten from a snapshot Alpaca actually answered.
+> If the account, positions or orders cannot be read, **nothing is changed** and
+> the run degrades — a transport failure must never be read as "you hold nothing."
 
 ---
 
 ## 📁 Project Layout
 
 ```
-LLM_Portfolio_Manager.py   # Current all-in-one script (entry point)
+LLM_Portfolio_Manager.py   # Entry point: config, data, indicators, LLM rounds, reporting
+screener_safety.py         # Pure primitives: sizing/risk caps, atomic writes, exits
+screener_portfolio.py      # Canonical session ledger: queue -> fill -> replay -> close
+screener_contracts.py      # Fail-closed LLM + config schema validation, RunHealth
+screener_alpaca.py         # Alpaca market data + paper execution + authoritative reads
+screener_broker_sync.py    # Pure ledger-vs-broker reconciliation planner
+screener_discord.py        # Discord delivery (never raises into the trading path)
+qa_validate.py             # Non-mutating ledger checks + isolated live-provider QA
 requirements.txt           # Python dependencies
 .env.example               # Environment variable template
-config/                    # Config files (future split from script constants)
-data/                      # Local intermediate data (git-ignored)
-reports/                   # Generated HTML/CSV/JSON reports (git-ignored)
-docs/
-  guides/                  # RUNBOOK, NVIDIA endpoint setup guide
-  reference/               # PROJECT_STRUCTURE, api_inventory.csv, CODE_AUDIT_REPORT
-tests/                     # Test suite and notes
-StockScreener/             # Portfolio state + latest report output
+docs/reference/            # PROJECT_STRUCTURE, api_inventory.csv
+architecture/              # Architecture diagram
+tests/                     # Offline regression suite (no network, no credentials)
+StockScreener/             # Portfolio state + generated reports
 ```
 
 See [`docs/reference/PROJECT_STRUCTURE.md`](docs/reference/PROJECT_STRUCTURE.md) for details and refactor plans.

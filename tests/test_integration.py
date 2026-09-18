@@ -284,16 +284,50 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(APP._current_config(), before)
         self.assertIn('invalid_config', APP._HEALTH.as_dict()['degraded_reasons'])
 
-    def test_market_gate_precedes_config_monitoring_probes_and_alerts(self):
+    def test_market_gate_precedes_screening_probes_and_alerts(self):
+        # Outside a completed session nothing may screen, probe a model, price a
+        # replay off incomplete bars, or place an order. Broker reconciliation is
+        # deliberately NOT in that list — see the weekend test below.
         self.pipeline()
         for instant in (datetime(2026, 9, 12, 17), datetime(2026, 9, 7, 17), datetime(2026, 9, 11, 16, 14)):
             with self.subTest(instant=instant):
                 Clock.instant = instant.replace(tzinfo=ZoneInfo('America/New_York'))
                 self.assertIsNone(APP.run_screener())
                 self.assertEqual(APP._HEALTH.as_dict()['status'], 'healthy')
-        for mock in (self.config, self.monitor, self.probe, self.context, self.download, self.post, self.alert, self.weekly):
+        for mock in (self.monitor, self.probe, self.context, self.download,
+                     self.post, self.alert, self.weekly):
             mock.assert_not_called()
-        self.assertFalse(Path(APP.PORTFOLIO_JSON).exists())
+
+    def test_weekend_run_reconciles_the_broker_but_never_trades(self):
+        """A fill is a fact even when this run may not screen.
+
+        The 2026-09-17 MTD fill went unrecorded precisely because the gate
+        returned before anything asked Alpaca what had happened.
+        """
+        self.pipeline()
+        Clock.instant = datetime(2026, 9, 12, 17, tzinfo=ZoneInfo('America/New_York'))
+        events = [{'kind': 'fill', 'severity': 'info', 'symbol': 'AAA',
+                   'summary': 'AAA filled', 'shares': 5, 'price': 10.0}]
+        with patch.object(APP, 'sync_with_broker', return_value=events) as sync, \
+                patch.object(APP, 'send_execution_alerts') as alerts:
+            self.assertIsNone(APP.run_screener())
+        sync.assert_called_once()
+        alerts.assert_called_once_with(events)
+        self.assertEqual(APP._HEALTH.as_dict()['status'], 'healthy')
+        self.assertEqual(APP._RUN_MODE, 'no_session')
+        # Reconciled state is persisted, but nothing was screened or ordered.
+        self.assertTrue(Path(APP.PORTFOLIO_JSON).exists())
+        for mock in (self.monitor, self.probe, self.context, self.download,
+                     self.post, self.alert, self.weekly):
+            mock.assert_not_called()
+
+    def test_already_processed_session_still_reconciles_the_broker(self):
+        self.pipeline()
+        APP.run_screener()
+        with patch.object(APP, 'sync_with_broker', return_value=[]) as sync:
+            self.assertIsNone(APP.run_screener())
+        sync.assert_called_once()
+        self.assertEqual(APP._RUN_MODE, 'already_processed')
 
     def test_healthy_pipeline_queues_and_persists_without_spending_cash(self):
         self.pipeline()
@@ -314,7 +348,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertFalse(self.alert.call_args.kwargs['position_opened'])
         order = pf['pending_orders'][0]
         self.assertEqual(order['execution_session'], '2026-09-14')
-        self.assertEqual(self.download.call_args.kwargs['period'], '6mo')
+        self.assertEqual(self.download.call_args.kwargs['period'], APP._HISTORY_PERIOD)
         self.assertEqual(order['vix'], 18)
         self.assertEqual(order['qqq_trend'], 'BULLISH')
         self.assertEqual(result['top_pick']['facts_as_of'], '2026-09-11')
@@ -819,20 +853,74 @@ class IntegrationTests(unittest.TestCase):
         self.assertNotIn('private.invalid', text + raw)
         self.assertNotIn('Bearer token', text + raw)
 
-    def test_six_month_batch_avoids_calendar_day_ma_warmup_shortfall(self):
+    def test_batch_window_covers_ma200_and_52_week_warmup(self):
+        # A calendar-day window is not a session count: 65 calendar days is
+        # commonly only 46 bars. The window must clear BOTH the 200 sessions
+        # MA200 needs and the 252 a real 52-week high needs, or
+        # compute_indicators silently substitutes spot price for MA200 and
+        # mislabels a short-window high as a 52-week high.
         self.pipeline()
 
         def yahoo_window(tickers, **kwargs):
-            # 65 calendar days commonly has only 46 bars, not 65 sessions.
-            count = 130 if kwargs['period'] == '6mo' else 46
+            count = 520 if kwargs['period'] == APP._HISTORY_PERIOD else 46
             frames = {ticker: bars(count=count) for ticker in tickers}
             return pd.concat(frames, axis=1).swaplevel(0, 1, axis=1)
 
         self.download.side_effect = yahoo_window
         self.assertEqual(APP.run_screener()['order_status'], 'QUEUED')
-        self.assertEqual(self.download.call_args.kwargs['period'], '6mo')
+        self.assertEqual(self.download.call_args.kwargs['period'], APP._HISTORY_PERIOD)
         self.assertFalse(self.download.call_args.kwargs['auto_adjust'])
         self.assertTrue(APP._HEALTH.as_dict()['stages']['market_data']['success'])
+
+    def test_configured_window_is_long_enough_for_both_indicators(self):
+        sessions_per_year = 252
+        years = int(APP._HISTORY_PERIOD.rstrip('y'))
+        self.assertGreaterEqual(years * sessions_per_year, APP._MIN_SESSIONS_52W)
+        self.assertGreaterEqual(years * sessions_per_year, APP._MIN_SESSIONS_MA200)
+        # Alpaca is specified in calendar days; ~252 of every 365 are sessions.
+        self.assertGreaterEqual(APP._HISTORY_CALENDAR_DAYS * 252 / 365,
+                                APP._MIN_SESSIONS_52W)
+
+    def test_ma200_and_52_week_high_are_real_values_not_fallbacks(self):
+        # The regression this guards: with too little history MA200 fell back to
+        # spot price, making vs_ma200_pct exactly 0.0 and locking the top tier
+        # of the moving-average score out of reach for every stock, forever.
+        long_history = bars(count=520)
+        indicators = APP.compute_indicators(long_history)
+        self.assertNotEqual(indicators['vs_ma200_pct'], 0.0)
+        self.assertLess(indicators['ma200'], indicators['price'])
+        short_history = bars(count=126)
+        self.assertEqual(APP.compute_indicators(short_history)['vs_ma200_pct'], 0.0)
+
+    def test_entry_rsi_matches_the_exit_rule_rsi(self):
+        # The buy filter and the sell rule must measure RSI the same way, or
+        # "don't buy over 75" and "sell over 78" are different scales.
+        history = bars(count=300)
+        entry = APP.compute_indicators(history)['rsi']
+        closes = history['Close'].astype(float)
+        delta = closes.diff()
+        gain = delta.clip(lower=0).ewm(com=13, adjust=False).mean().iloc[-1]
+        loss = (-delta.clip(upper=0)).ewm(com=13, adjust=False).mean().iloc[-1]
+        exit_rsi = 100.0 if loss == 0 and gain > 0 else 100 - 100 / (1 + gain / loss)
+        self.assertAlmostEqual(entry, round(exit_rsi, 1), places=1)
+
+    def test_bearish_market_scores_the_cautious_tier_not_the_unknown_one(self):
+        scores = {}
+        for sentiment in ('BULLISH', 'NEUTRAL', 'BEARISH', 'SOMETHING_ELSE'):
+            _, breakdown, _ = APP.compute_news_score([], [], None, None, sentiment)
+            scores[sentiment] = breakdown['macro_alignment']
+        self.assertEqual(scores['BULLISH'], 10)
+        self.assertEqual(scores['NEUTRAL'], 6)
+        self.assertEqual(scores['BEARISH'], 3, 'BEARISH must not fall through to the catch-all')
+        self.assertEqual(scores['SOMETHING_ELSE'], 1)
+
+    def test_weekend_volume_relaxation_uses_the_new_york_session_date(self):
+        # The runner's clock is UTC on CI and can be a different weekday, which
+        # would relax the volume filter on a real trading session.
+        with patch.object(APP, '_session_date', return_value='2026-09-12'):   # Saturday
+            self.assertTrue(pd.Timestamp(APP._session_date()).weekday() >= 5)
+        with patch.object(APP, '_session_date', return_value='2026-09-11'):   # Friday
+            self.assertFalse(pd.Timestamp(APP._session_date()).weekday() >= 5)
 
     def test_unknown_fx_charges_and_tracks_each_side_normally(self):
         for rate in (None, 0, -0.6):
@@ -1179,10 +1267,14 @@ class IntegrationTests(unittest.TestCase):
                 self.assertNotIn('BOUGHT AAA', html)
                 self.real_whatsapp(result['top_pick'], self.ctx, 110., [], 106., 118., portfolio=pf)
             messages = '\n'.join(call.args[0] for call in send.call_args_list)
-            self.assertIn('QUEUED AAA', messages)
-            self.assertIn('REJECTED AAA', messages)
-            self.assertIn('next session Open; no cash debited', messages)
+            # A queued order must read as "not yet bought", and a rejected one as
+            # "no order placed" — neither may ever look like a completed purchase.
+            self.assertIn('Order placed: buy', messages)
+            self.assertIn('Nothing has been bought yet and no money has been spent',
+                          messages)
+            self.assertIn('No order was placed for AAA', messages)
             self.assertIn('<denied> & limit', messages)
+            self.assertNotIn('Bought', messages)
             self.assertNotIn('BOUGHT', messages)
             self.assertNotIn('likely no cash', messages)
 

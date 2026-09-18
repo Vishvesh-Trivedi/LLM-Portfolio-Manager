@@ -40,6 +40,7 @@ import pandas as pd
 from screener_safety import (
     atomic_csv, atomic_json, evaluate_horizon, finite_number, fresh_bar,
     mechanical_exit, plan_order, validate_portfolio,
+    _sector as _canonical_sector,
 )
 
 
@@ -47,6 +48,7 @@ __all__ = [
     'load_portfolio', 'save_portfolio', 'update_portfolio_prices',
     'open_position', 'close_position', 'reconcile_closed_picks',
     'load_performance_history', 'update_results', 'queue_position',
+    'apply_broker_state', 'broker_authoritative',
 ]
 
 _LEARNING_FIELDS = (
@@ -540,6 +542,237 @@ def queue_position(app, pf, pick, entry, stop, target, candidate):
     return True
 
 
+# ── Broker-authoritative reconciliation ────────────────────────────────────
+# In broker mode the Alpaca account is the source of truth: the ledger does not
+# simulate a fill at the opening print, it books what actually executed. These
+# writers deliberately bypass plan_order — its risk caps decide whether an order
+# MAY be placed, and re-running them here would refuse to record a trade that
+# has already happened in the real account. Cash is never adjusted arithmetically
+# either; the 'set_cash' action carries the broker's own balance.
+
+
+def broker_authoritative(app):
+    """True when the parent has opted this run into broker-authoritative mode."""
+    hook = getattr(app, '_broker_authoritative', None)
+    try:
+        return bool(hook()) if callable(hook) else bool(hook)
+    except Exception:
+        return False
+
+
+def _find(records, key, value):
+    return next((r for r in records if r.get(key) == value), None)
+
+
+def _apply_fill_pending(app, work, action):
+    order = _find(work['pending_orders'], 'id', action['order_id'])
+    if order is None:
+        raise ValueError('pending order not found: ' + str(action['order_id']))
+    shares = action['shares']
+    if not isinstance(shares, int) or shares < 1:
+        raise ValueError('broker fill quantity must be a positive integer')
+    entry = _positive(action['price'], 'fill price')
+    work['pending_orders'].remove(order)
+    stop = _price_offset(entry, order['stop_distance'], subtract=True)
+    target = _price_offset(entry, order['target_distance'])
+    if not 0 < stop < entry < target:
+        raise ValueError('broker fill price invalidates the stored stop/target')
+    cost = round(entry * shares, 2)
+    pos = _learning_metadata(order)
+    pos.update({
+        'trade_id': order['id'], 'ticker': _text(order['ticker'], 'ticker').upper(),
+        'shares': shares, 'entry_price': entry, 'entry_date': action['session'],
+        'fill_date': action['session'], 'signal_date': order['signal_date'],
+        'execution_session': action['session'],
+        'stop_price': stop, 'target_price': target, 'sector': order['sector'],
+        'current_price': entry, 'current_value': cost, 'cost_basis': cost,
+        'brokerage_in': 0.0, 'unrealized_pnl': 0.0, 'unrealized_pnl_pct': 0.0,
+        'hold_days': 0, 'held_sessions': 0, 'hold_sessions': order['hold_sessions'],
+        'high_watermark': entry, 'atr_at_entry': order['atr'],
+        'filled_at_open': True, 'quote_stale': False,
+        'cost_basis_basis': 'broker_confirmed_fill',
+        'broker_order_id': action.get('broker_order_id', ''),
+        'broker_partial_fill': bool(action.get('partial')),
+        'requested_shares': order['shares'],
+    })
+    work['positions'].append(pos)
+    return ('Filled ' + pos['ticker'] + ': ' + str(shares) + ' @ ' + str(entry)
+            + ' (broker confirmed)')
+
+
+def _apply_expire_pending(app, work, action):
+    order = _find(work['pending_orders'], 'id', action['order_id'])
+    if order is None:
+        raise ValueError('pending order not found: ' + str(action['order_id']))
+    _expire(app, work, order, action['reason'])
+    return 'Expired ' + str(action['symbol']) + ': ' + action['reason']
+
+
+def _apply_close_position(app, work, action):
+    pos = _find(work['positions'], 'trade_id', action['trade_id'])
+    if pos is None:
+        raise ValueError('position not found: ' + str(action['trade_id']))
+    exit_price = _positive(action['price'], 'exit price')
+    exit_date = _date(action['session']).isoformat()
+    if exit_date < _date(pos['entry_date']).isoformat():
+        raise ValueError('broker exit date precedes entry date')
+    gross = round(exit_price * pos['shares'], 2)
+    pnl = round(gross - pos['cost_basis'], 2)
+    pct = pnl / pos['cost_basis'] * 100
+    closed = copy.deepcopy(pos)
+    closed.update({
+        'exit_price': exit_price, 'exit_date': exit_date, 'exit_value': gross,
+        'brokerage_out': 0.0, 'realized_pnl': pnl, 'realized_pnl_pct': pct,
+        'realized_pct': pct, 'net_realized_pct': pct,
+        'reason': action.get('reason', 'broker_confirmed_exit'),
+        'result': _result(pct), 'Result': _result(pct),
+        'outcome_basis': 'net_realized', 'last_evaluated_session': exit_date,
+        'fee_basis': 'broker_actual', 'broker_order_id': action.get('broker_order_id', ''),
+    })
+    closed.pop('exit_requested', None)
+    work['closed_trades'].append(closed)
+    work['positions'].remove(pos)
+    work['total_realized_pnl'] = round(work['total_realized_pnl'] + pnl, 2)
+    return ('Closed ' + closed['ticker'] + ': ' + str(pos['shares']) + ' @ '
+            + str(exit_price) + ' (broker confirmed)')
+
+
+def _apply_resize_position(app, work, action):
+    pos = _find(work['positions'], 'trade_id', action['trade_id'])
+    if pos is None:
+        raise ValueError('position not found: ' + str(action['trade_id']))
+    shares = action['shares']
+    if not isinstance(shares, int) or shares < 1:
+        raise ValueError('broker share count must be a positive integer')
+    previous = pos['shares']
+    entry = _positive(pos['entry_price'], 'entry_price')
+    pos['shares'] = shares
+    pos['cost_basis'] = round(entry * shares, 2)
+    pos['current_value'] = round(_positive(pos.get('current_price', entry),
+                                           'current_price') * shares, 2)
+    pos['unrealized_pnl'] = round(pos['current_value'] - pos['cost_basis'], 2)
+    pos['unrealized_pnl_pct'] = (pos['current_value'] / pos['cost_basis'] - 1) * 100
+    pos['cost_basis_basis'] = 'broker_reconciled'
+    return ('Resized ' + pos['ticker'] + ': ' + str(previous) + ' -> ' + str(shares))
+
+
+def _apply_reprice_position(app, work, action):
+    pos = _find(work['positions'], 'trade_id', action['trade_id'])
+    if pos is None:
+        raise ValueError('position not found: ' + str(action['trade_id']))
+    entry = _positive(action['entry_price'], 'entry_price')
+    previous = pos['entry_price']
+    pos['entry_price'] = entry
+    pos['cost_basis'] = round(entry * pos['shares'], 2)
+    current = _positive(pos.get('current_price', entry), 'current_price')
+    pos['current_value'] = round(current * pos['shares'], 2)
+    pos['unrealized_pnl'] = round(pos['current_value'] - pos['cost_basis'], 2)
+    pos['unrealized_pnl_pct'] = (pos['current_value'] / pos['cost_basis'] - 1) * 100
+    pos['cost_basis_basis'] = 'broker_reconciled'
+    return ('Repriced ' + pos['ticker'] + ': ' + str(previous) + ' -> ' + str(entry))
+
+
+def _apply_adopt_position(app, work, action):
+    symbol = _text(action['symbol'], 'symbol').upper()
+    if any(p['ticker'].strip().upper() == symbol for p in work['positions']):
+        raise ValueError('ticker already held: ' + symbol)
+    shares = action['shares']
+    if not isinstance(shares, int) or shares < 1:
+        raise ValueError('adopted share count must be a positive integer')
+    entry = _positive(action['entry_price'], 'entry_price')
+    # plan_order calls _sector() on EVERY open position when sizing a new order,
+    # so a sector it cannot map raises there and permanently blocks every future
+    # order until the ledger is hand-edited. Validate against the same mapping
+    # now and refuse the adoption, rather than poisoning the ledger with it.
+    sector = _text(action.get('sector') or '', 'sector')
+    _canonical_sector(sector)
+    current = _positive(action.get('current_price') or entry, 'current_price')
+    cost = round(entry * shares, 2)
+    value = round(current * shares, 2)
+    work['positions'].append({
+        'trade_id': str(uuid4()), 'ticker': symbol, 'shares': shares,
+        'entry_price': entry, 'entry_date': action['session'],
+        'signal_date': action['session'], 'sector': sector,
+        'cost_basis': cost, 'brokerage_in': 0.0,
+        'current_price': current, 'current_value': value,
+        'unrealized_pnl': round(value - cost, 2),
+        'unrealized_pnl_pct': (value / cost - 1) * 100,
+        'hold_days': 0, 'held_sessions': 0,
+        'hold_sessions': _hold(getattr(app, '_CFG_HOLD_DAYS', 10)),
+        'high_watermark': current, 'atr_at_entry': 0, 'filled_at_open': False,
+        'quote_stale': False, 'cost_basis_basis': 'broker_adopted',
+        'source': 'BROKER_ADOPTED',
+        'reasoning': 'Adopted from the Alpaca account; not originated by the screener.',
+        # No stop/target is known for a position the screener did not plan, so
+        # mechanical_exit cannot fire until a human sets them.
+        'needs_risk_levels': True,
+    })
+    return 'Adopted ' + symbol + ': ' + str(shares) + ' @ ' + str(entry)
+
+
+def _apply_set_cash(app, work, action):
+    cash = finite_number(action['cash'], 'cash', minimum=0)
+    previous = work['cash']
+    work['cash'] = round(cash, 2)
+    equity = action.get('equity')
+    if equity is not None:
+        work['broker_equity'] = round(finite_number(equity, 'equity'), 2)
+    work['cash_basis'] = 'broker_actual'
+    return 'Cash set from broker: ' + str(previous) + ' -> ' + str(work['cash'])
+
+
+_BROKER_OPS = {
+    'fill_pending': _apply_fill_pending,
+    'expire_pending': _apply_expire_pending,
+    'close_position': _apply_close_position,
+    'resize_position': _apply_resize_position,
+    'reprice_position': _apply_reprice_position,
+    'adopt_position': _apply_adopt_position,
+    'set_cash': _apply_set_cash,
+}
+# Positions settle before cash so the broker balance is written last and is
+# never re-derived from local arithmetic.
+_BROKER_OP_ORDER = ('fill_pending', 'expire_pending', 'close_position',
+                    'resize_position', 'reprice_position', 'adopt_position',
+                    'set_cash')
+
+
+def apply_broker_state(app, pf, plan):
+    """Apply a broker reconciliation plan to the ledger, then save atomically.
+
+    Each action is staged against a private copy and validated on its own, so a
+    single unusable action is recorded as a failure instead of discarding the
+    rest of the reconciliation. Returns ``{'applied', 'failed', 'notes'}``.
+    A plan the broker could not substantiate (``ok`` false) applies nothing.
+    """
+    result = {'applied': [], 'failed': [], 'notes': []}
+    if not isinstance(plan, dict) or not plan.get('ok'):
+        result['notes'].append('broker plan unavailable; ledger untouched')
+        return result
+    work = _validated(pf)
+    actions = sorted(plan.get('actions', []),
+                     key=lambda a: _BROKER_OP_ORDER.index(a['op'])
+                     if a.get('op') in _BROKER_OP_ORDER else len(_BROKER_OP_ORDER))
+    for action in actions:
+        handler = _BROKER_OPS.get(action.get('op'))
+        if handler is None:
+            result['failed'].append({'action': action, 'error': 'unknown op'})
+            continue
+        try:
+            stage = copy.deepcopy(work)
+            note = handler(app, stage, action)
+            work = _validated(stage)
+            result['applied'].append(action['op'] + ': ' + str(action.get('symbol', '')))
+            result['notes'].append(note)
+        except Exception as exc:
+            result['failed'].append({'action': action, 'error': str(exc)})
+            app._degrade('broker_sync_failed:' + str(action.get('op'))
+                         + ':' + str(action.get('symbol', '')))
+    save_portfolio(app, work)
+    _publish(pf, work)
+    return result
+
+
 def _frame(frame, start, asof):
     """Keep only this ticker's requested dates; reject ambiguous daily indexes."""
     if (not isinstance(frame, pd.DataFrame)
@@ -740,7 +973,10 @@ def update_portfolio_prices(app, pf):
             raise cache[ticker]
         return cache[ticker]
 
-    for order in list(work['pending_orders']):
+    # In broker mode a pending order is resolved by apply_broker_state from
+    # Alpaca's actual execution. Simulating a fill at the opening print here
+    # would be exactly the phantom-position bug broker authority exists to end.
+    for order in ([] if broker_authoritative(app) else list(work['pending_orders'])):
         ticker = order['ticker']
         try:
             if 'execution_session' not in order:
@@ -805,7 +1041,15 @@ def update_portfolio_prices(app, pf):
             stage = copy.deepcopy(work)
             index = next(i for i, p in enumerate(stage['positions']) if p['trade_id'] == pos['trade_id'])
             stage['positions'][index] = pos
-            if exit_order is not None:
+            if exit_order is not None and broker_authoritative(app):
+                # An exit is a REQUEST, not a fact. The position stays open until
+                # Alpaca confirms the sale; _ledger_share_map drops flagged
+                # positions so this run's mirror submits the sell.
+                stage['positions'][index]['exit_requested'] = {
+                    'reason': str(exit_order[1]),
+                    'session': _date(pos['last_evaluated_session']).isoformat()}
+                _reason(app, 'Exit requested for ' + ticker + ': ' + str(exit_order[1]))
+            elif exit_order is not None:
                 with _close_context(app, pos['last_evaluated_session']):
                     close_position(app, stage, ticker, exit_order[0], exit_order[1],
                                    stage.get('last_nzdusd_rate'))

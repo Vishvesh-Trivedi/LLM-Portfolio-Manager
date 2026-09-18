@@ -133,6 +133,8 @@ class PortfolioTests(unittest.TestCase):
             'load_performance_history': ['app', 'fp'],
             'update_results': ['app', 'fp', 'cols'],
             'queue_position': ['app', 'pf', 'pick', 'entry', 'stop', 'target', 'candidate'],
+            'apply_broker_state': ['app', 'pf', 'plan'],
+            'broker_authoritative': ['app'],
         }
         self.assertEqual(set(engine.__all__), set(expected))
         for name, parameters in expected.items():
