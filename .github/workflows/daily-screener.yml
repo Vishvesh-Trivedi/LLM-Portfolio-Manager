@@ -2,7 +2,14 @@ name: Daily Stock Screener
 
 on:
   schedule:
-    - cron: '15 21 * * *'
+    # US close is 16:00 ET and the screener gate opens at 16:15 ET, but
+    # GitHub cron is UTC only and cannot follow US daylight saving - so the
+    # close sits at 20:00 UTC in summer and 21:00 UTC in winter. Two entries
+    # cover both halves of the year, each landing 30 minutes after the close.
+    # Whichever fires first processes the session; the other exits immediately
+    # on "already processed", so the duplicate costs nothing.
+    - cron: '30 20 * * *'   # 16:30 ET while US daylight saving is on  (Mar-Nov)
+    - cron: '30 21 * * *'   # 16:30 ET while US standard time is on    (Nov-Mar)
   workflow_dispatch:
     inputs:
       qa_only:
