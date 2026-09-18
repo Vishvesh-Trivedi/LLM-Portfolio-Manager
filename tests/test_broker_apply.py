@@ -197,6 +197,30 @@ class BrokerApplyTests(_LedgerFixture, unittest.TestCase):
         self.assertEqual(len(result['failed']), 1)
         self.assertEqual(pf['positions'], [])
 
+    def test_adopt_refuses_a_sector_the_order_planner_cannot_map(self):
+        # An unmappable sector is accepted by the ledger but then raises inside
+        # plan_order on EVERY later order, silently blocking all trading.
+        pf = self.ledger()
+        result = engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 50.0, 'current_price': 52.0, 'sector': 'Biotechnology',
+             'session': self.SESSION}))
+        self.assertEqual(len(result['failed']), 1)
+        self.assertEqual(pf['positions'], [])
+
+    def test_an_adopted_position_never_blocks_future_orders(self):
+        from screener_safety import plan_order
+        pf = self.ledger()  # full cash: keeps the drawdown guard out of this test
+        engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 50.0, 'current_price': 52.0, 'sector': 'Healthcare',
+             'session': self.SESSION}))
+        self.assertEqual(len(pf['positions']), 1)
+        # The whole point: sizing a new order must still work afterwards.
+        order = plan_order(pf, 'AAA', 100.0, 5000.0, 96.0, 110.0, 'Technology',
+                           lambda n: 0.0, max_positions=5, cash_floor=500.0)
+        self.assertGreater(order['shares'], 0)
+
     def test_adopt_with_a_sector_creates_a_flagged_position(self):
         pf = self.ledger()
         engine.apply_broker_state(self.app, pf, plan(

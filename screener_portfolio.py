@@ -40,6 +40,7 @@ import pandas as pd
 from screener_safety import (
     atomic_csv, atomic_json, evaluate_horizon, finite_number, fresh_bar,
     mechanical_exit, plan_order, validate_portfolio,
+    _sector as _canonical_sector,
 )
 
 
@@ -679,10 +680,12 @@ def _apply_adopt_position(app, work, action):
     if not isinstance(shares, int) or shares < 1:
         raise ValueError('adopted share count must be a positive integer')
     entry = _positive(action['entry_price'], 'entry_price')
-    # plan_order calls _sector() on every open position, and an unknown sector
-    # would raise there and block ALL future orders. The caller resolves a real
-    # sector before adoption; refusing here is safer than defaulting to one.
+    # plan_order calls _sector() on EVERY open position when sizing a new order,
+    # so a sector it cannot map raises there and permanently blocks every future
+    # order until the ledger is hand-edited. Validate against the same mapping
+    # now and refuse the adoption, rather than poisoning the ledger with it.
     sector = _text(action.get('sector') or '', 'sector')
+    _canonical_sector(sector)
     current = _positive(action.get('current_price') or entry, 'current_price')
     cost = round(entry * shares, 2)
     value = round(current * shares, 2)

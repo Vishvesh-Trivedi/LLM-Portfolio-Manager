@@ -5560,6 +5560,10 @@ def _resolve_sector(symbol):
         info = _fetch_fundamentals_single(symbol) or {}
         sector = str(info.get('sector') or '').strip()
         if sector and sector.casefold() not in ('unknown', 'n/a', 'none'):
+            # Only a sector the order planner can map is usable: an unmappable
+            # one would be accepted here and then raise inside plan_order on
+            # every later run, silently blocking all new orders.
+            _portfolio._canonical_sector(sector)
             return sector
     except Exception:
         pass
