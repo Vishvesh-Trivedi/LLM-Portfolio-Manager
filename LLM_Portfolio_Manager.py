@@ -676,23 +676,106 @@ def _switch_llm_model(reason=''):
     return False
 
 
-def _llm_acquire_rate_slot():
-    """Global rolling-window limiter: never exceed _LLM_RATE_LIMIT_PER_MIN per 60s."""
-    while True:
-        wait_for = 0.0
+# ── Per-provider rate budgets and circuit breaker ──────────
+# NVIDIA and OpenRouter have independent free-tier limits, so a single shared
+# window made each provider consume the other's allowance and left the backup
+# throttled exactly when it was needed. Each provider now has its own rolling
+# window, and a provider that keeps failing sits out instead of being retried
+# into every remaining call of the run.
+_LLM_PROVIDER_LIMITS = {
+    # NVIDIA free tier allows 40/min; OpenRouter free models allow ~20/min.
+    'NVIDIA': {'per_min': None, 'min_gap': None},      # None = use the globals
+    'OpenRouter': {'per_min': 18, 'min_gap': 1.0},
+}
+_LLM_PROVIDER_COOLDOWN_SECONDS = 120.0
+_LLM_PROVIDER_STRIKES = 3
+
+
+class _LLMBudget:
+    """Rolling-window allowance plus a consecutive-failure circuit breaker."""
+
+    def __init__(self, name, stamps=None):
+        self.name = name
+        self.stamps = deque() if stamps is None else stamps
+        self.lock = threading.Lock()
+        self.last_call = 0.0
+        self.strikes = 0
+        self.cooldown_until = 0.0
+
+    def _per_min(self):
+        configured = _LLM_PROVIDER_LIMITS.get(self.name, {}).get('per_min')
+        return _LLM_RATE_LIMIT_PER_MIN if configured is None else configured
+
+    def _min_gap(self):
+        configured = _LLM_PROVIDER_LIMITS.get(self.name, {}).get('min_gap')
+        return _LLM_MIN_GAP if configured is None else configured
+
+    def wait_time(self):
+        """Seconds until a slot frees. None means the breaker is open."""
         now = time.time()
-        with _LLM_RATE_LOCK:
-            while _LLM_REQUEST_TIMESTAMPS and (now - _LLM_REQUEST_TIMESTAMPS[0]) >= _LLM_WINDOW_SECONDS:
-                _LLM_REQUEST_TIMESTAMPS.popleft()
+        with self.lock:
+            if now < self.cooldown_until:
+                return None
+            while self.stamps and (now - self.stamps[0]) >= _LLM_WINDOW_SECONDS:
+                self.stamps.popleft()
+            gap = max(0.0, self._min_gap() - (now - self.last_call)) if self.last_call else 0.0
+            if len(self.stamps) < self._per_min():
+                return gap
+            return max(gap, (self.stamps[0] + _LLM_WINDOW_SECONDS) - now, 0.1)
 
-            if len(_LLM_REQUEST_TIMESTAMPS) < _LLM_RATE_LIMIT_PER_MIN:
-                _LLM_REQUEST_TIMESTAMPS.append(now)
+    def reserve(self):
+        now = time.time()
+        with self.lock:
+            self.stamps.append(now)
+            self.last_call = now
+
+    def note(self, success):
+        """A success clears the breaker; repeated failures open it."""
+        with self.lock:
+            if success:
+                self.strikes = 0
+                self.cooldown_until = 0.0
                 return
+            self.strikes += 1
+            if self.strikes >= _LLM_PROVIDER_STRIKES:
+                self.cooldown_until = time.time() + _LLM_PROVIDER_COOLDOWN_SECONDS
+                self.strikes = 0
+                print(f'  {self.name} paused for '
+                      f'{int(_LLM_PROVIDER_COOLDOWN_SECONDS)}s after repeated failures')
 
-            oldest = _LLM_REQUEST_TIMESTAMPS[0]
-            wait_for = max(0.1, (oldest + _LLM_WINDOW_SECONDS) - now)
 
-        time.sleep(wait_for)
+# NVIDIA reuses the original deque so existing tooling and tests keep working.
+_LLM_BUDGETS = {
+    'NVIDIA': _LLMBudget('NVIDIA', _LLM_REQUEST_TIMESTAMPS),
+    'OpenRouter': _LLMBudget('OpenRouter'),
+}
+
+
+def _llm_budget(provider):
+    return _LLM_BUDGETS.setdefault(provider, _LLMBudget(provider))
+
+
+def _llm_provider_ready(provider, tolerance=0.0):
+    """True when the provider can answer now (or within `tolerance` seconds)."""
+    wait = _llm_budget(provider).wait_time()
+    return wait is not None and wait <= tolerance
+
+
+def _openrouter_ready(tolerance=0.0):
+    return bool(OPENROUTER_API_KEY) and _llm_provider_ready('OpenRouter', tolerance)
+
+
+def _llm_acquire_rate_slot(provider='NVIDIA'):
+    """Block until `provider` has a free slot, then reserve it."""
+    budget = _llm_budget(provider)
+    while True:
+        wait_for = budget.wait_time()
+        if wait_for is None:                      # breaker open: wait it out
+            wait_for = max(0.1, budget.cooldown_until - time.time())
+        elif wait_for <= 0:
+            budget.reserve()
+            return
+        time.sleep(min(wait_for, _LLM_WINDOW_SECONDS))
 
 def _llm_backoff_seconds(attempt, retry_after=None):
     """Backoff helper with small jitter; honors Retry-After when present."""
@@ -751,10 +834,10 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
     for m in [_OPENROUTER_ACTIVE[0]] + _OPENROUTER_MODELS:
         if isinstance(m, str) and m.endswith(':free') and m not in models:
             models.append(m)
-    for m in models[:2]:
+    for m in models[:3]:
         actual_model = m
         try:
-            _llm_acquire_rate_slot()
+            _llm_acquire_rate_slot('OpenRouter')
             r = _REQUESTS_SESSION.post(
                 _OPENROUTER_ENDPOINT, headers=_openrouter_headers(),
                 json={'model': m, 'max_tokens': max_tokens,
@@ -773,10 +856,12 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
             if not raw:
                 raise ValueError('empty LLM response')
             _HEALTH.provider('OpenRouter', actual_model, True)
+            _llm_budget('OpenRouter').note(True)
             _OPENROUTER_ACTIVE[0] = m
             return raw
         except Exception as e:
             _HEALTH.provider('OpenRouter', actual_model, False)
+            _llm_budget('OpenRouter').note(False)
             print(f'  OpenRouter fallback failed [{m}]: {_safe_llm_error(e)}')
             if getattr(getattr(e, 'response', None), 'status_code', None) in (401, 403):
                 break
@@ -801,6 +886,18 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
         time.sleep(_LLM_MIN_GAP - gap)
     _LLM_LAST_CALL[0] = time.time()
     _LLM_CALL_COUNT[0] += 1
+
+    # Route to the backup BEFORE burning retries, not after. When NVIDIA is
+    # throttled or its breaker is open, waiting out a 60s window while an idle
+    # OpenRouter allowance sits unused is pure lost runtime — and with ~35 calls
+    # a run, that is the difference between finishing and hitting the job
+    # timeout. NVIDIA still wins every tie; this only fires when it cannot answer.
+    if allow_fallback and not _llm_provider_ready('NVIDIA', tolerance=5.0) and _openrouter_ready():
+        alt = _call_openrouter(system, user, max_tokens=max_tokens,
+                               connect_timeout=connect_timeout, read_timeout=read_timeout)
+        if alt:
+            print('  ↪️  NVIDIA unavailable; answered via OpenRouter.')
+            return alt
 
     headers = {"Authorization": f"Bearer {NVIDIA_API_KEY}", "Content-Type": "application/json"}
     last_err = None
@@ -829,9 +926,11 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
             if not raw:
                 raise ValueError('empty LLM response')
             _HEALTH.provider('NVIDIA', actual_model, True)
+            _llm_budget('NVIDIA').note(True)
             return raw
         except Exception as e:
             _HEALTH.provider('NVIDIA', actual_model, False)
+            _llm_budget('NVIDIA').note(False)
             last_err = e
             retry_after = None
             status = None
@@ -896,6 +995,15 @@ def call_llm(system, user, max_tokens=2000, raise_on_failure=True, max_attempts=
                 return ''
 
             if attempt < max_attempts - 1 and is_retryable:
+                # Spending the backoff idle while the backup has capacity is
+                # wasted runtime; take the answer we can get now.
+                if allow_fallback and _openrouter_ready():
+                    alt = _call_openrouter(system, user, max_tokens=max_tokens,
+                                           connect_timeout=connect_timeout,
+                                           read_timeout=read_timeout)
+                    if alt:
+                        print('  ↪️  NVIDIA throttled; answered via OpenRouter.')
+                        return alt
                 time.sleep(_llm_backoff_seconds(attempt, retry_after=retry_after))
                 continue
 

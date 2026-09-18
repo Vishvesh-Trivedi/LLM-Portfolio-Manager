@@ -21,4 +21,5 @@ imported into a temporary output directory, and no credentials are read. Set
 | `test_broker_sync.py` | Broker-authoritative planning: fills, partials, rejects, drift, adoption, unreadable snapshots |
 | `test_broker_apply.py` | Applying a broker plan to the ledger, and broker-mode replay behaviour |
 | `test_discord.py` | Discord delivery: gating, chunking, retries, rate limits, token redaction |
+| `test_llm_routing.py` | Per-provider rate budgets, circuit breaker, NVIDIA/OpenRouter failover routing |
 | `test_market_data.py` | OHLCV cleanup, indicators, bounded LLM calls |

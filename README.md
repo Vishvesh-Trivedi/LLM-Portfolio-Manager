@@ -134,7 +134,7 @@ See [`.env.example`](.env.example) for the full list.
 | Variable | Required | Purpose |
 |----------|:--------:|---------|
 | `NVIDIA_API_KEY` | ✅ | LLM analysis (free key from build.nvidia.com) |
-| `OPENROUTER_API_KEY` | — | Backup LLM provider, used only if every NVIDIA model fails |
+| `OPENROUTER_API_KEY` | — | Second LLM provider with its own rate budget; used as soon as NVIDIA is throttled |
 | `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` | — | Primary market data; required for any broker feature |
 | `SCREENER_LIVE_BROKER` | — | `1` mirrors orders to Alpaca and makes it the source of truth |
 | `DISCORD_BOT_TOKEN` / `DISCORD_CHANNEL_ID` | — | Discord alerts (primary channel) |
