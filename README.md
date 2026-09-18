@@ -186,6 +186,29 @@ right-click the channel → **Copy Channel ID**. Add both as repository Secrets.
 
 ---
 
+## ✅ Preflight — check before you trade
+
+```bash
+python qa_validate.py --preflight
+```
+
+Read-only: no orders, no ledger writes, no messages. It reports whether the next
+run will work and **exactly what it will do to your ledger**, then exits non-zero
+if anything is blocking:
+
+```
+  [OK  ] Ledger file          0 open, 13 closed, 1 pending, cash $100,000.00
+  [OK  ] Alpaca account       PAPER - cash $74,740.92, equity $100,128.84
+  [OK  ] Live broker mode     ON - Alpaca is the source of truth
+  [WARN] Ledger vs Alpaca     next run will: fill pending MTD 18 @ $1,403.28
+  [OK  ] OpenRouter key       present - failover available
+  VERDICT: READY, with 1 thing(s) worth a look.
+```
+
+Run it after changing any secret, and before the first live session.
+
+---
+
 ## 🏦 Broker-Authoritative Execution (Alpaca)
 
 Alpaca serves two independent purposes, each behind its own switch:

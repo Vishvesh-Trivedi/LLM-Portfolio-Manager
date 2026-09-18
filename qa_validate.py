@@ -108,14 +108,169 @@ def live_qa():
             raise RuntimeError('QA modified canonical portfolio outputs')
 
 
+# -- Preflight -------------------------------------------------------------
+# Answers one question before real money is involved: will the next run work,
+# and what exactly will it do to the ledger? Entirely read-only: no orders, no
+# ledger writes, no messages sent.
+
+OK, WARN, BAD = 'OK', 'WARN', 'FAIL'
+
+
+def _row(results, status, name, detail):
+    results.append((status, name, detail))
+
+
+def _check_ledger(results, root):
+    try:
+        portfolio = check_state(root / 'StockScreener' / 'portfolio.json')
+        _row(results, OK, 'Ledger file',
+             f'{len(portfolio["positions"])} open, {len(portfolio["closed_trades"])} closed, '
+             f'{len(portfolio.get("pending_orders", []))} pending, cash ${portfolio["cash"]:,.2f}')
+        return portfolio
+    except Exception as exc:
+        _row(results, BAD, 'Ledger file', f'{type(exc).__name__}: {exc}')
+        return None
+
+
+def _check_alpaca(results, app, portfolio):
+    alpaca = app._alpaca
+    if not alpaca.data_enabled():
+        _row(results, BAD, 'Alpaca keys', 'ALPACA_API_KEY / ALPACA_SECRET_KEY not set')
+        return
+    _row(results, OK, 'Alpaca keys', 'present')
+
+    account = alpaca.fetch_account()
+    if not account:
+        _row(results, BAD, 'Alpaca account', 'could not be read - check keys and network')
+        return
+    paper = os.environ.get('ALPACA_PAPER', '1').strip() != '0'
+    try:
+        cash = float(account.get('cash', 0) or 0)
+        equity = float(account.get('equity', 0) or 0)
+    except (TypeError, ValueError):
+        cash = equity = 0.0
+    _row(results, OK if paper else WARN, 'Alpaca account',
+         f'{"PAPER" if paper else "*** LIVE MONEY ***"} - cash ${cash:,.2f}, equity ${equity:,.2f}')
+    if account.get('trading_blocked') or account.get('account_blocked'):
+        _row(results, BAD, 'Alpaca status', 'account is BLOCKED - no trade can go through')
+
+    if not alpaca.trading_enabled():
+        _row(results, BAD, 'Live broker mode',
+             'SCREENER_LIVE_BROKER is not 1 - the run will NOT read your Alpaca '
+             'positions, and may sell holdings it has lost track of')
+        return
+    _row(results, OK, 'Live broker mode', 'ON - Alpaca is the source of truth')
+
+    if portfolio is None:
+        return
+    snapshot = alpaca.broker_snapshot()
+    if not snapshot.get('ok'):
+        _row(results, BAD, 'Ledger vs Alpaca', f'unreadable: {snapshot.get("error")}')
+        return
+    from screener_broker_sync import plan_broker_sync
+    plan = plan_broker_sync(portfolio, snapshot, app._session_date())
+    changes = [a for a in plan['actions'] if a['op'] != 'set_cash']
+    if not changes:
+        _row(results, OK, 'Ledger vs Alpaca', 'in sync - the next run changes nothing')
+    else:
+        detail = '; '.join(
+            a['op'].replace('_', ' ') + ' ' + str(a.get('symbol', ''))
+            + (f' {a.get("shares")} @ ${a["price"]:,.2f}' if a.get('price') else '')
+            for a in changes)
+        _row(results, WARN, 'Ledger vs Alpaca', 'next run will: ' + detail)
+    for reason in plan['blocked']:
+        _row(results, BAD, 'Broker conflict', reason)
+
+
+def _check_llm(results, app):
+    nvidia = bool(app.NVIDIA_API_KEY)
+    router = bool(app.OPENROUTER_API_KEY)
+    if not nvidia and not router:
+        _row(results, BAD, 'LLM providers',
+             'neither NVIDIA_API_KEY nor OPENROUTER_API_KEY is set - no pick can be made')
+        return
+    _row(results, OK if nvidia else WARN, 'NVIDIA key',
+         'present' if nvidia else 'missing - running on the backup only')
+    _row(results, OK if router else WARN, 'OpenRouter key',
+         'present - failover available' if router else
+         'missing - an NVIDIA outage or throttle means no trade that day')
+    if nvidia:
+        try:
+            served = app._fetch_served_models()
+            chat = [m for m in served if app._is_chat_model(m)] if served else []
+            _row(results, OK if chat else WARN, 'NVIDIA models',
+                 f'{len(chat)} chat model(s) reachable' if chat else
+                 'catalog unreadable - the run falls back to its built-in list')
+        except Exception as exc:
+            _row(results, WARN, 'NVIDIA models', f'probe failed: {type(exc).__name__}')
+
+
+def _check_alerts(results, app):
+    discord = app._discord
+    if discord.enabled():
+        _row(results, OK, 'Discord alerts',
+             'channel ' + os.environ.get('DISCORD_CHANNEL_ID', '?')
+             + (' [TEST MODE - every message marked as a test]' if discord.test_mode() else ''))
+    elif os.environ.get('SCREENER_DISABLE_ALERTS') == '1':
+        _row(results, WARN, 'Discord alerts', 'silenced by SCREENER_DISABLE_ALERTS=1')
+    else:
+        _row(results, WARN, 'Discord alerts',
+             'not configured - you will not be told what executed')
+    if app.WHATSAPP_PHONE and app.CALLMEBOT_API_KEY:
+        _row(results, OK, 'WhatsApp alerts', 'configured')
+
+
+def preflight():
+    """Report whether the next live run will work, and what it will do."""
+    import contextlib
+    import io as _io
+
+    root = Path(__file__).resolve().parent
+    output = Path(os.environ.get('SCREENER_OUTPUT_DIR')
+                  or tempfile.mkdtemp(prefix='screener-preflight-')).resolve()
+    if output == (root / 'StockScreener').resolve():
+        raise ValueError('Preflight must not write into the canonical portfolio directory')
+    output.mkdir(parents=True, exist_ok=True)
+    os.environ.update(SCREENER_SKIP_UNIVERSE_FETCH='1', SCREENER_OUTPUT_DIR=str(output))
+
+    with contextlib.redirect_stdout(_io.StringIO()):
+        import LLM_Portfolio_Manager as app
+
+    results = []
+    portfolio = _check_ledger(results, root)
+    _check_alpaca(results, app, portfolio)
+    _check_llm(results, app)
+    _check_alerts(results, app)
+
+    print()
+    print('PREFLIGHT - LLM Portfolio Manager')
+    print('=' * 74)
+    for status, name, detail in results:
+        print(f'  [{status:4}] {name:<20} {detail}')
+    print('=' * 74)
+    failures = [r for r in results if r[0] == BAD]
+    warnings = [r for r in results if r[0] == WARN]
+    if failures:
+        print(f'  VERDICT: NOT READY - {len(failures)} blocking issue(s) above.')
+    elif warnings:
+        print(f'  VERDICT: READY, with {len(warnings)} thing(s) worth a look.')
+    else:
+        print('  VERDICT: READY.')
+    print()
+    return 1 if failures else 0
+
+
 def main():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--check-state')
     group.add_argument('--live', action='store_true')
+    group.add_argument('--preflight', action='store_true')
     args = parser.parse_args()
     if args.check_state:
         check_state(args.check_state)
+    elif args.preflight:
+        raise SystemExit(preflight())
     else:
         live_qa()
 

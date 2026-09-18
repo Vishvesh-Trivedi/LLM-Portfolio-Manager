@@ -34,3 +34,6 @@ jobs:
       - run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Validate committed legacy ledger without mutation
         run: python qa_validate.py --check-state StockScreener/portfolio.json
+      - name: Preflight reports NOT READY without credentials
+        run: |
+          python qa_validate.py --preflight && exit 1 || true

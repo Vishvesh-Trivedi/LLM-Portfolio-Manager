@@ -355,6 +355,14 @@ _REQUESTS_SESSION = _create_requests_session()
 
 
 # ── TUNING CONSTANTS ───────────────────────────────────────
+# Price history per ticker. MA200 needs >=200 sessions and the 52-week high
+# needs >=252; anything shorter makes compute_indicators fall back to spot price
+# and quietly mislabel a short-window high as a 52-week high.
+_HISTORY_PERIOD        = '2y'   # yfinance period string (~500 sessions)
+_HISTORY_CALENDAR_DAYS = 760    # Alpaca lookback in calendar days (~500 sessions)
+_MIN_SESSIONS_MA200    = 200
+_MIN_SESSIONS_52W      = 252
+
 MIN_DOLLAR_VOLUME_M  = 20      # minimum $20M/day - ensures liquidity
 ATR_STOP_MULT        = 1.5     # stop = entry - 1.5xATR
 ATR_TARGET_MULT      = 3.0     # target = entry + 3xATR → R:R 1:2
@@ -1384,11 +1392,15 @@ def compute_news_score(news_titles, rescue_keywords, analyst_rating,
     else:               kw_pts = 0
 
     # 3. Macro alignment (0-10)
+    # The news contract only ever emits BULLISH/NEUTRAL/BEARISH, so the old
+    # CAUTIOUS branch was unreachable and BEARISH fell through to the catch-all
+    # worth 1 point. BEARISH now takes the cautious tier it was written for;
+    # the catch-all is reserved for a genuinely unrecognised value.
     ms = (market_sentiment or 'NEUTRAL').upper()
-    if   ms == 'BULLISH':  mac_pts = 10
-    elif ms == 'NEUTRAL':  mac_pts =  6
-    elif ms == 'CAUTIOUS': mac_pts =  3
-    else:                  mac_pts =  1
+    if   ms == 'BULLISH':                mac_pts = 10
+    elif ms == 'NEUTRAL':                mac_pts =  6
+    elif ms in ('BEARISH', 'CAUTIOUS'):  mac_pts =  3
+    else:                                mac_pts =  1
 
     # 4. Analyst consensus (0-3)
     a_pts = 0
@@ -2103,7 +2115,11 @@ def batch_download(tickers):
     # Alpaca credentials are absent.
     if _alpaca.data_enabled():
         try:
-            start = (pd.Timestamp.utcnow() - pd.Timedelta(days=260)).date().isoformat()
+            # 2 calendar years ~= 500 sessions. compute_indicators needs 200
+            # sessions for MA200 and 252 for a real 52-week high; at the old 260
+            # calendar days (~178 sessions) MA200 silently fell back to spot
+            # price and the "52-week" high was really a 6-month high.
+            start = (pd.Timestamp.utcnow() - pd.Timedelta(days=_HISTORY_CALENDAR_DAYS)).date().isoformat()
             alpaca_bars = _alpaca.daily_bars(tickers, start=start)
             for t, df in alpaca_bars.items():
                 if df is not None and len(df) >= 20:
@@ -2129,7 +2145,7 @@ def batch_download(tickers):
     for i, batch in enumerate(batches, start=1):
         try:
             raw = yf.download(
-                batch, period='6mo',
+                batch, period=_HISTORY_PERIOD,
                 auto_adjust=False, progress=False, threads=True, group_by='ticker'
             )
             if raw.empty:
@@ -2468,9 +2484,14 @@ def compute_indicators(df, spy_return_today=0.0):
         else:
             vol_accel = False
 
+        # Wilder's smoothing (com=13 == alpha 1/14). The exit rule in
+        # screener_portfolio._indicator_exit already uses Wilder; a simple
+        # rolling mean here read up to ~12 RSI points differently on the same
+        # data, so "don't buy over RSI 75" and "sell over RSI 78" were measuring
+        # different things.
         delta     = cl.diff()
-        gain      = delta.where(delta > 0, 0.0).rolling(14).mean()
-        loss      = (-delta.where(delta < 0, 0.0)).rolling(14).mean()
+        gain      = delta.clip(lower=0).ewm(com=13, adjust=False).mean()
+        loss      = (-delta.clip(upper=0)).ewm(com=13, adjust=False).mean()
         loss_safe = loss.replace(0, 1e-10)
         rsi_val   = float((100 - (100 / (1 + gain / loss_safe))).iloc[-1]) if len(cl) >= 14 else 50.0
 
@@ -2589,7 +2610,11 @@ def compute_indicators(df, spy_return_today=0.0):
 
 def screen_technical(batch_data, ctx):
     """Screen ALL tickers using batch data."""
-    is_weekend    = datetime.now().weekday() >= 5
+    # Every other date decision in this file uses the New York session date.
+    # datetime.now() is the runner's clock (UTC on GitHub Actions), which can
+    # be a different weekday and would silently relax the volume filter on a
+    # real trading session.
+    is_weekend    = pd.Timestamp(_session_date()).weekday() >= 5
     vol_threshold = 1.0 if is_weekend else _CFG_VOLUME_MIN_RATIO
 
     print(f'\nPhase 2 - Technical screening ({len(batch_data)} tickers)...')

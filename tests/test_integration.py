@@ -348,7 +348,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertFalse(self.alert.call_args.kwargs['position_opened'])
         order = pf['pending_orders'][0]
         self.assertEqual(order['execution_session'], '2026-09-14')
-        self.assertEqual(self.download.call_args.kwargs['period'], '6mo')
+        self.assertEqual(self.download.call_args.kwargs['period'], APP._HISTORY_PERIOD)
         self.assertEqual(order['vix'], 18)
         self.assertEqual(order['qqq_trend'], 'BULLISH')
         self.assertEqual(result['top_pick']['facts_as_of'], '2026-09-11')
@@ -853,20 +853,74 @@ class IntegrationTests(unittest.TestCase):
         self.assertNotIn('private.invalid', text + raw)
         self.assertNotIn('Bearer token', text + raw)
 
-    def test_six_month_batch_avoids_calendar_day_ma_warmup_shortfall(self):
+    def test_batch_window_covers_ma200_and_52_week_warmup(self):
+        # A calendar-day window is not a session count: 65 calendar days is
+        # commonly only 46 bars. The window must clear BOTH the 200 sessions
+        # MA200 needs and the 252 a real 52-week high needs, or
+        # compute_indicators silently substitutes spot price for MA200 and
+        # mislabels a short-window high as a 52-week high.
         self.pipeline()
 
         def yahoo_window(tickers, **kwargs):
-            # 65 calendar days commonly has only 46 bars, not 65 sessions.
-            count = 130 if kwargs['period'] == '6mo' else 46
+            count = 520 if kwargs['period'] == APP._HISTORY_PERIOD else 46
             frames = {ticker: bars(count=count) for ticker in tickers}
             return pd.concat(frames, axis=1).swaplevel(0, 1, axis=1)
 
         self.download.side_effect = yahoo_window
         self.assertEqual(APP.run_screener()['order_status'], 'QUEUED')
-        self.assertEqual(self.download.call_args.kwargs['period'], '6mo')
+        self.assertEqual(self.download.call_args.kwargs['period'], APP._HISTORY_PERIOD)
         self.assertFalse(self.download.call_args.kwargs['auto_adjust'])
         self.assertTrue(APP._HEALTH.as_dict()['stages']['market_data']['success'])
+
+    def test_configured_window_is_long_enough_for_both_indicators(self):
+        sessions_per_year = 252
+        years = int(APP._HISTORY_PERIOD.rstrip('y'))
+        self.assertGreaterEqual(years * sessions_per_year, APP._MIN_SESSIONS_52W)
+        self.assertGreaterEqual(years * sessions_per_year, APP._MIN_SESSIONS_MA200)
+        # Alpaca is specified in calendar days; ~252 of every 365 are sessions.
+        self.assertGreaterEqual(APP._HISTORY_CALENDAR_DAYS * 252 / 365,
+                                APP._MIN_SESSIONS_52W)
+
+    def test_ma200_and_52_week_high_are_real_values_not_fallbacks(self):
+        # The regression this guards: with too little history MA200 fell back to
+        # spot price, making vs_ma200_pct exactly 0.0 and locking the top tier
+        # of the moving-average score out of reach for every stock, forever.
+        long_history = bars(count=520)
+        indicators = APP.compute_indicators(long_history)
+        self.assertNotEqual(indicators['vs_ma200_pct'], 0.0)
+        self.assertLess(indicators['ma200'], indicators['price'])
+        short_history = bars(count=126)
+        self.assertEqual(APP.compute_indicators(short_history)['vs_ma200_pct'], 0.0)
+
+    def test_entry_rsi_matches_the_exit_rule_rsi(self):
+        # The buy filter and the sell rule must measure RSI the same way, or
+        # "don't buy over 75" and "sell over 78" are different scales.
+        history = bars(count=300)
+        entry = APP.compute_indicators(history)['rsi']
+        closes = history['Close'].astype(float)
+        delta = closes.diff()
+        gain = delta.clip(lower=0).ewm(com=13, adjust=False).mean().iloc[-1]
+        loss = (-delta.clip(upper=0)).ewm(com=13, adjust=False).mean().iloc[-1]
+        exit_rsi = 100.0 if loss == 0 and gain > 0 else 100 - 100 / (1 + gain / loss)
+        self.assertAlmostEqual(entry, round(exit_rsi, 1), places=1)
+
+    def test_bearish_market_scores_the_cautious_tier_not_the_unknown_one(self):
+        scores = {}
+        for sentiment in ('BULLISH', 'NEUTRAL', 'BEARISH', 'SOMETHING_ELSE'):
+            _, breakdown, _ = APP.compute_news_score([], [], None, None, sentiment)
+            scores[sentiment] = breakdown['macro_alignment']
+        self.assertEqual(scores['BULLISH'], 10)
+        self.assertEqual(scores['NEUTRAL'], 6)
+        self.assertEqual(scores['BEARISH'], 3, 'BEARISH must not fall through to the catch-all')
+        self.assertEqual(scores['SOMETHING_ELSE'], 1)
+
+    def test_weekend_volume_relaxation_uses_the_new_york_session_date(self):
+        # The runner's clock is UTC on CI and can be a different weekday, which
+        # would relax the volume filter on a real trading session.
+        with patch.object(APP, '_session_date', return_value='2026-09-12'):   # Saturday
+            self.assertTrue(pd.Timestamp(APP._session_date()).weekday() >= 5)
+        with patch.object(APP, '_session_date', return_value='2026-09-11'):   # Friday
+            self.assertFalse(pd.Timestamp(APP._session_date()).weekday() >= 5)
 
     def test_unknown_fx_charges_and_tracks_each_side_normally(self):
         for rate in (None, 0, -0.6):
