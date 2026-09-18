@@ -197,6 +197,33 @@ class BrokerApplyTests(_LedgerFixture, unittest.TestCase):
         self.assertEqual(len(result['failed']), 1)
         self.assertEqual(pf['positions'], [])
 
+    def test_an_adoption_does_not_consume_the_sessions_order_slot(self):
+        """Run #94: 'Order not queued: session already has a decision/order'.
+
+        Adopting MTD stamped the position with signal_date = today, so
+        queue_position saw the session as already decided and refused the day's
+        real trade. An adoption records something that already happened at the
+        broker; it is not this session's decision.
+        """
+        pf = self.ledger()
+        engine.apply_broker_state(self.app, pf, plan(
+            {'op': 'adopt_position', 'symbol': 'XYZ', 'shares': 5,
+             'entry_price': 100.0, 'current_price': 102.0, 'sector': 'Healthcare',
+             'stop_price': 94.0, 'target_price': 112.0, 'atr': 4.0,
+             'session': self.SESSION}))
+        adopted = pf['positions'][0]
+        self.assertNotIn('signal_date', adopted,
+                         'an adoption must not claim this session as its signal')
+
+        # The day's real order must still be able to go through.
+        queued = engine.queue_position(
+            self.app, pf,
+            {'ticker': 'AAA', 'position_size_pct': 10, 'source': 'TECHNICAL',
+             'reasoning': 'setup', 'hold_sessions': 10},
+            100.0, 96.0, 110.0, {'sector': 'Technology', 'atr': 1.0})
+        self.assertTrue(queued, self.app._ORDER_REASON[0])
+        self.assertEqual(pf['pending_orders'][0]['ticker'], 'AAA')
+
     def test_adopt_refuses_a_sector_the_order_planner_cannot_map(self):
         # An unmappable sector is accepted by the ledger but then raises inside
         # plan_order on EVERY later order, silently blocking all trading.

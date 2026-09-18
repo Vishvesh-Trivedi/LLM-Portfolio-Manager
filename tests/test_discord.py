@@ -234,6 +234,41 @@ class DiscordTests(unittest.TestCase):
         self.assertNotIn('footer', embed)
 
 
+    # -- Malformed credentials --------------------------------------------
+
+    def test_a_token_pasted_with_a_line_break_still_works(self):
+        # Run #94 failed every send with requests InvalidHeader: the secret held
+        # a newline INSIDE the token, and .strip() only trims the ends.
+        broken = TOKEN[:20] + '\n' + TOKEN[20:]
+        with patch.dict(os.environ, {'DISCORD_BOT_TOKEN': broken}):
+            self.assertEqual(discord._token(), TOKEN)
+            ('Bot ' + discord._token()).encode('latin-1')  # must not raise
+            ok, mock, _ = self.send(Response())
+        self.assertTrue(ok)
+        self.assertEqual(mock.call_args.kwargs['headers']['Authorization'], 'Bot ' + TOKEN)
+
+    def test_surrounding_whitespace_in_the_channel_id_is_ignored(self):
+        with patch.dict(os.environ, {'DISCORD_CHANNEL_ID': '  ' + CHANNEL + '\n'}):
+            ok, mock, _ = self.send(Response())
+        self.assertTrue(ok)
+        self.assertIn('/channels/' + CHANNEL + '/', mock.call_args.args[0])
+
+    def test_a_channel_id_that_is_not_digits_is_named_as_the_fault(self):
+        with patch.dict(os.environ, {'DISCORD_CHANNEL_ID': 'alpaca-bot-1'}), \
+                patch.object(discord.requests, 'get',
+                             side_effect=AssertionError('must not call Discord')):
+            ok, detail = discord.check_access()
+        self.assertFalse(ok)
+        self.assertIn('digits only', detail)
+
+    def test_a_token_that_cannot_be_a_header_is_named_as_the_fault(self):
+        with patch.dict(os.environ, {'DISCORD_BOT_TOKEN': 'tok\u00e9n\u2014smart'}), \
+                patch.object(discord.requests, 'get',
+                             side_effect=AssertionError('must not call Discord')):
+            ok, detail = discord.check_access()
+        self.assertFalse(ok)
+        self.assertIn('cannot be sent as a header', detail)
+
     # -- Read-only access probe -------------------------------------------
 
     def test_access_check_reports_the_channel_name_on_success(self):

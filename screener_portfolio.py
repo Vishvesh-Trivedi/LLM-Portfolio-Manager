@@ -700,7 +700,11 @@ def _apply_adopt_position(app, work, action):
     record = {
         'trade_id': str(uuid4()), 'ticker': symbol, 'shares': shares,
         'entry_price': entry, 'entry_date': action['session'],
-        'signal_date': action['session'], 'sector': sector,
+        # Deliberately NO signal_date. queue_position treats a record carrying
+        # this session's signal_date as "the session already produced an order"
+        # and refuses the day's real trade. An adoption records something that
+        # already happened at the broker; it is not this session's decision.
+        'sector': sector,
         'cost_basis': cost, 'brokerage_in': 0.0,
         'current_price': current, 'current_value': value,
         'unrealized_pnl': round(value - cost, 2),

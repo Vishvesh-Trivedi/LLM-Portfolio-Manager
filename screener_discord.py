@@ -40,12 +40,23 @@ _MAX_ATTEMPTS = 3
 _MAX_CHUNKS = 6
 
 
+def _clean(value):
+    """Strip ALL whitespace, not just the ends.
+
+    A secret pasted with a line break in the middle produced
+    requests.exceptions.InvalidHeader on every send - the header was rejected
+    before it ever reached Discord, so the failure looked like a network fault
+    rather than a malformed credential. .strip() only trims the ends.
+    """
+    return ''.join(str(value or '').split())
+
+
 def _token():
-    return os.environ.get('DISCORD_BOT_TOKEN', '').strip()
+    return _clean(os.environ.get('DISCORD_BOT_TOKEN'))
 
 
 def _channel_id():
-    return os.environ.get('DISCORD_CHANNEL_ID', '').strip()
+    return _clean(os.environ.get('DISCORD_CHANNEL_ID'))
 
 
 ALERT_TEST_ENV = 'SCREENER_ALERT_TEST'
@@ -171,6 +182,12 @@ def check_access():
     try:
         if not _token() or not _channel_id():
             return False, 'DISCORD_BOT_TOKEN / DISCORD_CHANNEL_ID not set'
+        try:
+            ('Bot ' + _token()).encode('latin-1')
+        except UnicodeEncodeError:
+            return False, 'DISCORD_BOT_TOKEN contains characters that cannot be sent as a header'
+        if not _channel_id().isdigit():
+            return False, 'DISCORD_CHANNEL_ID must be digits only, got ' + repr(_channel_id()[:24])
         response = requests.get(
             API + '/channels/' + _channel_id(),
             headers={'Authorization': 'Bot ' + _token()}, timeout=_REQUEST_TIMEOUT)
