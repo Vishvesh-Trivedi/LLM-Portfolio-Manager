@@ -132,23 +132,37 @@ def _parse_ref(client_order_id):
     return parts[3]
 
 
-def _match_order(record_id, symbol, side, by_ref, by_symbol_side, used):
-    """Exact ref match first; fall back to the newest unused symbol/side order.
+def _match_order(record_id, symbol, side, by_ref, by_symbol_side, used,
+                 prefer_filled=False):
+    """Exact ref match first; fall back to an untagged symbol/side order.
 
-    The fallback exists only for orders placed before ids were tagged. It is
-    reported to the caller so a weak match can be surfaced rather than trusted
-    as silently as an exact one.
+    The fallback exists only for orders placed before ids were tagged, and is
+    reported to the caller so a weak match is never trusted as silently as an
+    exact one.
+
+    ``prefer_filled`` picks a candidate that actually executed. Orders arrive
+    newest-first, and a resting protective OCO is an unfilled SELL that sits at
+    the front of that list for the whole life of a position - so without this,
+    the search for the sell that closed a position could land on the unfilled
+    protective order and report the position as vanished while the genuine
+    filled sell sat one entry further down.
     """
     ref = _norm_ref(record_id)
     order = by_ref.get(ref)
     if order is not None and id(order) not in used:
         used.add(id(order))
         return order, True
-    for candidate in by_symbol_side.get((symbol, side), []):
-        if id(candidate) in used:
-            continue
-        if _parse_ref(candidate.get('client_order_id')):
-            continue  # tagged for a different ledger record; not ours to claim
+    candidates = [c for c in by_symbol_side.get((symbol, side), [])
+                  if id(c) not in used
+                  # Tagged for a different ledger record; not ours to claim.
+                  and not _parse_ref(c.get('client_order_id'))]
+    if prefer_filled:
+        for candidate in candidates:
+            quantity, price = _fill_of(candidate)
+            if quantity > 0 and price is not None:
+                used.add(id(candidate))
+                return candidate, False
+    for candidate in candidates:
         used.add(id(candidate))
         return candidate, False
     return None, False
@@ -245,7 +259,10 @@ def _plan_pending(ledger, by_ref, by_symbol_side, used, session, actions, events
 
 
 def _sell_fill_for(trade_id, symbol, by_ref, by_symbol_side, used, session):
-    order, _ = _match_order(trade_id, symbol, 'sell', by_ref, by_symbol_side, used)
+    # A position left the broker, so we are looking for the sell that executed -
+    # not for whatever sell order happens to be newest.
+    order, _ = _match_order(trade_id, symbol, 'sell', by_ref, by_symbol_side, used,
+                            prefer_filled=True)
     if order is None:
         return None, None, '', session
     qty, price = _fill_of(order)

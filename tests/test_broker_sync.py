@@ -332,6 +332,22 @@ class BrokerSyncTests(unittest.TestCase):
                   filled_avg_price=110.0, filled_at='2026-09-18T19:45:00Z')]))
         self.assertEqual(only(plan, 'close_position')['session'], '2026-09-18')
 
+    def test_a_resting_protective_order_does_not_mask_the_real_exit(self):
+        # A protective OCO is an unfilled SELL that sits newest in the list for
+        # the whole life of a position. Matching it instead of the genuine
+        # filled sell would report the position as vanished and block the run.
+        ledger = {'positions': [position()], 'pending_orders': [], 'cash': 1.0}
+        plan = self.plan(ledger, snapshot(orders=[
+            order(side='sell', status='canceled', filled_qty=0,
+                  filled_avg_price=None, order_id='protective-oco'),
+            order(side='sell', status='filled', filled_qty=10,
+                  filled_avg_price=112.5, order_id='the-real-exit'),
+        ]))
+        action = only(plan, 'close_position')
+        self.assertEqual(action['broker_order_id'], 'the-real-exit')
+        self.assertEqual(action['price'], 112.5)
+        self.assertNotIn('position_vanished', kinds(plan))
+
 
 if __name__ == '__main__':
     unittest.main()

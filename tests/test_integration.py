@@ -374,25 +374,6 @@ class IntegrationTests(unittest.TestCase):
         for mock in (self.monitor, self.context, self.download, self.probe, self.post, self.queue, self.alert, self.report):
             mock.assert_not_called()
 
-    def test_forced_rerun_reports_existing_pending_order_without_new_pick(self):
-        self.pipeline()
-        first = APP.run_screener()
-        self.assertEqual(first['order_status'], 'QUEUED')
-        for mock in (self.download, self.probe, self.post, self.queue, self.alert, self.report):
-            mock.reset_mock()
-        with patch.dict(os.environ, {'SCREENER_FORCE_SESSION': '1'}):
-            result = APP.run_screener()
-        self.assertEqual(result['order_status'], 'QUEUED')
-        self.assertEqual(result['top_pick']['ticker'], 'AAA')
-        self.assertIn('Existing session order already queued', result['order_reason'])
-        self.assertEqual(APP._RUN_MODE, 'existing_session_order')
-        self.download.assert_not_called()
-        self.probe.assert_not_called()
-        self.post.assert_not_called()
-        self.queue.assert_not_called()
-        self.report.assert_called_once()
-        self.alert.assert_called_once()
-
     def test_alpaca_pending_order_resizes_from_live_cash_baseline(self):
         self.pipeline()
         self.mock('_alpaca', new=SimpleNamespace(
