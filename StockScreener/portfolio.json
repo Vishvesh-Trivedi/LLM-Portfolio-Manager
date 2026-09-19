@@ -8,7 +8,6 @@
       "shares": 18,
       "entry_price": 1403.282222,
       "entry_date": "2026-09-18",
-      "signal_date": "2026-09-18",
       "sector": "Healthcare",
       "cost_basis": 25259.08,
       "brokerage_in": 0.0,
@@ -301,8 +300,7 @@
   "pending_orders": [],
   "processed_sessions": [
     "2026-09-16",
-    "2026-09-17",
-    "2026-09-18"
+    "2026-09-17"
   ],
   "equity_peak": 100128.84,
   "broker_equity": 99802.68,
