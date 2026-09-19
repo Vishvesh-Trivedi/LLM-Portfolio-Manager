@@ -5029,13 +5029,62 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     vixr = str(ctx.get('vix_regime', '') or '').split(' ')[0].upper()
     spy = ctx.get('spy_return_today')
     calm = {'LOW': 'calm', 'MODERATE': 'normal', 'HIGH': 'jumpy', 'EXTREME': 'very jumpy'}
-    m1 += ['', 'MARKET TODAY',
-           '- Nasdaq trending '
-           + ('up' if str(ctx.get('qqq_trend', '')).upper() == 'BULLISH' else 'down')]
-    if isinstance(vix, (int, float)):
-        m1.append(f'- Volatility {calm.get(vixr, "steady")}')
+    m1 += ['', 'MARKET TODAY']
+
+    trend = 'up' if str(ctx.get('qqq_trend', '')).upper() == 'BULLISH' else 'down'
+    gap = _num(ctx.get('qqq_vs_ma50'))
+    m1.append(f'- Nasdaq trending {trend}'
+              + (f', {abs(gap):.1f}% {"above" if gap >= 0 else "below"} its 50-day average'
+                 if gap is not None else ''))
     if isinstance(spy, (int, float)):
         m1.append(f'- S&P 500 finished {spy:+.1f}%')
+    if isinstance(vix, (int, float)):
+        # The percentile says how today compares with the past year. Spelling
+        # that out beats printing "p59", which means nothing to most readers.
+        pct = _num(ctx.get('vix_percentile'))
+        versus = ''
+        if pct is not None:
+            versus = (' - quieter than usual' if pct < 40 else
+                      ' - jumpier than usual' if pct > 60 else ' - about average')
+        m1.append(f'- Volatility {calm.get(vixr, "steady")}: VIX {vix:.1f}{versus}')
+
+    sectors = {k: v for k, v in (ctx.get('sector_1d') or {}).items()
+               if isinstance(v, (int, float))}
+    if sectors:
+        ranked = sorted(sectors.items(), key=lambda kv: kv[1], reverse=True)
+        m1.append('- Strongest today: '
+                  + ', '.join(f'{name} {value:+.1f}%' for name, value in ranked[:3]))
+        if len(ranked) > 3:
+            m1.append('- Weakest today: '
+                      + ', '.join(f'{name} {value:+.1f}%' for name, value in ranked[-2:]))
+
+    macro = ctx.get('global_macro') or {}
+
+    def _macro(key, label, suffix=''):
+        entry = macro.get(key) or {}
+        price, change = _num(entry.get('price')), _num(entry.get('chg_pct'))
+        if price is None:
+            return ''
+        return (f'{label} {price:,.2f}{suffix}'
+                + (f' ({change:+.1f}%)' if change is not None else ''))
+
+    rates = [x for x in (_macro('yield_10y', 'US 10-year yield', '%'),
+                         _macro('dxy', 'US dollar')) if x]
+    if rates:
+        m1.append('- ' + ', '.join(rates))
+    def _move(key, label):
+        # Only the move matters for an overseas index; the level is noise.
+        change = _num((macro.get(key) or {}).get('chg_pct'))
+        return f'{label} {change:+.1f}%' if change is not None else ''
+
+    overnight = [x for x in (_move('nikkei', 'Nikkei'), _move('dax', 'DAX'),
+                             _move('ftse', 'FTSE')) if x]
+    if overnight:
+        m1.append('- Overnight: ' + ', '.join(overnight))
+
+    if ctx.get('defensive_mode'):
+        m1.append('- CAUTION: defensive mode is on (high volatility and a falling '
+                  'Nasdaq), so it is being far more selective')
 
     msg1 = '\n'.join(m1)
 
