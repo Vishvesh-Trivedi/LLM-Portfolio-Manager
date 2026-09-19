@@ -4590,6 +4590,66 @@ def _money(value):
     return 'n/a' if value is None else f'${float(value):,.2f}'
 
 
+# Internal refusals, in the words someone reading their phone would use. Order
+# matters: the first match wins, so put the specific phrases before the general.
+_NO_TRADE_REASONS = (
+    ('maximum positions', 'you already hold as many stocks as the rules allow'),
+    ('equity drawdown', 'the account is well below its high, so buying is paused '
+                        'until it recovers'),
+    ('cannot buy one share', 'the amount set aside was too small to buy even one '
+                             'share safely'),
+    ('session already has a decision', "today's decision had already been made "
+                                       'earlier, so it did not decide twice'),
+    ('duplicate ticker', 'you already own that stock'),
+    ('reward/risk', 'the possible gain was too small for the risk'),
+    ('sector', 'it would have put too much of your money into one industry'),
+    ('cash floor', 'there is not enough spare cash to buy safely'),
+    ('position_size_pct', 'the suggested amount to spend was not usable'),
+    ('validation incomplete', 'some market data or analysis did not arrive, so it '
+                              'did not trade rather than guess'),
+    ('unknown sector', 'it could not confirm which industry the stock belongs to'),
+    ('no qualifying buy', 'no stock was strong enough to buy'),
+)
+
+
+def _why_no_trade(pick, no_pick_reason, order_reason, candidates=None):
+    """One plain sentence saying why nothing was bought, plus the evidence."""
+    raw = ' '.join(str(x or '') for x in (order_reason, no_pick_reason,
+                                          pick.get('reasoning', ''))).lower()
+    plain = ''
+    recognised = False
+    for needle, wording in _NO_TRADE_REASONS:
+        if needle in raw:
+            plain, recognised = wording, True
+            break
+
+    signal = str(pick.get('signal', '')).upper()
+    confidence = pick.get('confidence', 0)
+    if not plain:
+        if signal in ('NO PICK', 'WATCH', '') or not pick.get('ticker'):
+            plain = (f'the best stock scored {int(confidence)} out of 100, and it '
+                     f'needs {BUY_THRESHOLD} to be worth buying'
+                     if confidence else 'no stock was strong enough to buy')
+        else:
+            plain = 'the order did not pass the safety checks'
+
+    lines = ['Why: ' + plain + '.']
+    ticker = str(pick.get('ticker', '') or '').upper()
+    if ticker and ticker != 'NONE' and signal == 'BUY':
+        lines.append(f'It wanted to buy {ticker}, but the order was not placed.')
+    if candidates:
+        lines.append(f'It looked at {len(candidates)} shortlisted stocks today.')
+    # Keep the raw wording only when nothing above recognised it, so an
+    # unexpected refusal is still diagnosable instead of being flattened into a
+    # generic sentence.
+    if not recognised:
+        # _short lives inside send_whatsapp; keep this independent of it.
+        detail = ' '.join(str(order_reason or no_pick_reason or '').split())[:200]
+        if detail:
+            lines.append('Detail: ' + detail)
+    return lines
+
+
 def send_execution_alerts(events):
     """Post what Alpaca actually did with our orders: fills, rejects, drift.
 
@@ -4900,14 +4960,14 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
                 m1.append(f'Expected price about {_usd(ep_num, True)} a share'
                           + (f', {_usd(total)} in total.' if total else '.'))
         elif status == 'REJECTED':
-            m1.append(f'No order was placed for {tkr}.')
-            m1.append(f'Reason: {_short(pick.get("order_reason"), 300)}')
+            m1.append('Nothing was bought today.')
+            m1 += _why_no_trade(pick, no_pick_reason, pick.get('order_reason'), candidates)
         elif position_opened:
             m1.append(f'Bought {int(_opened.get("shares", 0))} shares of {tkr}'
                       + (f' at {_usd(ep_num, True)} a share.' if ep_num else '.'))
         else:
-            m1.append(f'No order was placed for {tkr}.')
-            m1.append(f'Reason: {_short(pick.get("order_reason") or "no order was authorised", 300)}')
+            m1.append('Nothing was bought today.')
+            m1 += _why_no_trade(pick, no_pick_reason, pick.get('order_reason'), candidates)
         if stop_num or tgt_num:
             sell = []
             if stop_num:
@@ -4927,12 +4987,9 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         if pick.get('reasoning'):
             m1 += ['', f'Why it is interesting: {_short(pick.get("reasoning"))}']
     else:
-        m1.append(f'Nothing bought today - no stock scored the {BUY_THRESHOLD} '
-                  f'out of 100 needed.')
-        _np_reason = str(no_pick_reason or pick.get('reasoning', '')).strip()
-        if _np_reason:
-            m1.append(f'Reason: {_short(_np_reason, 300)}')
-        m1.append('Your money stays in cash.')
+        m1.append('Nothing was bought today.')
+        m1 += _why_no_trade(pick, no_pick_reason, pick.get('order_reason'), candidates)
+        m1.append(f'Your money stays in cash: {_usd(cash)} available.')
 
     if closed_today:
         _net = sum(float(t.get('realized_pnl', 0) or 0) for t in closed_today)
@@ -6079,11 +6136,25 @@ def _require_core_health():
     return _trade_readiness()['trade_ready']
 
 
-def _persist_session(portfolio):
-    if _require_core_health():
+def _persist_session(portfolio, decided=True):
+    """Close the session only when it actually produced a decision.
+
+    ``decided`` is False when the order planner refused - max positions, cash
+    floor, a risk cap - because nothing reached Alpaca and no judgement was
+    recorded. Marking the day done anyway makes a local flag claim a decision
+    the broker never saw, and queue_position then refuses to revisit that
+    session forever. Friday 2026-09-18 was closed exactly that way.
+
+    A deliberate NO PICK is still a decision and still closes the day; only a
+    mechanical rejection leaves it open for a later run.
+    """
+    if _require_core_health() and decided:
         session = _session_date()
         if session not in portfolio['processed_sessions']:
             portfolio['processed_sessions'].append(session)
+    elif not decided:
+        print('  Session left open: the order was rejected, so nothing was '
+              'decided and a later run may retry.')
     save_portfolio(portfolio)
     reconcile_broker(portfolio)
 
@@ -6566,7 +6637,10 @@ def run_screener():
         result['order_status'] = 'QUEUED' if queued else 'REJECTED'
     result['order_reason'] = _ORDER_REASON[0]
     pick.update(order_status=result['order_status'], order_reason=result['order_reason'])
-    _persist_session(portfolio)
+    # QUEUED is a decision, and so is 'NO ORDER' - the screener looked and chose
+    # not to buy. REJECTED is neither: the planner refused, nothing reached the
+    # broker, and the day should stay open.
+    _persist_session(portfolio, decided=result['order_status'] != 'REJECTED')
 
     print('\nStep 8/8: Saving results...')
     if sig=='BUY' and conf>=BUY_THRESHOLD:

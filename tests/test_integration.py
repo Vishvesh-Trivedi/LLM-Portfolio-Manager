@@ -703,7 +703,11 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(result['top_pick']['position_size_pct'], .01)
         self.assertEqual(self.ledger()['cash'], APP.STARTING_CAPITAL)
         self.assertEqual(self.ledger()['pending_orders'], [])
-        self.assertEqual(self.ledger()['processed_sessions'], ['2026-09-11'])
+        # The size was refused, so nothing reached Alpaca and nothing was
+        # decided - the session stays open rather than being closed by a
+        # rejection. The point of this test, that a tiny size is never
+        # silently rounded up to something buyable, is unchanged.
+        self.assertEqual(self.ledger()['processed_sessions'], [])
 
     def test_missing_selected_sector_rejected_but_optional_coverage_not_global_failure(self):
         self.pipeline()
@@ -1278,7 +1282,10 @@ class IntegrationTests(unittest.TestCase):
             self.assertIn('Order placed: buy', messages)
             self.assertIn('Nothing has been bought yet and no money has been spent',
                           messages)
-            self.assertIn('No order was placed for AAA', messages)
+            self.assertIn('Nothing was bought today', messages)
+            # Plain language first, but an unrecognised refusal must still
+            # carry its raw wording so it stays diagnosable.
+            self.assertIn('Why:', messages)
             self.assertIn('<denied> & limit', messages)
             self.assertNotIn('Bought', messages)
             self.assertNotIn('BOUGHT', messages)
@@ -1375,6 +1382,29 @@ class IntegrationTests(unittest.TestCase):
                 patch.object(APP._alpaca, 'protective_orders_by_symbol',
                              side_effect=AssertionError('must not touch the broker')):
             self.assertEqual(APP.protect_positions({'positions': [dict(self.POS)]}), [])
+
+    def test_a_rejected_order_leaves_the_session_open_for_a_retry(self):
+        # Nothing reached Alpaca, so nothing was decided. Closing the day on a
+        # rejection lets a local flag claim a decision the broker never saw,
+        # and queue_position then refuses to revisit that session forever.
+        portfolio = {'processed_sessions': [], 'positions': [], 'pending_orders': []}
+        with patch.object(APP, '_require_core_health', return_value=True), \
+                patch.object(APP, 'save_portfolio'), \
+                patch.object(APP, 'reconcile_broker'), \
+                patch.object(APP, '_session_date', return_value='2026-09-18'), \
+                redirect_stdout(io.StringIO()):
+            APP._persist_session(portfolio, decided=False)
+        self.assertEqual(portfolio['processed_sessions'], [])
+
+    def test_a_deliberate_no_pick_still_closes_the_session(self):
+        portfolio = {'processed_sessions': [], 'positions': [], 'pending_orders': []}
+        with patch.object(APP, '_require_core_health', return_value=True), \
+                patch.object(APP, 'save_portfolio'), \
+                patch.object(APP, 'reconcile_broker'), \
+                patch.object(APP, '_session_date', return_value='2026-09-18'), \
+                redirect_stdout(io.StringIO()):
+            APP._persist_session(portfolio, decided=True)
+        self.assertEqual(portfolio['processed_sessions'], ['2026-09-18'])
 
     def test_sector_resolution_unpacks_the_fundamentals_tuple(self):
         # _fetch_fundamentals_single returns (ticker, data). Calling .get() on
