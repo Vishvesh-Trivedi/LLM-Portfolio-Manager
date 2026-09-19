@@ -1282,13 +1282,19 @@ class IntegrationTests(unittest.TestCase):
             self.assertIn('Order placed: buy', messages)
             self.assertIn('Nothing has been bought yet and no money has been spent',
                           messages)
-            self.assertIn('Nothing was bought today', messages)
+            self.assertIn('NOTHING WAS BOUGHT TODAY', messages)
+            # A refused order must not advertise sell prices or a thesis,
+            # which would read as though something had been bought.
+            self.assertNotIn('Sell if it falls to', messages.split('NOTHING WAS BOUGHT')[1])
             # Plain language first, but an unrecognised refusal must still
             # carry its raw wording so it stays diagnosable.
             self.assertIn('Why:', messages)
             self.assertIn('<denied> & limit', messages)
-            self.assertNotIn('Bought', messages)
-            self.assertNotIn('BOUGHT', messages)
+            # Precise, not a bare substring: 'WAITING TO BE BOUGHT (no money
+            # spent yet)' is the OPPOSITE of a completed purchase. What must
+            # never appear is the heading announcing one.
+            self.assertNotIn(chr(10) + 'BOUGHT' + chr(10), chr(10) + messages + chr(10))
+            self.assertNotIn('- 22 shares of AAA at', messages)
             self.assertNotIn('likely no cash', messages)
 
 

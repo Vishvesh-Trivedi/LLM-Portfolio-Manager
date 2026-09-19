@@ -4633,12 +4633,12 @@ def _why_no_trade(pick, no_pick_reason, order_reason, candidates=None):
         else:
             plain = 'the order did not pass the safety checks'
 
-    lines = ['Why: ' + plain + '.']
+    lines = ['Why: ' + plain]
     ticker = str(pick.get('ticker', '') or '').upper()
     if ticker and ticker != 'NONE' and signal == 'BUY':
-        lines.append(f'It wanted to buy {ticker}, but the order was not placed.')
+        lines.append(f'- It wanted {ticker}, but the order was not placed')
     if candidates:
-        lines.append(f'It looked at {len(candidates)} shortlisted stocks today.')
+        lines.append(f'- Looked at {len(candidates)} shortlisted stocks')
     # Keep the raw wording only when nothing above recognised it, so an
     # unexpected refusal is still diagnosable instead of being flattened into a
     # generic sentence.
@@ -4646,7 +4646,7 @@ def _why_no_trade(pick, no_pick_reason, order_reason, candidates=None):
         # _short lives inside send_whatsapp; keep this independent of it.
         detail = ' '.join(str(order_reason or no_pick_reason or '').split())[:200]
         if detail:
-            lines.append('Detail: ' + detail)
+            lines.append('- Detail: ' + detail)
     return lines
 
 
@@ -4914,12 +4914,12 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         pct = p.get('unrealized_pnl_pct', 0)
         entry = _num(p.get('entry_price')) or 0
         current = _num(p.get('current_price')) or entry
-        lines = [f'{p["ticker"]} - {"up" if pnl >= 0 else "down"} {_usd(pnl)} ({pct:+.1f}%)',
-                 f'{int(p.get("shares", 0))} shares bought at {_usd(entry, True)}, '
-                 f'now {_usd(current, True)}']
+        lines = [f'- {p["ticker"]}: {"up" if pnl >= 0 else "down"} {_usd(pnl)} '
+                 f'({pct:+.1f}%)  |  {int(p.get("shares", 0))} shares, '
+                 f'{_usd(entry, True)} -> {_usd(current, True)}']
         note = _health(p)
         if note:
-            lines.append(note)
+            lines.append(f'  {note}')
         return lines
 
     _reason_map = {
@@ -4945,103 +4945,105 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     queued_shares = next((int(o.get('shares', 0) or 0) for o in pf.get('pending_orders', [])
                           if str(o.get('ticker', '')).upper() == tkr), 0)
 
-    m1 = [f'Daily screen - {date_str}', broker_label, '']
+    m1 = [f'DAILY SCREEN - {date_str}', broker_label, '']
 
     if sig == 'BUY' and tkr and tkr not in ('NONE', ''):
         _opened = next((p for p in positions if str(p.get('ticker', '')).upper() == tkr), {})
         status = pick.get('order_status')
         if status == 'QUEUED':
-            m1.append(f'Order placed: buy {queued_shares} shares of {tkr}.'
-                      if queued_shares else f'Order placed: buy {tkr}.')
-            m1.append('Waiting for the market to open. Nothing has been bought yet '
-                      'and no money has been spent.')
+            m1.append('ORDER PLACED')
+            m1.append(f'- Order placed: buy {queued_shares} shares of {tkr}'
+                      if queued_shares else f'- Order placed: buy {tkr}')
             if ep_num:
                 total = ep_num * queued_shares if queued_shares else None
-                m1.append(f'Expected price about {_usd(ep_num, True)} a share'
-                          + (f', {_usd(total)} in total.' if total else '.'))
+                m1.append(f'- About {_usd(ep_num, True)} a share'
+                          + (f', {_usd(total)} in total' if total else ''))
+            m1.append('- Fills when the market next opens')
+            m1.append('- Nothing has been bought yet and no money has been spent')
         elif status == 'REJECTED':
-            m1.append('Nothing was bought today.')
+            m1.append('NOTHING WAS BOUGHT TODAY')
             m1 += _why_no_trade(pick, no_pick_reason, pick.get('order_reason'), candidates)
         elif position_opened:
-            m1.append(f'Bought {int(_opened.get("shares", 0))} shares of {tkr}'
-                      + (f' at {_usd(ep_num, True)} a share.' if ep_num else '.'))
+            m1.append('BOUGHT')
+            m1.append(f'- {int(_opened.get("shares", 0))} shares of {tkr}'
+                      + (f' at {_usd(ep_num, True)} a share' if ep_num else ''))
         else:
-            m1.append('Nothing was bought today.')
+            m1.append('NOTHING WAS BOUGHT TODAY')
             m1 += _why_no_trade(pick, no_pick_reason, pick.get('order_reason'), candidates)
-        if stop_num or tgt_num:
-            sell = []
-            if stop_num:
-                sell.append(f'falls to {_usd(stop_num, True)}'
-                            + (f' ({(stop_num / ep_num - 1) * 100:+.1f}%)' if ep_num else ''))
-            if tgt_num:
-                sell.append(f'rises to {_usd(tgt_num, True)}'
-                            + (f' ({(tgt_num / ep_num - 1) * 100:+.1f}%)' if ep_num else ''))
-            m1.append('It will be sold if it ' + ' or '.join(sell) + '.')
-        if pick.get('reasoning'):
-            m1 += ['', f'Why this one: {_short(pick.get("reasoning"))}']
-        if pick.get('key_risk'):
-            m1.append(f'Main risk: {_short(pick.get("key_risk"), 220)}')
+        # Sell prices and the thesis describe a position that exists. Printing
+        # them when the order was refused reads as though something was bought.
+        placed = status == 'QUEUED' or position_opened
+        if placed and stop_num:
+            m1.append(f'- Sell if it falls to {_usd(stop_num, True)}'
+                      + (f' ({(stop_num / ep_num - 1) * 100:+.1f}%)' if ep_num else ''))
+        if placed and tgt_num:
+            m1.append(f'- Sell if it rises to {_usd(tgt_num, True)}'
+                      + (f' ({(tgt_num / ep_num - 1) * 100:+.1f}%)' if ep_num else ''))
+        if placed and pick.get('reasoning'):
+            m1 += ['', 'WHY THIS ONE', '- ' + _short(pick.get('reasoning'), 320)]
+        if placed and pick.get('key_risk'):
+            m1.append('- Main risk: ' + _short(pick.get('key_risk'), 200))
     elif sig == 'WATCH' and tkr and tkr not in ('NONE', ''):
-        m1.append(f'Nothing bought today. {tkr} is worth watching but was not strong '
-                  f'enough to buy (scored {conf} out of 100, needs {BUY_THRESHOLD}).')
+        m1.append('NOTHING BOUGHT')
+        m1.append(f'- {tkr} is worth watching but not strong enough to buy')
+        m1.append(f'- It scored {conf} out of 100; it needs {BUY_THRESHOLD}')
         if pick.get('reasoning'):
-            m1 += ['', f'Why it is interesting: {_short(pick.get("reasoning"))}']
+            m1 += ['', 'WHY IT IS INTERESTING', '- ' + _short(pick.get('reasoning'), 320)]
     else:
-        m1.append('Nothing was bought today.')
+        m1.append('NOTHING WAS BOUGHT TODAY')
         m1 += _why_no_trade(pick, no_pick_reason, pick.get('order_reason'), candidates)
-        m1.append(f'Your money stays in cash: {_usd(cash)} available.')
+        m1.append(f'- Your money stays in cash: {_usd(cash)} available')
 
     if closed_today:
         _net = sum(float(t.get('realized_pnl', 0) or 0) for t in closed_today)
-        m1 += ['', f'Sold today ({len(closed_today)}, '
-                   f'{"made" if _net >= 0 else "lost"} {_usd(_net)} overall):']
+        m1 += ['', f'SOLD TODAY ({len(closed_today)}, '
+                   f'{"made" if _net >= 0 else "lost"} {_usd(_net)} overall)']
         for t in closed_today[:4]:
             _pnl = float(t.get('realized_pnl', 0) or 0)
             _pct = float(t.get('realized_pnl_pct', 0) or 0)
-            m1.append(f'{str(t.get("ticker", "?")).upper()} - '
+            m1.append(f'- {str(t.get("ticker", "?")).upper()}: '
                       f'{"made" if _pnl >= 0 else "lost"} {_usd(_pnl)} ({_pct:+.1f}%), '
-                      f'sold because {_clean_reason(t.get("reason"))}.')
+                      f'{_clean_reason(t.get("reason"))}')
 
     _wl_named = [w for w in wl if str(w.get('ticker', '')).upper() not in ('', 'NONE')]
     if _wl_named:
         top = sorted(_wl_named, key=lambda x: x.get('confidence', 0), reverse=True)[:3]
-        m1 += ['', 'Watching next: '
-               + ', '.join(str(w.get('ticker', '?')).upper() for w in top) + '.']
+        m1 += ['', 'ALSO WATCHING',
+               '- ' + ', '.join(str(w.get('ticker', '?')).upper() for w in top)]
 
     vix = ctx.get('vix_level')
     vixr = str(ctx.get('vix_regime', '') or '').split(' ')[0].upper()
     spy = ctx.get('spy_return_today')
     calm = {'LOW': 'calm', 'MODERATE': 'normal', 'HIGH': 'jumpy', 'EXTREME': 'very jumpy'}
-    mkt = ['the Nasdaq is trending '
+    m1 += ['', 'MARKET TODAY',
+           '- Nasdaq trending '
            + ('up' if str(ctx.get('qqq_trend', '')).upper() == 'BULLISH' else 'down')]
     if isinstance(vix, (int, float)):
-        mkt.append(f'markets are {calm.get(vixr, "steady")}')
+        m1.append(f'- Volatility {calm.get(vixr, "steady")}')
     if isinstance(spy, (int, float)):
-        mkt.append(f'the S&P 500 finished {spy:+.1f}% today')
-    m1 += ['', 'Market: ' + ', '.join(mkt) + '.']
+        m1.append(f'- S&P 500 finished {spy:+.1f}%')
 
     msg1 = '\n'.join(m1)
 
     # ═══ MESSAGE 2: WHAT YOU HOLD ═══
-    m2 = [f'Your portfolio - {date_str}', broker_label, '',
-          f'Total value {_usd(total_val)} '
+    m2 = [f'YOUR PORTFOLIO - {date_str}', broker_label, '', 'SUMMARY',
+          f'- Total value: {_usd(total_val)} '
           f'({"up" if total_pnl >= 0 else "down"} {_usd(total_pnl)}, {total_pct:+.1f}%)',
-          f'Cash available {_usd(cash)}']
+          f'- Cash available: {_usd(cash)}',
+          f'- Holdings: {len(open_positions)}']
     if open_positions:
-        m2.append(f'{len(open_positions)} holding'
-                  f'{"" if len(open_positions) == 1 else "s"}, worst first:')
+        m2 += ['', 'HOLDINGS (worst first)']
         for p in open_positions[:6]:
-            m2 += [''] + _pos_lines(p)
+            m2 += _pos_lines(p)
         remaining = len(open_positions) - 6
         if remaining > 0:
-            m2 += ['', f'...and {remaining} more.']
+            m2.append(f'- ...and {remaining} more')
     else:
-        m2.append('You hold no shares right now - everything is in cash.')
+        m2 += ['', 'You hold no shares right now - everything is in cash']
     pending = pf.get('pending_orders', [])
     if pending:
-        m2 += ['', 'Waiting to be bought (no money spent yet): '
-               + ', '.join(f'{int(o.get("shares", 0) or 0)} {o["ticker"]}'
-                           for o in pending) + '.']
+        m2 += ['', 'WAITING TO BE BOUGHT (no money spent yet)']
+        m2 += [f'- {int(o.get("shares", 0) or 0)} {o["ticker"]}' for o in pending]
 
     msg2 = '\n'.join(m2)
 
