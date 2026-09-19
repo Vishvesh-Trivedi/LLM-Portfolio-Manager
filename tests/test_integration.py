@@ -590,10 +590,8 @@ class IntegrationTests(unittest.TestCase):
         Clock.instant = datetime(2026, 9, 10, 17, tzinfo=ZoneInfo('America/New_York'))
         pf = APP.load_portfolio()
         entry = float(bars()['Close'].iloc[-2])
-        # Isolate replay from the portfolio's separate binary fee/debit guard.
-        # Fee coverage is explicitly known here, not assumed when FX is absent.
         APP._portfolio.open_position(APP, pf, 'HELD', entry, 1000, entry - 4, entry + 8,
-                         'Energy', 2, nzdusd_rate=.6)
+                                     'Energy', 2)
         self.assertEqual(len(pf['positions']), 1, APP._ORDER_REASON[0])
         APP.save_portfolio(pf)
         Clock.instant = datetime(2026, 9, 11, 17, tzinfo=ZoneInfo('America/New_York'))
@@ -954,68 +952,38 @@ class IntegrationTests(unittest.TestCase):
         with patch.object(APP, '_session_date', return_value='2026-09-11'):   # Friday
             self.assertFalse(pd.Timestamp(APP._session_date()).weekday() >= 5)
 
-    def test_unknown_fx_charges_and_tracks_each_side_normally(self):
-        for rate in (None, 0, -0.6):
-            with self.subTest(rate=rate):
-                pf = {}
-                self.assertEqual(APP._sharesies_fee(200, pf, rate), 1.0)
-                self.assertEqual(APP._sharesies_fee(300, pf, rate), 1.5)
-                self.assertEqual(APP._sharesies_fee(400, pf, rate, side='sell'), 2.0)
-                self.assertEqual(pf['sharesies_bought_usd'], 500)
-                self.assertEqual(pf['sharesies_sold_usd'], 400)
-                self.assertEqual(pf['sharesies_month'], '2026-09')
+    def test_alpaca_charges_nothing_to_trade(self):
+        """Commission-free, both sides, at any size.
 
-    def test_unknown_fx_fee_is_capped_at_five_dollars(self):
-        for amount in (1000, 1001, 10_000, 1_000_000):
+        Alpaca's regulatory pass-throughs are deducted inside the account, so
+        they reach the ledger when reconciliation overwrites cash with the
+        broker's figure. Charging them here too would count them twice.
+        """
+        for amount in (0, 1, 200, 10_000, 1_000_000):
             for side in ('buy', 'sell'):
                 with self.subTest(amount=amount, side=side):
-                    pf = {}
-                    self.assertEqual(APP._sharesies_fee(amount, pf, side=side), 5.0)
-                    key = 'sharesies_bought_usd' if side == 'buy' else 'sharesies_sold_usd'
-                    self.assertEqual(pf[key], amount)
+                    self.assertEqual(APP._broker_fee(amount, side=side), 0.0)
 
-    def test_known_fx_preserves_coverage_and_counts_prior_unknown_usage(self):
-        self.mock('SHARESIES_COVERAGE_NZD', new=5000)
-        pf = {}
-        self.assertEqual(APP._sharesies_fee(1000, pf), 5.0)
-        pf['last_nzdusd_rate'] = .6
-        self.assertEqual(APP._sharesies_fee(2000, pf), 0.0)
-        self.assertEqual(APP._sharesies_fee(400, pf), 2.0)
-        self.assertEqual(APP._sharesies_fee(2000, pf), 5.0)
-        self.assertEqual(APP._sharesies_fee(3100, pf, side='sell'), .5)
-        self.assertEqual(pf['sharesies_bought_usd'], 5400)
-        self.assertEqual(pf['sharesies_sold_usd'], 3100)
+    def test_broker_fee_reads_no_portfolio_and_keeps_no_state(self):
+        """plan_order's fee_quote contract requires a pure quote.
 
-    def test_fee_month_uses_session_date_and_resets_both_sides(self):
-        pf = {'sharesies_month': '2026-09', 'sharesies_bought_usd': 8000,
-              'sharesies_sold_usd': 4000}
-        with patch.object(APP, '_session_date', return_value='2026-08-31'):
-            self.assertEqual(APP._sharesies_fee(200, pf), 1.0)
-        self.assertEqual(pf, {'sharesies_month': '2026-08', 'sharesies_bought_usd': 200,
-                              'sharesies_sold_usd': 0})
-        self.assertEqual(APP._sharesies_fee(300, pf, side='sell'), 1.5)
-        self.assertEqual(pf, {'sharesies_month': '2026-09', 'sharesies_bought_usd': 0,
-                              'sharesies_sold_usd': 300})
+        The Sharesies fee took the portfolio and wrote monthly usage into it,
+        so every caller had to hand it a deep copy to stay safe.
+        """
+        import inspect
+        self.assertEqual(list(inspect.signature(APP._broker_fee).parameters),
+                         ['amount_usd', 'side'])
+        pf = {'cash': 1000.0}
+        APP._broker_fee(200)
+        self.assertEqual(pf, {'cash': 1000.0})
 
-    def test_fee_rejects_invalid_numbers_before_mutating_usage(self):
-        for bad in (float('nan'), float('inf'), -float('inf'), True, '0.6', [], {}):
-            for field in ('amount', 'explicit_fx', 'stored_fx', 'usage'):
-                with self.subTest(field=field, value=bad):
-                    pf = {'sharesies_month': '2026-09', 'sharesies_bought_usd': 10,
-                          'sharesies_sold_usd': 20, 'last_nzdusd_rate': .6}
-                    if field == 'stored_fx':
-                        pf['last_nzdusd_rate'] = bad
-                    if field == 'usage':
-                        pf['sharesies_bought_usd'] = bad
-                    before = json.dumps(pf)
-                    with self.assertRaises(ValueError):
-                        APP._sharesies_fee(bad if field == 'amount' else 200, pf,
-                                           bad if field == 'explicit_fx' else None)
-                    self.assertEqual(json.dumps(pf), before)
-        pf = {}
+    def test_broker_fee_rejects_a_nonsense_amount_or_side(self):
+        for bad in (float('nan'), float('inf'), -float('inf'), True, '200', [], {}, -1):
+            with self.subTest(amount=bad):
+                with self.assertRaises(ValueError):
+                    APP._broker_fee(bad)
         with self.assertRaises(ValueError):
-            APP._sharesies_fee(-1, pf)
-        self.assertEqual(pf, {})
+            APP._broker_fee(200, side='short')
 
     def test_missing_or_failed_required_stage_is_not_ready(self):
         # Each of these makes a trade unsafe if it fails: prices must be real, a
@@ -1244,9 +1212,6 @@ class IntegrationTests(unittest.TestCase):
         Clock.instant = datetime(2026, 10, 1, 0, 30, tzinfo=ZoneInfo('UTC'))
         self.assertEqual(APP._session_date(), '2026-09-30')
         self.assertEqual(APP._session_gate(Clock.instant), '')
-        pf = {}
-        APP._sharesies_fee(200, pf)
-        self.assertEqual(pf['sharesies_month'], '2026-09')
 
     def test_vix_stale_missing_or_invalid_is_display_only_and_blocks_new_order(self):
         self.pipeline()
@@ -1270,19 +1235,16 @@ class IntegrationTests(unittest.TestCase):
                 self.assertEqual(self.ledger()['processed_sessions'], [])
         self.queue.assert_not_called()
 
-    def test_vix_exact_session_ignores_future_rows_and_fx_keeps_four_decimals(self):
+    def test_vix_uses_the_exact_session_and_ignores_future_rows(self):
         self.pipeline()
         vix = bars()
         future = vix.iloc[[-1]].copy()
         future.index = pd.DatetimeIndex(['2026-09-14'])
         future[['Open', 'High', 'Low', 'Close']] = 999
         self.frames['^VIX'] = pd.concat([future, vix.iloc[::-1]])
-        self.frames['NZDUSD=X'] = pd.DataFrame({'Close': [.60123, .61234]},
-                                               index=pd.to_datetime(['2026-09-10', '2026-09-11']))
         ctx = self.real_context()
         self.assertTrue(ctx['vix_available'])
         self.assertEqual(ctx['vix_level'], round(float(vix['Close'].iloc[-1]), 2))
-        self.assertEqual(ctx['global_macro']['nzdusd']['price'], .6123)
         self.assertTrue(APP._HEALTH.as_dict()['stages']['market_context']['success'])
         self.assertNotIn('stale_vix', APP._HEALTH.as_dict()['degraded_reasons'])
 

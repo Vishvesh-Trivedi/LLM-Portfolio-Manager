@@ -77,7 +77,7 @@ class PortfolioTests(unittest.TestCase):
             PICKS_CSV=self.root / 'picks.csv',
             STARTING_CAPITAL=10000.0,
             _session_date=lambda: self.today,
-            _sharesies_fee=self.fee,
+            _broker_fee=self.fee,
             _ORDER_REASON=[''], _degrade=self.degraded.append,
             _CFG_MAX_POSITIONS=5, _CFG_MIN_CASH_FLOOR=500.0,
             _CFG_HOLD_DAYS=10, _CFG_TRAIL_ATR_MULT=1.5,
@@ -86,10 +86,8 @@ class PortfolioTests(unittest.TestCase):
             yf=self.yf,
         )
 
-    def fee(self, amount, pf, nzdusd_rate=None, side='buy'):
-        self.fee_calls.append((amount, side, nzdusd_rate))
-        key = 'sharesies_bought_usd' if side == 'buy' else 'sharesies_sold_usd'
-        pf[key] = pf.get(key, 0.0) + amount
+    def fee(self, amount, side='buy'):
+        self.fee_calls.append((amount, side))
         return self.fees[side]
 
     def new(self):
@@ -127,8 +125,8 @@ class PortfolioTests(unittest.TestCase):
             'load_portfolio': ['app'], 'save_portfolio': ['app', 'pf'],
             'update_portfolio_prices': ['app', 'pf'],
             'open_position': ['app', 'pf', 'ticker', 'entry_price', 'amount_usd', 'stop',
-                              'target', 'sector', 'atr', 'nzdusd_rate'],
-            'close_position': ['app', 'pf', 'ticker', 'exit_price', 'reason', 'nzdusd_rate'],
+                              'target', 'sector', 'atr'],
+            'close_position': ['app', 'pf', 'ticker', 'exit_price', 'reason'],
             'reconcile_closed_picks': ['app', 'pf'],
             'load_performance_history': ['app', 'fp'],
             'update_results': ['app', 'fp', 'cols'],
@@ -240,17 +238,19 @@ class PortfolioTests(unittest.TestCase):
             engine.save_portfolio(self.app, pf)
         self.assertEqual(self.app.PORTFOLIO_JSON.read_text(), 'corrupt')
 
-    def test_fee_quotes_are_pure_and_conservative_and_actual_fee_commits_once(self):
+    def test_fee_quotes_are_pure_and_priced_on_the_dearer_side(self):
         pf = self.new()
-        pf['last_nzdusd_rate'] = 0.61
+        before = copy.deepcopy(pf)
         self.fees.update(buy=0.0, sell=5.0)
         pos = self.open(pf, amount=10000.0)
         self.assertEqual(pos['shares'], 22)  # floor((100 risk - 5 - 5) / 4)
-        self.assertEqual(pf['sharesies_bought_usd'], pos['shares'] * 100)
-        self.assertNotIn('sharesies_sold_usd', pf)
         self.assertEqual(pos['brokerage_in'], 0)
         self.assertLessEqual(pos['shares'] * 4 + 10, 100)
-        self.assertTrue(all(call[2] == 0.61 for call in self.fee_calls))
+        # Sized against the sell even though buying is free, so the trade can
+        # always afford the exit that closes it.
+        self.assertIn('sell', [side for _, side in self.fee_calls])
+        # A quote is a question, not a transaction: asking must change nothing.
+        self.assertEqual(before['cash'], 10000)
 
     def test_open_rejections_do_not_mutate_portfolio_or_fee_usage(self):
         pf = self.new()
@@ -259,7 +259,7 @@ class PortfolioTests(unittest.TestCase):
         cases = [dict(stop=0), dict(stop=-1), dict(stop=101), dict(target=102),
                  dict(entry_price=float('nan')), dict(amount_usd=float('inf')),
                  dict(amount_usd=0), dict(amount_usd=True), dict(entry_price='100'),
-                 dict(atr=-1), dict(atr=float('nan')), dict(nzdusd_rate=float('nan')),
+                 dict(atr=-1), dict(atr=float('nan')),
                  dict(sector='Unknown'), dict(ticker='')]
         for override in cases:
             with self.subTest(override=override):
@@ -305,7 +305,7 @@ class PortfolioTests(unittest.TestCase):
         pos['excess_return_pct'] = -19.0
         tid = pos['trade_id']
         self.today = '2026-09-10'
-        engine.close_position(self.app, pf, 'ABC', 101.0, 'profit_test', nzdusd_rate=0.63)
+        engine.close_position(self.app, pf, 'ABC', 101.0, 'profit_test')
         trade = pf['closed_trades'][0]
         self.assertEqual(trade['trade_id'], tid)
         for key, expected in [('entry_date', '2026-09-08'), ('exit_date', '2026-09-10'),
@@ -317,8 +317,7 @@ class PortfolioTests(unittest.TestCase):
         self.assertEqual(trade['target_price'], 110)
         self.assertEqual(trade['benchmark_return_pct'], 20)
         self.assertEqual(trade['realized_pnl'], trade['exit_value'] - trade['cost_basis'])
-        self.assertEqual(self.fee_calls[-1][1:], ('sell', 0.63))
-        self.assertEqual(pf['sharesies_sold_usd'], trade['shares'] * 101)
+        self.assertEqual(self.fee_calls[-1], (trade['shares'] * 101, 'sell'))
 
     def test_close_invalid_price_is_no_mutation(self):
         pf = self.new()
@@ -343,7 +342,6 @@ class PortfolioTests(unittest.TestCase):
         self.assertEqual(order['signal_date'], self.today)
         self.assertEqual(pf['positions'], [])
         self.assertEqual(pf['cash'], 10000)
-        self.assertNotIn('sharesies_bought_usd', pf)
         self.assertEqual(engine.load_portfolio(self.app), pf)
 
     def test_queue_invalid_zero_and_tiny_size_never_uplifted(self):
@@ -428,7 +426,6 @@ class PortfolioTests(unittest.TestCase):
         self.assertEqual(pos['held_sessions'], 1)
         self.assertLessEqual(pos['shares'], order['shares'])
         self.assertLessEqual(pos['cost_basis'], order['amount_usd'])
-        self.assertEqual(pf['sharesies_bought_usd'], pos['shares'] * 102)
         self.assertEqual(pos['last_evaluated_session'], self.today)
         self.assertIn('RSI omitted', pos['indicator_exit_note'])
         before = copy.deepcopy(pf)
@@ -464,7 +461,6 @@ class PortfolioTests(unittest.TestCase):
         self.assertEqual(pf['pending_orders'], [])
         self.assertEqual(pf['positions'], [])
         self.assertEqual(pf['cash'], 10000)
-        self.assertNotIn('sharesies_bought_usd', pf)
         self.assertIn('missed next session', pf['expired_orders'][0]['reason'])
         self.assertIn('expired', self.app._ORDER_REASON[0])
 
@@ -490,7 +486,6 @@ class PortfolioTests(unittest.TestCase):
         self.yf.frames['ABC'] = bars(['2026-09-08', self.today])
         engine.update_portfolio_prices(self.app, pf)
         self.assertEqual(pf['cash'], 500)
-        self.assertNotIn('sharesies_bought_usd', pf)
         self.assertEqual(pf['positions'], [])
         self.assertIn('execution rejected', pf['expired_orders'][0]['reason'])
 
@@ -834,11 +829,10 @@ class PortfolioTests(unittest.TestCase):
         self.open(pf, 'XYZ', sector='Energy')
         before = copy.deepcopy(pf)
 
-        def broken_fee(amount, state, nzdusd_rate=None, side='buy'):
-            state['sharesies_bought_usd'] = 999999
+        def broken_fee(amount, side='buy'):
             raise RuntimeError('fee calculation unavailable')
 
-        self.app._sharesies_fee = broken_fee
+        self.app._broker_fee = broken_fee
         engine.open_position(self.app, pf, 'ABC', 100, 2000, 96, 110, 'Technology')
         self.assertEqual(pf, before)
         self.assertIn('fee calculation unavailable', self.app._ORDER_REASON[0])
@@ -887,7 +881,6 @@ class PortfolioTests(unittest.TestCase):
         self.assertFalse(pf['pending_orders'])
         self.assertIn('stop', pf['expired_orders'][0]['reason'])
         self.assertEqual(pf['cash'], 10000)
-        self.assertNotIn('sharesies_bought_usd', pf)
 
     def test_update_save_failure_preserves_unfilled_order_for_recovery(self):
         pf = self.new()
@@ -1281,7 +1274,7 @@ class PortfolioTests(unittest.TestCase):
         self.assertTrue(pf['positions'][0]['quote_stale'])
         self.assertIn(self.today, pf['positions'][0]['update_error'])
 
-    def test_replayed_fee_uses_exit_month_and_restores_parent_hooks(self):
+    def test_replayed_close_is_dated_to_its_exit_session_not_today(self):
         self.today = '2026-08-28'
         pf = self.new()
         self.open(pf)
@@ -1295,17 +1288,14 @@ class PortfolioTests(unittest.TestCase):
         self.app._CLOSE_CONTEXT = prior_context
         seen = []
 
-        def monthly_fee(amount, state, nzdusd_rate=None, side='buy'):
-            day = self.app._session_date()
-            seen.append((day, side))
-            month = day[:7]
-            state.setdefault('fee_months', {})[month] = amount
-            return 3.0 if month == '2026-08' else 8.0
+        def exit_fee(amount, side='buy'):
+            seen.append(side)
+            return 3.0
 
-        self.app._sharesies_fee = monthly_fee
+        self.app._broker_fee = exit_fee
         engine.update_portfolio_prices(self.app, pf)
         trade = pf['closed_trades'][0]
-        self.assertEqual(seen, [('2026-08-31', 'sell')])
+        self.assertEqual(seen, ['sell'])
         self.assertEqual(trade['brokerage_out'], 3)
         self.assertEqual(trade['exit_date'], '2026-08-31')
         self.assertEqual(trade['replayed_asof'], self.today)
@@ -1325,12 +1315,10 @@ class PortfolioTests(unittest.TestCase):
                                      (100, 105, 99, 104)])
         original_hook = self.app._session_date
 
-        def broken(amount, state, nzdusd_rate=None, side='sell'):
-            self.assertEqual(self.app._session_date(), '2026-09-09')
-            state['cash'] = 1
+        def broken(amount, side='sell'):
             raise RuntimeError('historical fee failed')
 
-        self.app._sharesies_fee = broken
+        self.app._broker_fee = broken
         engine.update_portfolio_prices(self.app, pf)
         self.assertIs(self.app._session_date, original_hook)
         self.assertFalse(hasattr(self.app, '_CLOSE_CONTEXT'))
@@ -1386,16 +1374,11 @@ class PortfolioTests(unittest.TestCase):
         self.yf.frames['XYZ'] = bars(['2026-09-14', '2026-09-15', self.today],
                                     [(100, 101, 99, 100), (100, 101, 95, 100),
                                      (100, 101, 99, 100)])
-        seen = []
-
-        def dated_fee(amount, state, nzdusd_rate=None, side='sell'):
-            seen.append(self.app._session_date())
-            return self.fee(amount, state, nzdusd_rate, side)
-
-        self.app._sharesies_fee = dated_fee
         engine.update_portfolio_prices(self.app, pf)
         self.assertEqual([t['ticker'] for t in pf['closed_trades']], ['XYZ', 'ABC'])
-        self.assertEqual(seen, ['2026-09-15', '2026-09-16'])
+        # Each is dated to the session it actually exited, in that order.
+        self.assertEqual([t['exit_date'] for t in pf['closed_trades']],
+                         ['2026-09-15', '2026-09-16'])
 
     def test_pending_split_blocks_fill_then_expires_without_cash_adjustment(self):
         pf = self.new()

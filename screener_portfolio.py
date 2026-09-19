@@ -2,7 +2,7 @@
 
 All entry points take the parent module as ``app``; this module never imports
 the main program or a network client. Required hooks are PORTFOLIO_JSON,
-STARTING_CAPITAL, _session_date(), _sharesies_fee(), _ORDER_REASON (one-item
+STARTING_CAPITAL, _session_date(), _broker_fee(), _ORDER_REASON (one-item
 list), _degrade(reason), and yf.Ticker. The parent's NYSE gate must supply a
 completed session. Optional _CFG_* settings retain the parent's names.
 
@@ -298,19 +298,13 @@ def save_portfolio(app, pf):
     return _publish(pf, work)
 
 
-def _rate(pf, supplied):
-    rate = supplied if supplied is not None else pf.get('last_nzdusd_rate')
-    if rate is not None:
-        _positive(rate, 'nzdusd_rate')
-    return rate
-
-
-def _fee_quote(app, pf, rate):
+def _fee_quote(app):
     def quote(notional):
-        # Each side sees an independent snapshot, including month/allowance state.
-        return max(finite_number(app._sharesies_fee(
-            notional, copy.deepcopy(pf), nzdusd_rate=rate, side=side),
-            side + ' fee', minimum=0) for side in ('buy', 'sell'))
+        # The dearer of the two sides, so a plan approved on the buy can always
+        # afford the sell that closes it.
+        return max(finite_number(app._broker_fee(notional, side=side),
+                                 side + ' fee', minimum=0)
+                   for side in ('buy', 'sell'))
     return quote
 
 
@@ -357,26 +351,13 @@ def _close_context(app, exit_date):
             app._CLOSE_CONTEXT = previous
 
 
-@contextmanager
-def _fee_session(app, exit_date):
-    # The parent fee hook reads _session_date for its monthly allowance bucket.
-    # Only that synchronous call sees this override; never patch the run globally.
-    previous = app._session_date
-    app._session_date = lambda: exit_date
-    try:
-        yield
-    finally:
-        app._session_date = previous
-
-
 def open_position(app, pf, ticker, entry_price, amount_usd, stop, target,
-                  sector='', atr=0, nzdusd_rate=None):
+                  sector='', atr=0):
     """Fill a safety-approved order, charging the committed buy allowance once."""
     try:
         work = _validated(pf)
         ticker = _text(ticker, 'ticker').upper()
         finite_number(atr, 'atr', minimum=0)
-        rate = _rate(work, nzdusd_rate)
         context = _context(app)
         hold = _hold(context.get('hold_sessions', getattr(app, '_CFG_HOLD_DAYS', 10)))
         fill_date = _session(app)
@@ -384,7 +365,7 @@ def open_position(app, pf, ticker, entry_price, amount_usd, stop, target,
             signal = _date(context['signal_date']).isoformat()
             if signal > fill_date:
                 raise ValueError('signal date is after fill date')
-        quote = _fee_quote(app, work, rate)
+        quote = _fee_quote(app)
         # A gap down must not increase the quantity authorized at signal time.
         cap = context.get('max_shares')
         if cap is not None:
@@ -419,10 +400,10 @@ def open_position(app, pf, ticker, entry_price, amount_usd, stop, target,
                                  else 'after_close_estimate'),
             'quote_stale': False,
         })
-        # Stage the actual fee: a fee error or postcondition failure cannot spend
-        # cash or monthly coverage in the caller's portfolio.
-        fee = finite_number(app._sharesies_fee(
-            plan['stock_cost'], work, nzdusd_rate=rate, side='buy'), 'buy fee', minimum=0)
+        # Stage the actual fee: a fee error or postcondition failure cannot
+        # spend cash in the caller's portfolio.
+        fee = finite_number(app._broker_fee(plan['stock_cost'], side='buy'),
+                            'buy fee', minimum=0)
         debit = round(plan['stock_cost'] + fee, 2)
         if Decimal(str(plan['stock_cost'])) + Decimal(str(fee)) > Decimal(str(plan['total_cost'])):
             raise ValueError('actual buy fee exceeds approved conservative quote')
@@ -439,7 +420,7 @@ def open_position(app, pf, ticker, entry_price, amount_usd, stop, target,
     return _publish(pf, work)
 
 
-def close_position(app, pf, ticker, exit_price, reason='hold_period', nzdusd_rate=None):
+def close_position(app, pf, ticker, exit_price, reason='hold_period'):
     """Close only a ledger position; preserve identity, metadata and entry dates."""
     try:
         work = _validated(pf)
@@ -448,7 +429,6 @@ def close_position(app, pf, ticker, exit_price, reason='hold_period', nzdusd_rat
         if pos is None:
             raise ValueError('no open position for ' + ticker)
         _positive(exit_price, 'exit_price')
-        rate = _rate(work, nzdusd_rate)
         asof = _session(app)
         context = getattr(app, '_CLOSE_CONTEXT', None)
         if context is not None:
@@ -462,9 +442,8 @@ def close_position(app, pf, ticker, exit_price, reason='hold_period', nzdusd_rat
         if exit_date < _date(pos['entry_date']).isoformat():
             raise ValueError('exit date precedes entry date')
         gross = round(exit_price * pos['shares'], 2)
-        with _fee_session(app, exit_date):
-            fee = finite_number(app._sharesies_fee(
-                gross, work, nzdusd_rate=rate, side='sell'), 'sell fee', minimum=0)
+        fee = finite_number(app._broker_fee(gross, side='sell'),
+                            'sell fee', minimum=0)
         net = round(gross - fee, 2)
         if net < 0:
             raise ValueError('sell fee exceeds proceeds')
@@ -512,9 +491,8 @@ def queue_position(app, pf, pick, entry, stop, target, candidate):
         sector = candidate.get('sector', '')  # Do not trust a hallucinated pick sector.
         atr = finite_number(candidate.get('atr', 0), 'atr', minimum=0)
         amount = work['cash'] * pct / 100  # Absolute requested cash budget, including fees.
-        rate = _rate(work, None)
         plan = _plan(app, work, ticker, entry, amount, stop, target, sector,
-                     _fee_quote(app, work, rate))
+                     _fee_quote(app))
         metadata = _context(app)
         for source in (candidate, pick):
             metadata.update(_learning_metadata(source))
@@ -1023,7 +1001,7 @@ def update_portfolio_prices(app, pf):
                 open_position(app, work, ticker, bar['Open'], order['amount_usd'],
                               _price_offset(bar['Open'], order['stop_distance'], subtract=True),
                               _price_offset(bar['Open'], order['target_distance']), order['sector'],
-                              order['atr'], work.get('last_nzdusd_rate'))
+                              order['atr'])
             if not any(p['trade_id'] == order['id'] for p in work['positions']):
                 detail = app._ORDER_REASON[0]
                 work['pending_orders'].append(order)
@@ -1069,8 +1047,7 @@ def update_portfolio_prices(app, pf):
                 _reason(app, 'Exit requested for ' + ticker + ': ' + str(exit_order[1]))
             elif exit_order is not None:
                 with _close_context(app, pos['last_evaluated_session']):
-                    close_position(app, stage, ticker, exit_order[0], exit_order[1],
-                                   stage.get('last_nzdusd_rate'))
+                    close_position(app, stage, ticker, exit_order[0], exit_order[1])
                 if any(p['trade_id'] == pos['trade_id'] for p in stage['positions']):
                     raise ValueError(app._ORDER_REASON[0])
             work = _validated(stage)

@@ -150,14 +150,9 @@ PORTFOLIO_JSON   = f'{DRIVE_FOLDER}/portfolio.json'
 STARTING_CAPITAL = 10_000.00
 ALPACA_PAPER_CAPITAL = 100_000.00
 
-# ── SHARESIES $15/MONTH PLAN (NZ broker — buys NYSE/NASDAQ in USD) ──────────
-# Plan:  $5,000 NZD free buys + $5,000 NZD free sells per month
-# Rate:  fetched live via NZDUSD=X each run (stored in ctx['global_macro']['nzdusd'])
-# Fee when OVER coverage: 0.5% of order value, capped at $5.00 USD per trade
-# BROKERAGE_FEE = 0 while positions stay within monthly coverage.
-# Change to 5.00 if you regularly go over.
-SHARESIES_COVERAGE_NZD = 5_000.0   # NZD of free buys per month under $15 plan
-BROKERAGE_FEE          = 0.00      # $0 within coverage, max $5 USD over
+# ── BROKERAGE ───────────────────────────────────────────────────────────────
+# Alpaca charges no commission on US equities, so every trade this account
+# makes costs nothing to place. See _broker_fee().
 
 # Optional: set to '1' to see why tickers fail compute_indicators
 # os.environ['SCREENER_DEBUG'] = '1'
@@ -320,7 +315,6 @@ _CFG_HOLD_DAYS          = 10      # days before position auto-closes and Win/Los
 _CFG_SECTOR_CONC_MAX    = SECTOR_CONC_MAX  # max same-sector picks in rolling window
 _CFG_SAMPLE_SIZE        = SAMPLE_SIZE      # how many stocks to scan each run
 _CFG_ADDITIONAL_TICKERS = []      # LLM can add tickers outside the default universe
-_CFG_BROKERAGE_FEE      = BROKERAGE_FEE  # per-trade flat fee (both buy and sell sides)
 _CFG_MIN_CASH_FLOOR     = 500.0   # cash below this = fully deployed, no new buys
 _CFG_DD_CAUTION_PCT     = -10.0   # portfolio drawdown % that triggers caution mode
 _CFG_DD_SEVERE_PCT      = -20.0   # portfolio drawdown % that triggers severe mode
@@ -1957,7 +1951,6 @@ def get_market_context():
         'dxy':        'DX-Y.NYB',  # Dollar index
         'es_futures': 'ES=F',      # S&P 500 e-mini futures (pre-market direction)
         'nq_futures': 'NQ=F',      # Nasdaq 100 e-mini futures (pre-market direction)
-        'nzdusd':     'NZDUSD=X',  # NZD/USD live rate (Sharesies coverage calc)
         'nikkei':     '^N225',     # Japan (overnight)
         'dax':        '^GDAXI',    # Germany (overnight)
         'ftse':       '^FTSE',     # UK (overnight)
@@ -1968,7 +1961,7 @@ def get_market_context():
             h = yf.Ticker(sym).history(period='5d')
             closes = _valid_closes(h)
             if len(closes) >= 2:
-                latest = round(float(closes.iloc[-1]), 4 if name == 'nzdusd' else 2)
+                latest = round(float(closes.iloc[-1]), 2)
                 prev   = float(closes.iloc[-2])
                 chg    = round((latest - prev) / prev * 100, 2) if prev else 0.0
                 global_macro[name] = {'price': latest, 'chg_pct': chg}
@@ -3166,8 +3159,6 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     nqf    = gm.get('nq_futures', {})
     nk     = gm.get('nikkei', {})
     dax    = gm.get('dax', {})
-    nzdusd_llm = gm.get('nzdusd', {})
-    nzd_rate_llm = nzdusd_llm.get('price')
     s1d  = ctx.get('sector_1d', {})
     top_s = sorted(s1d.items(), key=lambda x: x[1], reverse=True)
     sector_flow_str = (
@@ -5153,7 +5144,6 @@ _CONFIG_GLOBALS = {
     'sector_conc_max': ('_CFG_SECTOR_CONC_MAX', 'SECTOR_CONC_MAX'),
     'sample_size': ('_CFG_SAMPLE_SIZE', 'SAMPLE_SIZE'),
     'additional_tickers': ('_CFG_ADDITIONAL_TICKERS',),
-    'brokerage_fee': ('_CFG_BROKERAGE_FEE', 'BROKERAGE_FEE'),
     'min_cash_floor': ('_CFG_MIN_CASH_FLOOR',),
     'dd_caution_pct': ('_CFG_DD_CAUTION_PCT',),
     'dd_severe_pct': ('_CFG_DD_SEVERE_PCT',),
@@ -5470,7 +5460,6 @@ Keep unchanged values as-is; do not add unknown keys or invent missing data.
   "sector_conc_max": {_CFG_SECTOR_CONC_MAX},
   "sample_size": {_CFG_SAMPLE_SIZE},
   "additional_tickers": {json.dumps(_CFG_ADDITIONAL_TICKERS)},
-  "brokerage_fee": {_CFG_BROKERAGE_FEE},
   "min_cash_floor": {_CFG_MIN_CASH_FLOOR},
   "dd_caution_pct": {_CFG_DD_CAUTION_PCT},
   "dd_severe_pct": {_CFG_DD_SEVERE_PCT},
@@ -5562,7 +5551,7 @@ def _resize_legacy_pending_orders(pf):
             sector = str(order.get('sector', '') or 'Unknown')
             stop = entry - finite_number(order.get('stop_distance', 0), 'stop_distance', minimum=0)
             target = entry + finite_number(order.get('target_distance', 0), 'target_distance', minimum=0)
-            quote = _portfolio._fee_quote(sys.modules[__name__], pf, pf.get('last_nzdusd_rate'))
+            quote = _portfolio._fee_quote(sys.modules[__name__])
             plan = _portfolio._plan(sys.modules[__name__], pf, str(order.get('ticker', '')).strip().upper(),
                                     entry, live_cash * pct / 100.0, stop, target, sector, quote)
             current_shares = int(order.get('shares', 0) or 0)
@@ -5591,55 +5580,35 @@ def update_portfolio_prices(pf):
     return _portfolio.update_portfolio_prices(sys.modules[__name__], pf)
 
 
-def _sharesies_fee(amount_usd, pf, nzdusd_rate=None, side='buy'):
+def _broker_fee(amount_usd, side='buy'):
+    """What this broker charges to trade amount_usd. For Alpaca: nothing.
+
+    Alpaca takes no commission on US equities. It does pass through small
+    regulatory charges on sells, but those are deducted inside the account, so
+    they arrive here through broker reconciliation - which replaces cash with
+    Alpaca's own figure. Charging them here as well would count them twice.
+
+    This is deliberately pure: it reads no portfolio and mutates nothing, which
+    is what plan_order's fee_quote contract requires. The hook is kept rather
+    than deleted so a broker that does charge can be priced in one place,
+    without threading a fee argument back through every call site.
     """
-    Calculate actual Sharesies brokerage fee for this trade.
-    $15/month plan: $5,000 NZD free buys + $5,000 NZD free sells per month.
-    Over the limit: 0.5% of trade value, capped at $5 USD.
-    Tracks usage in portfolio.json so the free tier is consumed correctly.
-    nzdusd_rate falls back to pf['last_nzdusd_rate'] if not supplied.
-    Without a positive rate, no free coverage can be verified. Reject invalid
-    numeric inputs before changing usage; missing/zero/negative FX is uncovered.
-    """
-    amount_usd = finite_number(amount_usd, 'amount_usd', minimum=0)
+    finite_number(amount_usd, 'amount_usd', minimum=0)
     if side not in ('buy', 'sell'):
         raise ValueError('side must be buy or sell')
-    if nzdusd_rate is None:
-        nzdusd_rate = pf.get('last_nzdusd_rate')
-    rate = 0.0 if nzdusd_rate is None else finite_number(nzdusd_rate, 'nzdusd_rate')
-    coverage_usd = finite_number(SHARESIES_COVERAGE_NZD * max(0.0, rate), 'coverage_usd')
-    month_key = _session_date()[:7]
-    reset_month = pf.get('sharesies_month') != month_key
-    used_key = 'sharesies_bought_usd' if side == 'buy' else 'sharesies_sold_usd'
-    already_used = finite_number(0.0 if reset_month else pf.get(used_key, 0.0),
-                                 used_key, minimum=0)
-    new_usage = round(finite_number(already_used + amount_usd, 'monthly usage'), 2)
-    remaining_free = max(0.0, coverage_usd - already_used)
-
-    if amount_usd <= remaining_free:
-        fee = 0.0
-    else:
-        over_amount = amount_usd - remaining_free
-        fee = min(over_amount * 0.005, 5.0)  # 0.5%, max $5 USD
-
-    if reset_month:
-        pf['sharesies_month'] = month_key
-        pf['sharesies_bought_usd'] = 0.0
-        pf['sharesies_sold_usd'] = 0.0
-    pf[used_key] = new_usage
-    return round(fee, 2)
+    return 0.0
 
 
-def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', atr=0, nzdusd_rate=None):
+def open_position(pf, ticker, entry_price, amount_usd, stop, target, sector='', atr=0):
     return _portfolio.open_position(
         sys.modules[__name__], pf, ticker, entry_price, amount_usd, stop, target,
-        sector=sector, atr=atr, nzdusd_rate=nzdusd_rate,
+        sector=sector, atr=atr,
     )
 
 
-def close_position(pf, ticker, exit_price, reason='hold_period', nzdusd_rate=None):
+def close_position(pf, ticker, exit_price, reason='hold_period'):
     return _portfolio.close_position(
-        sys.modules[__name__], pf, ticker, exit_price, reason=reason, nzdusd_rate=nzdusd_rate,
+        sys.modules[__name__], pf, ticker, exit_price, reason=reason,
     )
 
 
@@ -6474,12 +6443,6 @@ def run_screener():
 
     print('\nStep 2/8: Market context...')
     ctx = get_market_context()
-
-    # Store live NZD/USD in portfolio so _sharesies_fee() can use it without re-fetching
-    _nzdusd = ctx.get('global_macro', {}).get('nzdusd', {}).get('price')
-    if _nzdusd:
-        portfolio['last_nzdusd_rate'] = float(_nzdusd)
-        save_portfolio(portfolio)
 
     if force_session and cutoff_date in portfolio.get('processed_sessions', []):
         existing = _report_existing_session_order(ctx, portfolio, cutoff_date, closed_today=_closed_today)

@@ -38,7 +38,7 @@ class _LedgerFixture:
             PORTFOLIO_JSON=self.root / 'portfolio.json',
             STARTING_CAPITAL=100000.0,
             _session_date=lambda: self.SESSION,
-            _sharesies_fee=lambda amount, pf, nzdusd_rate=None, side='buy': 0.0,
+            _broker_fee=lambda amount, side='buy': 0.0,
             _ORDER_REASON=[''], _degrade=self.degraded.append,
             _CFG_MAX_POSITIONS=5, _CFG_MIN_CASH_FLOOR=500.0, _CFG_HOLD_DAYS=10,
             _broker_authoritative=lambda: True,
