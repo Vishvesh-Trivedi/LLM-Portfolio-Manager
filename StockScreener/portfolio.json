@@ -297,10 +297,41 @@
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
-  "pending_orders": [],
+  "pending_orders": [
+    {
+      "source": "BOTH",
+      "reasoning": "GILD is poised for a 1-4 week rally due to its strengthened HIV growth platform and expanded Latin America access. The stock has shown technical strength with a rising RSI and ADX, and the sector is experiencing a rotation towards healthcare.",
+      "confidence": 85,
+      "rsi": 61.2,
+      "vix": 14.81,
+      "vix_regime": "LOW (p7 risk-on)",
+      "qqq_trend": "BULLISH",
+      "earnings_days": 40,
+      "congress": "NEUTRAL",
+      "insider": "BUYING",
+      "position_size_pct": 25,
+      "tech_score": 43,
+      "news_score": 31,
+      "id": "49c5222c-58f0-4eb1-a48c-63e768d55b32",
+      "trade_id": "49c5222c-58f0-4eb1-a48c-63e768d55b32",
+      "ticker": "GILD",
+      "signal_date": "2026-09-18",
+      "execution_session": "2026-09-21",
+      "estimated_entry": 150.44,
+      "stop_distance": 4.71,
+      "target_distance": 9.42,
+      "sector": "Healthcare",
+      "atr": 3.14,
+      "amount_usd": 18685.23,
+      "shares": 98,
+      "hold_sessions": 10,
+      "status": "PENDING"
+    }
+  ],
   "processed_sessions": [
     "2026-09-16",
-    "2026-09-17"
+    "2026-09-17",
+    "2026-09-18"
   ],
   "equity_peak": 100128.84,
   "broker_equity": 99802.68,

@@ -16,7 +16,7 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-18 23:38
+   Time:   2026-09-19 00:34
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
@@ -34,8 +34,8 @@ Step 2/8: Market context...
 
 Market context...
   VIX:  14.81 (p6.7) -> LOW (p7 risk-on) (1.1x)
-  QQQ:  $721.45 | BULLISH (+1.62% vs 50MA)
-  SPY today: -0.12%
+  QQQ:  $716.92 | BULLISH (+0.98% vs 50MA)
+  SPY today: +1.13%
   10Y yield: 5.0% (+1.07%)  DXY: 100.21 (-0.01%)  Nikkei: +0.33%
   Futures:  ES=+1.11%  NQ=+1.73%
 
@@ -51,62 +51,43 @@ Batch downloading 200 tickers (3 chunked API calls)...
   OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
   RSS feeds active: 14/16 | Headlines: 84
   Fetching news for all 900 stocks (parallel)...
-  News found: 643/900 stocks have news today
-  Fetching fundamentals for all 892 stocks (parallel)...
-  Full fundamentals: 661/892 stocks
+  News found: 313/900 stocks have news today
+  Fetching fundamentals for all 699 stocks (parallel)...
+  Full fundamentals: 422/699 stocks
   Sector ranks - Top 3: ['Technology', 'Healthcare', 'Industrials'] | Perf: Technology:+2.9% | Healthcare:+0.4% | Industrials:-0.1% | Energy:-0.4% | Basic Materials:-1.0%
   Sector flows: TOP Technology +0.8% | BOT Basic Materials -1.4%
 
 Step 4/8: Bidirectional screening...
 
-Phase 2 - Technical screening (919 tickers)...
-  Passed: 21 | Rejected: Price:0 MA:759 Vol:68 RSI:2 Liq:17 ADX:26
+Phase 2 - Technical screening (726 tickers)...
+  Passed: 10 | Rejected: Price:0 MA:598 Vol:68 RSI:2 Liq:17 ADX:5
 
-Phase 3 - News screening all 919 stocks...
-  News rescued: 127 stocks → ['ABNB', 'AOS', 'AFL', 'GOOGL', 'ALGN', 'MO', 'AMCR', 'AMZN', 'AME', 'AWK']...
+Phase 3 - News screening all 726 stocks...
+  News rescued: 38 stocks → ['C', 'CMCSA', 'CPRT', 'CTVA', 'CSX', 'CMI', 'CRH', 'CVS', 'FANG', 'DE']...
 
 Phase 4 - Merging candidate pools...
-  Total candidates: 148
-    BOTH (tech+news): 5  TECHNICAL: 16  NEWS: 127
+  Total candidates: 48
+    BOTH (tech+news): 3  TECHNICAL: 7  NEWS: 38
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'GLW', 'ZTS', 'NLY', 'MS', 'AMZN', 'PLTR', 'AAPL', 'AMZN', 'PLTR', 'GE', 'GLW', 'ZTS', 'NLY', 'MS', 'AAPL', 'AMZN', 'PLTR', 'AAPL', 'AMZN', 'PLTR', 'MS', 'AAPL', 'GOOGL']
-  Stream B added: AAPL | $336.13 | RSI 64.3
-  Stream B added: GOOGL | $349.54 | RSI 55.0
-  Stream B added: GLW | $150.11 | RSI 47.2
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'NVDA', 'TSLA', 'ZTS', 'MS', 'AMD', 'AMZN', 'PLTR', 'AON', 'KKR']
+  Stream B added: NVDA | $222.04 | RSI 54.0
+  Stream B added: TSLA | $364.3 | RSI 53.8
   Stream B added: ZTS | $71.46 | RSI 36.8
-  Stream B added: NLY | $21.05 | RSI 23.5
   Stream B added: MS | $202.56 | RSI 35.4
-  Stream B added: AMZN | $253.71 | RSI 48.0
   Stream B added: PLTR | $177.49 | RSI 56.9
-  Stream B added: AAPL | $336.13 | RSI 64.3
-  Stream B added: AMZN | $253.71 | RSI 48.0
-  Stream B added: PLTR | $177.49 | RSI 56.9
-  Stream B added: GE | $313.99 | RSI 33.8
-  Stream B added: GLW | $150.11 | RSI 47.2
-  Stream B added: ZTS | $71.46 | RSI 36.8
-  Stream B added: NLY | $21.05 | RSI 23.5
-  Stream B added: MS | $202.56 | RSI 35.4
-  Stream B added: AAPL | $336.13 | RSI 64.3
-  Stream B added: AMZN | $253.71 | RSI 48.0
-  Stream B added: PLTR | $177.49 | RSI 56.9
-  Stream B added: AAPL | $336.13 | RSI 64.3
-  Stream B added: AMZN | $253.71 | RSI 48.0
-  Stream B added: PLTR | $177.49 | RSI 56.9
-  Stream B added: MS | $202.56 | RSI 35.4
-  Stream B added: AAPL | $336.13 | RSI 64.3
-  Stream B added: GOOGL | $349.54 | RSI 55.0
-  Sector sentiment derived: 11/11 sectors from 140 stocks
-  [ADVISORY ONLY] HOLD [LOW] MTD: The position is relatively stable with minimal loss, no fresh news, and no strong market indicators to suggest an immediate action. (no ledger changes)
+  Stream B added: KKR | $98.78 | RSI 39.6
+  Sector sentiment derived: 9/11 sectors from 51 stocks
+  [ADVISORY ONLY] HOLD [LOW] MTD: Position is slightly in the red, but no fresh news and market conditions are neutral, so holding is the best option for now. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 152 candidates...
-  Options data: 0/152 | Insider signals: 108/152
+  Fetching options + insider data for 53 candidates...
+  Options data: 0/53 | Insider signals: 42/53
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (152 candidates)...
-  Pre-score top 5: ANET(81=45T+36N [vader:BULLISH])  GOOGL(77=45T+32N [vader:BULLISH])  A(76=47T+29N [vader:BULLISH])  IQV(76=40T+36N [vader:BULLISH])  TMO(76=47T+29N [vader:BULLISH])
-  SEC EDGAR 8-K: 3/30 candidates have recent filings
+Phase 5.5 - Computing score breakdown (53 candidates)...
+  Pre-score top 5: IQV(76=40T+36N [vader:BULLISH])  GILD(74=43T+31N [vader:BULLISH])  COIN(69=38T+31N [vader:BULLISH])  HCA(67=36T+31N [vader:BULLISH])  DE(67=36T+31N [vader:BULLISH])
+  SEC EDGAR 8-K: 1/30 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
   Catalyst scoring: 30 stocks → 5 LLM calls...
@@ -115,87 +96,96 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
     Batch 3/5 
     Batch 4/5 
     Batch 5/5 
-  Catalyst scoring done — 7 auto-dropped, 23 remain
+  Catalyst scoring done — 6 auto-dropped, 24 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (23 candidates, 3 layers)...
+Phase 5 - News intelligence (24 candidates, 3 layers)...
   Sentiment: NEUTRAL | Adj: +0
-  23 candidates after news filter
+  24 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (23 candidates)...
-  Pre-score top 5: ANET(81=45T+36N [vader:BULLISH])  GOOGL(77=45T+32N [vader:BULLISH])  A(76=47T+29N [vader:BULLISH])  IQV(76=40T+36N [vader:BULLISH])  TMO(76=47T+29N [vader:BULLISH])
+Phase 5.5 - Computing score breakdown (24 candidates)...
+  Pre-score top 5: IQV(76=40T+36N [vader:BULLISH])  GILD(74=43T+31N [vader:BULLISH])  DE(67=36T+31N [vader:BULLISH])  HCA(67=36T+31N [vader:BULLISH])  MPC(67=36T+31N [vader:BULLISH])
 
 Step 5.5/8: Applying LLM config criteria...
-  23 candidates after config criteria
+  24 candidates after config criteria
   Self-calibration: 13 prior picks, 54% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (23 candidates)...
-  Round 1/3: Ranking 23 candidates...
-  Round 1 failed (ValueError: ranking contains invalid candidate tickers) — using pre_score top 10
+Phase 6 - NVIDIA final scoring (24 candidates)...
+  Round 1/3: Ranking 24 candidates...
+  Round 1 → Top 10: ['IQV', 'GILD', 'MPC', 'KEYS', 'TMO', 'JCI', 'GEV', 'ILMN', 'MRK', 'NVDA']
   Round 2/3: Deep-diving top 10...
-  Round 2 → analyses for ['ANET', 'GOOGL', 'A', 'IQV', 'TMO', 'GILD', 'NTAP', 'AAPL', 'TECH', 'DE']
+  Round 2 → analyses for ['IQV', 'GILD', 'MPC', 'KEYS', 'TMO', 'JCI', 'GEV', 'ILMN', 'MRK', 'NVDA']
   Round 3/3: Final deliberation...
-  Final pick: ANET | pre=81 → 85/100 | BUY | 11 LLM calls this run
+  final: NVIDIA parser/validator rejected response: JSONDecodeError: Expecting ':' delimiter: line 3 column 114 (char 134)
+  OpenRouter fallback failed [nvidia/nemotron-3-super-120b-a12b:free]: KeyError: 'choices'
+  OpenRouter fallback failed [z-ai/glm-5.2:free]: HTTPError (HTTP 429)
+  OpenRouter paused for 120s after repeated failures
+  OpenRouter fallback failed [minimax/minimax-m3:free]: HTTPError (HTTP 404)
+  final: OpenRouter provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via NVIDIA-retry.
+  Final pick: GILD | pre=74 → 85/100 | BUY | 12 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=10, wr=80%, HIGH confidence): Stocks with VIX multiplier > 1 and QQQ bullish tend to outperform.
-│ 2. Rule (n=5, wr=90%, HIGH confidence): Stocks with recent strong organic growth and AI adoption tend to outperform.
-│ → History suggests that stocks with a VIX multiplier greater than 1 and QQQ bullish tend to outperform in the next 1-4 weeks, especially when combined with recent strong organic growth and AI adoption.
+│ 1. Rule (n=8, wr=75%, HIGH confidence): Stocks with a strong short-term catalyst, positive momentum, and low risk of earnings announcements within the next 2 weeks tend to perform well.
+│ 2. Rule (n=6, wr=83%, HIGH confidence): Stocks with a rising RSI and ADX tend to continue their upward trend.
+│ 3. Rule (n=4, wr=50%, LOW confidence): Stocks with a high short ratio tend to be more volatile.
+│ → History taught me that stocks with strong short-term catalysts, positive momentum, and low earnings risk tend to perform well in the 1-4 week time frame.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
-  Entry estimate: close=$199.39 + 0.3% slippage = $199.99 (stop/target anchored here)
+  Entry estimate: close=$149.99 + 0.3% slippage = $150.44 (stop/target anchored here)
 
 █████████████████████████████████████████████████████████████████
-  TODAY'S PICK  —  Friday, Sep 18 2026
+  TODAY'S PICK  —  Saturday, Sep 19 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 14.8 (LOW (p7 risk-on))  |  QQQ BULLISH  |  SPY -0.13%
-  Macro:   The US market saw a mixed day with some stocks rising and others falling, amidst
+  Macro:   The US stock market is experiencing a mixed day with the Dow Jones futures down 
 ─────────────────────────────────────────────────────────────────
-  BUY  ANET  [NEWS]
-  Sector:     Technology
+  BUY  GILD  [BOTH]
+  Sector:     Healthcare
   Confidence: 85/100  █████████████████░░░
-  Entry:  ~$199.99   Stop: ~$188.35   Target: ~$223.27   R:R 1:2
+  Entry:  ~$150.44   Stop: ~$145.73   Target: ~$159.86   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      ANET is a strong pick due to its recent price gap and strong momentum, which may attract buyers. Additionally, the stock's revenue growth of 37.7% and earnings growth of 35.7% make it an attractive play.
-  Key Risk: The stock's high short ratio and short pct float may lead to a short squeeze, which could negatively impact the stock's price.
-  Bear case: The stock's high short ratio of 2.0 and short pct float of 1.4 may indicate a potential short squeeze risk. Additionally, the stock's recent price gap may not be sustainable in the long term.
+  Why:      GILD is poised for a 1-4 week rally due to its strengthened HIV growth platform and expanded Latin America access. The stock has shown technical strength with a rising RSI and ADX, and the sector is experiencing a rotation towards healthcare.
+  Key Risk: GILD's earnings are 40 days away, reducing the risk of a near-term earnings surprise.
+  Bear case: A bear case for GILD in the next 4 weeks could be a surprise earnings miss, which could lead to a decline in the stock price. Additionally, if the sector rotation towards healthcare slows down, GILD could lose its momentum.
 
   WATCH LIST:
-    GILD    74/100  [Healthcare]  GILD is a good candidate due to its recent HIV growth platform expansi
+    IQV     74/100  [Healthcare]  IQV is poised for a 1-4 week rally due to accelerating organic growth 
 █████████████████████████████████████████████████████████████████
-  Broker: in sync (1 position(s))
+  Broker BUY 98 GILD: submitted
 
 Step 8/8: Saving results...
-  OK: Saved ANET | Stop:188.35 Target:223.27
-  OK: Saved GILD | Stop:145.28 Target:159.41
+  OK: Saved GILD | Stop:145.73 Target:159.86
+  OK: Saved IQV | Stop:257.41 Target:284.86
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
-  CONFIRMED PICKS: 0 evaluated yet | 4 pending
-  WATCH LIST: 0 evaluated yet | 7 pending
+  CONFIRMED PICKS: 0 evaluated yet | 5 pending
+  WATCH LIST: 0 evaluated yet | 8 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  WhatsApp Message 1 (701 chars):
-Daily screen - Sep 18 2026
+  WhatsApp Message 1 (786 chars):
+Daily screen - Sep 19 2026
 Trading through your Alpaca account.
 
-No order was placed for ANET.
-Reason: Order not queued: session already has a decision/order
-It will be sold if it falls to $188.35 (-5.8%) or rises to $223.27 (+11.6%).
+Order placed: buy 98 shares of GILD.
+Waiting for the market to open. Nothing has been bought yet and no money has been spent.
+Expected price about $150.44 a share, $14,743 in total.
+It will be sold if it falls to $145.73 (-3.1%) or rises to $159.86 (+6.3%).
 
-Why this one: ANET is a strong pick due to its recent price gap and strong momentum, which may attract buyers. Additionally, the stock's revenue growth of 37.7% and earnings growth of 35.7% make it an attractive play.
-Main risk: The stock's high short ratio and short pct float may lead to a short squeeze, which could negatively impact the stock's price.
+Why this one: GILD is poised for a 1-4 week rally due to its strengthened HIV growth platform and expanded Latin America access. The stock has shown technical strength with a rising RSI and ADX, and the sector is experiencing a rotation towards healthcare.
+Main risk: GILD's earnings are 40 days away, reducing the risk of a near-term earnings surprise.
 
-Watching next: GILD.
+Watching next: IQV.
 
 Market: the Nasdaq is trending up, markets are calm, the S&P 500 finished -0.1% today.
 
-  WhatsApp Message 2 (222 chars):
-Your portfolio - Sep 18 2026
+  WhatsApp Message 2 (275 chars):
+Your portfolio - Sep 19 2026
 Trading through your Alpaca account.
 
 Total value $99,803 (down $197, -0.2%)
@@ -205,11 +195,9 @@ Cash available $74,741
 MTD - down $197 (-0.8%)
 18 shares bought at $1,403.28, now $1,392.32
 
-  Discord daily-decision transport error: InvalidHeader
-  Discord daily-decision: failed
+Waiting to be bought (no money spent yet): 98 GILD.
+
+  Discord daily-decision: sent
   WhatsApp daily-decision: sent
-  Discord daily-portfolio transport error: InvalidHeader
-  Discord daily-portfolio: failed
+  Discord daily-portfolio: sent
   WhatsApp daily-portfolio: sent
-  Discord run-health transport error: InvalidHeader
-  Discord run-health: failed
