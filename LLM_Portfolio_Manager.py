@@ -50,10 +50,6 @@ import threading
 import time
 import screener_alpaca as _alpaca
 
-_LLM_LAST_CALL = [0.0]
-_LLM_REQUEST_TIMESTAMPS = deque()
-_LLM_RATE_LOCK = threading.Lock()
-
 # ============================================================
 # OUTPUT LOCATION
 # ============================================================
@@ -5675,21 +5671,37 @@ def _resolve_sector(symbol):
     with an unknown sector would raise there and block every future order. When
     the sector cannot be resolved the adoption is skipped and the run degrades,
     which is the honest outcome: unknown sector means unknown exposure.
+
+    Returns '' when the sector genuinely cannot be established. Raises when
+    this function itself is broken - see the note on the parsing below.
     """
     try:
-        # _fetch_fundamentals_single returns (ticker, data), not data.
         result = _fetch_fundamentals_single(symbol)
-        info = result[1] if isinstance(result, tuple) and len(result) == 2 else result
-        sector = str((info or {}).get('sector') or '').strip()
-        if sector and sector.casefold() not in ('unknown', 'n/a', 'none'):
-            # Only a sector the order planner can map is usable: an unmappable
-            # one would be accepted here and then raise inside plan_order on
-            # every later run, silently blocking all new orders.
-            _portfolio._canonical_sector(sector)
-            return sector
+    except Exception as exc:
+        # The lookup failed: offline, rate-limited, unknown symbol. Expected.
+        print(f'  Broker sync: sector lookup failed for {symbol}: {type(exc).__name__}')
+        return ''
+
+    # Everything below is our own parsing, and an error in it is a bug here,
+    # not a gap in the data. The two must not produce the same answer: when
+    # this read `result.get(...)` on what is really a (ticker, data) tuple,
+    # the AttributeError came back as '' and was indistinguishable from
+    # yfinance having no sector, so nothing looked wrong. Let it raise; the
+    # caller reports it as a bug rather than as missing data.
+    info = result[1] if isinstance(result, tuple) and len(result) == 2 else result
+    sector = str((info or {}).get('sector') or '').strip()
+    if not sector or sector.casefold() in ('unknown', 'n/a', 'none'):
+        return ''
+    try:
+        # Only a sector the order planner can map is usable: an unmappable one
+        # would be accepted here and then raise inside plan_order on every
+        # later run, silently blocking all new orders.
+        _portfolio._canonical_sector(sector)
     except Exception:
-        pass
-    return ''
+        print(f'  Broker sync: {symbol} reports sector {sector!r}, which the '
+              f'order planner cannot map')
+        return ''
+    return sector
 
 
 def protect_positions(portfolio):
@@ -5837,7 +5849,17 @@ def sync_with_broker(portfolio):
     actions = []
     for action in plan['actions']:
         if action['op'] == 'adopt_position':
-            sector = action.get('sector') or _resolve_sector(action['symbol'])
+            try:
+                sector = action.get('sector') or _resolve_sector(action['symbol'])
+            except Exception as exc:
+                # A defect in our own sector handling. Skipping the adoption is
+                # the same outcome as missing data, but it must not carry the
+                # same label: this one means the code is wrong and needs fixing,
+                # not that a data provider was unhelpful.
+                sector = ''
+                _degrade('broker_adopt_sector_bug:' + action['symbol'])
+                print(f'  Broker sync BUG resolving sector for {action["symbol"]}: '
+                      f'{type(exc).__name__}: {exc}')
             if not sector:
                 _degrade('broker_adopt_unknown_sector:' + action['symbol'])
                 print(f'  Broker sync: cannot resolve sector for {action["symbol"]}; not adopted')
