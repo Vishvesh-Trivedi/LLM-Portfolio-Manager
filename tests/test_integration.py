@@ -291,15 +291,22 @@ class IntegrationTests(unittest.TestCase):
     def test_market_gate_precedes_screening_probes_and_alerts(self):
         # Outside a completed session nothing may screen, probe a model, price a
         # replay off incomplete bars, or place an order. Broker reconciliation is
-        # deliberately NOT in that list — see the weekend test below.
+        # and the closed-market summary are deliberately NOT in that list — see
+        # the weekend test below.
         self.pipeline()
-        for instant in (datetime(2026, 9, 12, 17), datetime(2026, 9, 7, 17), datetime(2026, 9, 11, 16, 14)):
+        # A shut market reports; a weekday still waiting for the close does not,
+        # because the real summary follows a few hours later on the same day.
+        for instant, summary in ((datetime(2026, 9, 12, 17), True),
+                                 (datetime(2026, 9, 7, 17), True),
+                                 (datetime(2026, 9, 11, 16, 14), False)):
             with self.subTest(instant=instant):
+                before = self.weekly.call_count
                 Clock.instant = instant.replace(tzinfo=ZoneInfo('America/New_York'))
                 self.assertIsNone(APP.run_screener())
                 self.assertEqual(APP._HEALTH.as_dict()['status'], 'healthy')
+                self.assertEqual(self.weekly.call_count, before + int(summary))
         for mock in (self.monitor, self.probe, self.context, self.download,
-                     self.post, self.alert, self.weekly):
+                     self.post, self.alert):
             mock.assert_not_called()
 
     def test_weekend_run_reconciles_the_broker_but_never_trades(self):
@@ -326,8 +333,34 @@ class IntegrationTests(unittest.TestCase):
         # Reconciled state is persisted, but nothing was screened or ordered.
         self.assertTrue(Path(APP.PORTFOLIO_JSON).exists())
         for mock in (self.monitor, self.probe, self.context, self.download,
-                     self.post, self.alert, self.weekly):
+                     self.post, self.alert):
             mock.assert_not_called()
+        # A shut market still reports, and is handed the reconciled ledger:
+        # re-pricing it would replay positions against a date that was never a
+        # trading session and mark every quote stale.
+        self.weekly.assert_called_once()
+        self.assertIsNotNone(self.weekly.call_args.kwargs.get('portfolio'))
+        self.monitor.assert_not_called()
+
+    def test_closed_market_summary_is_sent_once_a_day_not_once_a_cron(self):
+        """The schedule fires twice daily to cover US daylight saving.
+
+        Both firings land on the same shut market, so without a per-day guard
+        the weekend snapshot would arrive twice on Discord and twice on
+        WhatsApp.
+        """
+        self.pipeline()
+        Clock.instant = datetime(2026, 9, 12, 17, tzinfo=ZoneInfo('America/New_York'))
+        with patch.object(APP, 'sync_with_broker', return_value=[]), \
+                patch.object(APP, 'protect_positions', return_value=[]):
+            APP.run_screener()
+            self.assertEqual(self.weekly.call_count, 1)
+            APP.run_screener()
+            self.assertEqual(self.weekly.call_count, 1)
+            # A new shut day is a new snapshot.
+            Clock.instant = datetime(2026, 9, 13, 17, tzinfo=ZoneInfo('America/New_York'))
+            APP.run_screener()
+            self.assertEqual(self.weekly.call_count, 2)
 
     def test_already_processed_session_still_reconciles_the_broker(self):
         self.pipeline()

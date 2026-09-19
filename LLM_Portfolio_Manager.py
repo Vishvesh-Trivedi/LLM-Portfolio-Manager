@@ -4723,133 +4723,192 @@ def send_health_alert(health):
         return False
 
 
-def send_weekly_summary(reason='weekly'):
+# Shared by the daily message and the closed-market summary so both describe
+# a holding the same way. Previously nested inside send_whatsapp, which left
+# the weekend summary writing its own, older format.
+def _num(x):
+    return x if isinstance(x, (int, float)) else None
+
+def _short(txt, n=400):
+    txt = ' '.join(str(txt or '').split())
+    return (txt[:n - 1] + '…') if len(txt) > n else txt
+
+def _usd(value, cents=False):
+    if not isinstance(value, (int, float)):
+        return 'n/a'
+    return f'${abs(value):,.2f}' if cents else f'${abs(value):,.0f}'
+
+def _health(p):
+    cur = _num(p.get('current_price', p.get('entry_price')))
+    stop = _num(p.get('stop_price'))
+    tgt = _num(p.get('target_price'))
+    if cur and stop and cur <= stop * 1.02:
+        return 'Close to its sell price - watch this one'
+    if cur and tgt and cur >= tgt * 0.98:
+        return 'Almost at its target price'
+    if p.get('hold_days', 0) >= _CFG_HOLD_DAYS:
+        return 'Holding period is up - due to be sold'
+    return ''
+
+def _pos_lines(p):
+    pnl = p.get('unrealized_pnl', 0)
+    pct = p.get('unrealized_pnl_pct', 0)
+    entry = _num(p.get('entry_price')) or 0
+    current = _num(p.get('current_price')) or entry
+    lines = [f'- {p["ticker"]}: {"up" if pnl >= 0 else "down"} {_usd(pnl)} '
+             f'({pct:+.1f}%)  |  {int(p.get("shares", 0))} shares, '
+             f'{_usd(entry, True)} -> {_usd(current, True)}']
+    # Where it will be sold and how long it has left: the plain-language
+    # rewrite dropped both, leaving no way to see a holding's exit plan.
+    stop = _num(p.get('stop_price'))
+    target = _num(p.get('target_price'))
+    detail = []
+    if stop and target:
+        detail.append(f'sells at {_usd(stop, True)} or {_usd(target, True)}')
+    elif p.get('needs_risk_levels'):
+        detail.append('NO sell prices set')
+    held = p.get('held_sessions', p.get('hold_days'))
+    if isinstance(held, int):
+        detail.append(f'day {held} of {p.get("hold_sessions", _CFG_HOLD_DAYS)}')
+    if detail:
+        lines.append('  ' + '  |  '.join(detail))
+    note = _health(p)
+    if note:
+        lines.append(f'  {note}')
+    return lines
+
+_reason_map = {
+    'stop_loss': 'it fell to the sell price',
+    'profit_target': 'it reached the target price',
+    'rsi_overbought': 'it looked overbought',
+    'macd_bearish_cross': 'momentum turned negative',
+    'hold_period': 'the holding period ended',
+    'pre_earnings': 'earnings were coming up',
+}
+
+def _clean_reason(raw):
+    key = str(raw or '').split(' ')[0].lower()
+    return _reason_map.get(key, key.replace('_', ' ') or 'it was closed')
+
+
+def send_weekly_summary(reason='weekly', portfolio=None):
     """Send a portfolio snapshot on a non-trading day.
 
     reason='weekly'  -> full weekly review (US Saturday = Sunday NZT).
     reason=<holiday> -> 'MARKET CLOSED' snapshot for a NYSE holiday.
     reason='Weekend' -> 'MARKET CLOSED' snapshot for US Sunday.
+
+    ``portfolio`` supplies an already-current ledger. Without it this re-prices,
+    which must never happen on a closed market: update_portfolio_prices would
+    replay positions against a non-trading date, mark every quote stale and
+    degrade the run.
     """
     if not _alerts_configured():
         return
-    pf = load_portfolio()
-    pf = update_portfolio_prices(pf)
+    pf = portfolio if portfolio is not None else update_portfolio_prices(load_portfolio())
 
-    total_val = round(pf['cash'] + sum(p.get('current_value', p['cost_basis']) for p in pf['positions']), 2)
-    total_pnl = round(total_val - pf['starting_capital'], 2)
-    total_pct = round(total_pnl / pf['starting_capital'] * 100, 2)
+    positions = pf.get('positions', [])
+    pending = pf.get('pending_orders', [])
+    cash = float(pf.get('cash', 0) or 0)
+    start_cap = float(pf.get('starting_capital', STARTING_CAPITAL) or STARTING_CAPITAL)
+    invested = sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions)
+    total_val = cash + invested
+    total_pnl = total_val - start_cap
+    total_pct = (total_pnl / start_cap * 100) if start_cap else 0.0
 
-    # QQQ comparison — only from portfolio creation date, not a fixed 7-day window.
-    # Avoids false alpha when portfolio started mid-week.
-    created_str = pf.get('created', '')
-    qqq_week = None
-    qqq_label = 'QQQ: unavailable'
-    alpha_str = ''
     try:
-        qqq_h = yf.Ticker('QQQ').history(period='14d')
-        if not qqq_h.empty:
-            if created_str:
-                # Find first QQQ close on or after portfolio creation date
-                qqq_h.index = pd.to_datetime(qqq_h.index).tz_localize(None) if qqq_h.index.tz else pd.to_datetime(qqq_h.index)
-                created_dt  = pd.to_datetime(created_str)
-                qqq_since   = qqq_h[qqq_h.index >= created_dt]
-                if len(qqq_since) >= 2:
-                    qqq_week = round((float(qqq_since['Close'].iloc[-1]) - float(qqq_since['Close'].iloc[0])) /
-                                      float(qqq_since['Close'].iloc[0]) * 100, 2)
-                    days_tracked = (qqq_since.index[-1] - qqq_since.index[0]).days
-                    qqq_label = f'QQQ since start ({days_tracked}d): {qqq_week:+.2f}%'
-                    alpha = round(total_pct - qqq_week, 2)
-                    alpha_str = f'You vs QQQ: {alpha:+.2f}% alpha'
-                else:
-                    qqq_label = 'QQQ: portfolio too new for comparison'
-            else:
-                # No creation date — use last 7 days but flag it
-                qqq_week = round((float(qqq_h['Close'].iloc[-1]) - float(qqq_h['Close'].iloc[-5])) /
-                                  float(qqq_h['Close'].iloc[-5]) * 100, 2)
-                qqq_label = f'QQQ this week: {qqq_week:+.2f}%'
-    except:
-        pass
-
-    week_ago    = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-    week_closed = [t for t in pf.get('closed_trades', []) if str(t.get('exit_date', ''))[:10] >= week_ago]
-    week_wins   = sum(1 for t in week_closed if t.get('realized_pnl', 0) > 0)
-    week_losses = len(week_closed) - week_wins
-    week_pnl    = round(sum(t.get('realized_pnl', 0) for t in week_closed), 0)
-
-    _reason_map = {
-        'stop_loss':         'stop loss hit',
-        'profit_target':     'profit target hit',
-        'rsi_overbought':    'RSI exit',
-        'macd_bearish_cross':'momentum exit',
-        'hold_period':       '10-day hold done',
-        'pre_earnings':      'exited before earnings',
-    }
-    def _clean(raw):
-        key = raw.split(' ')[0].lower()
-        return _reason_map.get(key, raw.split(' ')[0].replace('_', ' '))
-
-    sep      = '||------------------------------||'
-    date_str = datetime.now().strftime('%b %d %Y')
-    cash     = round(pf['cash'], 0)
+        date_str = datetime.strptime(_session_date(), '%Y-%m-%d').strftime('%b %d %Y')
+    except Exception:
+        date_str = datetime.now().strftime('%b %d %Y')
 
     if reason == 'weekly':
-        header    = f'WEEKLY SUMMARY  {date_str}'
-        next_note = 'Next run: Tuesday 9AM NZT'
+        header = f'WEEKLY SUMMARY - {date_str}'
+        closed_line = 'US markets are shut for the weekend'
+    elif str(reason).lower().startswith('weekend'):
+        header = f'MARKET CLOSED - {date_str}'
+        closed_line = 'US markets are shut for the weekend'
     else:
-        header    = f'MARKET CLOSED — {reason}  ({date_str})'
-        next_note = 'No trading today. Markets reopen next US trading day.'
+        header = f'MARKET CLOSED - {date_str}'
+        closed_line = f'US markets are shut ({reason})'
 
-    winning = sorted([p for p in pf['positions'] if p.get('unrealized_pnl_pct', 0) >= 0],
-                     key=lambda p: p.get('unrealized_pnl_pct', 0), reverse=True)
-    losing  = sorted([p for p in pf['positions'] if p.get('unrealized_pnl_pct', 0) < 0],
-                     key=lambda p: p.get('unrealized_pnl_pct', 0))
+    live = _alpaca.trading_enabled()
+    lines = [header,
+             ('Trading through your Alpaca account.' if live
+              else 'Simulated only - no orders are sent to Alpaca.'),
+             '',
+             'WHY THERE IS NO TRADE TODAY',
+             f'- {closed_line}',
+             '- Nothing was bought or sold',
+             ('- Your holdings and their sell orders are unchanged' if positions
+              else '- You are not holding anything right now'),
+             '',
+             'YOUR MONEY',
+             f'- Total value: {_usd(total_val)} '
+             f'({"up" if total_pnl >= 0 else "down"} {_usd(total_pnl)}, '
+             f'{total_pct:+.1f}% since you started)',
+             f'- Cash not invested: {_usd(cash)}',
+             f'- Held in shares: {_usd(invested)}']
 
-    def _pos(p):
-        upc  = p.get('unrealized_pnl_pct', 0)
-        upl  = round(p.get('unrealized_pnl', 0), 0)
-        word = 'up' if upc >= 0 else 'down'
-        arrow = '▲' if upc >= 0 else '▼'
-        return f'{arrow} {p["ticker"]}  {word} {abs(upc):.1f}%  (USD {abs(upl):,.0f})  Day {p.get("hold_days",0)}/{_CFG_HOLD_DAYS}'
+    # How the account is doing against simply owning the Nasdaq, measured from
+    # the day this portfolio opened rather than a fixed week, so a portfolio
+    # that started mid-week is not credited with moves it was never in for.
+    try:
+        history = yf.Ticker('QQQ').history(period='3mo')
+        created = pf.get('created', '')
+        if not history.empty and created:
+            index = pd.to_datetime(history.index)
+            history.index = index.tz_localize(None) if index.tz is not None else index
+            since = history[history.index >= pd.to_datetime(created)]
+            if len(since) >= 2:
+                first, last = float(since['Close'].iloc[0]), float(since['Close'].iloc[-1])
+                qqq_pct = (last - first) / first * 100
+                gap = total_pct - qqq_pct
+                lines.append(f'- The Nasdaq is {qqq_pct:+.1f}% over the same period, '
+                             f'so you are {abs(gap):.1f}% '
+                             f'{"ahead of" if gap >= 0 else "behind"} it')
+    except Exception:
+        pass
 
-    lines = [
-        header,
-        sep,
-        'YOUR PORTFOLIO',
-        f'Total value:  USD {total_val:,.0f}  ({total_pct:+.1f}% since start)',
-        f'Cash left:    USD {cash:,.0f}',
-        qqq_label,
-        alpha_str if alpha_str else None,
-        sep,
-    ]
-
-    if winning:
-        lines.append('MAKING MONEY')
-        lines += [_pos(p) for p in winning]
-    if losing:
-        lines.append('IN THE RED')
-        lines += [_pos(p) for p in losing]
-    if not pf['positions']:
-        lines.append('No open positions')
-
-    lines.append(sep)
-
-    if week_closed:
-        lines.append(f'CLOSED THIS WEEK  ({week_wins} profit  /  {week_losses} loss)')
-        for t in week_closed:
-            pnl     = t.get('realized_pnl', 0)
-            pnl_pct = t.get('realized_pnl_pct', 0)
-            word    = 'profit' if pnl >= 0 else 'loss'
-            arrow   = '▲' if pnl >= 0 else '▼'
-            reason  = _clean(t.get('reason', ''))
-            lines.append(f'{arrow} {t["ticker"]}  {word} USD {abs(pnl):,.0f}  ({pnl_pct:+.1f}%)  — {reason}')
+    lines += ['', f'WHAT YOU OWN ({len(positions)})']
+    if positions:
+        for p in sorted(positions, key=lambda x: x.get('unrealized_pnl_pct', 0)):
+            lines += _pos_lines(p)
     else:
-        lines.append('No trades closed this week')
+        lines.append('- Nothing. The whole balance is sitting in cash')
 
-    lines += [sep, next_note]
+    if pending:
+        lines += ['', f'WAITING TO BUY ({len(pending)})']
+        for order in pending:
+            shares = int(order.get('shares', 0) or 0)
+            price = _num(order.get('estimated_entry'))
+            lines.append(f'- {order.get("ticker", "?")}: {shares} shares'
+                         + (f' at about {_usd(price, True)} each' if price else ''))
+        lines.append('- These fill when the market next opens')
 
-    msg = '\n'.join(l for l in lines if l is not None)
+    week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    recent = [t for t in pf.get('closed_trades', [])
+              if str(t.get('exit_date', ''))[:10] >= week_ago]
+    lines += ['', 'SOLD IN THE LAST 7 DAYS']
+    if recent:
+        for t in recent:
+            pnl = t.get('realized_pnl', 0)
+            lines.append(f'- {t.get("ticker", "?")}: '
+                         f'{"made" if pnl >= 0 else "lost"} {_usd(pnl)} '
+                         f'({t.get("realized_pnl_pct", 0):+.1f}%) '
+                         f'because {_clean_reason(t.get("reason", ""))}')
+        won = sum(1 for t in recent if t.get('realized_pnl', 0) > 0)
+        lines.append(f'- {won} of {len(recent)} made money')
+    else:
+        lines.append('- Nothing was sold')
+
+    lines += ['', 'WHAT HAPPENS NEXT',
+              '- The screener runs again after the next US market close',
+              ('- Alpaca is the source of truth; these numbers come from your account'
+               if live else '- These are simulated numbers, not a real account')]
+
+    msg = '\n'.join(lines)
     _label = 'weekly-summary' if reason == 'weekly' else 'closed-summary'
-    print(f'  {_label} preview ({len(msg)} chars):\n{msg}\n')
+    print(f'  {_label} ({len(msg)} chars):\n{msg}\n')
     _notify(msg, _label)
 
 
@@ -4879,75 +4938,12 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
     date_str = datetime.now().strftime('%b %d %Y')
     WA_MAX_CHARS = 1600  # Hard limit for CallMeBot per message
 
-    def _num(x):
-        return x if isinstance(x, (int, float)) else None
-
-    def _short(txt, n=400):
-        txt = ' '.join(str(txt or '').split())
-        return (txt[:n - 1] + '…') if len(txt) > n else txt
-
     # ── Open positions sorted by P/L (worst first so risk is visible up top) ──
     # These are read on a phone, so they are short sentences rather than packed
     # one-line records. No abbreviations and no trading jargon: a reader should
     # never need to know what "R:R", "tgt", "conf" or "8sh" means.
     open_positions = sorted(positions, key=lambda p: p.get('unrealized_pnl_pct', 0))
 
-    def _usd(value, cents=False):
-        if not isinstance(value, (int, float)):
-            return 'n/a'
-        return f'${abs(value):,.2f}' if cents else f'${abs(value):,.0f}'
-
-    def _health(p):
-        cur = _num(p.get('current_price', p.get('entry_price')))
-        stop = _num(p.get('stop_price'))
-        tgt = _num(p.get('target_price'))
-        if cur and stop and cur <= stop * 1.02:
-            return 'Close to its sell price - watch this one'
-        if cur and tgt and cur >= tgt * 0.98:
-            return 'Almost at its target price'
-        if p.get('hold_days', 0) >= _CFG_HOLD_DAYS:
-            return 'Holding period is up - due to be sold'
-        return ''
-
-    def _pos_lines(p):
-        pnl = p.get('unrealized_pnl', 0)
-        pct = p.get('unrealized_pnl_pct', 0)
-        entry = _num(p.get('entry_price')) or 0
-        current = _num(p.get('current_price')) or entry
-        lines = [f'- {p["ticker"]}: {"up" if pnl >= 0 else "down"} {_usd(pnl)} '
-                 f'({pct:+.1f}%)  |  {int(p.get("shares", 0))} shares, '
-                 f'{_usd(entry, True)} -> {_usd(current, True)}']
-        # Where it will be sold and how long it has left: the plain-language
-        # rewrite dropped both, leaving no way to see a holding's exit plan.
-        stop = _num(p.get('stop_price'))
-        target = _num(p.get('target_price'))
-        detail = []
-        if stop and target:
-            detail.append(f'sells at {_usd(stop, True)} or {_usd(target, True)}')
-        elif p.get('needs_risk_levels'):
-            detail.append('NO sell prices set')
-        held = p.get('held_sessions', p.get('hold_days'))
-        if isinstance(held, int):
-            detail.append(f'day {held} of {p.get("hold_sessions", _CFG_HOLD_DAYS)}')
-        if detail:
-            lines.append('  ' + '  |  '.join(detail))
-        note = _health(p)
-        if note:
-            lines.append(f'  {note}')
-        return lines
-
-    _reason_map = {
-        'stop_loss': 'it fell to the sell price',
-        'profit_target': 'it reached the target price',
-        'rsi_overbought': 'it looked overbought',
-        'macd_bearish_cross': 'momentum turned negative',
-        'hold_period': 'the holding period ended',
-        'pre_earnings': 'earnings were coming up',
-    }
-
-    def _clean_reason(raw):
-        key = str(raw or '').split(' ')[0].lower()
-        return _reason_map.get(key, key.replace('_', ' ') or 'it was closed')
 
     # ═══ MESSAGE 1: WHAT HAPPENED TODAY ═══
     sig = str(pick.get('signal', 'NO PICK')).upper()
@@ -6407,6 +6403,15 @@ def run_screener():
         _RUN_MODE = 'no_session'
         _HEALTH.stage('session', True, reason)
         send_execution_alerts(protect_positions(portfolio))
+        # A closed market should report, not go quiet. 'before 16:15 ET' is
+        # excluded: that is a normal weekday wait, and the real summary follows
+        # a few hours later. Once per calendar day, because the schedule fires
+        # twice to cover US daylight saving.
+        if reason != 'before 16:15 ET':
+            today = _session_date()
+            if portfolio.get('last_closed_summary') != today:
+                portfolio['last_closed_summary'] = today
+                send_weekly_summary(reason, portfolio=portfolio)
         save_portfolio(portfolio)
         print(f'  No completed trading session ({reason}); broker state reconciled only')
         return None
