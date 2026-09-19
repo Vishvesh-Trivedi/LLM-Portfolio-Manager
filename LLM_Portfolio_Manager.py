@@ -4917,6 +4917,20 @@ def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, 
         lines = [f'- {p["ticker"]}: {"up" if pnl >= 0 else "down"} {_usd(pnl)} '
                  f'({pct:+.1f}%)  |  {int(p.get("shares", 0))} shares, '
                  f'{_usd(entry, True)} -> {_usd(current, True)}']
+        # Where it will be sold and how long it has left: the plain-language
+        # rewrite dropped both, leaving no way to see a holding's exit plan.
+        stop = _num(p.get('stop_price'))
+        target = _num(p.get('target_price'))
+        detail = []
+        if stop and target:
+            detail.append(f'sells at {_usd(stop, True)} or {_usd(target, True)}')
+        elif p.get('needs_risk_levels'):
+            detail.append('NO sell prices set')
+        held = p.get('held_sessions', p.get('hold_days'))
+        if isinstance(held, int):
+            detail.append(f'day {held} of {p.get("hold_sessions", _CFG_HOLD_DAYS)}')
+        if detail:
+            lines.append('  ' + '  |  '.join(detail))
         note = _health(p)
         if note:
             lines.append(f'  {note}')

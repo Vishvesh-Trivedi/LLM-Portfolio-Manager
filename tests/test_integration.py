@@ -73,6 +73,10 @@ class Clock(datetime):
         return cls.instant.astimezone(tz) if tz else cls.instant.replace(tzinfo=None)
 
 
+MARKET_CTX = {'vix_level': 18.0, 'vix_regime': 'MODERATE', 'qqq_trend': 'BULLISH',
+              'spy_return_today': 0.2}
+
+
 def bars(end='2026-09-11', count=65):
     index = pd.bdate_range(end=end, periods=count)
     close = 100 + np.arange(count) * .15 + (np.arange(count) % 2) * .7
@@ -1411,6 +1415,48 @@ class IntegrationTests(unittest.TestCase):
                 redirect_stdout(io.StringIO()):
             APP._persist_session(portfolio, decided=True)
         self.assertEqual(portfolio['processed_sessions'], ['2026-09-18'])
+
+    def test_each_holding_shows_where_it_will_be_sold(self):
+        # The plain-language rewrite dropped stop, target and the day count, so
+        # a holding's exit plan was invisible in the portfolio message.
+        pf = {'cash': 1000.0, 'starting_capital': 10000.0, 'pending_orders': [],
+              'positions': [dict(ticker='MTD', shares=18, entry_price=1403.28,
+                                 current_price=1392.32, cost_basis=25259.08,
+                                 current_value=25061.76, unrealized_pnl=-197.32,
+                                 unrealized_pnl_pct=-0.78, held_sessions=3,
+                                 hold_sessions=10, stop_price=1353.69,
+                                 target_price=1502.46, sector='Healthcare')]}
+        sent = []
+        with patch.object(APP, '_discord', SimpleNamespace(
+                    enabled=lambda: True, test_mode=lambda: False,
+                    send=lambda t, l='': sent.append(t) or True,
+                    send_embed=lambda **k: True)), \
+                patch.object(APP, '_wa_send', return_value=True), \
+                redirect_stdout(io.StringIO()):
+            self.real_whatsapp({'ticker': 'NONE', 'signal': 'NO PICK', 'confidence': 0},
+                               MARKET_CTX, 'N/A', [], 'N/A', 'N/A', portfolio=pf)
+        portfolio_message = [m for m in sent if 'YOUR PORTFOLIO' in m][0]
+        self.assertIn('sells at $1,353.69 or $1,502.46', portfolio_message)
+        self.assertIn('day 3 of 10', portfolio_message)
+
+    def test_a_holding_with_no_sell_prices_says_so(self):
+        pf = {'cash': 1000.0, 'starting_capital': 10000.0, 'pending_orders': [],
+              'positions': [dict(ticker='XYZ', shares=5, entry_price=50.0,
+                                 current_price=52.0, cost_basis=250.0,
+                                 current_value=260.0, unrealized_pnl=10.0,
+                                 unrealized_pnl_pct=4.0, held_sessions=0,
+                                 hold_sessions=10, needs_risk_levels=True,
+                                 sector='Healthcare')]}
+        sent = []
+        with patch.object(APP, '_discord', SimpleNamespace(
+                    enabled=lambda: True, test_mode=lambda: False,
+                    send=lambda t, l='': sent.append(t) or True,
+                    send_embed=lambda **k: True)), \
+                patch.object(APP, '_wa_send', return_value=True), \
+                redirect_stdout(io.StringIO()):
+            self.real_whatsapp({'ticker': 'NONE', 'signal': 'NO PICK', 'confidence': 0},
+                               MARKET_CTX, 'N/A', [], 'N/A', 'N/A', portfolio=pf)
+        self.assertIn('NO sell prices set', [m for m in sent if 'YOUR PORTFOLIO' in m][0])
 
     def test_sector_resolution_unpacks_the_fundamentals_tuple(self):
         # _fetch_fundamentals_single returns (ticker, data). Calling .get() on
