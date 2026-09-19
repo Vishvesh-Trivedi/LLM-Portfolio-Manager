@@ -293,7 +293,7 @@
   "total_realized_pnl": 25.74,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.5724,
-  "last_updated": "2026-09-18",
+  "last_updated": "2026-09-19",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
@@ -378,7 +378,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-09-18T22:57:00.973251587Z",
+      "timestamp": "2026-09-18T22:57:00.973252Z",
       "order_id": "f642cae5-1c70-4fd2-aba4-c67fd62c597e",
       "client_order_id": "fdb59c08-e03c-4ba1-83b8-7dd9737ec82f",
       "symbol": "MTD",
@@ -391,7 +391,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-09-18T22:57:00.973222063Z",
+      "timestamp": "2026-09-18T22:57:00.973222Z",
       "order_id": "15bc87ff-0bf3-4401-8b01-b2a5c74d0609",
       "client_order_id": "lpm-P-MTD-ca256419351043229cfd47f86089d05c",
       "symbol": "MTD",
@@ -400,6 +400,19 @@
       "filled_avg_price": "",
       "qty": "18",
       "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-09-19T00:39:52.311802Z",
+      "order_id": "ded5428d-4f95-4735-8d88-4ca38df70737",
+      "client_order_id": "lpm-B-GILD-49c5222c58f04eb1a48c63e768d55b32",
+      "symbol": "GILD",
+      "status": "accepted",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "98",
+      "side": "buy"
     }
   ],
   "expired_orders": [
