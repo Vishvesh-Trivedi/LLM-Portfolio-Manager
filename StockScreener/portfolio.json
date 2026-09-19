@@ -449,5 +449,6 @@
       "expired_date": "2026-09-17"
     }
   ],
-  "cash_basis": "broker_actual"
+  "cash_basis": "broker_actual",
+  "last_closed_summary": "2026-09-19"
 }
