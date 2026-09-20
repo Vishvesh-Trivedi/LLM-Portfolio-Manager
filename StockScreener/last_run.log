@@ -16,45 +16,12 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-20 22:34
+   Time:   2026-09-20 23:22
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 901 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Broker sync: Cash set from broker: 74740.92 -> 74740.92
   Discord execution:working: sent
-  closed-summary (891 chars):
-MARKET CLOSED - Sep 20 2026
-Trading through your Alpaca account.
-
-WHY THERE IS NO TRADE TODAY
-- US markets are shut for the weekend
-- Nothing was bought or sold
-- Your holdings and their sell orders are unchanged
-
-YOUR MONEY
-- Total value: $99,803 (down $197, -0.2% since you started)
-- Cash not invested: $74,741
-- Held in shares: $25,062
-- The Nasdaq is +3.1% over the same period, so you are 3.3% behind it
-
-WHAT YOU OWN (1)
-- MTD: down $197 (-0.8%)  |  18 shares, $1,403.28 -> $1,392.32
-  sells at $1,353.69 or $1,502.46  |  day 0 of 10
-
-WAITING TO BUY (1)
-- GILD: 98 shares at about $150.44 each
-- These fill when the market next opens
-
-SOLD IN THE LAST 7 DAYS
-- FSLR: lost $110 (-5.3%) because it fell to the sell price
-- 0 of 1 made money
-
-WHAT HAPPENS NEXT
-- The screener runs again after the next US market close
-- Alpaca is the source of truth; these numbers come from your account
-
-  Discord closed-summary: sent
-  WhatsApp closed-summary: sent
   No completed trading session (weekend); broker state reconciled only
   Discord run-health: sent
