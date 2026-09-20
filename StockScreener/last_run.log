@@ -8,23 +8,23 @@ OK: Configuration ready
    BUY threshold:   80
    WATCH threshold: 70
    Sample size:     900
-  Dynamic universe: S&P 500 (503) + S&P 400 MidCap (400) = 903 unique tickers
+  Dynamic universe: S&P 500 (503) + S&P 400 MidCap (400) = 901 unique tickers
 OK: Universe loaded:
-   Stocks:    903
+   Stocks:    901
    ETFs:      26
-   TOTAL:     929
+   TOTAL:     927
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-19 23:23
+   Time:   2026-09-20 22:34
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
-   Stocks: 903 | ETFs: 26
+   Stocks: 901 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Broker sync: Cash set from broker: 74740.92 -> 74740.92
   Discord execution:working: sent
   closed-summary (891 chars):
-MARKET CLOSED - Sep 19 2026
+MARKET CLOSED - Sep 20 2026
 Trading through your Alpaca account.
 
 WHY THERE IS NO TRADE TODAY
@@ -47,7 +47,7 @@ WAITING TO BUY (1)
 - These fill when the market next opens
 
 SOLD IN THE LAST 7 DAYS
-- FSLR: lost $120 (-5.7%) because it fell to the sell price
+- FSLR: lost $110 (-5.3%) because it fell to the sell price
 - 0 of 1 made money
 
 WHAT HAPPENS NEXT
