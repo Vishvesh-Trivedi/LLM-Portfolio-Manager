@@ -24,6 +24,10 @@ on:
         description: 'Only check that the secrets, Alpaca, LLM and Discord are wired, then stop'
         type: boolean
         default: false
+      strategy_explainer:
+        description: 'Only post the plain-English explanation of the strategy to Discord, then stop'
+        type: boolean
+        default: false
 
 concurrency:
   group: daily-screener
@@ -63,9 +67,18 @@ jobs:
           SCREENER_OUTPUT_DIR: ${{ runner.temp }}/screener-qa
           PYTHONUNBUFFERED: '1'
         run: python qa_validate.py --live
+      - name: Post the strategy explainer to Discord
+        if: ${{ inputs.strategy_explainer == true }}
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          SCREENER_OUTPUT_DIR: ${{ runner.temp }}/screener-explainer
+          PYTHONUNBUFFERED: '1'
+        run: python -u explain_strategy.py --send
+
       - name: Preflight readiness check
         id: preflight
-        if: ${{ inputs.qa_only != true }}
+        if: ${{ inputs.qa_only != true && inputs.strategy_explainer != true }}
         continue-on-error: true
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
@@ -83,7 +96,7 @@ jobs:
 
       - name: Run screener
         id: screener
-        if: ${{ inputs.qa_only != true && inputs.preflight_only != true }}
+        if: ${{ inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true }}
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -102,12 +115,12 @@ jobs:
           python -u LLM_Portfolio_Manager.py 2>&1 | tee ${{ runner.temp }}/screener.log
 
       - name: Publish a redacted console log
-        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true }}
+        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true }}
         run: |
           python qa_validate.py --redact-log \
             ${{ runner.temp }}/screener.log StockScreener/last_run.log
       - name: Commit validated portfolio state
-        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && steps.tests.outcome == 'success' && steps.screener.outcome != 'skipped' }}
+        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true && steps.tests.outcome == 'success' && steps.screener.outcome != 'skipped' }}
         env:
           SCREENER_SKIP_UNIVERSE_FETCH: '1'
           SCREENER_DISABLE_ALERTS: '1'

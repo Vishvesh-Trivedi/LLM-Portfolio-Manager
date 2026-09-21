@@ -22,15 +22,25 @@ import types
 import unittest
 from contextlib import ExitStack, redirect_stdout
 from pathlib import Path
+import sys
 from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def import_isolated():
-    """Import main with alerts enabled but no real credentials or network."""
+    """Import main with alerts enabled but no real credentials or network.
+
+    patch.dict('sys.modules') restores the whole dictionary when it exits,
+    which unregisters every module imported inside it. The module objects
+    survive through the names bound here, but anything that later runs
+    `import LLM_Portfolio_Manager` would re-execute it from source - and a
+    second numpy import in one process raises "cannot load module more than
+    once". So whatever the import added is put back afterwards.
+    """
     dotenv = types.ModuleType('dotenv')
     dotenv.load_dotenv = Mock()
+    before = set(sys.modules)
     with tempfile.TemporaryDirectory(prefix='messages-') as output, ExitStack() as stack:
         stack.enter_context(patch.dict(os.environ, {
             'SCREENER_OUTPUT_DIR': output, 'SCREENER_SKIP_UNIVERSE_FETCH': '1',
@@ -40,12 +50,14 @@ def import_isolated():
         }, clear=False))
         os.environ.pop('SCREENER_DISABLE_ALERTS', None)
         stack.enter_context(patch.dict('sys.modules', {'dotenv': dotenv}))
-        import sys
         if str(ROOT) not in sys.path:
             sys.path.insert(0, str(ROOT))
         with redirect_stdout(io.StringIO()):
             import LLM_Portfolio_Manager as app
-        return app
+        added = {name: module for name, module in sys.modules.items()
+                 if name not in before and name != 'dotenv'}
+    sys.modules.update(added)
+    return app
 
 
 app = import_isolated()
@@ -213,6 +225,65 @@ class SectorResolution(unittest.TestCase):
         """
         with self.assertRaises(AttributeError):
             self.resolve(('MTD', 'not-a-dict'))
+
+
+class StrategyExplainer(unittest.TestCase):
+    """The plain-English explainer people outside this repo will read.
+
+    Its whole value is being true. A hand-written description drifts the moment
+    a threshold changes, so it reads the live configuration instead - and these
+    tests check it really did, rather than hard-coding the same numbers twice.
+    """
+
+    def setUp(self):
+        import explain_strategy
+        self.module = explain_strategy
+        self.text = explain_strategy.build()
+
+    def test_the_numbers_come_from_the_live_configuration(self):
+        for value in (app.BUY_THRESHOLD, app.WATCH_THRESHOLD,
+                      app._CFG_MAX_POSITIONS, app._CFG_HOLD_DAYS):
+            self.assertIn(str(value), self.text)
+
+    def test_changing_a_threshold_changes_the_explanation(self):
+        """Proves it is read, not transcribed."""
+        with patch.object(app, 'BUY_THRESHOLD', 91):
+            self.assertIn('91', self.module.build())
+
+    def test_it_says_the_money_is_not_real(self):
+        lowered = self.text.lower()
+        self.assertTrue(any(word in lowered for word in ('fake money', 'practice account')))
+
+    def test_it_states_the_two_things_people_get_wrong(self):
+        lowered = self.text.lower()
+        # That it does not adapt on its own, and that it was never backtested.
+        self.assertIn('nothing changes automatically', lowered)
+        self.assertIn('20%', self.text)
+        self.assertIn('past market data', lowered)
+
+    def test_it_explains_both_halves_of_the_score(self):
+        self.assertIn('60 points', self.text)
+        self.assertIn('40 points', self.text)
+
+    def test_it_avoids_the_jargon_it_is_meant_to_replace(self):
+        """These are the words a non-trader cannot parse."""
+        for jargon in ('ATR', 'RSI', 'MACD', 'R:R', 'drawdown', 'stop-loss',
+                       'reward:risk', 'overbought'):
+            self.assertNotIn(jargon.lower(), self.text.lower(), f'{jargon} leaked in')
+
+    def test_printing_it_sends_nothing(self):
+        with patch.object(self.module.discord, 'send',
+                          side_effect=AssertionError('must not send')),                 patch.object(sys, 'argv', ['explain_strategy.py']),                 redirect_stdout(io.StringIO()):
+            self.assertEqual(self.module.main(), 0)
+
+    def test_send_reports_failure_rather_than_pretending(self):
+        with patch.object(self.module.discord, 'enabled', return_value=True),                 patch.object(self.module.discord, 'send', return_value=False),                 patch.object(self.module.discord, 'last_error', return_value='401'),                 patch.object(sys, 'argv', ['explain_strategy.py', '--send']),                 redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(self.module.main(), 1)
+        self.assertIn('401', out.getvalue())
+
+    def test_it_survives_a_missing_ledger(self):
+        with patch.object(self.module, '_record', return_value=None):
+            self.assertIn('HOW MY TRADING BOT WORKS', self.module.build())
 
 
 if __name__ == '__main__':
