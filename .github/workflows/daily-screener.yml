@@ -18,12 +18,16 @@ on:
     # the same weekday. The earlier ones fall before the 16:15 ET gate in
     # winter and simply reconcile without screening, which is also what is
     # wanted.
-    - cron: '30 20 * * *'   # 16:30 ET in summer / 15:30 ET in winter
-    - cron: '30 21 * * *'   # 17:30 ET in summer / 16:30 ET in winter
-    - cron: '30 22 * * *'   # covers the earliest start actually observed
-    - cron: '30 23 * * *'   # covers the median start
-    - cron: '30 0 * * *'    # covers the worst observed start
-    - cron: '30 1 * * *'    # last chance before the next session
+    # Deliberately odd minutes. Every one of these used to be :30, which after
+    # :00 is the minute most of GitHub asks for - and a scheduled job waits
+    # behind everything else queued at the same instant. Asking at a time few
+    # others do is the one part of the delay that is ours to influence.
+    - cron: '17 20 * * *'   # 16:17 ET in summer / 15:17 ET in winter
+    - cron: '23 21 * * *'   # 17:23 ET in summer / 16:23 ET in winter
+    - cron: '41 22 * * *'   # around the earliest start actually observed
+    - cron: '07 23 * * *'   # around the median start
+    - cron: '53 0 * * *'    # past the worst start observed
+    - cron: '11 1 * * *'    # last chance before the next session
   workflow_dispatch:
     inputs:
       qa_only:
