@@ -124,6 +124,15 @@ def build():
         'behind it, so a winner cannot turn back into a loser. That price only '
         'ever moves up, never down.',
         '',
+        'It will also sell if:',
+        f'- it has held the share {app._CFG_HOLD_DAYS} days and nothing is '
+        'happening',
+        '- the company is about to announce results (too unpredictable)',
+        '- the rise looks exhausted - but only once the trade is already up by '
+        'more than it was risking. It used to sell the moment a share showed '
+        'any profit at all, which meant it kept selling its winners far too '
+        'early. One was sold for a gain of 0.04%.',
+        '',
         '**WHERE THE SAFETY NET ACTUALLY LIVES**',
         'This is the part people assume is riskier than it is. Those two sell '
         'prices are not a note in a file waiting for the program to wake up. '
@@ -131,9 +140,10 @@ def build():
         'orders at Alpaca**, linked so that whichever one triggers cancels the '
         'other.',
         '',
-        'So if a share crashes at 10am, Alpaca sells it at 10am. The program '
-        'only runs once a day, but the protection sits at the broker around '
-        'the clock and does not need the program to be awake or even working.',
+        'So if a share crashes at 10am, Alpaca sells it at 10am. The program is '
+        'only awake for a few minutes a day, but the protection sits at the '
+        'broker the whole time and does not need the program to be running, '
+        'or even working.',
         '',
         '**ALPACA IS THE BOSS, NOT THE PROGRAM**',
         'Every single run, before doing anything else, the program asks Alpaca '
@@ -143,15 +153,6 @@ def build():
         'If the program and the broker ever disagree, the broker wins, every '
         'time. If it cannot get a clear answer from Alpaca, it refuses to trade '
         'at all that day rather than act on numbers it is not sure about.',
-        '',
-        'It will also sell if:',
-        f'- it has held the share {app._CFG_HOLD_DAYS} days and nothing is '
-        'happening',
-        '- the company is about to announce results (too unpredictable)',
-        '- the rise looks exhausted - but only once the trade is already up by '
-        'more than it was risking. It used to sell the moment a share showed '
-        'any profit at all, which meant it kept selling its winners far too '
-        'early. One was sold for a gain of 0.04%.',
         '',
         '**THE RULES IT IS NOT ALLOWED TO BREAK**',
         'These are locked in the code. The AI can make them stricter but can '
