@@ -629,6 +629,94 @@ class PortfolioTests(unittest.TestCase):
         self.assertEqual(pf['closed_trades'][0]['reason'], 'rsi_overbought')
         self.assertEqual(len(self.yf.calls), 1)
 
+    def test_min_exit_profit_is_one_R_derived_from_the_entry_risk(self):
+        """1R = ATR_STOP_MULT x atr_at_entry, as a percentage of entry.
+
+        MTD entered at 1403.28 with atr 33.06 and a stop at 1353.69. The
+        entry-to-stop distance is 49.59, which is exactly 1.5 x atr, so the
+        gate and the stop describe the same risk.
+        """
+        self.app.ATR_STOP_MULT = 1.5
+        self.app._CFG_EXIT_MIN_R = 1.0
+        pos = {'atr_at_entry': 33.06, 'entry_price': 1403.28}
+        self.assertAlmostEqual(
+            engine._min_exit_profit_pct(self.app, pos, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0),
+            49.59 / 1403.28 * 100, places=6)
+
+    def test_min_exit_profit_ignores_a_stop_that_has_ratcheted_up(self):
+        """The trailing stop must not shrink the bar as the trade works.
+
+        Measuring R from the live stop would lower the exit threshold exactly
+        as a position approached the point of being worth holding.
+        """
+        self.app.ATR_STOP_MULT = 1.5
+        self.app._CFG_EXIT_MIN_R = 1.0
+        base = {'atr_at_entry': 4.0, 'entry_price': 100.0, 'stop_price': 94.0}
+        ratcheted = dict(base, stop_price=99.5, high_watermark=105.5)
+        self.assertEqual(
+            engine._min_exit_profit_pct(self.app, base, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0),
+            engine._min_exit_profit_pct(self.app, ratcheted, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0))
+
+    def test_min_exit_profit_falls_back_to_the_flat_percentage(self):
+        """A position predating atr_at_entry still has to work."""
+        self.app._CFG_RSI_EXIT_MIN_PROFIT = 2.5
+        for pos in ({'entry_price': 100.0}, {'atr_at_entry': 0, 'entry_price': 100.0},
+                    {'atr_at_entry': 4.0}, {'atr_at_entry': 'x', 'entry_price': 100.0},
+                    {'atr_at_entry': 4.0, 'entry_price': 0}):
+            with self.subTest(pos=pos):
+                self.assertEqual(
+                    engine._min_exit_profit_pct(self.app, pos, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0),
+                    2.5)
+
+    def test_min_exit_profit_keeps_the_flat_percentage_as_a_floor(self):
+        self.app.ATR_STOP_MULT = 1.5
+        self.app._CFG_EXIT_MIN_R = 1.0
+        self.app._CFG_RSI_EXIT_MIN_PROFIT = 20.0
+        pos = {'atr_at_entry': 1.0, 'entry_price': 100.0}   # 1R is only 1.5%
+        self.assertEqual(
+            engine._min_exit_profit_pct(self.app, pos, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0), 20.0)
+
+    def test_min_exit_profit_of_zero_R_restores_the_old_behaviour(self):
+        self.app.ATR_STOP_MULT = 1.5
+        self.app._CFG_EXIT_MIN_R = 0.0
+        pos = {'atr_at_entry': 33.06, 'entry_price': 1403.28}
+        self.assertEqual(
+            engine._min_exit_profit_pct(self.app, pos, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0), 0.0)
+
+    def rsi_run(self, atr, min_r):
+        """Drive a genuine RSI-overbought exit on a position held at a profit."""
+        self.app._CFG_RSI_EXIT = 78
+        self.app.ATR_STOP_MULT = 1.5
+        self.app._CFG_EXIT_MIN_R = min_r
+        pf = self.new()
+        self.today = '2026-08-20'
+        days = pd.bdate_range(self.today, periods=14)
+        self.open(pf, stop=95, target=140, atr=atr, context={'hold_sessions': 30})
+        self.today = days[-1].date().isoformat()
+        self.yf.frames['ABC'] = bars(days, [(100 + i, 101 + i, 99 + i, 100 + i)
+                                            for i in range(14)])
+        engine.update_portfolio_prices(self.app, pf)
+        return pf
+
+    def test_overbought_alone_no_longer_closes_a_winner_below_one_R(self):
+        """The defect: six of seven winners cut at an average of +3.69%.
+
+        The position is up ~13% on entry price here, but an atr of 12 puts 1R
+        at 18%, so the trade has not yet earned what a losing trade costs.
+        """
+        pf = self.rsi_run(atr=12.0, min_r=1.0)
+        self.assertEqual(pf['closed_trades'], [])
+        self.assertEqual(pf['positions'][0]['ticker'], 'ABC')
+
+    def test_overbought_still_closes_a_winner_that_has_made_its_R(self):
+        pf = self.rsi_run(atr=1.0, min_r=1.0)
+        self.assertEqual(pf['closed_trades'][0]['reason'], 'rsi_overbought')
+
+    def test_the_gate_is_what_holds_it_not_a_broken_rsi_exit(self):
+        """Same bars, same position, gate switched off - it must close."""
+        self.assertEqual(self.rsi_run(atr=12.0, min_r=0.0)['closed_trades'][0]['reason'],
+                         'rsi_overbought')
+
     def test_macd_bearish_cross_is_preserved(self):
         pf = self.new()
         self.app._CFG_MACD_EXIT_MIN_PROFIT = 0

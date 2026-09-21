@@ -280,6 +280,10 @@ _CFG_SECTOR_CONC_LOOKBACK= SECTOR_CONC_LOOKBACK  # rolling window for sector con
 _CFG_SECTOR_CONC_PENALTY = SECTOR_CONC_PENALTY   # confidence docked when over sector limit
 _CFG_CONGRESS_DAYS       = 60    # how many days back to fetch congress trades
 _CFG_SEC_8K_DAYS         = 7     # how many days back to fetch SEC 8-K filings
+_CFG_EXIT_MIN_R          = 1.0   # profit, in multiples of the risk taken at entry, before
+                                 # an indicator exit may close a winner. The stop risks 1R and
+                                 # the target pays 2R, so an exit that fires below 1R cannot
+                                 # pay for the losses the stop takes at full size.
 _CFG_RSI_EXIT            = 78.0  # RSI level that triggers overbought exit (when profitable)
 _CFG_RSI_EXIT_MIN_PROFIT = 0.0   # min unrealized % profit before RSI exit fires (0 = no gate, LLM controls)
 _CFG_MACD_EXIT_MIN_PROFIT= 0.0   # min unrealized % profit before MACD bearish cross exit fires (0 = no gate)
@@ -5155,6 +5159,7 @@ _CONFIG_GLOBALS = {
     'sector_conc_penalty': ('_CFG_SECTOR_CONC_PENALTY',),
     'congress_days': ('_CFG_CONGRESS_DAYS',), 'sec_8k_days': ('_CFG_SEC_8K_DAYS',),
     'rsi_exit': ('_CFG_RSI_EXIT',), 'rsi_exit_min_profit': ('_CFG_RSI_EXIT_MIN_PROFIT',),
+    'exit_min_r': ('_CFG_EXIT_MIN_R',),
     'macd_exit_min_profit': ('_CFG_MACD_EXIT_MIN_PROFIT',),
     'entry_slippage_pct': ('_CFG_ENTRY_SLIPPAGE_PCT',),
     'final_candidates': ('_CFG_FINAL_CANDIDATES',),
@@ -5474,6 +5479,7 @@ Keep unchanged values as-is; do not add unknown keys or invent missing data.
   "sector_conc_penalty": {_CFG_SECTOR_CONC_PENALTY},
   "congress_days": {_CFG_CONGRESS_DAYS},
   "sec_8k_days": {_CFG_SEC_8K_DAYS},
+  "exit_min_r": {_CFG_EXIT_MIN_R},
   "rsi_exit": {_CFG_RSI_EXIT},
   "rsi_exit_min_profit": {_CFG_RSI_EXIT_MIN_PROFIT},
   "macd_exit_min_profit": {_CFG_MACD_EXIT_MIN_PROFIT},

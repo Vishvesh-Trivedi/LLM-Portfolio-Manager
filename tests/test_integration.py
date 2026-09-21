@@ -281,6 +281,31 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(health['failures'], 2)
         self.assertEqual(health['successes'], 0)
 
+    def test_the_live_config_always_satisfies_its_own_contract(self):
+        """Every knob the app exposes must be one the contract knows.
+
+        _current_config() is what load_config_overrides merges an override
+        into before validating. A knob added to _CONFIG_GLOBALS without a
+        matching entry in the contract makes that whole document fail as an
+        "unknown config key", so the next run silently keeps defaults and
+        degrades with invalid_config. Adding exit_min_r did exactly that, and
+        no test noticed, because load_config_overrides only validates when an
+        override file happens to exist.
+        """
+        from screener_contracts import validate_config
+        approved = validate_config(APP._current_config())
+        for key, names in APP._CONFIG_GLOBALS.items():
+            self.assertIn(key, approved, f'{key} is exposed but not validated')
+            for name in names:
+                self.assertIn(name, dir(APP), f'{key} maps to missing global {name}')
+
+    def test_a_config_file_written_by_this_app_loads_back_unchanged(self):
+        before = copy.deepcopy(APP._current_config())
+        Path(APP._CFG_PATH).write_text(json.dumps(before), encoding='utf-8')
+        APP.load_config_overrides()
+        self.assertEqual(APP._current_config(), before)
+        self.assertNotIn('invalid_config', APP._HEALTH.as_dict()['degraded_reasons'])
+
     def test_invalid_configuration_has_no_partial_global_update(self):
         before = copy.deepcopy(APP._current_config())
         Path(APP._CFG_PATH).write_text(json.dumps({'RSI_MIN': 40, 'BUY_THRESHOLD': 99}), encoding='utf-8')

@@ -814,6 +814,39 @@ def _earnings_exit(app, instrument, pos, asof):
     return None
 
 
+def _min_exit_profit_pct(app, pos, flat_attr, flat_default):
+    """Profit an indicator exit must have captured before it may close a winner.
+
+    Measured in R - the per-share risk accepted at entry - so the bar tracks
+    the stock's volatility instead of being one percentage for everything. A
+    $30 stock and a $1,400 stock do not move in the same percentages, and the
+    stop and target already scale with ATR; this makes the exits agree.
+
+    R comes from atr_at_entry, never from the live stop_price: the stop
+    ratchets upward as a position works, so measuring against it would shrink R
+    precisely as the trade neared the point of being worth holding.
+
+    The flat percentage is kept as a floor, and is the whole answer for a
+    position old enough to predate atr_at_entry.
+    """
+    flat = finite_number(getattr(app, flat_attr, flat_default), flat_attr)
+    atr = pos.get('atr_at_entry')
+    entry = pos.get('entry_price')
+    if not atr or not entry:
+        return flat
+    try:
+        atr = finite_number(atr, 'atr_at_entry', minimum=0)
+        entry = _positive(entry, 'entry_price')
+        stop_mult = _positive(getattr(app, 'ATR_STOP_MULT', 1.5), 'atr_stop_mult')
+        multiple = finite_number(getattr(app, '_CFG_EXIT_MIN_R', 1.0),
+                                 'exit_min_r', minimum=0)
+    except ValueError:
+        return flat
+    if atr <= 0:
+        return flat
+    return max(flat, multiple * stop_mult * atr / entry * 100)
+
+
 def _indicator_exit(app, pos, history):
     # No second request, cross-ticker fallback or future bars. Insufficient
     # pre-entry history explicitly disables only the indicators lacking warmup.
@@ -833,13 +866,13 @@ def _indicator_exit(app, pos, history):
         loss = (-delta.clip(upper=0)).ewm(com=13, adjust=False).mean().iloc[-1]
         rsi = 100.0 if loss == 0 and gain > 0 else 50.0 if loss == gain == 0 else 100 - 100 / (1 + gain / loss)
         if (rsi > finite_number(getattr(app, '_CFG_RSI_EXIT', 78.0), 'rsi_exit')
-                and pos['unrealized_pnl_pct'] >= finite_number(
-                    getattr(app, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0), 'rsi_exit_min_profit')):
+                and pos['unrealized_pnl_pct'] >= _min_exit_profit_pct(
+                    app, pos, '_CFG_RSI_EXIT_MIN_PROFIT', 0.0)):
             return 'rsi_overbought'
     if len(closes) < 26:
         note.append('MACD omitted: fewer than 26 same-ticker sessions')
-    elif pos['unrealized_pnl_pct'] >= finite_number(
-            getattr(app, '_CFG_MACD_EXIT_MIN_PROFIT', 0.0), 'macd_exit_min_profit'):
+    elif pos['unrealized_pnl_pct'] >= _min_exit_profit_pct(
+            app, pos, '_CFG_MACD_EXIT_MIN_PROFIT', 0.0):
         macd = closes.ewm(span=12).mean() - closes.ewm(span=26).mean()
         signal = macd.ewm(span=9).mean()
         if macd.iloc[-1] < signal.iloc[-1] and macd.iloc[-2] >= signal.iloc[-2]:

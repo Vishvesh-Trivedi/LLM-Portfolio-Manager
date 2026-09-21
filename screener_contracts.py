@@ -43,7 +43,8 @@ CONFIG_NUMERIC_BOUNDS = MappingProxyType({
     'trail_atr_mult': (1, 4), 'min_catalyst_score': (0, 100),
     'min_adx_buy': (5, 30), 'max_vix': (0, None), 'min_price': (0, None),
     'min_dollar_volume_m': (1, 40), 'sector_conc_max': (1, None),
-    'sample_size': (1, None), 'brokerage_fee': (0, None),
+    'sample_size': (1, None),
+    'brokerage_fee': (0, None),  # accepted for old files; no longer read
     'dd_caution_pct': (-100, 0), 'dd_severe_pct': (-100, 0),
     'dd_critical_pct': (-100, 0), 'win_threshold_pct': (0, None),
     'loss_threshold_pct': (None, 0), 'min_picks_to_learn': (1, None),
@@ -54,6 +55,11 @@ CONFIG_NUMERIC_BOUNDS = MappingProxyType({
     'congress_days': (1, None), 'sec_8k_days': (1, None),
     'rsi_exit': (0, 100), 'rsi_exit_min_profit': (None, None),
     'macd_exit_min_profit': (None, None), 'entry_slippage_pct': (0, None),
+    # Profit an indicator exit must have made, in multiples of the risk taken
+    # at entry. 0 lets it close a winner at any profit, which is what it did
+    # while it was cutting winners at +0.04%. Above 2 it can never fire before
+    # the 2R target, which disables it.
+    'exit_min_r': (0, 5),
     'final_candidates': (1, None), 'pre_earnings_exit_days': (0, None),
     'squeeze_float_pct': (0, None), 'squeeze_days_to_cover': (0, None),
     'volume_min_ratio': (0, None),
