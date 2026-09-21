@@ -137,7 +137,7 @@ def build():
         '- Never put more than 40% into one industry',
         '- Never risk more than 1% of the account on any single trade',
         f'- Never own more than {app._CFG_MAX_POSITIONS} companies at once',
-        '- Always keep some cash spare',
+        f'- Always keep at least ${app._CFG_MIN_CASH_FLOOR:,.0f} in cash',
         '- **If the account ever drops 20% below its best-ever value, stop '
         'buying completely**',
         '- Refuse any trade where the possible gain is not at least 1.5 times '
