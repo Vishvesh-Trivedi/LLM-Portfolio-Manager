@@ -195,6 +195,40 @@ def _degrade(reason):
     _HEALTH.degrade(reason)
 
 
+def _missed_sessions(portfolio, lookback=14, now=None):
+    """Completed trading sessions this ledger never processed, oldest first.
+
+    Walks back over recent calendar days and asks the same gate the screener
+    uses, so weekends and NYSE holidays are excluded by exactly the rule that
+    decides whether a day counts. Today is excluded: it has not been processed
+    yet because the run doing the asking is the one that will process it.
+
+    Nothing before the ledger's first processed session is reported - that is
+    history from before this portfolio existed, not a gap.
+    """
+    from zoneinfo import ZoneInfo
+    processed = {str(day)[:10] for day in portfolio.get('processed_sessions', []) or []}
+    if not processed:
+        return []
+    earliest = min(processed)
+    today = _session_date()
+    missed = []
+    # Injectable so a test can ask about a specific week without replacing the
+    # datetime module, which the NYSE holiday helpers also depend on.
+    now = now or datetime.now(ZoneInfo('America/New_York'))
+    for back in range(1, max(1, int(lookback)) + 1):
+        day = now - timedelta(days=back)
+        stamp = day.strftime('%Y-%m-%d')
+        if stamp >= today or stamp <= earliest or stamp in processed:
+            continue
+        # 17:00 ET is safely past the 16:15 gate, so a '' answer means this was
+        # a real session that closed and should have been screened.
+        if _session_gate(day.replace(hour=17, minute=0, second=0, microsecond=0)):
+            continue
+        missed.append(stamp)
+    return sorted(missed)
+
+
 def _session_date():
     """Current New York calendar date; tests may patch this function explicitly."""
     from zoneinfo import ZoneInfo
@@ -6455,6 +6489,24 @@ def run_screener():
     # Always ask Alpaca what actually happened, then tell the operator.
     global _EXECUTION_EVENTS
     _EXECUTION_EVENTS = sync_with_broker(portfolio)
+
+    # A session that was never screened is invisible otherwise: processed_sessions
+    # is only ever asked whether today is done, never whether a day went missing.
+    skipped = _missed_sessions(portfolio)
+    if skipped:
+        for stamp in skipped:
+            _degrade('session_never_screened:' + stamp)
+        detail = ', '.join(skipped)
+        print(f'  MISSED SESSION(S) never screened: {detail}')
+        _HEALTH.stage('missed_sessions', False, detail)
+        _notify('MISSED TRADING DAY\n'
+                f'- {len(skipped)} session(s) closed without being screened: {detail}\n'
+                '- Most likely the scheduled run never started\n'
+                '- No pick was made and no order was placed on those days\n'
+                '- Your existing positions were not affected',
+                'missed-session')
+    else:
+        _HEALTH.stage('missed_sessions', True, 'no gaps')
     send_execution_alerts(_EXECUTION_EVENTS)
 
     if reason:

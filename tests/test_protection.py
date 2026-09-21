@@ -15,6 +15,8 @@ Two changes, covered here:
 
 import io
 import unittest
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from contextlib import ExitStack, redirect_stdout
 from unittest.mock import patch
 
@@ -185,6 +187,59 @@ class BrokerHoldingsAreAudited(unittest.TestCase):
     def test_nothing_held_means_nothing_to_report(self):
         reasons, _ = self.protect([], {})
         self.assertEqual(reasons, [])
+
+
+class MissedSessionsAreNoticed(unittest.TestCase):
+    """A trading day that was never screened must not vanish quietly.
+
+    processed_sessions is only ever asked whether today is done. When GitHub
+    dropped the whole schedule on 2026-09-18 that session was skipped in
+    silence, and the next run simply moved on to the next day.
+    """
+
+    def setUp(self):
+        from tests.test_messages import app
+        self.app = app
+        self.friday = datetime(2026, 9, 25, 17, tzinfo=ZoneInfo('America/New_York'))
+
+    def missed(self, processed, now=None):
+        with patch.object(self.app, '_session_date', return_value='2026-09-25'):
+            return self.app._missed_sessions({'processed_sessions': processed},
+                                             now=now or self.friday)
+
+    def test_a_weekday_that_was_never_screened_is_reported(self):
+        self.assertEqual(self.missed(['2026-09-21', '2026-09-22']),
+                         ['2026-09-23', '2026-09-24'])
+
+    def test_an_unbroken_run_of_sessions_reports_nothing(self):
+        self.assertEqual(
+            self.missed(['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24']), [])
+
+    def test_a_weekend_is_not_a_gap(self):
+        """Saturday and Sunday were never sessions, so they cannot be missed."""
+        monday = datetime(2026, 9, 21, 17, tzinfo=ZoneInfo('America/New_York'))
+        with patch.object(self.app, '_session_date', return_value='2026-09-21'):
+            self.assertEqual(
+                self.app._missed_sessions({'processed_sessions': ['2026-09-18']},
+                                          now=monday), [])
+
+    def test_a_new_ledger_does_not_report_the_days_before_it_existed(self):
+        self.assertEqual(self.missed([]), [])
+        # Nothing at or before the first processed session is history, not a gap.
+        self.assertEqual(self.missed(['2026-09-24']), [])
+
+    def test_today_is_not_reported_as_missed_by_the_run_processing_it(self):
+        self.assertNotIn('2026-09-25', self.missed(['2026-09-21']))
+
+    def test_a_holiday_is_not_a_gap(self):
+        """2026-09-07 is Labor Day; the Friday before it is a real session."""
+        tuesday = datetime(2026, 9, 8, 17, tzinfo=ZoneInfo('America/New_York'))
+        with patch.object(self.app, '_session_date', return_value='2026-09-08'):
+            gaps = self.app._missed_sessions({'processed_sessions': ['2026-09-04']},
+                                             now=tuesday)
+        self.assertNotIn('2026-09-07', gaps)
+        self.assertNotIn('2026-09-05', gaps)
+        self.assertNotIn('2026-09-06', gaps)
 
 
 if __name__ == '__main__':
