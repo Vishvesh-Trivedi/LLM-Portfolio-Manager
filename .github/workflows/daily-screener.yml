@@ -150,7 +150,21 @@ jobs:
           git add -A -- StockScreener
           if ! git diff --cached --quiet; then
             git commit -m "chore: update validated paper portfolio [skip ci] ($(date -u +'%Y-%m-%d'))"
-            git push
+            # A push that lands while this run was working is rejected as
+            # non-fast-forward, and the run's ledger, health report and console
+            # log are lost with it - which is exactly how run 101's results
+            # were thrown away. Rebase onto whatever arrived and try again.
+            # Only StockScreener/ is touched here, so a rebase cannot conflict
+            # with code changes; retry a few times in case of another push.
+            for attempt in 1 2 3; do
+              if git push; then
+                exit 0
+              fi
+              echo "push rejected (attempt $attempt); rebasing onto origin/main"
+              git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || exit 1
+            done
+            echo "could not publish run state after 3 attempts" >&2
+            exit 1
           fi
       - name: Upload run artifacts
         if: always()
