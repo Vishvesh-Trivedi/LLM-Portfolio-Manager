@@ -61,6 +61,9 @@ def build():
         'money is not real. I am doing this to find out whether the idea works '
         'before ever risking anything.',
         '',
+        'Alpaca charges nothing to buy or sell US shares, so there are no fees '
+        'eating into the results. What you see is what the strategy did.',
+        '',
         '**WHAT IT DOES EACH DAY**',
         'Every weekday, after the US stock market closes, a program wakes up '
         'and does this:',
@@ -93,7 +96,7 @@ def build():
         '- Is the market as a whole up or down today? (10)',
         '- Do professional analysts rate it? (3)',
         '- Are big investors placing unusual bets on it? (2)',
-        '- Are the company's own staff buying their own shares? (2)',
+        "- Are the company's own staff buying their own shares? (2)",
         '',
         '**THEN AN AI HAS THE FINAL SAY**',
         'The arithmetic picks the best handful. Those get handed to an AI, '
@@ -120,6 +123,26 @@ def build():
         '- **If it keeps rising**, the sell-at-a-loss price is dragged up '
         'behind it, so a winner cannot turn back into a loser. That price only '
         'ever moves up, never down.',
+        '',
+        '**WHERE THE SAFETY NET ACTUALLY LIVES**',
+        'This is the part people assume is riskier than it is. Those two sell '
+        'prices are not a note in a file waiting for the program to wake up. '
+        'The moment a share is bought, both are placed as **real standing '
+        'orders at Alpaca**, linked so that whichever one triggers cancels the '
+        'other.',
+        '',
+        'So if a share crashes at 10am, Alpaca sells it at 10am. The program '
+        'only runs once a day, but the protection sits at the broker around '
+        'the clock and does not need the program to be awake or even working.',
+        '',
+        '**ALPACA IS THE BOSS, NOT THE PROGRAM**',
+        'Every single run, before doing anything else, the program asks Alpaca '
+        'what it actually owns and how much cash it actually has - and rewrites '
+        'its own records to match.',
+        '',
+        'If the program and the broker ever disagree, the broker wins, every '
+        'time. If it cannot get a clear answer from Alpaca, it refuses to trade '
+        'at all that day rather than act on numbers it is not sure about.',
         '',
         'It will also sell if:',
         f'- it has held the share {app._CFG_HOLD_DAYS} days and nothing is '

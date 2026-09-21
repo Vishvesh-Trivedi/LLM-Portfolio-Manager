@@ -377,7 +377,15 @@ def is_protective(order):
     A protective sell sits open for the whole life of a position. Counting it as
     a negative share delta makes a fully protected holding look like zero shares
     held, and the desired-state mirror then BUYS the position a second time.
+
+    A BUY is never protection here. This system only ever holds long, so every
+    protective order is a sell; a buy carrying bracket legs is an entry that
+    has not filled yet. Treating it as protection would hide it from
+    open_order_shares_by_symbol, the incoming shares would go uncounted, and
+    the mirror would buy the position twice - the same failure in reverse.
     """
+    if str(order.get('side', '') or '').strip().lower() == 'buy':
+        return False
     if str(order.get('order_class', '') or '').strip().lower() in _PROTECTIVE_CLASSES:
         return True
     if order.get('legs'):
@@ -566,13 +574,20 @@ def _start_trade_updates_stream():
     return True
 
 
-def submit_market_order(symbol, qty, side, ref=''):
+def submit_market_order(symbol, qty, side, ref='', stop_price=None, target_price=None):
     """Submit a market DAY order. Returns the order dict or None.
 
     Submitted after the close, Alpaca accepts the order and queues it for the
     next session open — matching the screener's next-open fill model. ``ref``
     carries the ledger id so the next run can match this order back to the
     record that requested it.
+
+    When a buy supplies both ``stop_price`` and ``target_price`` it is sent as
+    a bracket, so Alpaca attaches the protective legs to the fill itself.
+    Without that the position is unprotected from the moment it fills until the
+    next run attaches protection after the close - for a morning fill, the
+    whole trading day. The levels are derived from the estimated entry and are
+    corrected by protect_positions once the true fill price is known.
     """
     try:
         qty = int(qty)
@@ -584,6 +599,18 @@ def submit_market_order(symbol, qty, side, ref=''):
     body = {'symbol': str(symbol).strip().upper(), 'qty': str(qty),
             'side': side, 'type': 'market', 'time_in_force': 'day',
             'client_order_id': _client_order_id(symbol, side, ref)}
+    if side == 'buy':
+        try:
+            stop = round(float(stop_price), 2)
+            target = round(float(target_price), 2)
+        except (TypeError, ValueError):
+            stop = target = None
+        # A malformed level must not silently downgrade the order to naked; it
+        # is better to send no bracket than one Alpaca will reject outright.
+        if stop is not None and 0 < stop < target:
+            body.update({'order_class': 'bracket',
+                         'take_profit': {'limit_price': _price(target)},
+                         'stop_loss': {'stop_price': _price(stop)}})
     order = _request('POST', _trade_base() + '/v2/orders', body=body)
     if isinstance(order, dict):
         try:

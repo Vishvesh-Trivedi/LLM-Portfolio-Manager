@@ -5651,6 +5651,37 @@ def _ledger_share_map(portfolio):
     return shares
 
 
+def _entry_levels_by_symbol(portfolio):
+    """Stop and target to attach to a buy, as ``{SYMBOL: (stop, target)}``.
+
+    A pending order stores distances against an estimated entry rather than
+    absolute prices, because the real fill price is not known until the market
+    opens. These are the best levels available at submission time; the next run
+    replaces them with ones measured from the actual fill.
+    """
+    levels = {}
+    for order in portfolio.get('pending_orders', []) or []:
+        symbol = str(order.get('ticker', '')).strip().upper()
+        try:
+            entry = float(order['estimated_entry'])
+            stop = round(entry - float(order['stop_distance']), 2)
+            target = round(entry + float(order['target_distance']), 2)
+        except (KeyError, TypeError, ValueError):
+            continue
+        if symbol and 0 < stop < target:
+            levels[symbol] = (stop, target)
+    for position in portfolio.get('positions', []) or []:
+        symbol = str(position.get('ticker', '')).strip().upper()
+        try:
+            stop = round(float(position['stop_price']), 2)
+            target = round(float(position['target_price']), 2)
+        except (KeyError, TypeError, ValueError):
+            continue
+        if symbol and 0 < stop < target:
+            levels.setdefault(symbol, (stop, target))
+    return levels
+
+
 def _ledger_refs_by_symbol(portfolio):
     """Map SYMBOL -> ledger id to stamp on outgoing orders.
 
@@ -5740,10 +5771,18 @@ def protect_positions(portfolio):
         return []
 
     placed = replaced = skipped = 0
+    protected = {symbol for symbol, order in existing.items()
+                 if order.get('stop') is not None or order.get('limit') is not None}
+    # Symbols the loop below has already spoken about, so the broker audit
+    # at the end does not say the same thing a second time.
+    reported = set()
     for position in portfolio.get('positions', []) or []:
         symbol = str(position.get('ticker', '')).strip().upper()
         if not symbol or position.get('exit_requested'):
-            continue  # a market exit is already on its way
+            # A market exit is already on its way, so this one is meant to be
+            # without protection; the broker audit must not call it exposed.
+            reported.add(symbol)
+            continue
         quantity = int(held.get(symbol, 0) or 0)
         if quantity <= 0:
             continue  # nothing at the broker to protect
@@ -5755,7 +5794,7 @@ def protect_positions(portfolio):
             stop = target = 0
         if not 0 < stop < target:
             skipped += 1
-            _degrade('position_unprotected:' + symbol)
+            reported.add(symbol) or _degrade('position_unprotected:' + symbol)
             events.append({'kind': 'unprotected', 'severity': 'warning', 'symbol': symbol,
                            'summary': symbol + ' has no usable stop/target',
                            'broker_shares': quantity})
@@ -5764,8 +5803,9 @@ def protect_positions(portfolio):
         if current and (current.get('qty'), current.get('stop'), current.get('limit')) == (quantity, stop, target):
             continue  # already exactly right
         if current:
+            protected.discard(symbol)
             if not _alpaca.cancel_order(current.get('order_id')):
-                _degrade('protection_stale:' + symbol)
+                reported.add(symbol) or _degrade('protection_stale:' + symbol)
                 events.append({'kind': 'protection_failed', 'severity': 'error', 'symbol': symbol,
                                'summary': 'could not replace the old stop for ' + symbol,
                                'stop': stop, 'target': target})
@@ -5773,7 +5813,7 @@ def protect_positions(portfolio):
         order = _alpaca.submit_protective_oco(symbol, quantity, stop, target,
                                               ref=position.get('trade_id', ''))
         if order is None:
-            _degrade('protection_rejected:' + symbol)
+            reported.add(symbol) or _degrade('protection_rejected:' + symbol)
             events.append({'kind': 'protection_failed', 'severity': 'error', 'symbol': symbol,
                            'summary': 'Alpaca refused the stop/target for ' + symbol,
                            'stop': stop, 'target': target})
@@ -5782,6 +5822,7 @@ def protect_positions(portfolio):
             replaced += 1
         else:
             placed += 1
+        protected.add(symbol)
         events.append({'kind': 'protected', 'severity': 'info', 'symbol': symbol,
                        'summary': symbol + ' protected at the broker',
                        'broker_shares': quantity, 'stop': stop, 'target': target,
@@ -5789,8 +5830,23 @@ def protect_positions(portfolio):
         print(f'  Protection: {symbol} {quantity} sh  stop ${stop:,.2f} / target ${target:,.2f}'
               + (' (replaced)' if current else ''))
 
-    _HEALTH.stage('protection', skipped == 0,
-                  f'{placed} placed, {replaced} moved, {skipped} without levels')
+    # Audit what Alpaca actually holds, not what the ledger thinks it holds.
+    # The loop above can only protect positions the ledger lists; a holding it
+    # has not booked yet is invisible to it and stays naked in silence.
+    naked = sorted(symbol for symbol, shares in held.items()
+                   if int(shares or 0) > 0 and symbol not in protected
+                   and symbol not in reported)
+    for symbol in naked:
+        _degrade('broker_holding_unprotected:' + symbol)
+        events.append({'kind': 'unprotected', 'severity': 'warning', 'symbol': symbol,
+                       'summary': f'{symbol} is held at Alpaca with no stop or target',
+                       'broker_shares': int(held.get(symbol, 0) or 0)})
+        print(f'  Protection: WARNING {symbol} is held at Alpaca with nothing '
+              f'protecting it')
+
+    _HEALTH.stage('protection', skipped == 0 and not naked,
+                  f'{placed} placed, {replaced} moved, {skipped} without levels'
+                  + (f'; UNPROTECTED at broker: {", ".join(naked)}' if naked else ''))
     return events
 
 
@@ -5951,9 +6007,11 @@ def reconcile_broker(portfolio):
             print(f'  Broker: in sync ({len(ledger_shares)} position(s))')
             return
         refs = _ledger_refs_by_symbol(portfolio)
+        levels = _entry_levels_by_symbol(portfolio)
         submitted, failed = 0, 0
         for side, symbol, qty in actions:
             ref = refs.get((side, symbol), '')
+            stop, target = levels.get(symbol, (None, None))
             if side == 'sell' and symbol not in ledger_shares:
                 # A full liquidation carries no client_order_id, so the ledger
                 # id is stamped via an explicit sell order when we know the
@@ -5961,10 +6019,16 @@ def reconcile_broker(portfolio):
                 ok = (_alpaca.submit_market_order(symbol, qty, side, ref=ref) is not None
                       if ref else _alpaca.close_position(symbol) is not None)
             else:
-                ok = _alpaca.submit_market_order(symbol, qty, side, ref=ref) is not None
+                ok = _alpaca.submit_market_order(
+                    symbol, qty, side, ref=ref,
+                    stop_price=stop, target_price=target) is not None
             if ok:
                 submitted += 1
-                print(f'  Broker {side.upper()} {qty} {symbol}: submitted')
+                guarded = (' with stop/target attached'
+                           if side == 'buy' and stop and target else '')
+                if side == 'buy' and not guarded:
+                    _degrade('entry_without_protection:' + symbol)
+                print(f'  Broker {side.upper()} {qty} {symbol}: submitted{guarded}')
             else:
                 failed += 1
                 print(f'  Broker {side.upper()} {qty} {symbol}: FAILED')
