@@ -650,6 +650,33 @@ def submit_protective_oco(symbol, qty, stop_price, limit_price, ref=''):
     return _request('POST', _trade_base() + '/v2/orders', body=body)
 
 
+def await_order_released(order_id, attempts=6, pause=0.75):
+    """Wait until a cancelled order no longer holds its shares.
+
+    Alpaca accepts a cancel immediately but settles it asynchronously. Until it
+    settles, the shares that order reserved are unavailable, and a replacement
+    sell is rejected for insufficient quantity - which leaves the position with
+    no protection at all, the worst of the three outcomes.
+
+    Returns True once the order is gone from the open list, False if it is
+    still there after the allowed attempts.
+    """
+    order_id = str(order_id or '').strip()
+    if not order_id:
+        return True
+    for attempt in range(max(1, int(attempts))):
+        try:
+            still_open = any(str(o.get('id', '')) == order_id
+                             for o in list_orders(status='open', limit=500))
+        except Exception:
+            return False
+        if not still_open:
+            return True
+        if attempt < attempts - 1:
+            time.sleep(pause)
+    return False
+
+
 def protective_orders_by_symbol():
     """Resting protection per symbol: ``{SYMBOL: {order_id, qty, stop, limit}}``."""
     found = {}

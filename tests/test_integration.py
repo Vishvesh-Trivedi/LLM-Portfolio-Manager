@@ -899,10 +899,17 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(health['stages']['final']['detail'], 'unhandled error:OSError')
         self.assertEqual(APP.run_screener()['order_status'], 'QUEUED')
 
-    def test_main_exit_two_after_degraded_reports_and_zero_for_noop(self):
+    def test_a_degraded_run_reports_but_does_not_fail_the_workflow(self):
+        """A degraded run did its job and said what was wrong.
+
+        Exiting non-zero for it made an advisory note look identical to a
+        crash, so every run appeared broken and the red cross stopped
+        carrying information. The degradation is still in run_health.json,
+        in the Discord digest, and printed as a warning annotation.
+        """
         self.pipeline()
         self.bad_stage = 'news'
-        self.assertEqual(APP.main(), 2)
+        self.assertEqual(APP.main(), 0)
         self.report.assert_called_once()
         self.assertTrue(Path(APP.PORTFOLIO_JSON).exists())
         health = json.loads((self.output / 'run_health.json').read_text(encoding='utf-8'))
@@ -913,6 +920,25 @@ class IntegrationTests(unittest.TestCase):
         health = json.loads((self.output / 'run_health.json').read_text(encoding='utf-8'))
         self.assertEqual(health['mode'], 'no_session')
         self.assertIsNone(health['report'])
+
+    def test_a_run_that_reached_no_decision_still_fails_the_workflow(self):
+        """Softening degraded must not soften real breakage.
+
+        A failed critical stage means no decision was reached at all. That is
+        the case the red cross exists for.
+        """
+        self.pipeline()
+        self.bad_stage = 'final'
+        self.assertNotEqual(APP.main(), 0)
+        health = json.loads((self.output / 'run_health.json').read_text(encoding='utf-8'))
+        self.assertEqual(health['status'], 'failed')
+
+    def test_an_unhandled_error_still_fails_the_workflow(self):
+        with patch.object(APP, 'run_screener', side_effect=RuntimeError('boom')):
+            with self.assertRaises(RuntimeError):
+                APP.main()
+        health = json.loads((self.output / 'run_health.json').read_text(encoding='utf-8'))
+        self.assertEqual(health['status'], 'failed')
 
     def test_health_summary_counts_actual_models_and_redacts_secrets(self):
         self.mock('NVIDIA_API_KEY', new='fake-private-key')
@@ -1092,12 +1118,12 @@ class IntegrationTests(unittest.TestCase):
         self.assertNotIn('failure_reason', result)
         self.assertEqual(self.ledger()['processed_sessions'], ['2026-09-11'])
 
-    def test_optional_round2_failure_keeps_exit_two_but_reports_trade_ready(self):
+    def test_optional_round2_failure_still_trades_and_stays_green(self):
         self.pipeline()
         self.bad_stage = 'round2'
         summary = self.output / 'summary.md'
         os.environ['GITHUB_STEP_SUMMARY'] = str(summary)
-        self.assertEqual(APP.main(), 2)
+        self.assertEqual(APP.main(), 0)
         health = json.loads((self.output / 'run_health.json').read_text(encoding='utf-8'))
         self.assertEqual(health['status'], 'degraded')
         self.assertTrue(health['trade_ready'])

@@ -4956,6 +4956,21 @@ def send_weekly_summary(reason='weekly', portfolio=None):
     _notify(msg, _label)
 
 
+_BLOCKER_WORDS = {
+    'protection_rejected': 'a stop order was refused by Alpaca, so no new risk '
+                           'was added until that is sorted',
+    'protection_stale': 'an old stop could not be cancelled, so no new risk '
+                        'was added',
+    'broker_holding_unprotected': 'something is held at Alpaca with no stop',
+    'broker_state_unreadable': 'Alpaca could not be read, so nothing was trusted',
+    'broker_discrepancy': 'the records and Alpaca disagree',
+    'session_never_screened': 'an earlier trading day was never screened',
+    'stale_vix': 'the market volatility reading was out of date',
+    'missing': 'a required check did not run',
+    'failed': 'a required check did not pass',
+}
+
+
 def _digest_today(events):
     """Plain-language lines for what Alpaca actually did this run."""
     lines = []
@@ -5033,6 +5048,9 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                   f'- Total {_usd(total)} ({"up" if pnl >= 0 else "down"} {_usd(pnl)}, '
                   f'{(pnl / start * 100) if start else 0:+.1f}% since start)']
 
+        health = _HEALTH.as_dict()
+        blockers = _trade_readiness()['trade_blockers']
+
         lines += ['', 'NEXT ORDER']
         if closed_reason:
             lines.append(f'- None. US markets were shut ({closed_reason})')
@@ -5045,13 +5063,17 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                              f'{order.get("ticker", "?")}'
                              + (f' at about {_usd(price, True)}' if price else ''))
             lines.append('- Fills when the market next opens')
+        elif blockers:
+            # Say what actually stopped it. Blaming absent market data while
+            # every stage succeeded sent people looking in the wrong place.
+            lines.append('- Nothing ordered, because:')
+            lines += [f'  {_BLOCKER_WORDS.get(str(b).split(":")[0], str(b))}'
+                      for b in blockers[:3]]
         else:
             reason = _why_no_trade(pick or {}, no_pick_reason,
                                    (pick or {}).get('order_reason'), None)
             lines += reason[:3] if reason else ['- Nothing ordered']
 
-        health = _HEALTH.as_dict()
-        blockers = _trade_readiness()['trade_blockers']
         lines += ['', 'STATUS']
         lines.append(f'- Checks: {health.get("status", "?")}')
         if blockers:
@@ -5976,8 +5998,19 @@ def protect_positions(portfolio):
                                'summary': 'could not replace the old stop for ' + symbol,
                                'stop': stop, 'target': target})
                 continue
-        order = _alpaca.submit_protective_oco(symbol, quantity, stop, target,
-                                              ref=position.get('trade_id', ''))
+            # The cancel is accepted immediately but settles asynchronously, and
+            # until it does the old order still reserves the shares - so the
+            # replacement is rejected and the position is left with nothing.
+            _alpaca.await_order_released(current.get('order_id'))
+        # Retry rather than leave a holding naked on one transient refusal.
+        order = None
+        for attempt in range(3):
+            order = _alpaca.submit_protective_oco(symbol, quantity, stop, target,
+                                                  ref=position.get('trade_id', ''))
+            if order is not None:
+                break
+            if attempt < 2:
+                time.sleep(1.0)
         if order is None:
             reported.add(symbol) or _degrade('protection_rejected:' + symbol)
             events.append({'kind': 'protection_failed', 'severity': 'error', 'symbol': symbol,
@@ -6579,7 +6612,10 @@ def write_run_health(result=None):
             stream.write('\n' + '\n'.join(lines) + '\n')
     # Surface fail-closed outcomes that previously only reached run_health.json
     # and the Actions summary, where nobody sees them until something is wrong.
-    send_health_alert(health)
+    # The digest already carries the status and the blockers; a second
+    # health embed said the same thing again. Kept for explicit callers.
+    if not _CAPTURE_EVENTS[0]:
+        send_health_alert(health)
     return health
 
 
@@ -6998,6 +7034,20 @@ def run_screener():
 
 
 def main():
+    """Exit 0 when the run completed, 1 when it could not.
+
+    A degraded run is not a failed one. It reconciled with Alpaca, protected
+    what it holds, reported what it found and said what was wrong - it simply
+    had something to flag. Failing the workflow for that made an advisory note
+    ("a holding has no stop yet", "an optional data source was quiet") look
+    exactly like a crash, so the red cross stopped carrying information and
+    every run appeared broken.
+
+    Degradations are not hidden by this: they are in the one Discord message,
+    in run_health.json, and printed here as a GitHub warning annotation. Only
+    a crash, or a failed critical stage that means no decision was reached,
+    turns the run red.
+    """
     result = None
     try:
         result = run_screener()
@@ -7006,8 +7056,20 @@ def main():
         raise
     finally:
         write_run_health(result)
-    # Deliberate skips stay green; degraded normal returns fail only after output.
-    return 0 if _HEALTH.as_dict()['status'] == 'healthy' else 2
+
+    health = _HEALTH.as_dict()
+    status = health['status']
+    if status == 'degraded':
+        notes = '; '.join(health.get('degraded_reasons') or []) or 'see run health'
+        failed = [name for name, stage in health.get('stages', {}).items()
+                  if not stage.get('success')]
+        if failed:
+            notes += ' | stages: ' + ', '.join(failed)
+        print(f'::warning title=Run completed with degradations::{notes[:400]}')
+        print('')
+        print(f'  Completed with degradations (not a failure): {notes[:400]}')
+        return 0
+    return 0 if status == 'healthy' else 1
 
 
 if __name__ == '__main__':

@@ -14,6 +14,8 @@ Two changes, covered here:
 """
 
 import io
+import shutil
+import tempfile
 import unittest
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -240,6 +242,97 @@ class MissedSessionsAreNoticed(unittest.TestCase):
         self.assertNotIn('2026-09-07', gaps)
         self.assertNotIn('2026-09-05', gaps)
         self.assertNotIn('2026-09-06', gaps)
+
+
+class ReplacingProtectionNeverLeavesItNaked(unittest.TestCase):
+    """Run 102: MTD's trailing stop moved up, and MTD ended up with nothing.
+
+    Alpaca accepts a cancel immediately but settles it asynchronously. Until it
+    settles the old order still reserves the shares, so the replacement is
+    rejected for insufficient quantity - and the holding, which had protection
+    a moment earlier, now has none.
+    """
+
+    def setUp(self):
+        from tests.test_messages import app
+        self.app = app
+        self.position = {'trade_id': 't1', 'ticker': 'MTD', 'shares': 18,
+                         'stop_price': 1380.85, 'target_price': 1502.46}
+        # Protection exists, but at the old stop - so it must be replaced.
+        self.existing = {'MTD': {'order_id': 'old-1', 'qty': 18,
+                                 'stop': 1353.69, 'limit': 1502.46}}
+
+    def run_protect(self, submit, released=True, cancelled=True):
+        calls = {'await': [], 'submit': 0}
+
+        def _submit(*args, **kwargs):
+            calls['submit'] += 1
+            return submit(calls['submit'])
+
+        broker = self.app._alpaca
+        with ExitStack() as stack:
+            for name, kw in (
+                ('trading_enabled', {'return_value': True}),
+                ('protective_orders_by_symbol', {'return_value': dict(self.existing)}),
+                ('positions_by_symbol', {'return_value': {'MTD': 18}}),
+                ('cancel_order', {'return_value': cancelled}),
+            ):
+                stack.enter_context(patch.object(broker, name, **kw))
+            stack.enter_context(patch.object(
+                broker, 'await_order_released',
+                side_effect=lambda oid, *a, **k: calls['await'].append(oid) or released))
+            stack.enter_context(patch.object(broker, 'submit_protective_oco',
+                                             side_effect=_submit))
+            stack.enter_context(patch.object(self.app, '_BROKER_SYNC_OK', [True]))
+            stack.enter_context(patch.object(self.app, 'time'))  # no real sleeping
+            degraded = []
+            stack.enter_context(patch.object(self.app, '_degrade',
+                                             side_effect=degraded.append))
+            stack.enter_context(redirect_stdout(io.StringIO()))
+            self.app.protect_positions({'positions': [self.position]})
+        return calls, degraded
+
+    def test_the_cancel_is_confirmed_before_the_replacement_is_sent(self):
+        calls, degraded = self.run_protect(lambda n: {'id': 'new-1'})
+        self.assertEqual(calls['await'], ['old-1'])
+        self.assertEqual(degraded, [])
+
+    def test_a_transient_refusal_is_retried_rather_than_left_naked(self):
+        """One rejection used to mean the position stayed unprotected."""
+        calls, degraded = self.run_protect(
+            lambda n: None if n == 1 else {'id': 'new-1'})
+        self.assertEqual(calls['submit'], 2)
+        self.assertEqual(degraded, [])
+
+    def test_a_persistent_refusal_is_still_reported(self):
+        """Retrying must not hide a real refusal."""
+        calls, degraded = self.run_protect(lambda n: None)
+        self.assertEqual(calls['submit'], 3)
+        self.assertIn('protection_rejected:MTD', degraded)
+
+
+class OneMessagePerRun(unittest.TestCase):
+
+    def setUp(self):
+        from tests.test_messages import app
+        self.app = app
+        # write_run_health writes a file; the import-time temp dir is long gone.
+        self.output = tempfile.mkdtemp(prefix='health-')
+        self.addCleanup(shutil.rmtree, self.output, ignore_errors=True)
+        patcher = patch.object(app, 'DRIVE_FOLDER', self.output)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_the_health_embed_is_not_sent_alongside_the_digest(self):
+        """Run 102 posted the digest and then a health embed saying the same."""
+        with patch.object(self.app, '_CAPTURE_EVENTS', [True]),                 patch.object(self.app, 'send_health_alert') as health,                 redirect_stdout(io.StringIO()):
+            self.app.write_run_health(None)
+        health.assert_not_called()
+
+    def test_an_explicit_caller_outside_a_run_still_gets_it(self):
+        with patch.object(self.app, '_CAPTURE_EVENTS', [False]),                 patch.object(self.app, 'send_health_alert') as health,                 redirect_stdout(io.StringIO()):
+            self.app.write_run_health(None)
+        health.assert_called_once()
 
 
 if __name__ == '__main__':
