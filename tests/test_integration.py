@@ -197,6 +197,8 @@ class IntegrationTests(unittest.TestCase):
         self.advisory = self.mock('analyze_exit_signals', side_effect=lambda *a, **kw: kw['portfolio'])
         self.report = self.mock('save_html_report')
         self.alert = self.mock('send_whatsapp')
+        # A run now posts one digest instead of the two-part daily message.
+        self.digest = self.mock('send_run_digest')
         self.weekly = self.mock('send_weekly_summary')
         self.mock('display_scorecard')
         self.mock('display_result')
@@ -325,11 +327,11 @@ class IntegrationTests(unittest.TestCase):
                                  (datetime(2026, 9, 7, 17), True),
                                  (datetime(2026, 9, 11, 16, 14), False)):
             with self.subTest(instant=instant):
-                before = self.weekly.call_count
+                before = self.digest.call_count
                 Clock.instant = instant.replace(tzinfo=ZoneInfo('America/New_York'))
                 self.assertIsNone(APP.run_screener())
                 self.assertEqual(APP._HEALTH.as_dict()['status'], 'healthy')
-                self.assertEqual(self.weekly.call_count, before + int(summary))
+                self.assertEqual(self.digest.call_count, before + int(summary))
         for mock in (self.monitor, self.probe, self.context, self.download,
                      self.post, self.alert):
             mock.assert_not_called()
@@ -346,7 +348,7 @@ class IntegrationTests(unittest.TestCase):
                    'summary': 'AAA filled', 'shares': 5, 'price': 10.0}]
         with patch.object(APP, 'sync_with_broker', return_value=events) as sync, \
                 patch.object(APP, 'protect_positions', return_value=[]) as protect, \
-                patch.object(APP, 'send_execution_alerts') as alerts:
+                patch.object(APP, 'capture_execution_events') as alerts:
             self.assertIsNone(APP.run_screener())
         sync.assert_called_once()
         # Protection runs on a gated run too: a position must not sit unguarded
@@ -363,8 +365,9 @@ class IntegrationTests(unittest.TestCase):
         # A shut market still reports, and is handed the reconciled ledger:
         # re-pricing it would replay positions against a date that was never a
         # trading session and mark every quote stale.
-        self.weekly.assert_called_once()
-        self.assertIsNotNone(self.weekly.call_args.kwargs.get('portfolio'))
+        self.digest.assert_called_once()
+        self.assertIsNotNone(self.digest.call_args.args[0])
+        self.assertTrue(self.digest.call_args.kwargs.get('closed_reason'))
         self.monitor.assert_not_called()
 
     def test_closed_market_summary_is_sent_once_a_day_not_once_a_cron(self):
@@ -379,13 +382,13 @@ class IntegrationTests(unittest.TestCase):
         with patch.object(APP, 'sync_with_broker', return_value=[]), \
                 patch.object(APP, 'protect_positions', return_value=[]):
             APP.run_screener()
-            self.assertEqual(self.weekly.call_count, 1)
+            self.assertEqual(self.digest.call_count, 1)
             APP.run_screener()
-            self.assertEqual(self.weekly.call_count, 1)
+            self.assertEqual(self.digest.call_count, 1)
             # A new shut day is a new snapshot.
             Clock.instant = datetime(2026, 9, 13, 17, tzinfo=ZoneInfo('America/New_York'))
             APP.run_screener()
-            self.assertEqual(self.weekly.call_count, 2)
+            self.assertEqual(self.digest.call_count, 2)
 
     def test_already_processed_session_still_reconciles_the_broker(self):
         self.pipeline()
@@ -434,7 +437,9 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(self.queue.call_count, 1)
         self.immediate.assert_not_called()
         self.assertFalse(self.report.call_args.kwargs['position_opened'])
-        self.assertFalse(self.alert.call_args.kwargs['position_opened'])
+        # Exactly one message for the whole run, carrying the ledger it describes.
+        self.digest.assert_called_once()
+        self.assertEqual(self.digest.call_args.args[0]['pending_orders'][0]['ticker'], 'AAA')
         order = pf['pending_orders'][0]
         self.assertEqual(order['execution_session'], '2026-09-14')
         self.assertEqual(self.download.call_args.kwargs['period'], APP._HISTORY_PERIOD)

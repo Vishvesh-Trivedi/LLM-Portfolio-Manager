@@ -4675,6 +4675,21 @@ def _why_no_trade(pick, no_pick_reason, order_reason, candidates=None):
     return lines
 
 
+# Events seen during this run, held for the single end-of-run digest rather
+# than posted one card at a time. Off by default so send_execution_alerts keeps
+# its own contract when called directly; run_screener turns it on for itself.
+_RUN_EVENTS = []
+_CAPTURE_EVENTS = [False]
+
+
+def capture_execution_events(events):
+    """Hold events for the digest. Returns them unchanged."""
+    for event in events or []:
+        if event not in _RUN_EVENTS:
+            _RUN_EVENTS.append(event)
+    return events
+
+
 def send_execution_alerts(events):
     """Post what Alpaca actually did with our orders: fills, rejects, drift.
 
@@ -4682,6 +4697,10 @@ def send_execution_alerts(events):
     run could book a position the broker never opened and nobody was told.
     """
     try:
+        capture_execution_events(events)
+        if _CAPTURE_EVENTS[0]:
+            # A run posts one digest at the end instead of a card per event.
+            return False
         events = [e for e in (events or []) if e.get('kind') in _ALERTING_EVENTS]
         if not events or not _discord.enabled():
             return False
@@ -4935,6 +4954,119 @@ def send_weekly_summary(reason='weekly', portfolio=None):
     _label = 'weekly-summary' if reason == 'weekly' else 'closed-summary'
     print(f'  {_label} ({len(msg)} chars):\n{msg}\n')
     _notify(msg, _label)
+
+
+def _digest_today(events):
+    """Plain-language lines for what Alpaca actually did this run."""
+    lines = []
+    for event in events:
+        kind = event.get('kind')
+        symbol = event.get('symbol', '')
+        shares = event.get('shares')
+        price = _num(event.get('price'))
+        if kind == 'fill' and shares and price:
+            lines.append(f'- BOUGHT {int(shares)} {symbol} at {_usd(price, True)} '
+                         f'({_usd(price * int(shares))})')
+        elif kind == 'exit_filled' and shares and price:
+            pnl = _num(event.get('pnl'))
+            made = (f' — {"made" if pnl >= 0 else "lost"} {_usd(pnl)}'
+                    if pnl is not None else '')
+            lines.append(f'- SOLD {int(shares)} {symbol} at {_usd(price, True)}{made}')
+        elif kind == 'protected':
+            stop, target = _num(event.get('stop')), _num(event.get('target'))
+            if stop and target:
+                lines.append(f'- {symbol} protected: sells at {_usd(stop, True)} '
+                             f'or {_usd(target, True)}')
+        elif kind == 'adopted':
+            lines.append(f'- Found {int(shares or 0)} {symbol} at Alpaca and '
+                         f'added it to the records')
+        elif kind == 'unprotected':
+            lines.append(f'- WARNING: {symbol} is held at Alpaca with no stop')
+        elif kind == 'qty_drift':
+            lines.append(f'- {symbol} share count corrected from Alpaca')
+        elif kind == 'expired':
+            lines.append(f'- The {symbol} order expired without filling')
+    return lines
+
+
+def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
+                    target_price=None, no_pick_reason='', closed_reason=''):
+    """Post ONE message covering the whole run. Never raises into the run.
+
+    ``closed_reason`` names why the market was shut, which replaces the
+    decision section - there is no decision to report on a day that never
+    traded, but what Alpaca holds still matters.
+    """
+    try:
+        if not _alerts_configured():
+            return False
+        pf = portfolio or {}
+        positions = pf.get('positions', []) or []
+        pending = pf.get('pending_orders', []) or []
+        cash = float(pf.get('cash', 0) or 0)
+        start = float(pf.get('starting_capital', STARTING_CAPITAL) or STARTING_CAPITAL)
+        invested = sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions)
+        total = cash + invested
+        pnl = total - start
+        live = _alpaca.trading_enabled()
+
+        try:
+            stamp = datetime.strptime(_session_date(), '%Y-%m-%d').strftime('%b %d %Y')
+        except Exception:
+            stamp = datetime.now().strftime('%b %d %Y')
+
+        lines = [f'ALPACA - {stamp}',
+                 ('Live paper account.' if live else 'Simulated only - nothing sent to Alpaca.'),
+                 '', 'WHAT HAPPENED TODAY']
+        today = _digest_today(_RUN_EVENTS)
+        lines += today or ['- Nothing was bought or sold']
+
+        lines += ['', f'WHAT YOU HOLD ({len(positions)})']
+        if positions:
+            for position in sorted(positions, key=lambda p: p.get('unrealized_pnl_pct', 0)):
+                lines += _pos_lines(position)
+        else:
+            lines.append('- Nothing. The whole balance is in cash')
+
+        lines += ['', 'MONEY',
+                  f'- Cash {_usd(cash)}  |  In shares {_usd(invested)}',
+                  f'- Total {_usd(total)} ({"up" if pnl >= 0 else "down"} {_usd(pnl)}, '
+                  f'{(pnl / start * 100) if start else 0:+.1f}% since start)']
+
+        lines += ['', 'NEXT ORDER']
+        if closed_reason:
+            lines.append(f'- None. US markets were shut ({closed_reason})')
+            lines.append('- Your holdings and their sell orders are unchanged'
+                         if positions else '- You are not holding anything')
+        elif pending:
+            for order in pending:
+                price = _num(order.get('estimated_entry'))
+                lines.append(f'- Buy {int(order.get("shares", 0) or 0)} '
+                             f'{order.get("ticker", "?")}'
+                             + (f' at about {_usd(price, True)}' if price else ''))
+            lines.append('- Fills when the market next opens')
+        else:
+            reason = _why_no_trade(pick or {}, no_pick_reason,
+                                   (pick or {}).get('order_reason'), None)
+            lines += reason[:3] if reason else ['- Nothing ordered']
+
+        health = _HEALTH.as_dict()
+        blockers = _trade_readiness()['trade_blockers']
+        lines += ['', 'STATUS']
+        lines.append(f'- Checks: {health.get("status", "?")}')
+        if blockers:
+            lines.append('- Blocked: ' + ', '.join(str(b) for b in blockers[:3]))
+
+        message = '\n'.join(lines)
+        # One message means one message: trim holdings before Discord splits it.
+        while len(message) > 1900 and len(lines) > 12:
+            del lines[-4]
+            message = '\n'.join(lines)
+        print(f'  run-digest ({len(message)} chars):\n{message}\n')
+        return _notify(message, 'run-digest')
+    except Exception as exc:
+        print(f'  Run digest error: {type(exc).__name__}: {exc}')
+        return False
 
 
 def send_whatsapp(pick, ctx, ep, wl, stop_price, target_price, candidates=None, portfolio=None,
@@ -6453,6 +6585,8 @@ def write_run_health(result=None):
 
 def run_screener():
     global _HEALTH, _RUN_MODE, _RUN_REPORT
+    _RUN_EVENTS.clear()
+    _CAPTURE_EVENTS[0] = True
     _HEALTH = RunHealth()
     _RUN_MODE, _RUN_REPORT = 'screening', None
     _ORDER_REASON[0] = ''
@@ -6515,7 +6649,7 @@ def run_screener():
         # is not screening: a position must not sit unguarded until Monday.
         _RUN_MODE = 'no_session'
         _HEALTH.stage('session', True, reason)
-        send_execution_alerts(protect_positions(portfolio))
+        capture_execution_events(protect_positions(portfolio))
         # A closed market should report, not go quiet. 'before 16:15 ET' is
         # excluded: that is a normal weekday wait, and the real summary follows
         # a few hours later. Once per calendar day, because the schedule fires
@@ -6524,7 +6658,7 @@ def run_screener():
             today = _session_date()
             if portfolio.get('last_closed_summary') != today:
                 portfolio['last_closed_summary'] = today
-                send_weekly_summary(reason, portfolio=portfolio)
+                send_run_digest(portfolio, closed_reason=reason)
         save_portfolio(portfolio)
         print(f'  No completed trading session ({reason}); broker state reconciled only')
         return None
@@ -6540,7 +6674,11 @@ def run_screener():
         # and the schedule fires several times a day - so every later attempt
         # re-checks that nothing is sitting at the broker uncovered, even
         # though it will not screen or trade again.
-        send_execution_alerts(protect_positions(portfolio))
+        capture_execution_events(protect_positions(portfolio))
+        # Only speak up when this attempt actually found something; a silent
+        # repeat run must not post a duplicate digest every hour.
+        if _RUN_EVENTS:
+            send_run_digest(portfolio)
         save_portfolio(portfolio)
         return None
     if force_session and cutoff_date in portfolio.get('processed_sessions', []):
@@ -6848,12 +6986,11 @@ def run_screener():
                      stop_price=_stop, target_price=_tgt, portfolio=portfolio, position_opened=_position_opened)
     _RUN_REPORT = os.path.join(DRIVE_FOLDER, 'report_latest.html')
     display_scorecard()
-    send_whatsapp(
-        pick, ctx, ep, wl, _stop, _tgt,
-        candidates=candidates,
-        portfolio=portfolio,
-        position_opened=_position_opened,
-        closed_today=_closed_today,
+    # One message covering both halves of what matters: what the agent did at
+    # Alpaca, and where the Alpaca account now stands. The per-event cards and
+    # the two-part daily message were five to eight posts for the same facts.
+    send_run_digest(
+        portfolio, pick=pick, entry=ep, stop_price=_stop, target_price=_tgt,
         no_pick_reason=result.get('failure_reason', '') if isinstance(result, dict) else ''
     )
 
