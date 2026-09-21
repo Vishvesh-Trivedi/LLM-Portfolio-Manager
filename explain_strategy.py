@@ -93,7 +93,7 @@ def build():
         '- Is the market as a whole up or down today? (10)',
         '- Do professional analysts rate it? (3)',
         '- Are big investors placing unusual bets on it? (2)',
-        '- Are the company’s own staff buying their own shares? (2)',
+        '- Are the company's own staff buying their own shares? (2)',
         '',
         '**THEN AN AI HAS THE FINAL SAY**',
         'The arithmetic picks the best handful. Those get handed to an AI, '
