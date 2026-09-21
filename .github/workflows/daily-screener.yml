@@ -2,14 +2,28 @@ name: Daily Stock Screener
 
 on:
   schedule:
-    # US close is 16:00 ET and the screener gate opens at 16:15 ET, but
-    # GitHub cron is UTC only and cannot follow US daylight saving - so the
-    # close sits at 20:00 UTC in summer and 21:00 UTC in winter. Two entries
-    # cover both halves of the year, each landing 30 minutes after the close.
-    # Whichever fires first processes the session; the other exits immediately
-    # on "already processed", so the duplicate costs nothing.
-    - cron: '30 20 * * *'   # 16:30 ET while US daylight saving is on  (Mar-Nov)
-    - cron: '30 21 * * *'   # 16:30 ET while US standard time is on    (Nov-Mar)
+    # GitHub does not run these when they say. Measured over three weeks, the
+    # 20:30 entry has never started before 22:21 UTC, the median start is
+    # 23:15, the worst was 23:51 - and on 2026-09-18 the schedule was dropped
+    # altogether and the session went unprocessed. A single pair of entries
+    # makes the day's run depend on whether GitHub feels busy.
+    #
+    # So the window is covered rather than aimed at. The first attempt that
+    # actually lands processes the session; every later one finds the date in
+    # processed_sessions and exits as "already processed" within seconds. The
+    # concurrency group below stops two from overlapping. Extra entries
+    # therefore cost almost nothing and remove the single point of failure.
+    #
+    # All six land on the same New York session date: 01:30 UTC is 21:30 ET on
+    # the same weekday. The earlier ones fall before the 16:15 ET gate in
+    # winter and simply reconcile without screening, which is also what is
+    # wanted.
+    - cron: '30 20 * * *'   # 16:30 ET in summer / 15:30 ET in winter
+    - cron: '30 21 * * *'   # 17:30 ET in summer / 16:30 ET in winter
+    - cron: '30 22 * * *'   # covers the earliest start actually observed
+    - cron: '30 23 * * *'   # covers the median start
+    - cron: '30 0 * * *'    # covers the worst observed start
+    - cron: '30 1 * * *'    # last chance before the next session
   workflow_dispatch:
     inputs:
       qa_only:

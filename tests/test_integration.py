@@ -395,6 +395,29 @@ class IntegrationTests(unittest.TestCase):
         sync.assert_called_once()
         self.assertEqual(APP._RUN_MODE, 'already_processed')
 
+    def test_a_repeat_run_rechecks_protection_without_trading_again(self):
+        """The schedule fires six times a day and only one attempt screens.
+
+        Protection is not a one-shot: a fill can land after the run that
+        screened, and a protective order can be rejected. Every later attempt
+        re-checks that nothing sits at the broker uncovered - which is what
+        would have caught GILD holding all day with no stop.
+        """
+        self.pipeline()
+        APP.run_screener()          # the attempt that actually screens
+        for mock in (self.context, self.download, self.post, self.alert):
+            mock.reset_mock()
+        with patch.object(APP, 'sync_with_broker', return_value=[]),                 patch.object(APP, 'protect_positions', return_value=[]) as protect:
+            self.assertIsNone(APP.run_screener())   # a later cron for the same day
+        protect.assert_called_once()
+        self.assertEqual(APP._RUN_MODE, 'already_processed')
+        # Pricing still runs, because a pending order must be able to fill on a
+        # later attempt. What must not happen is screening, market data, or any
+        # LLM call that could produce a second decision for the same session.
+        for mock in (self.context, self.download, self.post):
+            mock.assert_not_called()
+        self.assertEqual(self.ledger()['processed_sessions'], ['2026-09-11'])
+
     def test_healthy_pipeline_queues_and_persists_without_spending_cash(self):
         self.pipeline()
         result = APP.run_screener()

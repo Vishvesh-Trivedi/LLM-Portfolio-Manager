@@ -6483,6 +6483,12 @@ def run_screener():
     if cutoff_date in portfolio.get('processed_sessions', []) and not force_session:
         _RUN_MODE = 'already_processed'
         _HEALTH.stage('session', True, 'already processed')
+        # The session is decided, but protection is not a one-shot. A fill can
+        # land after the run that screened, a protective order can be rejected,
+        # and the schedule fires several times a day - so every later attempt
+        # re-checks that nothing is sitting at the broker uncovered, even
+        # though it will not screen or trade again.
+        send_execution_alerts(protect_positions(portfolio))
         save_portfolio(portfolio)
         return None
     if force_session and cutoff_date in portfolio.get('processed_sessions', []):
