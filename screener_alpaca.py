@@ -612,6 +612,20 @@ def submit_market_order(symbol, qty, side, ref='', stop_price=None, target_price
                          'take_profit': {'limit_price': _price(target)},
                          'stop_loss': {'stop_price': _price(stop)}})
     order = _request('POST', _trade_base() + '/v2/orders', body=body)
+    if order is None and body.get('order_class') == 'bracket':
+        # Alpaca refused the bracket - it is fussier about them than about a
+        # plain order, and the reasons vary with session state. Losing the
+        # trade entirely would be the worse outcome: protect_positions attaches
+        # the same stop and target on this run, and the schedule re-checks
+        # protection several times a day. So fall back to the plain order the
+        # previous version would have sent, loudly.
+        print(f'  Alpaca refused a bracket for {body["symbol"]}; retrying '
+              f'without it. Protection will be attached separately.')
+        for key in ('order_class', 'take_profit', 'stop_loss'):
+            body.pop(key, None)
+        # A fresh id: the refused submission may still have registered the old.
+        body['client_order_id'] = _client_order_id(symbol, side, ref) + '-nb'
+        order = _request('POST', _trade_base() + '/v2/orders', body=body)
     if isinstance(order, dict):
         try:
             _upsert_order_ledger(_order_snapshot(order, 'submit'))

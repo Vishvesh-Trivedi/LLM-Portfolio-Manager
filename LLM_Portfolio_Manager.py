@@ -6032,8 +6032,18 @@ def protect_positions(portfolio):
     # Audit what Alpaca actually holds, not what the ledger thinks it holds.
     # The loop above can only protect positions the ledger lists; a holding it
     # has not booked yet is invisible to it and stays naked in silence.
+    # Ask Alpaca what protection it actually has now, rather than trusting that
+    # every accepted submit became a live order. Alpaca can accept an order and
+    # reject it asynchronously, so a 200 is not proof. One extra read per run
+    # is a cheap price for knowing. If that read fails, fall back to what this
+    # run believes it placed - a stale answer beats no answer.
+    try:
+        confirmed = _alpaca.protective_orders_by_symbol()
+    except Exception:
+        confirmed = None
+    live = set(confirmed) if isinstance(confirmed, dict) else protected
     naked = sorted(symbol for symbol, shares in held.items()
-                   if int(shares or 0) > 0 and symbol not in protected
+                   if int(shares or 0) > 0 and symbol not in live
                    and symbol not in reported)
     for symbol in naked:
         _degrade('broker_holding_unprotected:' + symbol)

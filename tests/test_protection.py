@@ -92,6 +92,39 @@ class EntryCarriesItsProtection(unittest.TestCase):
                 self.assertNotIn('order_class',
                                  self.submit(stop_price=stop, target_price=target))
 
+    def test_a_refused_bracket_falls_back_rather_than_losing_the_trade(self):
+        """Alpaca is fussier about brackets than about plain orders.
+
+        Losing the buy entirely is the worse outcome: protect_positions
+        attaches the same stop and target on this run, and the schedule
+        re-checks protection several times a day.
+        """
+        bodies = []
+
+        def request(method, url, body=None, **_):
+            bodies.append(dict(body or {}))
+            return None if len(bodies) == 1 else {'id': 'plain-1'}
+
+        with patch.object(alpaca, '_request', side_effect=request),                 patch.object(alpaca, '_start_trade_updates_stream'),                 patch.object(alpaca, '_upsert_order_ledger'):
+            order = alpaca.submit_market_order('GILD', 98, 'buy', ref='r1',
+                                               stop_price=145.73,
+                                               target_price=159.86)
+        self.assertIsNotNone(order, 'the trade must still be placed')
+        self.assertEqual(len(bodies), 2)
+        self.assertEqual(bodies[0].get('order_class'), 'bracket')
+        self.assertNotIn('order_class', bodies[1])
+        self.assertNotIn('stop_loss', bodies[1])
+        # A distinct id: the refused submission may have registered the first.
+        self.assertNotEqual(bodies[0]['client_order_id'],
+                            bodies[1]['client_order_id'])
+
+    def test_a_plain_order_that_is_refused_is_not_retried_forever(self):
+        calls = []
+        with patch.object(alpaca, '_request',
+                          side_effect=lambda *a, **k: calls.append(1)),                 patch.object(alpaca, '_start_trade_updates_stream'),                 patch.object(alpaca, '_upsert_order_ledger'):
+            self.assertIsNone(alpaca.submit_market_order('GILD', 98, 'buy', ref='r'))
+        self.assertEqual(len(calls), 1)
+
     def test_a_sell_never_carries_a_bracket(self):
         body = self.submit(side='sell', stop_price=145.73, target_price=159.86)
         self.assertNotIn('order_class', body)
@@ -138,19 +171,48 @@ class BrokerHoldingsAreAudited(unittest.TestCase):
         from tests.test_messages import app
         self.app = app
 
-    def protect(self, ledger_positions, held, existing=None):
+    def protect(self, ledger_positions, held, existing=None, accepts=True):
+        """Run protect_positions against a broker that remembers what it took.
+
+        protect_positions refuses to act unless trading is on and the ledger
+        has been reconciled: a stop derived from a ledger known to be wrong
+        could sell at the wrong level.
+
+        The fake records what it accepts, because a static {} for
+        protective_orders_by_symbol makes the confirmation read at the end see
+        nothing - every holding then looks naked however well the run went, and
+        the test measures the mock rather than the code.
+        """
         events = []
-        # protect_positions refuses to act unless trading is on and the
-        # ledger has been reconciled: a stop derived from a ledger known to
-        # be wrong could sell at the wrong level.
+        at_broker = dict(existing or {})
+
+        def _submit(symbol, qty, stop, limit, ref=''):
+            if accepts is False:
+                return None
+            if accepts == 'drops':
+                # Alpaca answered 200 and then dropped the order, which is a
+                # real behaviour and indistinguishable from success at the
+                # point of submission.
+                return {'id': 'p-' + symbol}
+            at_broker[symbol] = {'order_id': 'p-' + symbol, 'qty': qty,
+                                 'stop': stop, 'limit': limit}
+            return {'id': 'p-' + symbol}
+
+        def _cancel(order_id):
+            for symbol, order in list(at_broker.items()):
+                if order.get('order_id') == order_id:
+                    del at_broker[symbol]
+            return True
+
         broker = self.app._alpaca
         with ExitStack() as stack:
             for target, kwargs in (
                 ('trading_enabled', {'return_value': True}),
-                ('protective_orders_by_symbol', {'return_value': dict(existing or {})}),
+                ('protective_orders_by_symbol', {'side_effect': lambda: dict(at_broker)}),
                 ('positions_by_symbol', {'return_value': held}),
-                ('submit_protective_oco', {'return_value': {'id': 'p1'}}),
-                ('cancel_order', {'return_value': True}),
+                ('submit_protective_oco', {'side_effect': _submit}),
+                ('cancel_order', {'side_effect': _cancel}),
+                ('await_order_released', {'return_value': True}),
             ):
                 stack.enter_context(patch.object(broker, target, **kwargs))
             stack.enter_context(patch.object(self.app, '_BROKER_SYNC_OK', [True]))
@@ -173,6 +235,29 @@ class BrokerHoldingsAreAudited(unittest.TestCase):
         success, detail = stage.call_args.args[1], stage.call_args.args[2]
         self.assertFalse(success)
         self.assertIn('GILD', detail)
+
+    def test_protection_accepted_then_rejected_by_alpaca_is_caught(self):
+        """A 200 from Alpaca is not proof the order lived.
+
+        The run believed it had protected the position; only the confirmation
+        read notices that it had not.
+        """
+        reasons, _ = self.protect(
+            [{'ticker': 'MTD', 'stop_price': 1353.69, 'target_price': 1502.46}],
+            {'MTD': 18}, accepts=False)
+        self.assertTrue(any('MTD' in reason for reason in reasons), reasons)
+
+    def test_an_order_accepted_then_dropped_by_alpaca_is_still_caught(self):
+        """This is why the run re-reads instead of trusting its own submits.
+
+        Alpaca answers 200 and the order never lives. Believing the submit
+        leaves the position unprotected and the run reporting success.
+        """
+        reasons, events = self.protect(
+            [{'ticker': 'MTD', 'stop_price': 1353.69, 'target_price': 1502.46}],
+            {'MTD': 18}, accepts='drops')
+        self.assertIn('broker_holding_unprotected:MTD', reasons)
+        self.assertTrue(any(e['kind'] == 'unprotected' for e in events))
 
     def test_a_holding_that_is_already_protected_is_not_reported(self):
         reasons, _ = self.protect(

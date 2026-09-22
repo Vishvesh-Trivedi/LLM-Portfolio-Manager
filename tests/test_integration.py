@@ -1380,20 +1380,30 @@ class IntegrationTests(unittest.TestCase):
         """Run protect_positions against a fake broker; return (events, calls)."""
         APP._BROKER_SYNC_OK[0] = True
         calls = []
+        # The fake records what it accepts. protect_positions re-reads Alpaca at
+        # the end to confirm protection really exists, so a broker that forgets
+        # makes every holding look naked no matter how well the run went.
+        at_broker = dict(existing or {})
 
         def _submit(symbol, qty, stop, target, ref=''):
             calls.append(('submit', symbol, qty, stop, target))
-            return None if submit == 'reject' else {'id': 'oco-1'}
+            if submit == 'reject':
+                return None
+            at_broker[symbol] = {'order_id': 'oco-1', 'qty': qty,
+                                 'stop': stop, 'limit': target}
+            return {'id': 'oco-1'}
 
-        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
-                patch.object(APP._alpaca, 'positions_by_symbol',
-                             return_value=held if held is not None else {'MTD': 18}), \
-                patch.object(APP._alpaca, 'protective_orders_by_symbol',
-                             return_value=existing or {}), \
-                patch.object(APP._alpaca, 'submit_protective_oco', side_effect=_submit), \
-                patch.object(APP._alpaca, 'cancel_order',
-                             side_effect=lambda oid: calls.append(('cancel', oid)) or cancel), \
-                redirect_stdout(io.StringIO()):
+        def _cancel(order_id):
+            calls.append(('cancel', order_id))
+            if cancel:
+                for symbol, order in list(at_broker.items()):
+                    if order.get('order_id') == order_id:
+                        del at_broker[symbol]
+            return cancel
+
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True),                 patch.object(APP._alpaca, 'positions_by_symbol',
+                             return_value=held if held is not None else {'MTD': 18}),                 patch.object(APP._alpaca, 'protective_orders_by_symbol',
+                             side_effect=lambda: dict(at_broker)),                 patch.object(APP._alpaca, 'await_order_released', return_value=True),                 patch.object(APP._alpaca, 'submit_protective_oco', side_effect=_submit),                 patch.object(APP._alpaca, 'cancel_order', side_effect=_cancel),                 redirect_stdout(io.StringIO()):
             events = APP.protect_positions({'positions': positions})
         return events, calls
 
