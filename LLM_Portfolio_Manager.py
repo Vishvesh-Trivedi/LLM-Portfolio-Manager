@@ -6825,17 +6825,35 @@ def run_screener():
     all_fundamentals = fetch_all_fundamentals_parallel([t for t in eligible if t in batch_data])
     sector_ranks, sector_perf = compute_sector_ranks(batch_data)
 
-    # Compute sector 1-day returns from batch data and add to ctx
+    # Sector 1-day returns. These are not display-only: they reach the LLM
+    # prompt and compute_tech_score's sector bonus, so a sector that goes
+    # missing scores differently from one that is flat. A bare except made a
+    # defect in this arithmetic indistinguishable from an ETF having no bars,
+    # and neither was ever mentioned.
     sector_1d = {}
+    unavailable = []
     for sector, etf in SECTOR_ETF_MAP.items():
-        df = batch_data.get(etf)
-        if df is not None and len(df) >= 2:
-            try:
-                r1d = round((float(df['Close'].iloc[-1]) - float(df['Close'].iloc[-2])) /
-                             float(df['Close'].iloc[-2]) * 100, 2)
-                sector_1d[sector] = r1d
-            except:
-                pass
+        frame = batch_data.get(etf)
+        if frame is None or len(frame) < 2:
+            unavailable.append(sector)
+            continue
+        try:
+            latest = float(frame['Close'].iloc[-1])
+            previous = float(frame['Close'].iloc[-2])
+        except (KeyError, IndexError, TypeError, ValueError):
+            unavailable.append(sector)
+            continue
+        if not previous:
+            unavailable.append(sector)
+            continue
+        sector_1d[sector] = round((latest - previous) / previous * 100, 2)
+    if unavailable:
+        # Printed, not degraded. A sector ETF without two bars is ordinary -
+        # the point of naming them is that a defect in the arithmetic above
+        # would empty this list in a way somebody can see, where the old bare
+        # except made a bug and a quiet market look identical.
+        print(f'  Sector returns unavailable for {len(unavailable)}: '
+              f'{", ".join(sorted(unavailable))}')
     ctx['sector_1d'] = sector_1d
     top_sectors    = sorted(sector_1d.items(), key=lambda x: x[1], reverse=True)
     if top_sectors:
