@@ -51,6 +51,29 @@ ALPACA_STREAM_UPDATES = os.environ.get('ALPACA_STREAM_UPDATES', '0').strip().low
 _SYMBOLS_PER_REQUEST = 100
 
 
+def to_alpaca_symbol(symbol):
+    """Spell a ticker the way Alpaca does.
+
+    Class shares differ: Yahoo and this app write BRK-B, Alpaca writes BRK.B.
+    Sending the wrong spelling returns 400 for the entire request, taking the
+    other symbols in the batch down with it.
+    """
+    return str(symbol or '').strip().upper().replace('-', '.')
+
+
+def from_alpaca_symbol(symbol, sent=None):
+    """Spell an Alpaca ticker the way this app does.
+
+    ``sent`` maps what was requested back to the original spelling, so only
+    symbols this call actually asked about are rewritten - a dot in some other
+    context is left alone.
+    """
+    key = str(symbol or '').strip().upper()
+    if sent and key in sent:
+        return sent[key]
+    return key
+
+
 def _key():
     return os.environ.get('ALPACA_API_KEY', '').strip()
 
@@ -193,9 +216,15 @@ def daily_bars(symbols, start, end=None, feed=None):
     symbols = list(dict.fromkeys(symbols))
     if not symbols:
         return {}
+    # Ask in Alpaca's spelling, remember the caller's, answer in the caller's.
+    sent = {to_alpaca_symbol(sym): sym for sym in symbols}
+    symbols = list(sent)
     feed = (feed or _feed())
     accumulated = {}
-    for chunk in _chunks(symbols, _SYMBOLS_PER_REQUEST):
+    pending = list(_chunks(symbols, _SYMBOLS_PER_REQUEST))
+    while pending:
+        chunk = pending.pop(0)
+        got_any = False
         page_token = None
         while True:
             params = {'symbols': ','.join(chunk), 'timeframe': '1Day',
@@ -207,9 +236,19 @@ def daily_bars(symbols, start, end=None, feed=None):
                 params['page_token'] = page_token
             data = _get(_DATA_BASE + '/v2/stocks/bars', params)
             if not data:
+                # One unknown ticker makes Alpaca reject the whole request, so
+                # a single delisting or bad spelling costs the bars for every
+                # symbol batched with it. Halve and retry: the bad one ends up
+                # alone and only it is lost.
+                if not got_any and len(chunk) > 1:
+                    middle = len(chunk) // 2
+                    pending[:0] = [chunk[:middle], chunk[middle:]]
+                elif not got_any:
+                    print('  Alpaca has no bars for ' + chunk[0])
                 break
+            got_any = True
             for sym, blist in (data.get('bars') or {}).items():
-                accumulated.setdefault(sym, []).extend(blist)
+                accumulated.setdefault(from_alpaca_symbol(sym, sent), []).extend(blist)
             page_token = data.get('next_page_token')
             if not page_token:
                 break
@@ -607,7 +646,7 @@ def submit_market_order(symbol, qty, side, ref='', stop_price=None, target_price
     if qty <= 0 or side not in ('buy', 'sell'):
         return None
     _start_trade_updates_stream()
-    body = {'symbol': str(symbol).strip().upper(), 'qty': str(qty),
+    body = {'symbol': to_alpaca_symbol(symbol), 'qty': str(qty),
             'side': side, 'type': 'market', 'time_in_force': 'day',
             'client_order_id': _client_order_id(symbol, side, ref)}
     if side == 'buy':
@@ -667,7 +706,7 @@ def submit_protective_oco(symbol, qty, stop_price, limit_price, ref=''):
     if qty <= 0 or not 0 < stop < limit:
         return None
     body = {
-        'symbol': str(symbol).strip().upper(), 'qty': str(qty), 'side': 'sell',
+        'symbol': to_alpaca_symbol(symbol), 'qty': str(qty), 'side': 'sell',
         'type': 'limit', 'time_in_force': 'gtc', 'order_class': 'oco',
         'limit_price': _price(limit),
         'take_profit': {'limit_price': _price(limit)},

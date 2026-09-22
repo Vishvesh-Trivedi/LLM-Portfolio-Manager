@@ -105,6 +105,69 @@ class ProtectiveOrderIdsAreUniquePerSubmission(unittest.TestCase):
         self.assertNotEqual(first, sent['client_order_id'])
 
 
+class AlpacaSpellsClassSharesDifferently(unittest.TestCase):
+    """From the live screening log:
+
+        Alpaca GET HTTP 400: {"message":"invalid symbol: BRK-B"}
+        Alpaca GET HTTP 400: {"message":"invalid symbol: MOG-A"}
+
+    Yahoo and this app write BRK-B; Alpaca writes BRK.B. Symbols are sent a
+    hundred at a time and a rejected request returns nothing, so one unknown
+    ticker cost the bars for the ninety-nine beside it.
+    """
+
+    def bars(self, symbols, reject=(), per_request=100):
+        asked = []
+
+        def fake_get(url, params=None):
+            names = params['symbols'].split(',')
+            asked.append(names)
+            if any(name in reject for name in names):
+                return None
+            return {'bars': {name: [{'t': '2026-09-21T00:00:00Z', 'o': 1, 'h': 2,
+                                     'l': 1, 'c': 2, 'v': 9}] for name in names}}
+
+        with patch.object(alpaca, '_get', side_effect=fake_get),                 patch.object(alpaca, 'data_enabled', return_value=True),                 patch.object(alpaca, '_SYMBOLS_PER_REQUEST', per_request),                 redirect_stdout(io.StringIO()):
+            return alpaca.daily_bars(symbols, '2026-09-01'), asked
+
+    def test_a_class_share_is_sent_in_alpacas_spelling(self):
+        _, asked = self.bars(['BRK-B', 'AAPL'])
+        self.assertEqual(asked[0], ['BRK.B', 'AAPL'])
+
+    def test_the_answer_comes_back_in_this_apps_spelling(self):
+        """Everything downstream keys off the Yahoo spelling."""
+        frames, _ = self.bars(['BRK-B', 'AAPL'])
+        self.assertEqual(sorted(frames), ['AAPL', 'BRK-B'])
+
+    def test_an_order_is_placed_in_alpacas_spelling(self):
+        sent = {}
+        with patch.object(alpaca, '_request',
+                          side_effect=lambda m, u, body=None, **k:
+                              sent.update(body or {}) or {'id': '1'}),                 patch.object(alpaca, '_start_trade_updates_stream'),                 patch.object(alpaca, '_upsert_order_ledger'):
+            alpaca.submit_market_order('BRK-B', 5, 'buy', ref='r1')
+        self.assertEqual(sent['symbol'], 'BRK.B')
+
+    def test_one_unknown_ticker_no_longer_costs_the_whole_batch(self):
+        """A delisting or a typo should cost one symbol, not a hundred."""
+        frames, _ = self.bars(
+            ['AAPL', 'MSFT', 'BAD', 'NVDA', 'AMD', 'INTC', 'CSCO', 'ORCL'],
+            reject=('BAD',), per_request=8)
+        self.assertNotIn('BAD', frames)
+        self.assertEqual(sorted(frames),
+                         ['AAPL', 'AMD', 'CSCO', 'INTC', 'MSFT', 'NVDA', 'ORCL'])
+
+    def test_a_single_bad_symbol_alone_is_simply_dropped(self):
+        frames, asked = self.bars(['BAD'], reject=('BAD',))
+        self.assertEqual(frames, {})
+        self.assertEqual(len(asked), 1, 'must not retry a lone symbol forever')
+
+    def test_a_wholly_rejecting_broker_terminates(self):
+        frames, asked = self.bars(['A', 'B', 'C', 'D'], reject=('A', 'B', 'C', 'D'),
+                                  per_request=4)
+        self.assertEqual(frames, {})
+        self.assertLess(len(asked), 20, 'splitting must not run away')
+
+
 class EntryCarriesItsProtection(unittest.TestCase):
 
     def submit(self, side='buy', **kwargs):
