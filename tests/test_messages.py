@@ -189,6 +189,45 @@ class ClosedMarketSummary(unittest.TestCase):
         self.assertNotIn('FSLR', text)
 
 
+class WhatsAppAllowanceIsSpentOnce(unittest.TestCase):
+    """CallMeBot stops delivering when its allowance runs out.
+
+    The schedule makes six attempts a day so a dropped cron cannot lose the
+    session. Sending all six to WhatsApp exhausts the allowance in a day and
+    the one message that matters never arrives.
+    """
+
+    def digest(self, mode='screening', events=()):
+        sent = []
+        with patch.object(app, 'WHATSAPP_PHONE', 'phone'),                 patch.object(app, 'CALLMEBOT_API_KEY', 'key'),                 patch.object(app, '_RUN_MODE', mode),                 patch.object(app, '_RUN_EVENTS', list(events)),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda t, l='': sent.append('discord') or True),                 patch.object(app, '_wa_send',
+                             lambda t, l='': sent.append('whatsapp') or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(ledger())
+        return sent
+
+    def test_a_repeat_reconciliation_does_not_spend_a_message(self):
+        self.assertNotIn('whatsapp', self.digest(mode='already_processed'))
+
+    def test_discord_still_gets_every_run(self):
+        self.assertIn('discord', self.digest(mode='already_processed'))
+
+    def test_the_run_that_screened_does_spend_one(self):
+        self.assertIn('whatsapp', self.digest(mode='screening'))
+
+    def test_a_repeat_run_where_money_moved_still_spends_one(self):
+        """A fill landing on a later attempt is worth a message."""
+        sent = self.digest(mode='already_processed',
+                           events=[{'kind': 'fill', 'symbol': 'GILD',
+                                    'shares': 98, 'price': 150.44}])
+        self.assertIn('whatsapp', sent)
+
+    def test_a_missed_session_is_carried_in_the_digest_not_sent_separately(self):
+        with patch.object(app, '_MISSED_SESSIONS', ['2026-09-21']),                 patch.object(app, 'WHATSAPP_PHONE', 'phone'),                 patch.object(app, 'CALLMEBOT_API_KEY', 'key'),                 patch.object(app, '_RUN_EVENTS', []),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send', lambda t, l='': True),                 patch.object(app, '_wa_send', lambda t, l='': True),                 redirect_stdout(io.StringIO()) as out:
+            app.send_run_digest(ledger())
+        self.assertIn('2026-09-21', out.getvalue())
+        self.assertIn('without being screened', out.getvalue())
+
+
 class SectorResolution(unittest.TestCase):
     """A bug in our own code must not look like a gap in the data."""
 

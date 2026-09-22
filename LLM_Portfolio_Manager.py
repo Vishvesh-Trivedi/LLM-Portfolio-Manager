@@ -4280,7 +4280,7 @@ def _wa_no_pick(ctx, portfolio, reason='No qualifying candidates today'):
         f'Portfolio: ${total_val:,.0f} ({sign}{total_pct}%) | '
         f'Cash ${cash:,.0f} | {n_open} open position(s)'
     )
-    _notify(msg, label='no-pick')
+    _notify(msg, label='no-pick', whatsapp=False)
 
 
 def _wa_send(text, label=''):
@@ -4586,8 +4586,13 @@ def _alerts_configured():
     return _discord.enabled() or bool(WHATSAPP_PHONE and CALLMEBOT_API_KEY)
 
 
-def _notify(text, label='', discord_text=None):
+def _notify(text, label='', discord_text=None, whatsapp=True):
     """Fan one message out to every configured channel. Never raises.
+
+    ``whatsapp`` is False for anything that is not the day's one summary.
+    CallMeBot allows a limited number of messages and then simply stops, so a
+    secondary alert spends an allowance the summary will need later. Discord
+    has no such limit and still receives everything.
 
     Discord marks its own test messages inside screener_discord; WhatsApp has no
     such choke point, so the banner is applied here for that channel.
@@ -4601,7 +4606,7 @@ def _notify(text, label='', discord_text=None):
             print(f'  Discord {label} error: {type(exc).__name__}')
         _record_alert('discord', ok)
         delivered = ok or delivered
-    if WHATSAPP_PHONE and CALLMEBOT_API_KEY:
+    if whatsapp and WHATSAPP_PHONE and CALLMEBOT_API_KEY:
         try:
             wa_text = ('TEST MESSAGE - not a real trade\n' + text
                        if _discord.test_mode() else text)
@@ -4683,6 +4688,9 @@ def _why_no_trade(pick, no_pick_reason, order_reason, candidates=None):
 # its own contract when called directly; run_screener turns it on for itself.
 _RUN_EVENTS = []
 _CAPTURE_EVENTS = [False]
+# Sessions that closed without being screened, reported inside the digest
+# rather than as a message of their own.
+_MISSED_SESSIONS = []
 
 
 def capture_execution_events(events):
@@ -5038,6 +5046,9 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                  '', 'WHAT HAPPENED TODAY']
         today = _digest_today(_RUN_EVENTS)
         lines += today or ['- Nothing was bought or sold']
+        if _MISSED_SESSIONS:
+            lines.append(f'- NOTE: {", ".join(_MISSED_SESSIONS)} closed without '
+                         'being screened, so no pick was made those days')
 
         lines += ['', f'WHAT YOU HOLD ({len(positions)})']
         if positions:
@@ -5082,13 +5093,23 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
         if blockers:
             lines.append('- Blocked: ' + ', '.join(str(b) for b in blockers[:3]))
 
+        # The schedule makes six attempts a day so a dropped cron cannot
+        # lose the session. Discord can have all six. WhatsApp cannot:
+        # CallMeBot stops delivering once its allowance is spent, so it
+        # gets the run that actually decided something, or one where money
+        # moved - not the repeat reconciliations in between.
+        material = any(event.get('kind') in ('fill', 'exit_filled', 'adopted',
+                                             'unprotected', 'protection_failed')
+                       for event in _RUN_EVENTS)
+        to_whatsapp = bool(material) or _RUN_MODE != 'already_processed'
+
         message = '\n'.join(lines)
         # One message means one message: trim holdings before Discord splits it.
         while len(message) > 1900 and len(lines) > 12:
             del lines[-4]
             message = '\n'.join(lines)
         print(f'  run-digest ({len(message)} chars):\n{message}\n')
-        return _notify(message, 'run-digest')
+        return _notify(message, 'run-digest', whatsapp=to_whatsapp)
     except Exception as exc:
         print(f'  Run digest error: {type(exc).__name__}: {exc}')
         return False
@@ -6690,13 +6711,12 @@ def run_screener():
         detail = ', '.join(skipped)
         print(f'  MISSED SESSION(S) never screened: {detail}')
         _HEALTH.stage('missed_sessions', False, detail)
-        _notify('MISSED TRADING DAY\n'
-                f'- {len(skipped)} session(s) closed without being screened: {detail}\n'
-                '- Most likely the scheduled run never started\n'
-                '- No pick was made and no order was placed on those days\n'
-                '- Your existing positions were not affected',
-                'missed-session')
+        # Carried into the run digest rather than sent on its own: a second
+        # message spends a WhatsApp allowance the daily summary will need,
+        # and CallMeBot stops delivering once that allowance runs out.
+        _MISSED_SESSIONS[:] = skipped
     else:
+        _MISSED_SESSIONS.clear()
         _HEALTH.stage('missed_sessions', True, 'no gaps')
     send_execution_alerts(_EXECUTION_EVENTS)
 
