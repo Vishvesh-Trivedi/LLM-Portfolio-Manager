@@ -681,8 +681,12 @@ def submit_market_order(symbol, qty, side, ref='', stop_price=None, target_price
     if isinstance(order, dict):
         try:
             _upsert_order_ledger(_order_snapshot(order, 'submit'))
-        except Exception:
-            pass
+        except Exception as exc:
+            # The order is placed either way, so this must not raise - but a
+            # silent pass meant a lost order record looked like no record ever
+            # existed, and the next run matches fills against that ledger.
+            print(f'  Alpaca: order placed but not recorded locally: '
+                  f'{type(exc).__name__}')
     return order
 
 
@@ -785,8 +789,13 @@ def cancel_order(order_id):
 
 
 def close_position(symbol):
-    """Liquidate an Alpaca position entirely. Returns the order dict or None."""
-    return _request('DELETE', _trade_base() + '/v2/positions/' + str(symbol).strip().upper())
+    """Liquidate an Alpaca position entirely. Returns the order dict or None.
+
+    The symbol is spelled Alpaca's way, or a class share would 404 here the
+    same way it 400'd on the bars endpoint - and this one sells.
+    """
+    return _request('DELETE', _trade_base() + '/v2/positions/'
+                    + to_alpaca_symbol(symbol))
 
 
 def positions_by_symbol():

@@ -105,6 +105,65 @@ class ProtectiveOrderIdsAreUniquePerSubmission(unittest.TestCase):
         self.assertNotEqual(first, sent['client_order_id'])
 
 
+class RiskLevelsForAnAdoptedHolding(unittest.TestCase):
+    """A holding the screener never planned carries no stop or target.
+
+    Without derived levels mechanical_exit can never fire on it and the
+    position sits unguarded indefinitely - which is how MTD was first found.
+    Deriving nothing is better than inventing a level, so every failure path
+    has to answer (None, None, ...) rather than a guess.
+    """
+
+    def setUp(self):
+        from tests.test_messages import app
+        self.app = app
+
+    def resolve(self, entry, atr=None, frame=object(), indicators=None):
+        indicators = {'atr': atr} if indicators is None else indicators
+        with patch.object(self.app, 'batch_download',
+                          return_value={} if frame is None else {'MTD': frame}),                 patch.object(self.app, 'compute_indicators', return_value=indicators),                 redirect_stdout(io.StringIO()):
+            return self.app._resolve_risk_levels('MTD', entry)
+
+    def test_levels_come_from_the_entry_and_the_stocks_own_atr(self):
+        stop, target, atr = self.resolve(1403.28, atr=33.06)
+        self.assertEqual(atr, 33.06)
+        self.assertEqual(stop, round(1403.28 - 1.5 * 33.06, 2))
+        self.assertEqual(target, round(1403.28 + 3.0 * 33.06, 2))
+        self.assertLess(stop, 1403.28)
+        self.assertGreater(target, 1403.28)
+
+    def test_the_reward_is_twice_the_risk(self):
+        stop, target, _ = self.resolve(100.0, atr=2.0)
+        self.assertAlmostEqual((target - 100.0) / (100.0 - stop), 2.0, places=6)
+
+    def test_no_price_history_invents_nothing(self):
+        self.assertEqual(self.resolve(1403.28, frame=None), (None, None, 0.0))
+
+    def test_no_usable_atr_invents_nothing(self):
+        for bad in (0, None, -1):
+            with self.subTest(atr=bad):
+                self.assertEqual(self.resolve(1403.28, atr=bad), (None, None, 0.0))
+
+    def test_a_nonsense_entry_price_invents_nothing(self):
+        for bad in (0, -5, float('nan'), 'x', None):
+            with self.subTest(entry=bad):
+                self.assertEqual(self.resolve(bad, atr=3.0)[:2], (None, None))
+
+    def test_a_stop_that_would_land_at_or_below_zero_is_refused(self):
+        """A penny stock with a wide ATR must not get a negative stop."""
+        stop, target, atr = self.resolve(2.0, atr=5.0)
+        self.assertIsNone(stop)
+        self.assertIsNone(target)
+        self.assertEqual(atr, 5.0)
+
+    def test_a_broken_indicator_call_is_reported_not_guessed(self):
+        with patch.object(self.app, 'batch_download', return_value={'MTD': object()}),                 patch.object(self.app, 'compute_indicators',
+                             side_effect=RuntimeError('boom')),                 redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(self.app._resolve_risk_levels('MTD', 100.0),
+                             (None, None, 0.0))
+        self.assertIn('cannot derive risk levels', out.getvalue())
+
+
 class AlpacaSpellsClassSharesDifferently(unittest.TestCase):
     """From the live screening log:
 

@@ -6071,10 +6071,15 @@ def protect_positions(portfolio):
                                'summary': 'could not replace the old stop for ' + symbol,
                                'stop': stop, 'target': target})
                 continue
-            # The cancel is accepted immediately but settles asynchronously, and
-            # until it does the old order still reserves the shares - so the
-            # replacement is rejected and the position is left with nothing.
-            _alpaca.await_order_released(current.get('order_id'))
+            # The cancel is accepted immediately but settles asynchronously,
+            # and until it does the old order still reserves the shares - so
+            # the replacement is rejected and the position is left with
+            # nothing. Proceed either way, because the retry below handles a
+            # still-settling cancel, but say so: a cancel that never clears is
+            # a stuck order somebody should look at.
+            if not _alpaca.await_order_released(current.get('order_id')):
+                print(f'  Protection: the old {symbol} order has not cleared '
+                      f'yet; replacing anyway')
         # Retry rather than leave a holding naked on one transient refusal.
         order = None
         for attempt in range(3):
