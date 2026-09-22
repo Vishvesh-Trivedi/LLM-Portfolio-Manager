@@ -16,7 +16,7 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-22 01:10
+   Time:   2026-09-22 01:33
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 901 | ETFs: 26
 =================================================================
@@ -38,10 +38,10 @@ Step 2/8: Market context...
 
 Market context...
   VIX:  14.87 (p7.5) -> LOW (p8 risk-on) (1.1x)
-  QQQ:  $721.45 | BULLISH (+1.62% vs 50MA)
+  QQQ:  $720.7 | BULLISH (+1.62% vs 50MA)
   SPY today: +0.13%
-  10Y yield: 4.96% (-0.76%)  DXY: 100.38 (+0.16%)  Nikkei: +1.38%
-  Futures:  ES=+2.32%  NQ=+4.33%
+  10Y yield: 4.96% (-0.76%)  DXY: 100.43 (+0.21%)  Nikkei: +1.38%
+  Futures:  ES=+2.30%  NQ=+4.25%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca GET HTTP 400: {"message":"invalid symbol: BRK-B"}
@@ -55,43 +55,37 @@ Batch downloading 200 tickers (3 chunked API calls)...
   OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
   RSS feeds active: 14/16 | Headlines: 84
   Fetching news for all 900 stocks (parallel)...
-  News found: 315/900 stocks have news today
-  Fetching fundamentals for all 698 stocks (parallel)...
-  Full fundamentals: 437/698 stocks
+  News found: 310/900 stocks have news today
+  Fetching fundamentals for all 737 stocks (parallel)...
+  Full fundamentals: 437/737 stocks
   Sector ranks - Top 3: ['Technology', 'Consumer Cyclical', 'Healthcare'] | Perf: Technology:+6.0% | Consumer Cyclical:+1.2% | Healthcare:+0.8% | Communication Services:+0.7% | Industrials:+0.7%
   Sector flows: TOP Communication Services +3.5% | BOT Energy -2.9%
 
 Step 4/8: Bidirectional screening...
 
-Phase 2 - Technical screening (726 tickers)...
-  Passed: 7 | Rejected: Price:0 MA:585 Vol:77 RSI:2 Liq:17 ADX:12
+Phase 2 - Technical screening (765 tickers)...
+  Passed: 7 | Rejected: Price:0 MA:617 Vol:84 RSI:2 Liq:17 ADX:12
 
-Phase 3 - News screening all 726 stocks...
-  News rescued: 33 stocks → ['CIEN', 'C', 'COHR', 'CME', 'CRWD', 'CSX', 'CPRT', 'CMI', 'CVS', 'COST']...
+Phase 3 - News screening all 765 stocks...
+  News rescued: 36 stocks → ['CPT', 'CARR', 'CDW', 'C', 'CME', 'CIEN', 'COHR', 'CRH', 'CSX', 'CRWD']...
 
 Phase 4 - Merging candidate pools...
-  Total candidates: 40
-    BOTH (tech+news): 1  TECHNICAL: 6  NEWS: 33
+  Total candidates: 43
+    BOTH (tech+news): 1  TECHNICAL: 6  NEWS: 36
   Earnings risk flags: ['COST']
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'WHR', 'NXPI', 'TSLA', 'MS', 'META']
-  Stream B added: WHR | $32.64 | RSI 32.4
-  Stream B added: NXPI | $232.3 | RSI 51.6
-  Stream B added: TSLA | $375.18 | RSI 58.6
-  Stream B added: MS | $206.11 | RSI 42.1
-  Stream B added: META | $741.29 | RSI 77.7
-  Sector sentiment derived: 9/11 sectors from 43 stocks
-  [ADVISORY ONLY] HOLD [LOW] MTD: Market conditions are stable, with no fresh news and a bullish QQQ trend, suggesting a wait-and-see approach. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] GILD: Price has moved in favor of the thesis, but the current rally may not be fully priced in yet, so holding is recommended to allow for further upside potential. (no ledger changes)
+  Sector sentiment derived: 9/11 sectors from 42 stocks
+  [ADVISORY ONLY] HOLD [LOW] MTD: Current price is near the target, but not exceeded, and the market is relatively stable with a low VIX and bullish QQQ. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] GILD: The stock is holding within expected rally parameters, but lacks a clear catalyst for further upside, so holding is the best course of action at this time. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 44 candidates...
-  Options data: 0/44 | Insider signals: 36/44
+  Fetching options + insider data for 42 candidates...
+  Options data: 39/42 | Insider signals: 0/42
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (44 candidates)...
-  Pre-score top 5: ILMN(80=47T+33N [vader:BULLISH])  IQV(77=45T+32N [vader:BULLISH])  HPE(77=42T+35N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  FTNT(73=44T+29N [vader:BULLISH])
+Phase 5.5 - Computing score breakdown (42 candidates)...
+  Pre-score top 5: ILMN(77=47T+30N [vader:BULLISH])  HPE(77=42T+35N [vader:BULLISH])  IQV(75=45T+30N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  FTNT(71=44T+27N [vader:BULLISH])
   SEC EDGAR 8-K: 1/30 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
@@ -99,40 +93,50 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
     Batch 1/5 
     Batch 2/5 
     Batch 3/5 
+  catalyst_4: NVIDIA parser/validator rejected response: JSONDecodeError: Expecting ':' delimiter: line 1 column 926 (char 925)
+  OpenRouter fallback failed [nvidia/nemotron-3-super-120b-a12b:free]: KeyError: 'choices'
+  OpenRouter fallback failed [z-ai/glm-5.2:free]: HTTPError (HTTP 429)
+  OpenRouter paused for 120s after repeated failures
+  OpenRouter fallback failed [minimax/minimax-m3:free]: HTTPError (HTTP 404)
+  catalyst_4: OpenRouter provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via NVIDIA-retry.
     Batch 4/5 
     Batch 5/5 
-  Catalyst scoring done — 6 auto-dropped, 24 remain
+  Catalyst scoring done — 7 auto-dropped, 23 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (24 candidates, 3 layers)...
-  news: NVIDIA parser/validator rejected response: JSONDecodeError: Invalid \escape: line 1 column 81 (char 80)
-  news: OpenRouter parser/validator rejected response: ValueError: non-object JSON or malformed prefix
-  ↩️  Critical LLM call recovered via NVIDIA-retry.
+Phase 5 - News intelligence (23 candidates, 3 layers)...
   Sentiment: NEUTRAL | Adj: +0
-  24 candidates after news filter
+  23 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (24 candidates)...
-  Pre-score top 5: ILMN(80=47T+33N [vader:BULLISH])  HPE(77=42T+35N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  FTNT(73=44T+29N [vader:BULLISH])  META(73=46T+27N [vader:BULLISH])
+Phase 5.5 - Computing score breakdown (23 candidates)...
+  Pre-score top 5: HPE(77=42T+35N [vader:BULLISH])  ILMN(77=47T+30N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  IQV(75=45T+30N [vader:BULLISH])  FTNT(71=44T+27N [vader:BULLISH])
 
 Step 5.5/8: Applying LLM config criteria...
-  24 candidates after config criteria
+  23 candidates after config criteria
   Self-calibration: 13 prior picks, 54% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (24 candidates)...
-  Round 1/3: Ranking 24 candidates...
-  Round 1 → Top 10: ['ILMN', 'HPE', 'CRWD', 'FTNT', 'META', 'COIN', 'COHR', 'KEYS', 'CIEN', 'QCOM']
+Phase 6 - NVIDIA final scoring (23 candidates)...
+  Round 1/3: Ranking 23 candidates...
+  Round 1 → Top 10: ['HPE', 'ILMN', 'COIN', 'KEYS', 'COHR', 'CIEN', 'FTNT', 'HONA', 'QCOM', 'MSFT']
   Round 2/3: Deep-diving top 10...
-  Round 2 → analyses for ['ILMN', 'HPE', 'CRWD', 'FTNT', 'META', 'COIN', 'COHR', 'KEYS', 'CIEN', 'QCOM']
+  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
+  -> NVIDIA throttled; answered via OpenRouter.
+  Round 2 → analyses for ['KEYS', 'COHR', 'CIEN', 'HPE', 'COIN', 'MSFT', 'QCOM', 'HONA', 'FTNT', 'ILMN']
   Round 3/3: Final deliberation...
-  Final pick: ILMN | pre=80 → 85/100 | BUY | 13 LLM calls this run
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
+  Final pick: HPE | pre=77 → 85/100 | BUY | 13 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=5, wr=60%, HIGH confidence): Stocks with high short-term momentum and low volatility tend to outperform in the next 1-4 weeks.
-│ 2. Rule (n=7, wr=57%, HIGH confidence): Stocks with strong recent performance and potential catalysts tend to continue their upward trend in the next 1-4 weeks.
-│ → History taught me that high short-term momentum and low volatility are key indicators of potential success in the next 1-4 weeks, but also that strong recent performance and potential catalysts are crucial for sustained growth.
+│ 1. Rule (n=10, wr=80%, HIGH confidence): Stocks with strong fundamentals and bullish technicals tend to perform well in the 1-4 week window.
+│ 2. Rule (n=5, wr=70%, HIGH confidence): Stocks with recent earnings beats and strong momentum tend to continue their uptrend.
+│ 3. Rule (n=3, wr=60%, LOW confidence): Stocks with high short interest and unusual call activity tend to experience a short squeeze.
+│ → History suggests that stocks with strong fundamentals and bullish technicals are more likely to perform well in the 1-4 week window, but high short interest and unusual call activity can also lead to a short squeeze.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
 
@@ -140,25 +144,23 @@ Phase 6 - NVIDIA final scoring (24 candidates)...
   TODAY'S PICK  —  Tuesday, Sep 22 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 14.9 (LOW (p8 risk-on))  |  QQQ BULLISH  |  SPY +1.56%
-  Macro:   US markets are experiencing a strong day with the Dow and S&P 500 gaining, while
+  Macro:   The US stock market is experiencing a mix of positive and negative headlines, wi
 ─────────────────────────────────────────────────────────────────
   NO PICK TODAY
   Data/LLM validation incomplete; no new order queued.
 
   WATCH LIST:
-    HPE     74/100  [Technology]  HPE is a watch candidate due to its moderate momentum and potential ca
-    FTNT    73/100  [Technology]  FTNT is a watch candidate due to its strong recent performance and pot
+    COIN    74/100  [Financial Services]  COIN's recent upgrade and strong 16.9% 5-day momentum, accompanied by 
 █████████████████████████████████████████████████████████████████
   Broker: in sync (2 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved HPE | Stop:55.46 Target:74.36
-  OK: Saved FTNT | Stop:165.13 Target:195.51
+  OK: Saved COIN | Stop:181.88 Target:239.34
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 0 evaluated yet | 5 pending
-  WATCH LIST: 0 evaluated yet | 11 pending
+  WATCH LIST: 0 evaluated yet | 12 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
   run-digest (599 chars):
