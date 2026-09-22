@@ -208,6 +208,9 @@ def _missed_sessions(portfolio, lookback=14, now=None):
     """
     from zoneinfo import ZoneInfo
     processed = {str(day)[:10] for day in portfolio.get('processed_sessions', []) or []}
+    # A session a run screened but deliberately left open is not a gap.
+    seen = processed | {str(day)[:10]
+                        for day in portfolio.get('screened_sessions', []) or []}
     if not processed:
         return []
     earliest = min(processed)
@@ -219,7 +222,7 @@ def _missed_sessions(portfolio, lookback=14, now=None):
     for back in range(1, max(1, int(lookback)) + 1):
         day = now - timedelta(days=back)
         stamp = day.strftime('%Y-%m-%d')
-        if stamp >= today or stamp <= earliest or stamp in processed:
+        if stamp >= today or stamp <= earliest or stamp in seen:
             continue
         # 17:00 ET is safely past the 16:15 gate, so a '' answer means this was
         # a real session that closed and should have been screened.
@@ -6479,8 +6482,16 @@ def _persist_session(portfolio, decided=True):
     A deliberate NO PICK is still a decision and still closes the day; only a
     mechanical rejection leaves it open for a later run.
     """
+    session = _session_date()
+    # A day a run actually looked at, whether or not it produced a decision.
+    # processed_sessions cannot answer that question: a blocked run leaves the
+    # session deliberately open, and reading that as "never screened" made the
+    # missed-session alarm fire on a day that had in fact been screened twice.
+    screened = portfolio.setdefault('screened_sessions', [])
+    if session not in screened:
+        screened.append(session)
+        del screened[:-40]
     if _require_core_health() and decided:
-        session = _session_date()
         if session not in portfolio['processed_sessions']:
             portfolio['processed_sessions'].append(session)
     elif not decided:

@@ -310,6 +310,29 @@ class MissedSessionsAreNoticed(unittest.TestCase):
                 self.app._missed_sessions({'processed_sessions': ['2026-09-18']},
                                           now=monday), [])
 
+    def test_a_screened_but_deliberately_open_session_is_not_a_gap(self):
+        """The false alarm the live run produced.
+
+        A blocked run leaves its session out of processed_sessions on purpose,
+        so a later run can retry it. Reading that as "never screened" fired the
+        missed-session alarm on a day that had in fact been screened twice.
+        """
+        with patch.object(self.app, '_session_date', return_value='2026-09-25'):
+            gaps = self.app._missed_sessions(
+                {'processed_sessions': ['2026-09-21', '2026-09-22'],
+                 'screened_sessions': ['2026-09-23', '2026-09-24']},
+                now=self.friday)
+        self.assertEqual(gaps, [])
+
+    def test_a_genuinely_skipped_day_is_still_reported(self):
+        """Forgiving open sessions must not forgive absent ones."""
+        with patch.object(self.app, '_session_date', return_value='2026-09-25'):
+            gaps = self.app._missed_sessions(
+                {'processed_sessions': ['2026-09-21', '2026-09-22'],
+                 'screened_sessions': ['2026-09-23']},
+                now=self.friday)
+        self.assertEqual(gaps, ['2026-09-24'])
+
     def test_a_new_ledger_does_not_report_the_days_before_it_existed(self):
         self.assertEqual(self.missed([]), [])
         # Nothing at or before the first processed session is history, not a gap.
