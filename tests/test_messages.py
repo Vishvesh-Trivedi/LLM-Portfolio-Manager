@@ -228,6 +228,37 @@ class WhatsAppAllowanceIsSpentOnce(unittest.TestCase):
         self.assertIn('without being screened', out.getvalue())
 
 
+class SilenceOnlyWhenNothingHappened(unittest.TestCase):
+    """A weekday before the close is quiet - unless it is not.
+
+    The run that finally placed MTD's stop reported discord: 0 sent,
+    whatsapp: 0 sent. A position went from uncovered to protected and nobody
+    was told until hours later.
+    """
+
+    def test_a_quiet_pre_close_run_stays_quiet(self):
+        self.assertFalse(self._ran_with(events=[]))
+
+    def test_a_pre_close_run_that_placed_a_stop_speaks_up(self):
+        self.assertTrue(self._ran_with(events=[
+            {'kind': 'protected', 'symbol': 'MTD', 'stop': 1380.85,
+             'target': 1502.46, 'severity': 'info'}]))
+
+    def test_a_pre_close_fill_speaks_up(self):
+        self.assertTrue(self._ran_with(events=[
+            {'kind': 'fill', 'symbol': 'GILD', 'shares': 98, 'price': 150.44,
+             'severity': 'info'}]))
+
+    def test_an_uncovered_holding_speaks_up(self):
+        self.assertTrue(self._ran_with(events=[
+            {'kind': 'unprotected', 'symbol': 'MTD', 'severity': 'warning'}]))
+
+    def _ran_with(self, events):
+        """Return whether the pre-close path would send a digest."""
+        with patch.object(app, '_RUN_EVENTS', list(events)):
+            return app._something_happened()
+
+
 class SectorResolution(unittest.TestCase):
     """A bug in our own code must not look like a gap in the data."""
 

@@ -4692,6 +4692,15 @@ _CAPTURE_EVENTS = [False]
 # rather than as a message of their own.
 _MISSED_SESSIONS = []
 
+# Event kinds worth interrupting someone for: money moved, or the risk on a
+# position changed. Anything else is routine reconciliation.
+_MATERIAL_EVENTS = ('fill', 'exit_filled', 'adopted', 'protected',
+                    'unprotected', 'protection_failed', 'expired')
+
+
+def _something_happened():
+    return any(event.get('kind') in _MATERIAL_EVENTS for event in _RUN_EVENTS)
+
 
 def capture_execution_events(events):
     """Hold events for the digest. Returns them unchanged."""
@@ -5098,10 +5107,7 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
         # CallMeBot stops delivering once its allowance is spent, so it
         # gets the run that actually decided something, or one where money
         # moved - not the repeat reconciliations in between.
-        material = any(event.get('kind') in ('fill', 'exit_filled', 'adopted',
-                                             'unprotected', 'protection_failed')
-                       for event in _RUN_EVENTS)
-        to_whatsapp = bool(material) or _RUN_MODE != 'already_processed'
+        to_whatsapp = _something_happened() or _RUN_MODE != 'already_processed'
 
         message = '\n'.join(lines)
         # One message means one message: trim holdings before Discord splits it.
@@ -6736,6 +6742,13 @@ def run_screener():
             if portfolio.get('last_closed_summary') != today:
                 portfolio['last_closed_summary'] = today
                 send_run_digest(portfolio, closed_reason=reason)
+        elif _something_happened():
+            # A weekday before the close is normally quiet: the real summary
+            # follows after 16:15 and repeating it now would spend a message
+            # for nothing. But something did happen - a fill landed, or a
+            # position that was uncovered now has a stop - and staying silent
+            # means the first you hear of it is hours later.
+            send_run_digest(portfolio, closed_reason=reason)
         save_portfolio(portfolio)
         print(f'  No completed trading session ({reason}); broker state reconciled only')
         return None
