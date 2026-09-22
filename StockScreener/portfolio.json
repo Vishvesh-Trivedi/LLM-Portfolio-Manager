@@ -458,6 +458,32 @@
       "filled_avg_price": "",
       "qty": "98",
       "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-09-22T07:47:02.87574289Z",
+      "order_id": "e3a9b7ff-3af6-4585-a2ff-2dd2766f73bb",
+      "client_order_id": "lpm-P-MTD-ca256419351043229cfd6e8ec3d0",
+      "symbol": "MTD",
+      "status": "accepted",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "18",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-09-22T07:47:02.875775779Z",
+      "order_id": "87888d67-371d-4da0-bbae-dbbf1e127765",
+      "client_order_id": "f343f321-d5e3-4b04-8d44-a3df357a4e38",
+      "symbol": "MTD",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "18",
+      "side": "sell"
     }
   ],
   "expired_orders": [

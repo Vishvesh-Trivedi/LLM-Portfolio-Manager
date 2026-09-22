@@ -1,5 +1,5 @@
 {
-  "status": "degraded",
+  "status": "healthy",
   "providers": {},
   "stages": {
     "broker_sync": {
@@ -7,8 +7,8 @@
       "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
-      "success": false,
-      "detail": "2026-09-21"
+      "success": true,
+      "detail": "no gaps"
     },
     "session": {
       "success": true,
@@ -16,17 +16,14 @@
     },
     "protection": {
       "success": true,
-      "detail": "0 placed, 0 moved, 0 without levels"
+      "detail": "1 placed, 0 moved, 0 without levels"
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
+      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
     }
   },
-  "degraded_reasons": [
-    "session_never_screened:2026-09-21",
-    "protection_rejected:MTD"
-  ],
+  "degraded_reasons": [],
   "label": "No successful LLM response",
   "attempts": 0,
   "successes": 0,
@@ -39,9 +36,7 @@
   "trade_blockers": [
     "missing:market_data",
     "missing:catalysts",
-    "missing:final",
-    "session_never_screened:2026-09-21",
-    "protection_rejected:MTD"
+    "missing:final"
   ],
   "order_status": "NO ORDER"
 }

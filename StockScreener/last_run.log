@@ -16,19 +16,11 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-22 07:39
+   Time:   2026-09-22 07:47
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 901 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Broker sync: Cash set from broker: 60082.1 -> 60082.1
-  MISSED SESSION(S) never screened: 2026-09-21
-  Discord missed-session: sent
-  WhatsApp missed-session: sent
-  Alpaca POST HTTP 422: {"code":40010001,"message":"client_order_id must be unique"}
-  Alpaca POST HTTP 422: {"code":40010001,"message":"client_order_id must be unique"}
-  Alpaca POST HTTP 422: {"code":40010001,"message":"client_order_id must be unique"}
+  Protection: MTD 18 sh  stop $1,380.85 / target $1,502.46
   No completed trading session (before 16:15 ET); broker state reconciled only
-::warning title=Run completed with degradations::session_never_screened:2026-09-21; protection_rejected:MTD | stages: missed_sessions
-
-  Completed with degradations (not a failure): session_never_screened:2026-09-21; protection_rejected:MTD | stages: missed_sessions
