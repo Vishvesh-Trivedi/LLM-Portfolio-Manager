@@ -147,16 +147,16 @@ class AtomicTests(unittest.TestCase):
                            (safety.atomic_csv, pd.DataFrame({'ok': [1]}))):
             events = []
 
-            def sync(fd):
+            def sync(fd, _events=events):
                 self.assertGreater(os.fstat(fd).st_size, 0)  # flushed before fsync
-                events.append('fsync')
+                _events.append('fsync')
                 real_fsync(fd)
 
-            def replace(source, target):
-                self.assertEqual(events, ['fsync'])
+            def replace(source, target, _events=events):
+                self.assertEqual(_events, ['fsync'])
                 self.assertEqual(Path(source).parent, self.destination.parent)
                 self.assertNotEqual(Path(source), Path(target))
-                events.append('replace')
+                _events.append('replace')
                 real_replace(source, target)
 
             with patch.object(safety.os, 'fsync', side_effect=sync), \

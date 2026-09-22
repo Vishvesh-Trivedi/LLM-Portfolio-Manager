@@ -281,4 +281,4 @@ def send_embed(title, description, color=0x5865F2, fields=None, footer='',
         return False
 
 
-__all__ = ['enabled', 'test_mode', 'check_access', 'send', 'send_embed', 'API']
+__all__ = ['API', 'check_access', 'enabled', 'send', 'send_embed', 'test_mode']

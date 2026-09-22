@@ -372,7 +372,6 @@ def compute_indicators(df, spy_return_today=0.0):
         p20 = float(cl.iloc[-20]) if len(cl) >= 20 else p
 
         w52_high  = float(cl.rolling(min(252, len(cl))).max().iloc[-1])
-        w52_low   = float(cl.rolling(min(252, len(cl))).min().iloc[-1])
         pct_from_52h = round(((p - w52_high) / w52_high) * 100, 1) if w52_high > 0 else 0.0
 
         prev_cl = cl.shift(1)

@@ -1300,7 +1300,7 @@ class PortfolioTests(unittest.TestCase):
             day = pos['last_evaluated_session']
             self.assertEqual(history.index.max().date().isoformat(), day)
             seen.append(day)
-            return None
+            return
 
         with patch.object(engine, '_indicator_exit', side_effect=indicator), patch.object(
                 engine, '_earnings_exit', return_value=None) as earnings:

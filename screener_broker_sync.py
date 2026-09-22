@@ -420,5 +420,13 @@ def plan_broker_sync(ledger, broker, session):
             'blocked': blocked, 'summary': summary}
 
 
-__all__ = ['plan_broker_sync', 'FILLED', 'PARTIAL', 'DEAD_STATUSES',
-           'WORKING_STATUSES', 'INFO', 'WARN', 'ERROR']
+__all__ = [
+    'DEAD_STATUSES',
+    'ERROR',
+    'FILLED',
+    'INFO',
+    'PARTIAL',
+    'WARN',
+    'WORKING_STATUSES',
+    'plan_broker_sync',
+]

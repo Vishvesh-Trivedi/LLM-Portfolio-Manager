@@ -165,7 +165,6 @@ print(f'   Sample size:     {SAMPLE_SIZE}')
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from openai import OpenAI
 import json
 import os
 import sys
@@ -1243,8 +1242,15 @@ def _fetch_insider_single(ticker):
         recent_filings = r.json().get('filings', {}).get('recent', {})
         forms = recent_filings.get('form', [])
         dates = recent_filings.get('filingDate', [])
+        if len(forms) != len(dates):
+            # Parallel arrays from one response. Different lengths means the
+            # pairing is wrong, not just short, and zip would silently count
+            # filings against the wrong dates.
+            return ticker, 0, 'NEUTRAL'
         cutoff = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
-        form4_count = sum(1 for f, d in zip(forms, dates) if f == '4' and d >= cutoff)
+        # strict=True states the invariant the guard above just established.
+        form4_count = sum(1 for form, date in zip(forms, dates, strict=True)
+                          if form == '4' and date >= cutoff)
         if form4_count >= 3:
             return ticker, form4_count * 5000, 'BUYING'
     except Exception: pass
@@ -1347,7 +1353,7 @@ def fetch_congress_trades(days=60):
                 else:
                     print(f'  Congress trades: all sources unavailable (cache is {cache_age}d old — too stale)')
             else:
-                print(f'  Congress trades: all sources unavailable (no cache)')
+                print('  Congress trades: all sources unavailable (no cache)')
         except Exception as ce:
             print(f'  Congress trades: all sources unavailable ({ce})')
         return {}
@@ -2168,7 +2174,7 @@ def screen_news(batch_data, all_stock_news, technical_passed, ctx):
 
 def merge_candidates(technical_passed, news_rescued, all_stock_news, fundamentals):
     """Merge technical and news pools."""
-    print(f'\nPhase 4 - Merging candidate pools...')
+    print('\nPhase 4 - Merging candidate pools...')
     candidates = []
 
     for t, ind in technical_passed.items():
@@ -2270,7 +2276,6 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
     all_tickers    = [c['ticker'] for c in candidates]
     both_tickers   = [c['ticker'] for c in candidates if c['source'] == 'BOTH']
     news_tickers   = [c['ticker'] for c in candidates if c['source'] in ('NEWS','BOTH')]
-    earnings_risks = [c['ticker'] for c in candidates if c.get('earnings_risk')]
     analyst_lines  = [f'{c["ticker"]}:rating={c["analyst_rating"]},upside={c["upside_pct"]}%' for c in candidates if c.get('analyst_rating') is not None]
     today          = datetime.now().strftime('%B %d %Y')
 
@@ -2559,7 +2564,8 @@ def analyze_exit_signals(ctx, all_stock_news, portfolio=None):
             )
             rec = _llm_json_with_fallback(
                 sys_msg, user_msg, max_tokens=600, read_timeout=45, max_attempts=1,
-                validator=lambda payload: validate_exit(payload, ticker), stage='exit:' + ticker,
+                validator=lambda payload, _for=ticker: validate_exit(payload, _for),
+                stage='exit:' + ticker,
             )
             print(f'  [ADVISORY ONLY] {rec["action"]} [{rec["urgency"]}] {ticker}: '
                   f'{rec["reason"]} (no ledger changes)')
@@ -2854,7 +2860,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     src_note = (f'\nBOTH (strongest): {both_t}' if both_t else '') + (f'\nNEWS-SOURCED: {news_t}' if news_t else '')
 
     # ── ROUND 2: Deep-dive top 10 → bull/bear for each ──────────────────────
-    print(f'  Round 2/3: Deep-diving top 10...')
+    print('  Round 2/3: Deep-diving top 10...')
     top10_candidates = [c for c in candidates if c['ticker'] in top10 and not c.get('auto_drop')]
     compact_deep = [{
         'ticker': c['ticker'], 'sector': c['sector'], 'source': c['source'],
@@ -2914,7 +2920,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         print(f'  Round 2 failed ({_safe_llm_error(e)})')
 
     # ── ROUND 3: Final pick — uses rounds 1+2 + full history + regime ────────
-    print(f'  Round 3/3: Final deliberation...')
+    print('  Round 3/3: Final deliberation...')
     r2_summary = '\n'.join([
         f'  {t}: BULL={a.get("bull","")} | BEAR={a.get("bear","")} | EDGE={a.get("short_term_edge","")}'
         for t, a in r2_analyses.items()
@@ -6298,7 +6304,7 @@ def run_screener():
         if extra:
             print(f'  LLM added tickers: {", ".join(extra)}')
             scan_universe = extra + scan_universe  # LLM picks come first
-    if _CFG_SAMPLE_SIZE < len(scan_universe):
+    if len(scan_universe) > _CFG_SAMPLE_SIZE:
         scan_universe = scan_universe[:_CFG_SAMPLE_SIZE]
 
     print(portfolio_summary_str(portfolio))
@@ -6374,7 +6380,7 @@ def run_screener():
     headlines        = fetch_macro_news()
     all_stock_news   = fetch_all_stock_news_parallel(list(dict.fromkeys(eligible + sorted(held))))
     all_fundamentals = fetch_all_fundamentals_parallel([t for t in eligible if t in batch_data])
-    sector_ranks, sector_perf = compute_sector_ranks(batch_data)
+    sector_ranks, _ = compute_sector_ranks(batch_data)
 
     # Sector 1-day returns. These are not display-only: they reach the LLM
     # prompt and compute_tech_score's sector bonus, so a sector that goes
