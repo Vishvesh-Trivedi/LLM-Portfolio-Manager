@@ -66,12 +66,12 @@ def live_qa():
         ctx = {'vix_level': 18.0, 'vix_percentile': 50.0, 'vix_regime': 'MODERATE',
                'vix_multiplier': 1.0, 'qqq_trend': 'BULLISH', 'qqq_vs_ma50': 1.0,
                'spy_return_today': 0.5, 'qqq_price': 100.0, 'defensive_mode': False}
-        candidates = [dict(ticker=t, sector='Technology', source='TECHNICAL',
-                           rsi=55.0, adx=25.0, momentum_5d=2.0, tech_score=45,
-                           news_score=20, pre_score=65, price=100.0, atr=2.0,
-                           earnings_days_away=40, quote_date=app._session_date(),
-                           short_ratio=2.0, short_pct_float=1.0,
-                           analyst_rating=None, upside_pct=None)
+        candidates = [{'ticker': t, 'sector': 'Technology', 'source': 'TECHNICAL',
+                           'rsi': 55.0, 'adx': 25.0, 'momentum_5d': 2.0, 'tech_score': 45,
+                           'news_score': 20, 'pre_score': 65, 'price': 100.0, 'atr': 2.0,
+                           'earnings_days_away': 40, 'quote_date': app._session_date(),
+                           'short_ratio': 2.0, 'short_pct_float': 1.0,
+                           'analyst_rating': None, 'upside_pct': None}
                       for t in ('AAPL', 'MSFT', 'NVDA', 'AMD', 'ADBE', 'ORCL')]
         headlines = ['SYNTHETIC QA DATA: no verified company news is supplied. Do not invent a catalyst.']
         news = {c['ticker']: headlines for c in candidates}
@@ -300,7 +300,7 @@ def redact_log(source, destination):
     text = re.sub(r'(?i)bearer\s+\S+', 'Bearer [redacted]', text)
     lines = text.splitlines()
     if len(lines) > LOG_TAIL_LINES:
-        lines = [f'(truncated: showing the last {LOG_TAIL_LINES} of {len(lines)} lines)'] + lines[-LOG_TAIL_LINES:]
+        lines = [f'(truncated: showing the last {LOG_TAIL_LINES} of {len(lines)} lines)', *lines[-LOG_TAIL_LINES:]]
     out = Path(destination)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text('\n'.join(lines) + '\n', encoding='utf-8')

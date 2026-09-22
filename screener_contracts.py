@@ -422,8 +422,8 @@ def validate_config(cfg):
         elif key in _CONFIG_LIST_KEYS:
             values = _list(value, key)
             normalized, seen = [], set()
-            for item in values:
-                item = _text(item, key, nonempty=True).strip()
+            for raw_item in values:
+                item = _text(raw_item, key, nonempty=True).strip()
                 if key == 'additional_tickers':
                     item = _ticker(item.upper())
                 _unique(item.casefold(), seen, key)

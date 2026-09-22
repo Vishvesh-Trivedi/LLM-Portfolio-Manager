@@ -3,7 +3,6 @@
 import ast
 import copy
 import inspect
-import json
 import socket
 import tempfile
 import unittest
@@ -254,13 +253,13 @@ class PortfolioTests(unittest.TestCase):
 
     def test_open_rejections_do_not_mutate_portfolio_or_fee_usage(self):
         pf = self.new()
-        base = dict(ticker='ABC', entry_price=100.0, amount_usd=2000.0,
-                    stop=96.0, target=110.0, sector='Technology', atr=1.0)
-        cases = [dict(stop=0), dict(stop=-1), dict(stop=101), dict(target=102),
-                 dict(entry_price=float('nan')), dict(amount_usd=float('inf')),
-                 dict(amount_usd=0), dict(amount_usd=True), dict(entry_price='100'),
-                 dict(atr=-1), dict(atr=float('nan')),
-                 dict(sector='Unknown'), dict(ticker='')]
+        base = {'ticker': 'ABC', 'entry_price': 100.0, 'amount_usd': 2000.0,
+                    'stop': 96.0, 'target': 110.0, 'sector': 'Technology', 'atr': 1.0}
+        cases = [{'stop': 0}, {'stop': -1}, {'stop': 101}, {'target': 102},
+                 {'entry_price': float('nan')}, {'amount_usd': float('inf')},
+                 {'amount_usd': 0}, {'amount_usd': True}, {'entry_price': '100'},
+                 {'atr': -1}, {'atr': float('nan')},
+                 {'sector': 'Unknown'}, {'ticker': ''}]
         for override in cases:
             with self.subTest(override=override):
                 before = copy.deepcopy(pf)
@@ -860,8 +859,8 @@ class PortfolioTests(unittest.TestCase):
         tid = self.open(pf)['trade_id']
         engine.save_portfolio(self.app, pf)
         self.today = '2026-09-11'
-        records = [dict(Trade_ID=tid), dict(Execution_Status='FILLED'),
-                   dict(Signal='NO PICK'), dict(Result='Win')]
+        records = [{'Trade_ID': tid}, {'Execution_Status': 'FILLED'},
+                   {'Signal': 'NO PICK'}, {'Result': 'Win'}]
         rows = [dict({'Date': '2026-09-01', 'Ticker': 'ABC', 'Result': 'Pending'}, **record)
                 for record in records]
         pd.DataFrame(rows).fillna('').to_csv(self.app.PICKS_CSV, index=False)
@@ -1060,8 +1059,8 @@ class PortfolioTests(unittest.TestCase):
         days = pd.bdate_range(end=self.today, periods=31)
         prices = [70 + i for i in range(31)]
         self.today = '2026-09-09'
-        self.yf.frames['ABC'] = bars(list(days) + [pd.Timestamp(self.today)],
-                                    [(p, p + 1, p - 1, p) for p in prices + [101]])
+        self.yf.frames['ABC'] = bars([*list(days), pd.Timestamp(self.today)],
+                                    [(p, p + 1, p - 1, p) for p in [*prices, 101]])
         engine.update_portfolio_prices(self.app, pf)
         trade = pf['closed_trades'][0]
         self.assertEqual(trade['reason'], 'rsi_overbought')

@@ -411,7 +411,7 @@ _NVIDIA_ACTIVE_MODEL = [NVIDIA_MODEL]
 def _build_model_rotation():
     """Primary model first, then unique fallbacks in deterministic order."""
     ordered = []
-    for m in [NVIDIA_MODEL] + _NVIDIA_FALLBACK_MODELS:
+    for m in [NVIDIA_MODEL, *_NVIDIA_FALLBACK_MODELS]:
         if m and m not in ordered:
             ordered.append(m)
     return ordered
@@ -781,7 +781,7 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
         return ''
     _reconcile_openrouter_once()
     models = []
-    for m in [_OPENROUTER_ACTIVE[0]] + _OPENROUTER_MODELS:
+    for m in [_OPENROUTER_ACTIVE[0], *_OPENROUTER_MODELS]:
         if isinstance(m, str) and m.endswith(':free') and m not in models:
             models.append(m)
     for m in models[:3]:
@@ -1006,9 +1006,8 @@ def _close_truncated_json(text):
         elif ch == '}':
             if stack and stack[-1] == '{':
                 stack.pop()
-        elif ch == ']':
-            if stack and stack[-1] == '[':
-                stack.pop()
+        elif ch == ']' and stack and stack[-1] == '[':
+            stack.pop()
     t = text
     if in_str:
         t += '"'
@@ -1143,12 +1142,13 @@ def _llm_json_with_fallback(system, user, max_tokens=4000, read_timeout=90, max_
 
 # The deterministic scoring layer lives in its own module: it reads no state
 # from here and calls nothing here, which is what made it safe to move.
-from screener_scoring import (  # noqa: E402
+from screener_scoring import (
     _clean_ohlcv, compute_indicators, compute_news_score,
     compute_tech_score, compute_vader_sentiment, enrich_with_scores,
     has_significant_news, RESCUE_TIER1, RESCUE_TIER2_CONTEXT,
     RESCUE_TIER2_REACTION, _VADER,
 )
+import contextlib
 
 # Re-exported deliberately. Callers and tests reach these through this module,
 # so they must keep resolving here even though the code above no longer uses
@@ -1177,7 +1177,7 @@ def _fetch_options_single(ticker):
         elif pc < 0.7:    label = 'BULLISH'
         elif pc > 1.3:    label = 'BEARISH'
         else:             label = 'NEUTRAL'
-        # Unusual call activity: any strike where volume > 3× open interest (smart money positioning)
+        # Unusual call activity: any strike where volume > 3x open interest (smart money positioning)
         unusual_calls = False
         try:
             calls = opt.calls.copy()
@@ -2244,7 +2244,7 @@ def get_news_intelligence(candidates, ctx, headlines, sector_news, all_stock_new
     """3-layer news intelligence via LLM."""
     print(f'\nPhase 5 - News intelligence ({len(candidates)} candidates, 3 layers)...')
 
-    sectors_in_pool  = list(set([c['sector'] for c in candidates if c['sector'] != 'Unknown']))
+    sectors_in_pool  = list({c['sector'] for c in candidates if c['sector'] != 'Unknown'})
     macro_text       = '\n'.join(headlines[:20])
     sector_text      = '\n'.join([
         f'[{sec}] {v["sentiment"]} avg_news={v["avg_news"]} mom={v["avg_mom"]:+.2f}% tickers={",".join(v["tickers"][:3])}'
@@ -2600,7 +2600,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
     print(f'\nPhase 6 - NVIDIA final scoring ({len(candidates)} candidates)...')
 
     if len(candidates) > _CFG_FINAL_CANDIDATES:
-        my_set = set(t.upper() for t in MY_STOCKS)
+        my_set = {t.upper() for t in MY_STOCKS}
         priority = [c for c in candidates if c['ticker'].upper() in my_set]
         rest     = [c for c in candidates if c['ticker'].upper() not in my_set]
         rest_sorted = sorted(rest, key=lambda x: x.get('pre_score',0), reverse=True)
@@ -2698,8 +2698,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
             reg_wr = round(reg_wins / len(picks) * 100) if picks else 0
             r30_vals = []
             for p in picks:
-                try: r30_vals.append(float(p['net_realized_pct']))
-                except Exception: pass
+                with contextlib.suppress(Exception): r30_vals.append(float(p['net_realized_pct']))
             avg_ret = f'{sum(r30_vals)/len(r30_vals):+.1f}%' if r30_vals else '?'
             marker = ' ← TODAY\'S REGIME' if reg == curr_regime else ''
             regime_lines += f'\n  REGIME: {reg} | {len(picks)} picks | {reg_wr}% win rate | avg net realized return: {avg_ret}{marker}\n'
@@ -2723,7 +2722,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
         )
 
     hard_note = ('\nHARD CAPS APPLIED:\n' + '\n'.join([f'{t}: {" ".join(fs)}' for t,fs in hard_rule_flags.items()]) + '\nRSI_CAP=max 70 | ANALYST_CAP=max 65\n') if hard_rule_flags else ''
-    my_set = set(t.upper() for t in MY_STOCKS)
+    my_set = {t.upper() for t in MY_STOCKS}
     priority_present = [c['ticker'] for c in candidates if c['ticker'].upper() in my_set]
     priority_note = f'\nUSER PRIORITY STOCKS (always evaluate these, even if scores are modest): {priority_present}\n' if priority_present else ''
 
@@ -3029,7 +3028,7 @@ PICK_COLS = [
     'Close_Date','Close_Price','Close_Reason',
     'Return_Pct','vs_QQQ_10d','Result'
 ]
-WATCH_COLS = PICK_COLS + ['Watch_Score']
+WATCH_COLS = [*PICK_COLS, 'Watch_Score']
 
 
 # Legacy column names from older screener versions → current names
@@ -5663,32 +5662,34 @@ def sync_with_broker(portfolio):
     # Resolve sectors before adopting, or drop the adoption entirely.
     actions = []
     for action in plan['actions']:
-        if action['op'] == 'adopt_position':
-            try:
-                sector = action.get('sector') or _resolve_sector(action['symbol'])
-            except Exception as exc:
-                # A defect in our own sector handling. Skipping the adoption is
-                # the same outcome as missing data, but it must not carry the
-                # same label: this one means the code is wrong and needs fixing,
-                # not that a data provider was unhelpful.
-                sector = ''
-                _degrade('broker_adopt_sector_bug:' + action['symbol'])
-                print(f'  Broker sync BUG resolving sector for {action["symbol"]}: '
-                      f'{type(exc).__name__}: {exc}')
-            if not sector:
-                _degrade('broker_adopt_unknown_sector:' + action['symbol'])
-                print(f'  Broker sync: cannot resolve sector for {action["symbol"]}; not adopted')
-                continue
-            stop, target, atr = _resolve_risk_levels(action['symbol'], action.get('entry_price'))
-            action = dict(action, sector=sector, stop_price=stop,
-                          target_price=target, atr=atr)
-            if stop is None:
-                _degrade('broker_adopt_no_risk_levels:' + action['symbol'])
-            # The alert must say which of the two outcomes actually happened.
-            for event in plan['events']:
-                if event.get('kind') == 'adopted' and event.get('symbol') == action['symbol']:
-                    event.update(stop=stop, target=target)
-        actions.append(action)
+        if action['op'] != 'adopt_position':
+            actions.append(action)
+            continue
+        try:
+            sector = action.get('sector') or _resolve_sector(action['symbol'])
+        except Exception as exc:
+            # A defect in our own sector handling. Skipping the adoption is
+            # the same outcome as missing data, but it must not carry the
+            # same label: this one means the code is wrong and needs fixing,
+            # not that a data provider was unhelpful.
+            sector = ''
+            _degrade('broker_adopt_sector_bug:' + action['symbol'])
+            print(f'  Broker sync BUG resolving sector for {action["symbol"]}: '
+                  f'{type(exc).__name__}: {exc}')
+        if not sector:
+            _degrade('broker_adopt_unknown_sector:' + action['symbol'])
+            print(f'  Broker sync: cannot resolve sector for {action["symbol"]}; not adopted')
+            continue
+        stop, target, atr = _resolve_risk_levels(action['symbol'], action.get('entry_price'))
+        enriched = dict(action, sector=sector, stop_price=stop,
+                        target_price=target, atr=atr)
+        if stop is None:
+            _degrade('broker_adopt_no_risk_levels:' + enriched['symbol'])
+        # The alert must say which of the two outcomes actually happened.
+        for event in plan['events']:
+            if event.get('kind') == 'adopted' and event.get('symbol') == enriched['symbol']:
+                event.update(stop=stop, target=target)
+        actions.append(enriched)
     plan = dict(plan, actions=actions)
 
     outcome = _portfolio.apply_broker_state(sys.modules[__name__], portfolio, plan)

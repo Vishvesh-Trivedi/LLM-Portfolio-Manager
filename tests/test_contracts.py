@@ -197,7 +197,7 @@ class CatalystTests(OfflineTests):
     def test_missing_duplicate_unknown_or_partial_coverage(self):
         original = catalysts()['ratings']
         for ratings in ([], original[:1], original + original[:1], [original[0], original[0]],
-                        original + [dict(original[0], ticker='GHOST')]):
+                        [*original, dict(original[0], ticker='GHOST')]):
             with self.subTest(ratings=ratings), self.assertRaises(ValueError):
                 contracts.validate_catalysts({'ratings': ratings}, candidates())
 
@@ -213,7 +213,7 @@ class CatalystTests(OfflineTests):
 
     def test_scores_enums_booleans_and_reason_constraints(self):
         invalid = {
-            'catalyst_score': BAD_NUMBERS + (0, 10.001),
+            'catalyst_score': (*BAD_NUMBERS, 0, 10.001),
             'auto_drop': (1, 0, 'false', None), 'catalyst_type': ('FAKE', 'breakout', None, []),
             'reason': ('', '  ', 'x' * 601, None, 42),
         }
@@ -273,7 +273,7 @@ class NewsTests(OfflineTests):
                     contracts.validate_news(payload, candidates())
             for field, values in {
                 'detected': (1, 0, 'false', None),
-                'score_adjustment': BAD_NUMBERS + (-30.01, 30.01),
+                'score_adjustment': (*BAD_NUMBERS, -30.01, 30.01),
                 'affected_sectors': ('Technology', [1], ['GHOST'], [None]),
                 'detail': (1, None, []),
             }.items():
@@ -310,7 +310,7 @@ class NewsTests(OfflineTests):
                 with self.subTest(key=key, field=field), self.assertRaises(ValueError):
                     contracts.validate_news(payload, candidates())
             invalid = {identity: ('GHOST', None, 1), 'news': (None, 5, []),
-                       'score_adjustment': BAD_NUMBERS + (-31, 31)}
+                       'score_adjustment': (*BAD_NUMBERS, -31, 31)}
             if identity == 'ticker':
                 invalid['auto_drop'] = (1, 0, 'false', None)
             for field, values in invalid.items():
@@ -331,7 +331,7 @@ class NewsTests(OfflineTests):
 
     def test_macro_types_and_adjustment_boundaries(self):
         for field, values in {
-            'overall_market_adjustment': BAD_NUMBERS + (-31, 31),
+            'overall_market_adjustment': (*BAD_NUMBERS, -31, 31),
             'macro_summary': (None, [], 1), 'market_sentiment': ('MIXED', 'neutral', [], None),
         }.items():
             for value in values:
@@ -371,7 +371,7 @@ class DecisionTests(OfflineTests):
         self.assertEqual(pick['confidence_label'], 'LLM score (uncalibrated)')
         self.assertEqual(pick['reasoning_label'], contracts.REASONING_LABEL)
         self.assertEqual(pick['facts_as_of'], '2026-09-10')
-        self.assertEqual(pick['facts'], {key: pool[0][key] for key in ('ticker',) + contracts.FACT_FIELDS})
+        self.assertEqual(pick['facts'], {key: pool[0][key] for key in ('ticker', *contracts.FACT_FIELDS)})
         self.assertIn('rsi=55.5', pick['factual_summary'])
         self.assertNotIn('MODEL', pick['factual_summary'])
         self.assertNotIn('fill_price', pick)
@@ -394,7 +394,7 @@ class DecisionTests(OfflineTests):
             self.assertNotIn(key, result)
 
     def test_buy_size_is_required_positive_finite_and_not_coerced_or_floored(self):
-        for size in BAD_NUMBERS + (0, -1, 100.01):
+        for size in (*BAD_NUMBERS, 0, -1, 100.01):
             payload = decision()
             payload['top_pick']['position_size_pct'] = size
             with self.subTest(size=size), self.assertRaises(ValueError):
@@ -465,7 +465,7 @@ class DecisionTests(OfflineTests):
 
     def test_confidence_strict_on_both_pick_and_watch(self):
         for target in ('top_pick', 'watch_candidates'):
-            for value in BAD_NUMBERS + (-0.1, 100.1):
+            for value in (*BAD_NUMBERS, -0.1, 100.1):
                 payload = decision()
                 record = payload[target] if target == 'top_pick' else payload[target][0]
                 record['confidence'] = value
@@ -540,7 +540,7 @@ class ExitTests(OfflineTests):
         for field, values in {
             'ticker': ('XYZ', 'abc', None, []), 'action': ('SELL', 'hold', None, []),
             'urgency': ('NOW', 'low', None, []), 'reason': ('', '  ', None, 1),
-            'exit_price': tuple(v for v in BAD_NUMBERS if v is not None) + (0, -1),
+            'exit_price': (*tuple(v for v in BAD_NUMBERS if v is not None), 0, -1),
         }.items():
             for value in values:
                 payload = exit_response()

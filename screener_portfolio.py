@@ -935,7 +935,7 @@ def _replay_position(app, original, instrument, history, asof):
     # Even an earlier replay exit requires complete coverage through current asof.
     # A partial response must never silently advance the last-evaluated cursor.
     valid = {}
-    for day in dict.fromkeys(pending + [asof]):
+    for day in dict.fromkeys([*pending, asof]):
         bar = fresh_bar(history, day)
         if bar is None:
             raise ValueError('quote gap: missing/invalid exact session ' + day)

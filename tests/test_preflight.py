@@ -24,10 +24,10 @@ os.environ.setdefault('SCREENER_SKIP_UNIVERSE_FETCH', '1')
 os.environ.setdefault('SCREENER_DISABLE_ALERTS', '1')
 os.environ.setdefault('SCREENER_OUTPUT_DIR', tempfile.mkdtemp(prefix='preflight-import-'))
 
-import qa_validate  # noqa: E402
+import qa_validate
 
 with redirect_stdout(io.StringIO()):
-    import LLM_Portfolio_Manager as app  # noqa: E402
+    import LLM_Portfolio_Manager as app
 
 LEDGER = ROOT / 'StockScreener' / 'portfolio.json'
 

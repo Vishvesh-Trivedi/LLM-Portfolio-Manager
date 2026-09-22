@@ -16,6 +16,7 @@ import sys
 import tempfile
 import types
 import unittest
+from typing import ClassVar
 from contextlib import ExitStack, redirect_stdout
 from datetime import datetime
 from types import SimpleNamespace
@@ -119,7 +120,7 @@ class IntegrationTests(unittest.TestCase):
             'SCREENER_OUTPUT_DIR': str(self.output), 'SCREENER_SKIP_UNIVERSE_FETCH': '1',
             'SCREENER_DISABLE_ALERTS': '1', 'SCREENER_ENABLE_SELF_TUNING': '0',
         }))
-        for name in SECRET_NAMES + ('GITHUB_STEP_SUMMARY',):
+        for name in (*SECRET_NAMES, 'GITHUB_STEP_SUMMARY'):
             os.environ.pop(name, None)
         self.stack.enter_context(redirect_stdout(io.StringIO()))
         self.stack.enter_context(patch.object(socket.socket, 'connect', side_effect=AssertionError('network forbidden')))
@@ -148,7 +149,7 @@ class IntegrationTests(unittest.TestCase):
 
     def pipeline(self, tickers=('AAA',), frames=None):
         self.events = []
-        self.frames = frames or {ticker: bars() for ticker in tuple(tickers) + ('SPY', 'QQQ')}
+        self.frames = frames or {ticker: bars() for ticker in (*tuple(tickers), 'SPY', 'QQQ')}
         self.mock('STOCK_UNIVERSE', new=list(tickers))
         self.mock('UNIVERSE_SET', new=set(tickers))
         self.mock('KEY_ETFS', new=['SPY', 'QQQ'])
@@ -626,7 +627,7 @@ class IntegrationTests(unittest.TestCase):
 
     def test_csv_report_history_is_not_used_as_trade_or_learning_input(self):
         self.pipeline()
-        row = {name: '' for name in APP.PICK_COLS}
+        row = dict.fromkeys(APP.PICK_COLS, '')
         row.update(Date='2026-08-01', Ticker='FAKE', Signal='BUY', Confidence=99,
                    Result='Win', Return_Pct=100, Entry_Price=1,
                    Execution_Status='SIGNAL', Outcome_Basis='hypothetical_excess_return')
@@ -1058,9 +1059,8 @@ class IntegrationTests(unittest.TestCase):
 
     def test_broker_fee_rejects_a_nonsense_amount_or_side(self):
         for bad in (float('nan'), float('inf'), -float('inf'), True, '200', [], {}, -1):
-            with self.subTest(amount=bad):
-                with self.assertRaises(ValueError):
-                    APP._broker_fee(bad)
+            with self.subTest(amount=bad), self.assertRaises(ValueError):
+                APP._broker_fee(bad)
         with self.assertRaises(ValueError):
             APP._broker_fee(200, side='short')
 
@@ -1407,7 +1407,7 @@ class IntegrationTests(unittest.TestCase):
             events = APP.protect_positions({'positions': positions})
         return events, calls
 
-    POS = {'ticker': 'MTD', 'shares': 18, 'trade_id': 'tid-1',
+    POS: ClassVar[dict] = {'ticker': 'MTD', 'shares': 18, 'trade_id': 'tid-1',
            'stop_price': 1353.69, 'target_price': 1502.46}
 
     def test_an_open_position_gets_a_resting_stop_at_the_broker(self):
@@ -1440,7 +1440,7 @@ class IntegrationTests(unittest.TestCase):
     def test_quantity_comes_from_the_broker_not_the_ledger(self):
         # Alpaca is the source of truth; protecting 18 when 15 are held would
         # be rejected or would oversell.
-        events, calls = self.protect([dict(self.POS)], held={'MTD': 15})
+        _events, calls = self.protect([dict(self.POS)], held={'MTD': 15})
         self.assertEqual(calls[0][2], 15)
 
     def test_a_position_without_levels_is_reported_not_guessed(self):
@@ -1463,11 +1463,11 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(events, [])
 
     def test_nothing_held_at_the_broker_means_nothing_to_protect(self):
-        events, calls = self.protect([dict(self.POS)], held={})
+        _events, calls = self.protect([dict(self.POS)], held={})
         self.assertEqual(calls, [])
 
     def test_a_rejected_order_is_reported_as_unprotected(self):
-        events, calls = self.protect([dict(self.POS)], submit='reject')
+        events, _calls = self.protect([dict(self.POS)], submit='reject')
         self.assertEqual([e['kind'] for e in events], ['protection_failed'])
 
     def test_protection_is_skipped_when_reconciliation_is_untrustworthy(self):
@@ -1504,12 +1504,12 @@ class IntegrationTests(unittest.TestCase):
         # The plain-language rewrite dropped stop, target and the day count, so
         # a holding's exit plan was invisible in the portfolio message.
         pf = {'cash': 1000.0, 'starting_capital': 10000.0, 'pending_orders': [],
-              'positions': [dict(ticker='MTD', shares=18, entry_price=1403.28,
-                                 current_price=1392.32, cost_basis=25259.08,
-                                 current_value=25061.76, unrealized_pnl=-197.32,
-                                 unrealized_pnl_pct=-0.78, held_sessions=3,
-                                 hold_sessions=10, stop_price=1353.69,
-                                 target_price=1502.46, sector='Healthcare')]}
+              'positions': [{'ticker': 'MTD', 'shares': 18, 'entry_price': 1403.28,
+                                 'current_price': 1392.32, 'cost_basis': 25259.08,
+                                 'current_value': 25061.76, 'unrealized_pnl': -197.32,
+                                 'unrealized_pnl_pct': -0.78, 'held_sessions': 3,
+                                 'hold_sessions': 10, 'stop_price': 1353.69,
+                                 'target_price': 1502.46, 'sector': 'Healthcare'}]}
         sent = []
         with patch.object(APP, '_discord', SimpleNamespace(
                     enabled=lambda: True, test_mode=lambda: False,
@@ -1519,18 +1519,18 @@ class IntegrationTests(unittest.TestCase):
                 redirect_stdout(io.StringIO()):
             self.real_whatsapp({'ticker': 'NONE', 'signal': 'NO PICK', 'confidence': 0},
                                MARKET_CTX, 'N/A', [], 'N/A', 'N/A', portfolio=pf)
-        portfolio_message = [m for m in sent if 'YOUR PORTFOLIO' in m][0]
+        portfolio_message = next(m for m in sent if 'YOUR PORTFOLIO' in m)
         self.assertIn('sells at $1,353.69 or $1,502.46', portfolio_message)
         self.assertIn('day 3 of 10', portfolio_message)
 
     def test_a_holding_with_no_sell_prices_says_so(self):
         pf = {'cash': 1000.0, 'starting_capital': 10000.0, 'pending_orders': [],
-              'positions': [dict(ticker='XYZ', shares=5, entry_price=50.0,
-                                 current_price=52.0, cost_basis=250.0,
-                                 current_value=260.0, unrealized_pnl=10.0,
-                                 unrealized_pnl_pct=4.0, held_sessions=0,
-                                 hold_sessions=10, needs_risk_levels=True,
-                                 sector='Healthcare')]}
+              'positions': [{'ticker': 'XYZ', 'shares': 5, 'entry_price': 50.0,
+                                 'current_price': 52.0, 'cost_basis': 250.0,
+                                 'current_value': 260.0, 'unrealized_pnl': 10.0,
+                                 'unrealized_pnl_pct': 4.0, 'held_sessions': 0,
+                                 'hold_sessions': 10, 'needs_risk_levels': True,
+                                 'sector': 'Healthcare'}]}
         sent = []
         with patch.object(APP, '_discord', SimpleNamespace(
                     enabled=lambda: True, test_mode=lambda: False,
@@ -1540,7 +1540,7 @@ class IntegrationTests(unittest.TestCase):
                 redirect_stdout(io.StringIO()):
             self.real_whatsapp({'ticker': 'NONE', 'signal': 'NO PICK', 'confidence': 0},
                                MARKET_CTX, 'N/A', [], 'N/A', 'N/A', portfolio=pf)
-        self.assertIn('NO sell prices set', [m for m in sent if 'YOUR PORTFOLIO' in m][0])
+        self.assertIn('NO sell prices set', next(m for m in sent if 'YOUR PORTFOLIO' in m))
 
     def test_sector_resolution_unpacks_the_fundamentals_tuple(self):
         # _fetch_fundamentals_single returns (ticker, data). Calling .get() on

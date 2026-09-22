@@ -16,6 +16,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pandas as pd
+import contextlib
 
 
 def finite_number(value, name='value', minimum=None, maximum=None):
@@ -55,10 +56,8 @@ def _atomic_write(path, writer):
         os.replace(staged, destination)
     finally:
         if staged is not None:
-            try:
+            with contextlib.suppress(FileNotFoundError):
                 os.unlink(staged)
-            except FileNotFoundError:
-                pass
 
 
 def atomic_json(path, data):

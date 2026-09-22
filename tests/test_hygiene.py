@@ -9,6 +9,7 @@ import ast
 import pathlib
 import re
 import unittest
+from typing import ClassVar
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MODULES = sorted(ROOT.glob('*.py'))
@@ -61,7 +62,7 @@ class NoCredentialsInSource(unittest.TestCase):
     This repository has had exactly that happen, so the guard is not theoretical.
     """
 
-    PATTERNS = (
+    PATTERNS: ClassVar[tuple] = (
         r'[A-Za-z0-9_-]{24}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27}',   # Discord bot
         r'\bsk-[A-Za-z0-9]{20,}',                                    # OpenAI style
         r'\bnvapi-[A-Za-z0-9]{20,}',                                 # NVIDIA
@@ -85,7 +86,7 @@ class TheTradingPathStaysCovered(unittest.TestCase):
     without a test is how the next one gets there.
     """
 
-    CRITICAL = {
+    CRITICAL: ClassVar[set] = {
         'sync_with_broker', 'protect_positions', 'reconcile_broker',
         'send_run_digest', '_resolve_sector', '_resolve_risk_levels',
         '_persist_session', '_missed_sessions', '_entry_levels_by_symbol',

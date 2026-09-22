@@ -303,7 +303,7 @@ def _number(value, default=None):
 
 def _whole(value, default=0):
     number = _number(value)
-    return default if number is None else int(round(number))
+    return default if number is None else round(number)
 
 
 def fetch_account():
@@ -758,7 +758,7 @@ def protective_orders_by_symbol():
         if not symbol:
             continue
         stop = limit = None
-        for leg in list(order.get('legs') or []) + [order]:
+        for leg in [*list(order.get('legs') or []), order]:
             if leg.get('stop_price') is not None:
                 stop = _number(leg.get('stop_price'), stop)
             elif leg.get('limit_price') is not None:

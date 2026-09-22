@@ -92,7 +92,7 @@ class DiscordTests(unittest.TestCase):
 
     def test_mentions_are_suppressed(self):
         # A pick reasoning containing @everyone must never ping a whole server.
-        ok, mock, _ = self.send(Response(), text='watch @everyone and @here')
+        _ok, mock, _ = self.send(Response(), text='watch @everyone and @here')
         self.assertEqual(mock.call_args.kwargs['json']['allowed_mentions'],
                          {'parse': []})
 
@@ -111,8 +111,8 @@ class DiscordTests(unittest.TestCase):
 
     def test_partial_chunk_failure_reports_failure(self):
         body = '\n'.join(f'LINE {i:04d} ' + 'x' * 40 for i in range(120))
-        ok, mock, out = self.send(Response(), Response(status_code=400, text='bad'),
-                                  text=body)
+        ok, _mock, out = self.send(Response(), Response(status_code=400, text='bad'),
+                                   text=body)
         self.assertFalse(ok)
         self.assertIn('parts', out)
 

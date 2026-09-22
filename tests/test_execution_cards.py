@@ -62,7 +62,7 @@ class ExecutionCardTests(unittest.TestCase):
         return app._execution_card(event)
 
     def test_buy_headline_carries_action_qty_symbol_and_price(self):
-        title, body, color, stats = self.card()
+        title, _body, color, stats = self.card()
         self.assertIn('BOUGHT', title)
         self.assertIn('18 MTD', title)
         self.assertIn('$1,403.28', title)

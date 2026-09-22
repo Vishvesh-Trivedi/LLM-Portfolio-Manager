@@ -52,8 +52,8 @@ def bars(dates, opening=100, close=105, high=120, low=90):
 
 
 def order(pf=None, **changes):
-    arguments = dict(ticker='NEW', entry_price=100, amount_usd=2500,
-                     stop=99, target=102, sector='Technology', fee_quote=lambda _: 0.0)
+    arguments = {'ticker': 'NEW', 'entry_price': 100, 'amount_usd': 2500,
+                     'stop': 99, 'target': 102, 'sector': 'Technology', 'fee_quote': lambda _: 0.0}
     arguments.update(changes)
     return safety.plan_order(portfolio() if pf is None else pf, **arguments)
 
@@ -520,8 +520,8 @@ class HorizonTests(unittest.TestCase):
         self.benchmark = bars(self.dates, opening=200, close=204, high=210, low=195)
 
     def evaluate(self, **changes):
-        arguments = dict(stock=self.stock, benchmark=self.benchmark,
-                         signal_date='2026-09-04', hold_sessions=2, as_of='2026-09-09')
+        arguments = {'stock': self.stock, 'benchmark': self.benchmark,
+                         'signal_date': '2026-09-04', 'hold_sessions': 2, 'as_of': '2026-09-09'}
         arguments.update(changes)
         return safety.evaluate_horizon(**arguments)
 

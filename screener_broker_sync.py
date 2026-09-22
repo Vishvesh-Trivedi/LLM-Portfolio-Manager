@@ -59,7 +59,7 @@ def _whole(value):
     number = _finite(value)
     if number is None:
         return None
-    rounded = int(round(number))
+    rounded = round(number)
     return rounded if abs(number - rounded) < 1e-6 else None
 
 

@@ -118,7 +118,9 @@ class RiskLevelsForAnAdoptedHolding(unittest.TestCase):
         from tests.test_messages import app
         self.app = app
 
-    def resolve(self, entry, atr=None, frame=object(), indicators=None):
+    _PRESENT = object()   # a stand-in frame; created once, never mutated
+
+    def resolve(self, entry, atr=None, frame=_PRESENT, indicators=None):
         indicators = {'atr': atr} if indicators is None else indicators
         with patch.object(self.app, 'batch_download',
                           return_value={} if frame is None else {'MTD': frame}),                 patch.object(self.app, 'compute_indicators', return_value=indicators),                 redirect_stdout(io.StringIO()):

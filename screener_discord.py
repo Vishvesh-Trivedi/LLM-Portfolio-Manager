@@ -26,6 +26,7 @@ import os
 import time
 
 import requests
+import contextlib
 
 
 API = "https://discord.com/api/v10"
@@ -146,10 +147,8 @@ def _post(payload, label):
         if response.status_code == 429:
             # Honour Discord's own backoff hint; fall back to exponential.
             wait = 2.0
-            try:
+            with contextlib.suppress(ValueError, AttributeError, TypeError):
                 wait = float((response.json() or {}).get('retry_after', wait))
-            except (ValueError, AttributeError, TypeError):
-                pass
             if attempt == _MAX_ATTEMPTS - 1:
                 print('  Discord ' + label + ': rate limited, giving up')
                 return False
