@@ -259,6 +259,55 @@ class SilenceOnlyWhenNothingHappened(unittest.TestCase):
             return app._something_happened()
 
 
+class TheDigestExplainsItselfAtThisAccountSize(unittest.TestCase):
+    """Percentages only mean something multiplied out against $100,000."""
+
+    def render(self, book, events=()):
+        sent = []
+        with patch.object(app, '_RUN_EVENTS', list(events)),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(book)
+        return sent[0] if sent else ''
+
+    def concentrated(self, first_pct, second_pct):
+        def holding(ticker, value, sector):
+            return {'ticker': ticker, 'shares': 10, 'entry_price': value / 10,
+                    'current_price': value / 10, 'cost_basis': value,
+                    'current_value': value, 'unrealized_pnl': 0.0,
+                    'unrealized_pnl_pct': 0.0, 'sector': sector,
+                    'stop_price': value / 10 * 0.95,
+                    'target_price': value / 10 * 1.1}
+        total = 100000.0
+        return {'cash': total * (100 - first_pct - second_pct) / 100,
+                'starting_capital': total, 'pending_orders': [], 'closed_trades': [],
+                'positions': [holding('AAA', total * first_pct / 100, 'Healthcare'),
+                              holding('BBB', total * second_pct / 100, 'Healthcare')]}
+
+    def test_a_book_concentrated_in_one_industry_says_so(self):
+        """Two Healthcare tickers is not visible from a list of symbols."""
+        text = self.render(self.concentrated(25, 15))
+        self.assertIn('one industry', text)
+        self.assertIn('Healthcare', text)
+
+    def test_a_spread_book_does_not_nag(self):
+        book = self.concentrated(15, 10)
+        book['positions'][1]['sector'] = 'Industrials'
+        self.assertNotIn('one industry', self.render(book))
+
+    def test_it_reports_the_account_total_not_a_percentage_alone(self):
+        text = self.render(self.concentrated(25, 15))
+        self.assertIn('$100,000', text)
+
+    def test_blockers_are_named_specifically_and_not_repeated(self):
+        """Three stages once read as 'a required check did not run', thrice."""
+        self.assertEqual(app._blocker_words('missing:market_data'),
+                         'the share prices did not arrive')
+        self.assertEqual(app._blocker_words('failed:final'),
+                         'the final decision did not pass')
+        self.assertNotEqual(app._blocker_words('missing:market_data'),
+                            app._blocker_words('missing:catalysts'))
+
+
 class SectorResolution(unittest.TestCase):
     """A bug in our own code must not look like a gap in the data."""
 

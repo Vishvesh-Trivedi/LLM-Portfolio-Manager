@@ -4990,6 +4990,28 @@ _BLOCKER_WORDS = {
     'failed': 'a required check did not pass',
 }
 
+# Stage names read back as something a person recognises.
+_STAGE_WORDS = {
+    'market_data': 'the share prices',
+    'market_context': 'the market overview',
+    'catalysts': 'the news check',
+    'news': 'the news check',
+    'final': 'the final decision',
+    'round1': 'the shortlist',
+    'round2': 'the deeper analysis',
+    'fundamental_coverage': 'the company data',
+}
+
+
+def _blocker_words(blocker):
+    """One plain sentence for a blocker like 'missing:market_data'."""
+    head, _, tail = str(blocker).partition(':')
+    phrase = _BLOCKER_WORDS.get(head, str(blocker))
+    if head in ('missing', 'failed') and tail:
+        verb = 'did not arrive' if head == 'missing' else 'did not pass'
+        return f'{_STAGE_WORDS.get(tail, tail)} {verb}'
+    return phrase
+
 
 def _digest_today(events):
     """Plain-language lines for what Alpaca actually did this run."""
@@ -5071,6 +5093,22 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                   f'- Total {_usd(total)} ({"up" if pnl >= 0 else "down"} {_usd(pnl)}, '
                   f'{(pnl / start * 100) if start else 0:+.1f}% since start)']
 
+        # Concentration is enforced when a position is opened and never after,
+        # so a book can drift past its limits as holdings appreciate - and
+        # nothing said so. Two positions in one industry is not visible from a
+        # list of tickers unless someone knows what each company does.
+        by_sector = {}
+        for position in positions:
+            value = position.get('current_value', position.get('cost_basis', 0))
+            sector = str(position.get('sector') or 'Unknown')
+            by_sector[sector] = by_sector.get(sector, 0) + value
+        for sector, value in sorted(by_sector.items(), key=lambda kv: -kv[1]):
+            share = (value / total * 100) if total else 0
+            if share >= 30:
+                lines.append(f'- {share:.0f}% of everything is in one industry '
+                             f'({sector}) - a bad week there hits the whole account')
+                break
+
         health = _HEALTH.as_dict()
         blockers = _trade_readiness()['trade_blockers']
 
@@ -5090,8 +5128,12 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
             # Say what actually stopped it. Blaming absent market data while
             # every stage succeeded sent people looking in the wrong place.
             lines.append('- Nothing ordered, because:')
-            lines += [f'  {_BLOCKER_WORDS.get(str(b).split(":")[0], str(b))}'
-                      for b in blockers[:3]]
+            seen = []
+            for blocker in blockers:
+                phrase = _blocker_words(blocker)
+                if phrase not in seen:
+                    seen.append(phrase)
+            lines += [f'  {phrase}' for phrase in seen[:3]]
         else:
             reason = _why_no_trade(pick or {}, no_pick_reason,
                                    (pick or {}).get('order_reason'), None)
@@ -5724,7 +5766,8 @@ Keep unchanged values as-is; do not add unknown keys or invent missing data.
 
 
 # ============================================================
-# PORTFOLIO  —  paper trading engine ($10,000 starting capital)
+# PORTFOLIO  —  paper ledger, mirrored onto the Alpaca paper account
+# (ALPACA_PAPER_CAPITAL when the broker is live; STARTING_CAPITAL offline)
 # ============================================================
 
 def load_portfolio():
