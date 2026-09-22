@@ -16,13 +16,14 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-21 22:43
+   Time:   2026-09-22 01:10
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 901 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
-  Broker sync: Filled GILD: 98 @ 149.5798 (broker confirmed)
   Broker sync: Cash set from broker: 60082.1 -> 60082.1
+  Alpaca POST HTTP 422: {"code":40010001,"message":"client_order_id must be unique"}
+  Alpaca POST HTTP 422: {"code":40010001,"message":"client_order_id must be unique"}
   Alpaca POST HTTP 422: {"code":40010001,"message":"client_order_id must be unique"}
 ALPACA PAPER ACCOUNT: $100,584.90 (+584.90 / +0.6% vs $100,000 starting)
 Cash: $60,082.10  |  Positions: 2/5  |  Deployed: 40%  |  Idle: 60%
@@ -37,10 +38,10 @@ Step 2/8: Market context...
 
 Market context...
   VIX:  14.87 (p7.5) -> LOW (p8 risk-on) (1.1x)
-  QQQ:  $741.47 | BULLISH (+4.39% vs 50MA)
-  SPY today: +1.55%
-  10Y yield: 4.96% (-0.76%)  DXY: 100.43 (+0.21%)  Nikkei: +1.38%
-  Futures:  ES=+2.31%  NQ=+4.05%
+  QQQ:  $721.45 | BULLISH (+1.62% vs 50MA)
+  SPY today: +0.13%
+  10Y yield: 4.96% (-0.76%)  DXY: 100.38 (+0.16%)  Nikkei: +1.38%
+  Futures:  ES=+2.32%  NQ=+4.33%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca GET HTTP 400: {"message":"invalid symbol: BRK-B"}
@@ -54,46 +55,43 @@ Batch downloading 200 tickers (3 chunked API calls)...
   OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
   RSS feeds active: 14/16 | Headlines: 84
   Fetching news for all 900 stocks (parallel)...
-  News found: 318/900 stocks have news today
-  Fetching fundamentals for all 886 stocks (parallel)...
-  Full fundamentals: 446/886 stocks
+  News found: 315/900 stocks have news today
+  Fetching fundamentals for all 698 stocks (parallel)...
+  Full fundamentals: 437/698 stocks
   Sector ranks - Top 3: ['Technology', 'Consumer Cyclical', 'Healthcare'] | Perf: Technology:+6.0% | Consumer Cyclical:+1.2% | Healthcare:+0.8% | Communication Services:+0.7% | Industrials:+0.7%
   Sector flows: TOP Communication Services +3.5% | BOT Energy -2.9%
 
 Step 4/8: Bidirectional screening...
 
-Phase 2 - Technical screening (914 tickers)...
-  Passed: 9 | Rejected: Price:0 MA:744 Vol:100 RSI:2 Liq:17 ADX:16
+Phase 2 - Technical screening (726 tickers)...
+  Passed: 7 | Rejected: Price:0 MA:585 Vol:77 RSI:2 Liq:17 ADX:12
 
-Phase 3 - News screening all 914 stocks...
-  News rescued: 70 stocks → ['ABT', 'A', 'ALL', 'AFL', 'AES', 'ALGN', 'ABNB', 'AMT', 'AMCR', 'AON']...
+Phase 3 - News screening all 726 stocks...
+  News rescued: 33 stocks → ['CIEN', 'C', 'COHR', 'CME', 'CRWD', 'CSX', 'CPRT', 'CMI', 'CVS', 'COST']...
 
 Phase 4 - Merging candidate pools...
-  Total candidates: 79
-    BOTH (tech+news): 1  TECHNICAL: 8  NEWS: 70
+  Total candidates: 40
+    BOTH (tech+news): 1  TECHNICAL: 6  NEWS: 33
   Earnings risk flags: ['COST']
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'TSLA', 'WHR', 'NXPI', 'MEDP', 'META', 'AMD']
-  Stream B added: AAPL | $338.98 | RSI 66.3
-  Stream B added: GOOGL | $354.97 | RSI 58.8
-  Stream B added: TSLA | $375.18 | RSI 58.6
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'WHR', 'NXPI', 'TSLA', 'MS', 'META']
   Stream B added: WHR | $32.64 | RSI 32.4
   Stream B added: NXPI | $232.3 | RSI 51.6
-  Stream B added: MEDP | $624.2 | RSI 63.6
+  Stream B added: TSLA | $375.18 | RSI 58.6
+  Stream B added: MS | $206.11 | RSI 42.1
   Stream B added: META | $741.29 | RSI 77.7
-  Stream B added: AMD | $615.52 | RSI 73.0
-  Sector sentiment derived: 11/11 sectors from 83 stocks
-  [ADVISORY ONLY] HOLD [LOW] MTD: Position is holding above the stop price and trending upwards, but no significant news or market indicators to suggest an immediate trade. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] GILD: Current price is near the target and no fresh news is available, so holding is the most prudent action. (no ledger changes)
+  Sector sentiment derived: 9/11 sectors from 43 stocks
+  [ADVISORY ONLY] HOLD [LOW] MTD: Market conditions are stable, with no fresh news and a bullish QQQ trend, suggesting a wait-and-see approach. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] GILD: Price has moved in favor of the thesis, but the current rally may not be fully priced in yet, so holding is recommended to allow for further upside potential. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 86 candidates...
-  Options data: 0/86 | Insider signals: 64/86
+  Fetching options + insider data for 44 candidates...
+  Options data: 0/44 | Insider signals: 36/44
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (86 candidates)...
-  Pre-score top 5: ILMN(80=47T+33N [vader:BULLISH])  IQV(77=45T+32N [vader:BULLISH])  HPE(77=42T+35N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  META(75=46T+29N [vader:BULLISH])
+Phase 5.5 - Computing score breakdown (44 candidates)...
+  Pre-score top 5: ILMN(80=47T+33N [vader:BULLISH])  IQV(77=45T+32N [vader:BULLISH])  HPE(77=42T+35N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  FTNT(73=44T+29N [vader:BULLISH])
   SEC EDGAR 8-K: 1/30 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
@@ -103,72 +101,72 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
     Batch 3/5 
     Batch 4/5 
     Batch 5/5 
-  Catalyst scoring done — 5 auto-dropped, 25 remain
+  Catalyst scoring done — 6 auto-dropped, 24 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (25 candidates, 3 layers)...
+Phase 5 - News intelligence (24 candidates, 3 layers)...
+  news: NVIDIA parser/validator rejected response: JSONDecodeError: Invalid \escape: line 1 column 81 (char 80)
+  news: OpenRouter parser/validator rejected response: ValueError: non-object JSON or malformed prefix
+  ↩️  Critical LLM call recovered via NVIDIA-retry.
   Sentiment: NEUTRAL | Adj: +0
-  25 candidates after news filter
+  24 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (25 candidates)...
-  Pre-score top 5: ILMN(80=47T+33N [vader:BULLISH])  HPE(77=42T+35N [vader:BULLISH])  IQV(77=45T+32N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  META(75=46T+29N [vader:BULLISH])
+Phase 5.5 - Computing score breakdown (24 candidates)...
+  Pre-score top 5: ILMN(80=47T+33N [vader:BULLISH])  HPE(77=42T+35N [vader:BULLISH])  CRWD(75=42T+33N [vader:BULLISH])  FTNT(73=44T+29N [vader:BULLISH])  META(73=46T+27N [vader:BULLISH])
 
 Step 5.5/8: Applying LLM config criteria...
-  25 candidates after config criteria
+  24 candidates after config criteria
   Self-calibration: 13 prior picks, 54% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (25 candidates)...
-  Round 1/3: Ranking 25 candidates...
-  Round 1 → Top 10: ['ILMN', 'META', 'AKAM', 'FTNT', 'ANET', 'AMD', 'COIN', 'MSFT', 'CIEN', 'GOOGL']
+Phase 6 - NVIDIA final scoring (24 candidates)...
+  Round 1/3: Ranking 24 candidates...
+  Round 1 → Top 10: ['ILMN', 'HPE', 'CRWD', 'FTNT', 'META', 'COIN', 'COHR', 'KEYS', 'CIEN', 'QCOM']
   Round 2/3: Deep-diving top 10...
-  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  -> NVIDIA throttled; answered via OpenRouter.
-  Round 2 → analyses for ['ILMN', 'META', 'AKAM', 'FTNT', 'ANET', 'AMD', 'COIN', 'MSFT', 'CIEN', 'GOOGL']
+  Round 2 → analyses for ['ILMN', 'HPE', 'CRWD', 'FTNT', 'META', 'COIN', 'COHR', 'KEYS', 'CIEN', 'QCOM']
   Round 3/3: Final deliberation...
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
-  Final pick: ILMN | pre=80 → 85/100 | BUY | 12 LLM calls this run
+  Final pick: ILMN | pre=80 → 85/100 | BUY | 13 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=8, wr=62.5%, HIGH confidence): stocks with 5-day momentum > 5% and RSI > 50 have a 62.5% win rate.
-│ 2. Rule (n=6, wr=66.7%, HIGH confidence): stocks with ADX > 20 and volume ratio > 1 have a 66.7% win rate.
-│ → History taught me that stocks with strong technicals and sector support tend to perform well in the 1-4 week time frame.
+│ 1. Rule (n=5, wr=60%, HIGH confidence): Stocks with high short-term momentum and low volatility tend to outperform in the next 1-4 weeks.
+│ 2. Rule (n=7, wr=57%, HIGH confidence): Stocks with strong recent performance and potential catalysts tend to continue their upward trend in the next 1-4 weeks.
+│ → History taught me that high short-term momentum and low volatility are key indicators of potential success in the next 1-4 weeks, but also that strong recent performance and potential catalysts are crucial for sustained growth.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
 
 █████████████████████████████████████████████████████████████████
-  TODAY'S PICK  —  Monday, Sep 21 2026
+  TODAY'S PICK  —  Tuesday, Sep 22 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 14.9 (LOW (p8 risk-on))  |  QQQ BULLISH  |  SPY +1.56%
-  Macro:   The US market is experiencing a positive trend, with the QQQ index showing a bul
+  Macro:   US markets are experiencing a strong day with the Dow and S&P 500 gaining, while
 ─────────────────────────────────────────────────────────────────
   NO PICK TODAY
   Data/LLM validation incomplete; no new order queued.
 
   WATCH LIST:
-    META    74/100  [Communication Services]  META exhibits powerful momentum with a 5-day gain of +10.6% and RSI 77
+    HPE     74/100  [Technology]  HPE is a watch candidate due to its moderate momentum and potential ca
+    FTNT    73/100  [Technology]  FTNT is a watch candidate due to its strong recent performance and pot
 █████████████████████████████████████████████████████████████████
   Broker: in sync (2 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved META | Stop:700.77 Target:822.32
+  OK: Saved HPE | Stop:55.46 Target:74.36
+  OK: Saved FTNT | Stop:165.13 Target:195.51
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 0 evaluated yet | 5 pending
-  WATCH LIST: 0 evaluated yet | 9 pending
+  WATCH LIST: 0 evaluated yet | 11 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (584 chars):
+  run-digest (599 chars):
 ALPACA - Sep 21 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- BOUGHT 98 GILD at $149.58 ($14,659)
+- Nothing was bought or sold
 
 WHAT YOU HOLD (2)
 - GILD: up $96 (+0.7%)  |  98 shares, $149.58 -> $150.56
@@ -181,7 +179,8 @@ MONEY
 - Total $100,585 (up $585, +0.6% since start)
 
 NEXT ORDER
-Why: some market data or analysis did not arrive, so it did not trade rather than guess
+- Nothing ordered, because:
+  a stop order was refused by Alpaca, so no new risk was added until that is sorted
 
 STATUS
 - Checks: degraded
@@ -189,4 +188,6 @@ STATUS
 
   Discord run-digest: sent
   WhatsApp run-digest: sent
-  Discord run-health: sent
+::warning title=Run completed with degradations::protection_rejected:MTD
+
+  Completed with degradations (not a failure): protection_rejected:MTD

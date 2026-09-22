@@ -2,25 +2,20 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 12,
-      "successes": 11,
-      "failures": 1
+      "attempts": 13,
+      "successes": 13,
+      "failures": 0
     },
     "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
       "attempts": 1,
       "successes": 1,
       "failures": 0
-    },
-    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "2 applied, 0 failed; fill=1"
+      "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -40,11 +35,11 @@
     },
     "market_data": {
       "success": true,
-      "detail": "914/926 exact-session quotes; missing: MMM, AOS, ALLE, AVY, CAT, MLI, MTN, NJR, NVST, OC, R, RBC"
+      "detail": "726/926 exact-session quotes; missing: MMM, AOS, ABT, ABBV, ACN, ADBE, AMD, AES, AFL, A, APD, ABNB, AKAM, ALB, ARE, ALGN, ALLE, LNT, ALL, GOOGL, GOOG, MO, AMZN, AMCR, AEE, AEP, AXP, AIG, AMT, AWK, AMP, AME, AMGN, APH, ADI, AON, APA, APO, AAPL, AMAT, APP, APTV, ACGL, ADM, ARES, ANET, AJG, AIZ, T, ATO, ADSK, ADP, AZO, AVY, AXON, BKR, BALL, BAC, BAX, BDX, BRK-B, BBY, TECH, BIIB, BLK, BX, XYZ, BE, BNY, BA, BKNG, BSX, BMY, AVGO, BR, BRO, BF-B, BG, BXP, CHRW, CDNS, CPT, COF, CAH, CCL, CARR, CVNA, CASY, CAT, CBOE, CBRE, CDW, COR, CNC, CNP, CF, CRL, SCHW, CHTR, CVX, KRC, KRG, KRYS, KTOS, LAD, LAMR, LEA, LECO, LFUS, LIVN, LNTH, LOPE, LPX, LSCC, LSTR, M, MANH, MAT, MEDP, MIDD, MKSI, MLI, MMS, MOG-A, MOH, MORN, MP, MSA, MSM, MTDR, MTG, MTN, MTSI, MTZ, MUR, MUSA, MZTI, NBIX, NEU, NFG, NJR, NLY, NNN, NOV, NOVT, NTNX, NVST, NVT, NWE, NXST, NXT, NYT, OC, OGE, OGS, OHI, OKTA, OLED, OLLI, OLN, ONB, ONTO, OPCH, ORA, ORI, OSK, OVV, OZK, PAG, PATH, PB, PBF, PCTY, PEGA, PEN, PFGC, PII, PINS, PK, PLNT, PNFP, POR, POST, PPC, PR, PRI, PSN, PVH, QLYS, R, RBA, RBC, REXR, RGA, RGEN, RGLD, RH, RLI, RMBS, RNR"
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "83/86 covered; missing: RMBS, WHR, MEDP; selected sector checked by order planner"
+      "detail": "43/44 covered; missing: WHR; selected sector checked by order planner"
     },
     "exit:MTD": {
       "success": true,
@@ -80,7 +75,7 @@
     },
     "news": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "NVIDIA-retry: JSON and contract accepted"
     },
     "round1": {
       "success": true,
@@ -108,8 +103,8 @@
   ],
   "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
   "attempts": 14,
-  "successes": 12,
-  "failures": 2,
+  "successes": 14,
+  "failures": 0,
   "date": "2026-09-21",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
