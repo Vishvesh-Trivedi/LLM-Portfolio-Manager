@@ -1410,10 +1410,10 @@ def _fetch_options_single(ticker):
                 calls['vol_oi'] = calls['volume'].fillna(0) / calls['openInterest']
                 if calls['vol_oi'].max() > 3:
                     unusual_calls = True
-        except:
+        except Exception:
             pass
         return ticker, pc, label, unusual_calls
-    except:
+    except Exception:
         return ticker, None, 'NEUTRAL', False
 
 
@@ -1426,7 +1426,7 @@ def _load_sec_cik_map():
         r = requests.get('https://www.sec.gov/files/company_tickers.json',
                          headers={'User-Agent': 'StockScreener research@example.com'}, timeout=15)
         _SEC_CIK_CACHE = {v['ticker'].upper(): str(v['cik_str']).zfill(10) for v in r.json().values()}
-    except: pass
+    except Exception: pass
     return _SEC_CIK_CACHE
 
 def _fetch_insider_single(ticker):
@@ -1440,7 +1440,7 @@ def _fetch_insider_single(ticker):
                 candidate = getattr(tk, attr, None)
                 if candidate is not None and not getattr(candidate, 'empty', True):
                     ins = candidate.copy(); break
-            except: pass
+            except Exception: pass
         if ins is not None:
             date_col = next((c for c in ['Start Date','Date','Transaction Date','startDate'] if c in ins.columns), None)
             if date_col:
@@ -1455,7 +1455,7 @@ def _fetch_insider_single(ticker):
                     if len(sells) >= 3 and len(sells) > len(buys) * 2:
                         return ticker, -(len(sells) * 10000), 'SELLING'
                     return ticker, 0, 'NEUTRAL'
-    except: pass
+    except Exception: pass
 
     # --- Fallback: SEC EDGAR Form 4 count (open govt API, always works) ---
     try:
@@ -1470,7 +1470,7 @@ def _fetch_insider_single(ticker):
         form4_count = sum(1 for f, d in zip(forms, dates) if f == '4' and d >= cutoff)
         if form4_count >= 3:
             return ticker, form4_count * 5000, 'BUYING'
-    except: pass
+    except Exception: pass
     return ticker, 0, 'NEUTRAL'
 
 
@@ -1620,7 +1620,7 @@ def compute_sector_ranks(batch_data):
             p_now = float(df['Close'].iloc[-1])
             p_5d  = float(df['Close'].iloc[-5])
             perf[sector] = round(((p_now - p_5d) / p_5d) * 100, 2) if p_5d > 0 else 0.0
-        except:
+        except Exception:
             perf[sector] = 0.0
     sorted_s = sorted(perf.items(), key=lambda x: x[1], reverse=True)
     ranks    = {s: i + 1 for i, (s, _) in enumerate(sorted_s)}
@@ -1968,7 +1968,7 @@ def get_market_context():
         qt  = 'BULLISH' if qc > q50 else 'BEARISH'
         qv  = round(((qc - q50) / q50) * 100, 2)
         qp  = round(qc, 2)
-    except:
+    except Exception:
         qt, qv, qp = 'UNKNOWN', 0.0, 0.0
 
     try:
@@ -1979,7 +1979,7 @@ def get_market_context():
         spy_ret  = round(((float(spy_closes.iloc[-1]) -
                            float(spy_closes.iloc[-2])) /
                            float(spy_closes.iloc[-2])) * 100, 2)
-    except:
+    except Exception:
         spy_ret = 0.0
 
     # Global macro — 10Y yield, dollar, overnight markets
@@ -2002,7 +2002,7 @@ def get_market_context():
                 prev   = float(closes.iloc[-2])
                 chg    = round((latest - prev) / prev * 100, 2) if prev else 0.0
                 global_macro[name] = {'price': latest, 'chg_pct': chg}
-        except:
+        except Exception:
             pass
 
     ctx = {
@@ -2142,7 +2142,7 @@ def _fetch_stock_news_single(ticker):
                 text += ' — ' + summary[:160].lower()
             items.append(text)
         return ticker, items
-    except:
+    except Exception:
         return ticker, []
 
 
@@ -2221,7 +2221,7 @@ def _fetch_fundamentals_single(ticker):
         pre_price = info.get('preMarketPrice')
         if pre_price and prev_close and float(prev_close) > 0:
             result['premarket_gap_pct'] = round((float(pre_price) - float(prev_close)) / float(prev_close) * 100, 2)
-    except:
+    except Exception:
         pass
 
     try:
@@ -2245,7 +2245,7 @@ def _fetch_fundamentals_single(ticker):
             result['earnings_date']      = str(ed)
             result['earnings_days_away'] = days_away
             result['earnings_risk']      = 0 <= days_away <= 5
-    except:
+    except Exception:
         pass
 
     try:
@@ -2264,7 +2264,7 @@ def _fetch_fundamentals_single(ticker):
                 if to_g or from_g:
                     actions.append(f'{date_s} {firm}: {from_g}→{to_g} ({action})')
             result['analyst_actions'] = actions
-    except:
+    except Exception:
         pass
 
     return ticker, result
@@ -2317,7 +2317,7 @@ def fetch_sec_8k(tickers, days=7):
                 if updated >= start and title:
                     filings.append(f'{updated}: {title}' + (f' — {summary}' if summary else ''))
             return ticker, filings
-        except:
+        except Exception:
             return ticker, []
 
     with ThreadPoolExecutor(max_workers=8) as ex:
@@ -2367,7 +2367,7 @@ def fetch_macro_news():
                     if ct >= 6: break
             if ct > 0:
                 active += 1
-        except:
+        except Exception:
             continue
     print(f'  RSS feeds active: {active}/{len(feeds)} | Headlines: {len(headlines)}')
     return headlines[:60]
@@ -2832,7 +2832,7 @@ def stream_b_from_headlines(headlines, batch_data, technical_passed, all_stock_n
                     depth-=1
                     if depth==0: raw=raw[:i+1]; break
         news_tickers = [t.upper().strip() for t in json.loads(raw) if isinstance(t,str)]
-    except:
+    except Exception:
         return []
 
     existing   = set(technical_passed.keys())
@@ -3112,7 +3112,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
             vix = h.get('vix', '')
             qqq = h.get('qqq_trend', '')
             try: v = float(vix)
-            except: v = 20
+            except Exception: v = 20
             vix_bucket = 'HIGH_VIX' if v > 25 else 'LOW_VIX' if v < 15 else 'MID_VIX'
             qqq_bucket = 'BULL' if 'bull' in str(qqq).lower() else 'BEAR' if 'bear' in str(qqq).lower() else 'NEUTRAL'
             return f'{vix_bucket}_{qqq_bucket}'
@@ -3147,7 +3147,7 @@ def analyze_with_nvidia(candidates, ctx, nd, pick_history=None, portfolio=None):
             r30_vals = []
             for p in picks:
                 try: r30_vals.append(float(p['net_realized_pct']))
-                except: pass
+                except Exception: pass
             avg_ret = f'{sum(r30_vals)/len(r30_vals):+.1f}%' if r30_vals else '?'
             marker = ' ← TODAY\'S REGIME' if reg == curr_regime else ''
             regime_lines += f'\n  REGIME: {reg} | {len(picks)} picks | {reg_wr}% win rate | avg net realized return: {avg_ret}{marker}\n'
@@ -3590,7 +3590,12 @@ def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=
         'Return_Pct': '', 'vs_QQQ_10d': '', 'Result': 'Pending',
     }
     if watch_score is not None: row['Watch_Score'] = watch_score
-    atomic_csv(fp, pd.concat([df, pd.DataFrame([row])], ignore_index=True))
+    # Concatenating onto an empty or all-NA frame is deprecated: pandas will
+    # stop dropping those columns when deciding dtypes, which would silently
+    # change the saved CSV's types. The first row does not need a concat.
+    addition = pd.DataFrame([row])
+    combined = addition if df.empty else pd.concat([df, addition], ignore_index=True)
+    atomic_csv(fp, combined)
     print(f'  OK: Saved {ticker} | Stop:{stop_p} Target:{tgt_p}')
 
 
@@ -3668,7 +3673,7 @@ def _build_rules_html(rules, summary):
                         history_html += f'<li style="padding:2px 0">{r}</li>'
                     history_html += '</ul></div>'
                 history_html += '</details>'
-        except: pass
+        except Exception: pass
     return f'''<div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
     {f'<p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">{summary}</p>' if summary else ''}
