@@ -3523,19 +3523,6 @@ def load_csv(fp, cols):
     return pd.DataFrame(columns=cols)
 
 
-def check_sector_concentration(sector, picks_csv_path):
-    if not os.path.exists(picks_csv_path): return False, 0, []
-    try:
-        df=pd.read_csv(picks_csv_path)
-        if df.empty or 'Sector' not in df.columns: return False, 0, []
-        recent=df.tail(_CFG_SECTOR_CONC_LOOKBACK)
-        last_sects=recent['Sector'].tolist()
-        same_count=sum(1 for s in last_sects if s==sector)
-        return same_count>=_CFG_SECTOR_CONC_MAX, same_count, last_sects
-    except:
-        return False, 0, []
-
-
 def save_pick(pick_data, ctx, price, fp, cols, all_candidates=None, watch_score=None, portfolio=None, stop_price=None, target_price=None):
     from screener_safety import atomic_csv
 
@@ -4203,84 +4190,6 @@ def display_scorecard():
 
 
 print('\nOK: All functions loaded')
-
-
-def _recent_picks_summary(days=10):
-    """Read PICKS_CSV and return last N days of BUY picks with live P&L for pending ones."""
-    lines = []
-    if not os.path.exists(PICKS_CSV):
-        return lines
-    try:
-        df = pd.read_csv(PICKS_CSV)
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        cutoff = datetime.now() - pd.Timedelta(days=days)
-        recent = df[df['Date'] >= cutoff].sort_values('Date', ascending=False)
-        # Fetch live prices in one batch for pending tickers
-        pending_tickers = recent[recent['Result'] == 'Pending']['Ticker'].dropna().unique().tolist()
-        live_prices = {}
-        if pending_tickers:
-            try:
-                raw = yf.download(pending_tickers, period='2d', auto_adjust=True,
-                                  progress=False, threads=True)
-                closes = raw['Close'] if isinstance(raw.columns, pd.MultiIndex) else raw[['Close']]
-                for t in pending_tickers:
-                    try:
-                        col = closes[t] if t in closes.columns else closes.iloc[:, 0]
-                        live_prices[t] = float(col.dropna().iloc[-1])
-                    except:
-                        pass
-            except:
-                pass
-        for _, row in recent.iterrows():
-            t      = str(row.get('Ticker', '')).strip()
-            d      = row['Date'].strftime('%b %d')
-            entry  = row.get('Entry_Price', '')
-            result = str(row.get('Result', 'Pending')).strip()
-            if result == 'Pending':
-                curr = live_prices.get(t)
-                if curr and entry and str(entry) not in ('', 'nan', 'N/A'):
-                    pct = (curr - float(entry)) / float(entry) * 100
-                    status = f'Open {pct:+.1f}%'
-                else:
-                    status = 'Open'
-            else:
-                ret = row.get('Return_Pct', '')
-                try:
-                    status = f'{result} ({float(ret):+.1f}%)'
-                except:
-                    status = result
-            lines.append(f'  {d}: {t} @ {entry} - {status}')
-    except Exception:
-        pass
-    return lines
-
-
-def _wa_no_pick(ctx, portfolio, reason='No qualifying candidates today'):
-    """Notify every configured channel when the screener finds no pick."""
-    if not _alerts_configured():
-        return
-    ctx = ctx or {}
-    pf  = portfolio or {}
-    positions = pf.get('positions', [])
-    cash      = round(pf.get('cash', STARTING_CAPITAL), 2)
-    start_cap = float(pf.get('starting_capital', STARTING_CAPITAL) or STARTING_CAPITAL)
-    total_val = round(cash + sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions), 2)
-    total_pnl = round(total_val - start_cap, 2)
-    total_pct = round((total_pnl / start_cap) * 100, 1) if start_cap else 0.0
-    sign      = '+' if total_pnl >= 0 else ''
-    date_str  = datetime.now().strftime('%b %d %Y %H:%M')
-    n_open    = len(positions)
-    vix       = ctx.get('vix_level', '?')
-    qqq_trend = ctx.get('qqq_trend', '?')
-    spy_ret   = ctx.get('spy_return_today', 0)
-    msg = (
-        f'📊 Screener ran {date_str} NZT\n'
-        f'Result: NO PICK — {reason}\n\n'
-        f'Market: VIX={vix} | QQQ={qqq_trend} | SPY={spy_ret:+.2f}%\n'
-        f'Portfolio: ${total_val:,.0f} ({sign}{total_pct}%) | '
-        f'Cash ${cash:,.0f} | {n_open} open position(s)'
-    )
-    _notify(msg, label='no-pick', whatsapp=False)
 
 
 def _wa_send(text, label=''):
