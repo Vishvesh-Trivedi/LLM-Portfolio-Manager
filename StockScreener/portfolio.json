@@ -495,5 +495,8 @@
     }
   ],
   "cash_basis": "broker_actual",
-  "last_closed_summary": "2026-09-20"
+  "last_closed_summary": "2026-09-20",
+  "screened_sessions": [
+    "2026-09-21"
+  ]
 }
