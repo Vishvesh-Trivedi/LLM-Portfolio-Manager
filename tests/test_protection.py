@@ -58,6 +58,53 @@ class BuyIsNeverProtection(unittest.TestCase):
             self.assertEqual(alpaca.open_order_shares_by_symbol(), {})
 
 
+class ProtectiveOrderIdsAreUniquePerSubmission(unittest.TestCase):
+    """The bug that actually left MTD unprotected.
+
+    Alpaca answers a repeated client_order_id with
+    422 {"code":40010001,"message":"client_order_id must be unique"}. The
+    protective id was derived only from the trade_id, so it was identical on
+    every submission - meaning a resting stop could be placed once and never
+    replaced. Since the stop is re-submitted every time the trailing stop moves
+    up, every trailing move after the first was refused and the position was
+    left with nothing.
+    """
+
+    def test_repeated_protective_submissions_get_distinct_ids(self):
+        ids = {alpaca._client_order_id('MTD', 'sell', 'tid-1', protective=True,
+                                       unique=True)
+               for _ in range(25)}
+        self.assertEqual(len(ids), 25)
+
+    def test_a_unique_id_still_parses_and_is_still_protective(self):
+        """It must keep four parts, or it stops matching back to the ledger."""
+        one = alpaca._client_order_id('MTD', 'sell', 'tid-1', protective=True,
+                                      unique=True)
+        self.assertEqual(len(one.split('-')), 4)
+        parsed = alpaca.parse_client_order_id(one)
+        self.assertIsNotNone(parsed)
+        self.assertTrue(parsed['protective'])
+        self.assertEqual(parsed['symbol'], 'MTD')
+
+    def test_an_ordinary_entry_id_stays_stable(self):
+        """Buys are matched back to the ledger by this id; it must not drift."""
+        first = alpaca._client_order_id('GILD', 'buy', 'order-9')
+        self.assertEqual(first, alpaca._client_order_id('GILD', 'buy', 'order-9'))
+
+    def test_the_real_submission_asks_for_a_unique_id(self):
+        sent = {}
+        with patch.object(alpaca, '_request',
+                          side_effect=lambda m, u, body=None, **k:
+                              sent.update(body or {}) or {'id': '1'}):
+            alpaca.submit_protective_oco('MTD', 18, 1380.85, 1502.46, ref='tid-1')
+        first = sent['client_order_id']
+        with patch.object(alpaca, '_request',
+                          side_effect=lambda m, u, body=None, **k:
+                              sent.update(body or {}) or {'id': '2'}):
+            alpaca.submit_protective_oco('MTD', 18, 1390.00, 1502.46, ref='tid-1')
+        self.assertNotEqual(first, sent['client_order_id'])
+
+
 class EntryCarriesItsProtection(unittest.TestCase):
 
     def submit(self, side='buy', **kwargs):

@@ -434,7 +434,7 @@ def effective_shares_by_symbol():
 _CLIENT_ORDER_PREFIX = 'lpm'
 
 
-def _client_order_id(symbol, side, ref='', protective=False):
+def _client_order_id(symbol, side, ref='', protective=False, unique=False):
     """Build a client_order_id that carries the ledger identity of the order.
 
     ``ref`` is the ledger's pending-order id (buys) or the position trade_id
@@ -445,12 +445,23 @@ def _client_order_id(symbol, side, ref='', protective=False):
     ``protective`` marks a resting stop/target order with a 'P' prefix. Those
     must never be read as an intent to change the position size - see
     open_order_shares_by_symbol.
+
+    ``unique`` adds entropy to the ledger tag for an order that is submitted
+    more than once for the same ledger record. Alpaca answers a repeated id
+    with 422 {"code":40010001,"message":"client_order_id must be unique"}, so
+    an id derived only from the trade_id can be used exactly once - and a
+    resting stop is re-submitted every time the trailing stop moves up. Every
+    replacement after the first was refused, which is how a position came to
+    sit with no protection at all. The id keeps its four parts either way,
+    because parse_client_order_id splits on exactly that.
     """
     cleaned = ''.join(ch for ch in str(symbol).upper() if ch.isalnum() or ch in ('-', '_'))[:12] or 'UNK'
     prefix = 'P' if protective else ('B' if str(side).lower() == 'buy' else 'S')
     tag = ''.join(ch for ch in str(ref or '') if ch.isalnum())[:32]
     if not tag:
         tag = f'{int(time.time())}{uuid.uuid4().hex[:8]}'
+    elif unique:
+        tag = tag[:20] + uuid.uuid4().hex[:8]
     return f'{_CLIENT_ORDER_PREFIX}-{prefix}-{cleaned}-{tag}'
 
 
@@ -623,8 +634,10 @@ def submit_market_order(symbol, qty, side, ref='', stop_price=None, target_price
               f'without it. Protection will be attached separately.')
         for key in ('order_class', 'take_profit', 'stop_loss'):
             body.pop(key, None)
-        # A fresh id: the refused submission may still have registered the old.
-        body['client_order_id'] = _client_order_id(symbol, side, ref) + '-nb'
+        # A fresh id, because the refused submission may still have
+        # registered the old one - and built the same way, because
+        # parse_client_order_id splits on exactly four parts.
+        body['client_order_id'] = _client_order_id(symbol, side, ref, unique=True)
         order = _request('POST', _trade_base() + '/v2/orders', body=body)
     if isinstance(order, dict):
         try:
@@ -659,7 +672,8 @@ def submit_protective_oco(symbol, qty, stop_price, limit_price, ref=''):
         'limit_price': _price(limit),
         'take_profit': {'limit_price': _price(limit)},
         'stop_loss': {'stop_price': _price(stop)},
-        'client_order_id': _client_order_id(symbol, 'sell', ref, protective=True),
+        'client_order_id': _client_order_id(symbol, 'sell', ref, protective=True,
+                                            unique=True),
     }
     return _request('POST', _trade_base() + '/v2/orders', body=body)
 
