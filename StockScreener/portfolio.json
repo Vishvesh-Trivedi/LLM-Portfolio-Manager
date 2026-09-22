@@ -436,7 +436,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-09-21T22:26:23.366195267Z",
+      "timestamp": "2026-09-21T22:26:23.366195Z",
       "order_id": "a48b7988-65d6-45e0-9030-3c3c67ce54f0",
       "client_order_id": "5eec7110-f696-4f5d-9763-5596fd644dad",
       "symbol": "GILD",
@@ -449,7 +449,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-09-21T22:26:23.366136719Z",
+      "timestamp": "2026-09-21T22:26:23.366137Z",
       "order_id": "5f0a265b-ec25-47b5-90d5-3361b9f84dfe",
       "client_order_id": "lpm-P-GILD-49c5222c58f04eb1a48c63e768d55b32",
       "symbol": "GILD",
