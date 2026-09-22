@@ -1,112 +1,22 @@
 {
   "status": "degraded",
-  "providers": {
-    "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 13,
-      "successes": 12,
-      "failures": 1
-    },
-    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
-      "attempts": 2,
-      "successes": 1,
-      "failures": 1
-    },
-    "OpenRouter:z-ai/glm-5.2:free": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
-    },
-    "OpenRouter:minimax/minimax-m3:free": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
-    },
-    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
-    }
-  },
+  "providers": {},
   "stages": {
     "broker_sync": {
       "success": true,
       "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
-      "success": true,
-      "detail": "no gaps"
+      "success": false,
+      "detail": "2026-09-21"
     },
     "session": {
       "success": true,
-      "detail": "Completed session after 16:15 ET"
+      "detail": "before 16:15 ET"
     },
     "protection": {
       "success": true,
       "detail": "0 placed, 0 moved, 0 without levels"
-    },
-    "market_context": {
-      "success": true,
-      "detail": "Exact-session VIX available"
-    },
-    "market_data": {
-      "success": true,
-      "detail": "765/926 exact-session quotes; missing: MMM, AOS, ABT, ABBV, ACN, ADBE, AMD, AES, AFL, A, APD, ABNB, AKAM, ALB, ARE, ALGN, ALLE, LNT, ALL, GOOGL, GOOG, MO, AMZN, AMCR, AEE, AEP, AXP, AIG, AMT, AWK, AMP, AME, AMGN, APH, ADI, AON, APA, APO, AAPL, AMAT, APP, APTV, ACGL, ADM, ARES, ANET, AJG, AIZ, T, ATO, ADSK, ADP, AZO, AVY, AXON, BKR, BALL, BAC, BAX, BDX, BRK-B, BBY, TECH, BIIB, BLK, BX, XYZ, BE, BNY, BA, BKNG, BSX, BMY, AVGO, BR, BRO, BF-B, BG, BXP, CHRW, CDNS, COF, CAH, CCL, CASY, CAT, CBOE, CBRE, COR, CNC, CNP, CF, CRL, SCHW, CHTR, CVX, KRG, KTOS, LAD, LAMR, LEA, LFUS, LOPE, LPX, LSCC, LSTR, M, MANH, MAT, MIDD, MKSI, MLI, MOG-A, MOH, MORN, MP, MSA, MTG, MTZ, MUR, MZTI, NBIX, NEU, NFG, NJR, NNN, NOVT, NVST, NVT, NWE, NXST, NXT, NYT, OC, OGE, OHI, OLED, OLN, ONB, OPCH, ORA, ORI, OSK, OVV, OZK, PB, PEGA, PII, PNFP, POR, POST, PPC, PRI, PVH, R, RBC, RGA, RGEN, RGLD, RLI, RMBS"
-    },
-    "fundamental_coverage": {
-      "success": true,
-      "detail": "42/42 covered; missing: none; selected sector checked by order planner"
-    },
-    "exit:MTD": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "exit:GILD": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalyst_1": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalysts": {
-      "success": true,
-      "detail": "30/30 verified"
-    },
-    "catalyst_2": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalyst_3": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalyst_4": {
-      "success": true,
-      "detail": "NVIDIA-retry: JSON and contract accepted"
-    },
-    "catalyst_5": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "news": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
-    },
-    "round2": {
-      "success": true,
-      "detail": "Optional analysis context available; not a decision contract"
-    },
-    "final": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "broker": {
-      "success": true,
-      "detail": "In sync: 2 position(s) match Alpaca"
     },
     "alerts": {
       "success": true,
@@ -114,18 +24,23 @@
     }
   },
   "degraded_reasons": [
+    "session_never_screened:2026-09-21",
     "protection_rejected:MTD"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
-  "attempts": 18,
-  "successes": 13,
-  "failures": 5,
-  "date": "2026-09-21",
+  "label": "No successful LLM response",
+  "attempts": 0,
+  "successes": 0,
+  "failures": 0,
+  "date": "2026-09-22",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "screening",
-  "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
+  "mode": "no_session",
+  "report": null,
   "trade_ready": false,
   "trade_blockers": [
+    "missing:market_data",
+    "missing:catalysts",
+    "missing:final",
+    "session_never_screened:2026-09-21",
     "protection_rejected:MTD"
   ],
   "order_status": "NO ORDER"
