@@ -2,29 +2,29 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 12,
-      "successes": 11,
-      "failures": 1
+      "attempts": 13,
+      "successes": 10,
+      "failures": 3
     },
     "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
-      "attempts": 2,
-      "successes": 1,
-      "failures": 1
+      "attempts": 4,
+      "successes": 2,
+      "failures": 2
     },
     "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 1,
+      "attempts": 3,
       "successes": 0,
-      "failures": 1
+      "failures": 3
     },
     "OpenRouter:z-ai/glm-5.2:free": {
-      "attempts": 1,
+      "attempts": 2,
       "successes": 0,
-      "failures": 1
+      "failures": 2
     },
     "OpenRouter:minimax/minimax-m3:free": {
-      "attempts": 1,
+      "attempts": 2,
       "successes": 0,
-      "failures": 1
+      "failures": 2
     }
   },
   "stages": {
@@ -54,7 +54,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "57/62 covered; missing: DT, OKTA, TWLO, SIRI, ONTO; selected sector checked by order planner"
+      "detail": "56/62 covered; missing: VLO, DT, OKTA, TWLO, SIRI, ONTO; selected sector checked by order planner"
     },
     "exit:GILD": {
       "success": true,
@@ -78,27 +78,27 @@
     },
     "catalyst_4": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "NVIDIA-retry: JSON and contract accepted"
     },
     "catalyst_5": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "news": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "success": false,
+      "detail": "ValueError: NVIDIA-retry provider unavailable or returned empty content (sentiment enrichment skipped)"
     },
     "round1": {
       "success": true,
       "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
-      "success": false,
-      "detail": "ValueError: no usable deep-dive context"
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
       "success": true,
-      "detail": "NVIDIA-retry: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "broker": {
       "success": true,
@@ -109,11 +109,13 @@
       "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
-  "degraded_reasons": [],
+  "degraded_reasons": [
+    "advisory_news_unavailable"
+  ],
   "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
-  "attempts": 17,
+  "attempts": 24,
   "successes": 12,
-  "failures": 5,
+  "failures": 12,
   "date": "2026-09-22",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
