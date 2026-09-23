@@ -1,20 +1,20 @@
 {
-  "status": "degraded",
+  "status": "healthy",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 11,
-      "successes": 10,
+      "attempts": 12,
+      "successes": 11,
+      "failures": 1
+    },
+    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
+      "attempts": 1,
+      "successes": 0,
       "failures": 1
     },
     "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
       "attempts": 1,
       "successes": 1,
       "failures": 0
-    },
-    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
     }
   },
   "stages": {
@@ -44,7 +44,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "61/62 covered; missing: OKTA; selected sector checked by order planner"
+      "detail": "57/58 covered; missing: OKTA; selected sector checked by order planner"
     },
     "exit:GILD": {
       "success": true,
@@ -76,15 +76,15 @@
     },
     "news": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "NVIDIA-retry: JSON and contract accepted"
     },
     "round1": {
       "success": true,
       "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
-      "success": false,
-      "detail": "ValueError: no usable deep-dive context"
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
       "success": true,
@@ -101,8 +101,8 @@
   },
   "degraded_reasons": [],
   "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
-  "attempts": 13,
-  "successes": 11,
+  "attempts": 14,
+  "successes": 12,
   "failures": 2,
   "date": "2026-09-23",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",

@@ -31,16 +31,16 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round2<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #16803c;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: HEALTHY</b><br>No recorded stage failures<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Wednesday September 23 2026  23:06 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Wednesday September 23 2026  23:57 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
     <div class="mi"><div class="ml">VIX</div><div class="mv">15.2 &nbsp;LOW (p12 risk-</div></div>
     <div class="mi"><div class="ml">SPY Today</div>
         <div class="mv" style="color:#f44336">-0.71%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BULLISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US market headlines are focused on prediction markets, wage growth, and the Trump-Xi summit, with a neutral tone on macro data and geopolitical events. The VIX </div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US markets are showing mixed signs, with the VIX at 15.18 and the SPY down 0.71%. The QQQ is bullish, up 4.19% vs 50MA. Headlines are dominated by the upcoming </div>
   </div>
 
   <div class="tabs">
@@ -54,8 +54,8 @@ tr:last-child td{border-bottom:none}
   <div id="t-buy" class="tp on">
     <div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
-    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that stocks with strong technical and fundamental signals tend to perform well in the 1-4 week time frame.</p>
-    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=10, wr=80%, HIGH confidence): Stocks with tech_score &gt; 40 and news_score &gt; 30 have a 80% win rate with an average magnitude of 12%.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=7, wr=71%, MEDIUM confidence): Stocks with vader_label = BULLISH and insider_label = BUYING have a 71% win rate with an average magnitude of 9%.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule (n=4, wr=50%, LOW confidence): Stocks with sector = Healthcare and upside_pct &gt; 10 have a 50% win rate with an average magnitude of 5%.</li></ul>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History taught me to prioritize stocks with strong momentum, low short ratios, and high revenue growth in a low-VIX environment.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=5, wr=80%, HIGH confidence): Stocks with a momentum of 5% or higher in the last 5 days and a short ratio of 3.5 or lower have a win rate of 80%.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=4, wr=75%, HIGH confidence): Stocks with a revenue growth of 20% or higher and a short ratio of 2.5 or lower have a win rate of 75%.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule (n=3, wr=60%, LOW confidence): Stocks with a VIX score of 15 or lower and a technical score of 40 or higher have a win rate of 60%.</li></ul>
     <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 23:48</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with a VIX score above 40 and a news score above 30 have a 80% win rate with an average return of 10%</li><li style="padding:2px 0">Rule (n=5, wr=70%, MEDIUM confidence): Stocks with a momentum score above 20 and a short ratio below 2.5 have a 70% win rate with an average return of 8%</li><li style="padding:2px 0">Rule (n=3, wr=60%, LOW confidence): Stocks with a sector score above 40 and a short ratio above 3 have a 60% win rate with an average return of 5%</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 23:05</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Strong bull cases with a high short-term catalyst and reasonable distance to earnings tend to perform well in the 1-4 week regime.</li><li style="padding:2px 0">Rule (n=5, wr=60%, HIGH confidence): Stocks with a high short ratio and recent decline from 52-week high tend to experience a short squeeze, making them high-risk trades.</li><li style="padding:2px 0">Rule (n=3, wr=50%, LOW confidence): Stocks with a high momentum and recent growth tend to perform well in the 1-4 week regime.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 01:43</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with strong fundamentals and bullish technicals tend to perform well in the 1-4 week window.</li><li style="padding:2px 0">Rule (n=5, wr=70%, HIGH confidence): Stocks with recent earnings beats and strong momentum tend to continue their uptrend.</li><li style="padding:2px 0">Rule (n=3, wr=60%, LOW confidence): Stocks with high short interest and unusual call activity tend to experience a short squeeze.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 01:17</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=60%, HIGH confidence): Stocks with high short-term momentum and low volatility tend to outperform in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=7, wr=57%, HIGH confidence): Stocks with strong recent performance and potential catalysts tend to continue their upward trend in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-21 22:51</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=8, wr=62.5%, HIGH confidence): stocks with 5-day momentum > 5% and RSI > 50 have a 62.5% win rate.</li><li style="padding:2px 0">Rule (n=6, wr=66.7%, HIGH confidence): stocks with ADX > 20 and volume ratio > 1 have a 66.7% win rate.</li></ul></div></details>
   </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
@@ -92,11 +92,11 @@ tr:last-child td{border-bottom:none}
       <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
                   font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
           <b>LLM narrative (not verified facts)</b><br>
-          ILMN has a strong technical score of 43 and a news score of 31, indicating a solid bull case. The company&#x27;s vader sentiment is BULLISH, and insiders are buying, which further supports the thesis.
+          ILMN&#x27;s strong fundamentals, including a 9.4% revenue growth and 71.4% RSI, make it a compelling short-term trade. Additionally, the stock has a low short ratio of 4.7, indicating a low level of short interest.
       </div>
       <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
                   border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
-          Risk (LLM narrative): ILMN&#x27;s key risk is its high short ratio of 4.7, which could lead to a short squeeze if the stock moves against the bears.
+          Risk (LLM narrative): ILMN&#x27;s high analyst rating may be overly optimistic, leading to a potential decline in the stock price.
       </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-23)</b><br>ticker=ILMN; sector=Healthcare; source=BOTH; rsi=71.4; short_ratio=4.7; short_pct_float=10.5</div>
     </div>
     <div class="sec">
@@ -111,7 +111,18 @@ tr:last-child td{border-bottom:none}
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
           <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
         </div>
-        <div style="font-size:13px;color:#555">LLM narrative: DE has a strong technical score of 41 and a news score of 35, making it a potential candidate for a watch list.</div>
+        <div style="font-size:13px;color:#555">LLM narrative: DE&#x27;s moderate momentum and 3.5% 5-day move could be sustained by its strong fundamentals, including a 4.9% revenue growt</div>
+      </div>
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">ETN</span>
+          <span style="color:#888;font-size:13px">72/100 &nbsp;·&nbsp; Industrials</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:72%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">LLM narrative: ETN&#x27;s recent news and stock price movement suggest a potential short-term uptrend, driven by its 21.4% revenue growth an</div>
       </div>
     </div>
   </div>
