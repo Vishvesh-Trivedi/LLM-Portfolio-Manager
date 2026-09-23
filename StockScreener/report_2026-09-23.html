@@ -31,16 +31,16 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>news; advisory_news_unavailable<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round2<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Wednesday September 23 2026  01:40 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Wednesday September 23 2026  23:06 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
-    <div class="mi"><div class="ml">VIX</div><div class="mv">14.2 &nbsp;LOW (p2 risk-o</div></div>
+    <div class="mi"><div class="ml">VIX</div><div class="mv">15.2 &nbsp;LOW (p12 risk-</div></div>
     <div class="mi"><div class="ml">SPY Today</div>
-        <div class="mv" style="color:#f44336">-0.01%</div></div>
+        <div class="mv" style="color:#f44336">-0.71%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BULLISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px"></div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US market headlines are focused on prediction markets, wage growth, and the Trump-Xi summit, with a neutral tone on macro data and geopolitical events. The VIX </div>
   </div>
 
   <div class="tabs">
@@ -54,17 +54,17 @@ tr:last-child td{border-bottom:none}
   <div id="t-buy" class="tp on">
     <div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
-    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History taught that high-momentum stocks with long earnings visibility and clear catalysts tend to outperform, while stocks with strong technicals but weak fundamentals are riskier.</p>
-    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=10, wr=80%, HIGH confidence): stocks with 5-day momentum &gt; 10% and earnings &gt; 5 weeks away have a 80% win rate with avg+12% wins.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=5, wr=60%, MEDIUM confidence): stocks with a clear upgrade catalyst and insider buying have a 60% win rate with avg+8% wins.</li></ul>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that stocks with strong technical and fundamental signals tend to perform well in the 1-4 week time frame.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=10, wr=80%, HIGH confidence): Stocks with tech_score &gt; 40 and news_score &gt; 30 have a 80% win rate with an average magnitude of 12%.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=7, wr=71%, MEDIUM confidence): Stocks with vader_label = BULLISH and insider_label = BUYING have a 71% win rate with an average magnitude of 9%.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule (n=4, wr=50%, LOW confidence): Stocks with sector = Healthcare and upside_pct &gt; 10 have a 50% win rate with an average magnitude of 5%.</li></ul>
     <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 23:48</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with a VIX score above 40 and a news score above 30 have a 80% win rate with an average return of 10%</li><li style="padding:2px 0">Rule (n=5, wr=70%, MEDIUM confidence): Stocks with a momentum score above 20 and a short ratio below 2.5 have a 70% win rate with an average return of 8%</li><li style="padding:2px 0">Rule (n=3, wr=60%, LOW confidence): Stocks with a sector score above 40 and a short ratio above 3 have a 60% win rate with an average return of 5%</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 23:05</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Strong bull cases with a high short-term catalyst and reasonable distance to earnings tend to perform well in the 1-4 week regime.</li><li style="padding:2px 0">Rule (n=5, wr=60%, HIGH confidence): Stocks with a high short ratio and recent decline from 52-week high tend to experience a short squeeze, making them high-risk trades.</li><li style="padding:2px 0">Rule (n=3, wr=50%, LOW confidence): Stocks with a high momentum and recent growth tend to perform well in the 1-4 week regime.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 01:43</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with strong fundamentals and bullish technicals tend to perform well in the 1-4 week window.</li><li style="padding:2px 0">Rule (n=5, wr=70%, HIGH confidence): Stocks with recent earnings beats and strong momentum tend to continue their uptrend.</li><li style="padding:2px 0">Rule (n=3, wr=60%, LOW confidence): Stocks with high short interest and unusual call activity tend to experience a short squeeze.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-22 01:17</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=60%, HIGH confidence): Stocks with high short-term momentum and low volatility tend to outperform in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=7, wr=57%, HIGH confidence): Stocks with strong recent performance and potential catalysts tend to continue their upward trend in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-21 22:51</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=8, wr=62.5%, HIGH confidence): stocks with 5-day momentum > 5% and RSI > 50 have a 62.5% win rate.</li><li style="padding:2px 0">Rule (n=6, wr=66.7%, HIGH confidence): stocks with ADX > 20 and volume ratio > 1 have a 66.7% win rate.</li></ul></div></details>
   </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
                 margin-bottom:14px;border-left:8px solid #ff9800">
       <div style="font-size:28px;font-weight:800;color:#ff9800;margin-bottom:6px">
-        REJECTED MPWR
+        REJECTED ILMN
       </div>
       <div style="color:#aaa;font-size:13px">
-        2026-09-23 &nbsp;·&nbsp; Technology &nbsp;·&nbsp; TECHNICAL
+        2026-09-23 &nbsp;·&nbsp; Healthcare &nbsp;·&nbsp; BOTH
       </div>
             
       <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>REJECTED</b>: Order not queued: equity drawdown is at least 20%</div>
@@ -78,11 +78,11 @@ tr:last-child td{border-bottom:none}
         </div>
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
           <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Reference price (not a fill)</div>
-          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1384.89</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">256.22</div>
         </div>
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
           <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
-          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">1313.22 / 1528.23</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">240.79 / 287.09</div>
         </div>
         <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
           <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
@@ -92,12 +92,12 @@ tr:last-child td{border-bottom:none}
       <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
                   font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
           <b>LLM narrative (not verified facts)</b><br>
-          MPWR shows a 20.2% 5-day price surge on heavy volume, with an upcoming upgrade catalyst, strong 47.6% revenue growth, and 85.8% earnings growth. The stock is positioned for continued AI-data-center power demand over the next 1-4 weeks.
+          ILMN has a strong technical score of 43 and a news score of 31, indicating a solid bull case. The company&#x27;s vader sentiment is BULLISH, and insiders are buying, which further supports the thesis.
       </div>
       <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
                   border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
-          Risk (LLM narrative): High short interest (5.5% of float) and elevated valuation multiples pose downside risk.
-      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-22)</b><br>ticker=MPWR; sector=Technology; source=TECHNICAL; rsi=63.5; short_ratio=2.9; short_pct_float=5.5</div>
+          Risk (LLM narrative): ILMN&#x27;s key risk is its high short ratio of 4.7, which could lead to a short squeeze if the stock moves against the bears.
+      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-23)</b><br>ticker=ILMN; sector=Healthcare; source=BOTH; rsi=71.4; short_ratio=4.7; short_pct_float=10.5</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
@@ -105,13 +105,13 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
                   border-radius:6px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <span style="font-weight:700;font-size:16px">NVDA</span>
-          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Technology</span>
+          <span style="font-weight:700;font-size:16px">DE</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Industrials</span>
         </div>
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
           <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
         </div>
-        <div style="font-size:13px;color:#555">LLM narrative: NVDA&#x27;s 6.97% 5-day momentum reflects sustained AI-chip demand, with 105.9% revenue growth and 127.8% earnings growth, bu</div>
+        <div style="font-size:13px;color:#555">LLM narrative: DE has a strong technical score of 41 and a news score of 35, making it a potential candidate for a watch list.</div>
       </div>
     </div>
   </div>
@@ -122,8 +122,8 @@ tr:last-child td{border-bottom:none}
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
-        <div style="font-size:28px;font-weight:700">USD 102,095</div>
-                <div style="color:#00c853;font-size:15px;margin-top:2px">+2.1% vs Alpaca paper capital</div>
+        <div style="font-size:28px;font-weight:700">USD 101,968</div>
+                <div style="color:#00c853;font-size:15px;margin-top:2px">+2.0% vs Alpaca paper capital</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
@@ -142,29 +142,29 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">GILD</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +2.1%</span>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +1.2%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          98 shares &nbsp;·&nbsp; Value USD 14,962
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+303</span>
+          98 shares &nbsp;·&nbsp; Value USD 14,834
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+175</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
             <span>Stop 147.96</span><span>Target 158.9998</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:43%;background:#00c853;
+            <div style="position:absolute;left:0;width:31%;background:#00c853;
                         border-radius:4px;height:8px;opacity:.35"></div>
             <div style="position:absolute;left:15%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:43%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:31%;width:4px;height:16px;top:-4px;
                         background:#00c853;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 149.5798 &nbsp;·&nbsp; Current 152.6699981689453</div>
+          <div style="font-size:11px;color:#999">Entry 149.5798 &nbsp;·&nbsp; Current 151.3699951171875</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:20%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:30%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 2 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 3 of 10</div>
       </div>
   </div>
 
@@ -211,8 +211,8 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">3.1% above stop</div>
-          <div style="font-size:12px;color:#888">Current 152.6699981689453 &nbsp;·&nbsp; Stop 147.96</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.3% above stop</div>
+          <div style="font-size:12px;color:#888">Current 151.3699951171875 &nbsp;·&nbsp; Stop 147.96</div>
         </div>
       </div>
     </div>

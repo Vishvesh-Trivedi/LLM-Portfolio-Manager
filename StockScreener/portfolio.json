@@ -27,14 +27,14 @@
       "stop_price": 147.96,
       "target_price": 158.9998,
       "sector": "Healthcare",
-      "current_price": 152.6699981689453,
-      "current_value": 14961.66,
+      "current_price": 151.3699951171875,
+      "current_value": 14834.26,
       "cost_basis": 14658.82,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 302.84,
-      "unrealized_pnl_pct": 2.065923450864404,
-      "hold_days": 2,
-      "held_sessions": 2,
+      "unrealized_pnl": 175.44,
+      "unrealized_pnl_pct": 1.1968221180149508,
+      "hold_days": 3,
+      "held_sessions": 3,
       "hold_sessions": 10,
       "high_watermark": 152.6699981689453,
       "atr_at_entry": 3.14,
@@ -44,9 +44,9 @@
       "broker_order_id": "ded5428d-4f95-4735-8d88-4ca38df70737",
       "broker_partial_fill": false,
       "requested_shares": 98,
-      "quote_date": "2026-09-22",
-      "last_evaluated_session": "2026-09-22",
-      "earnings_days_away": 37,
+      "quote_date": "2026-09-23",
+      "last_evaluated_session": "2026-09-23",
+      "earnings_days_away": 36,
       "indicator_exit_note": ""
     }
   ],
@@ -367,7 +367,7 @@
     "2026-09-18"
   ],
   "equity_peak": 127636.56,
-  "broker_equity": 102114.04,
+  "broker_equity": 101968.02,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -501,12 +501,12 @@
     },
     {
       "source": "poll",
-      "event": "accepted",
-      "timestamp": "2026-09-22T22:59:56.904010962Z",
+      "event": "new",
+      "timestamp": "2026-09-23T08:00:42.443309Z",
       "order_id": "55cc836d-d849-4ebe-aa46-85c0394f081d",
       "client_order_id": "lpm-P-GILD-49c5222c58f04eb1a48ca453ae81",
       "symbol": "GILD",
-      "status": "accepted",
+      "status": "new",
       "filled_qty": "0",
       "filled_avg_price": "",
       "qty": "98",
@@ -515,7 +515,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-09-22T22:59:56.904048468Z",
+      "timestamp": "2026-09-22T22:59:56.904048Z",
       "order_id": "2361a7fb-a79a-4635-8be7-700914badd25",
       "client_order_id": "56af5b1b-79eb-4302-9d21-7b65b9970168",
       "symbol": "GILD",
@@ -564,6 +564,7 @@
   "last_closed_summary": "2026-09-20",
   "screened_sessions": [
     "2026-09-21",
-    "2026-09-22"
+    "2026-09-22",
+    "2026-09-23"
   ]
 }
