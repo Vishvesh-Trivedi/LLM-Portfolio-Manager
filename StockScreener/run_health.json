@@ -2,29 +2,29 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 13,
-      "successes": 10,
+      "attempts": 12,
+      "successes": 9,
       "failures": 3
-    },
-    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
-      "attempts": 4,
-      "successes": 2,
-      "failures": 2
     },
     "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
       "attempts": 3,
       "successes": 0,
       "failures": 3
     },
-    "OpenRouter:z-ai/glm-5.2:free": {
+    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
       "attempts": 2,
+      "successes": 1,
+      "failures": 1
+    },
+    "OpenRouter:z-ai/glm-5.2:free": {
+      "attempts": 1,
       "successes": 0,
-      "failures": 2
+      "failures": 1
     },
     "OpenRouter:minimax/minimax-m3:free": {
-      "attempts": 2,
+      "attempts": 1,
       "successes": 0,
-      "failures": 2
+      "failures": 1
     }
   },
   "stages": {
@@ -54,7 +54,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "56/62 covered; missing: VLO, DT, OKTA, TWLO, SIRI, ONTO; selected sector checked by order planner"
+      "detail": "57/63 covered; missing: DT, OKTA, TWLO, ENSG, SIRI, ONTO; selected sector checked by order planner"
     },
     "exit:GILD": {
       "success": true,
@@ -78,7 +78,7 @@
     },
     "catalyst_4": {
       "success": true,
-      "detail": "NVIDIA-retry: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "catalyst_5": {
       "success": true,
@@ -113,9 +113,9 @@
     "advisory_news_unavailable"
   ],
   "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
-  "attempts": 24,
-  "successes": 12,
-  "failures": 12,
+  "attempts": 19,
+  "successes": 10,
+  "failures": 9,
   "date": "2026-09-22",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",

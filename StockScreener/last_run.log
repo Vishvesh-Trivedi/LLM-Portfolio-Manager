@@ -16,7 +16,7 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-23 00:56
+   Time:   2026-09-23 01:24
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 901 | ETFs: 26
 =================================================================
@@ -36,8 +36,8 @@ Market context...
   VIX:  14.21 (p2.4) -> LOW (p2 risk-on) (1.1x)
   QQQ:  $741.47 | BULLISH (+4.50% vs 50MA)
   SPY today: +1.55%
-  10Y yield: 4.97% (+0.14%)  DXY: 100.55 (+0.12%)  Nikkei: +1.38%
-  Futures:  ES=-0.03%  NQ=+0.84%
+  10Y yield: 4.97% (+0.14%)  DXY: 100.6 (+0.17%)  Nikkei: +1.38%
+  Futures:  ES=-0.04%  NQ=+0.78%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
@@ -45,9 +45,9 @@ Step 3/8: Fetching all data (parallel)...
   OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
   RSS feeds active: 14/16 | Headlines: 84
   Fetching news for all 900 stocks (parallel)...
-  News found: 314/900 stocks have news today
+  News found: 319/900 stocks have news today
   Fetching fundamentals for all 899 stocks (parallel)...
-  Full fundamentals: 436/899 stocks
+  Full fundamentals: 448/899 stocks
   Sector ranks - Top 3: ['Technology', 'Consumer Cyclical', 'Healthcare'] | Perf: Technology:+6.7% | Consumer Cyclical:+2.0% | Healthcare:+1.2% | Industrials:+0.9% | Communication Services:+0.5%
   Sector flows: TOP Basic Materials +1.6% | BOT Financial Services -2.0%
 
@@ -57,30 +57,31 @@ Phase 2 - Technical screening (926 tickers)...
   Passed: 12 | Rejected: Price:0 MA:746 Vol:96 RSI:3 Liq:35 ADX:8
 
 Phase 3 - News screening all 926 stocks...
-  News rescued: 44 stocks → ['A', 'ACN', 'ABBV', 'ABT', 'ADI', 'APP', 'AON', 'BKR', 'BAC', 'BSX']...
+  News rescued: 44 stocks → ['ACN', 'A', 'ABBV', 'ABT', 'AON', 'ADI', 'APP', 'BAC', 'BKR', 'BMY']...
 
 Phase 4 - Merging candidate pools...
   Total candidates: 56
     BOTH (tech+news): 3  TECHNICAL: 9  NEWS: 44
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'SIRI', 'MRVL', 'ONTO', 'MSFT', 'AMZN']
+  Stream B: Processing headline mentions: ['AAPL', 'ENSG', 'SIRI', 'ONTO', 'MSFT', 'AMZN', 'GOOGL', 'NVDA']
   Stream B added: AAPL | $339.85 | RSI 66.8
-  Stream B added: GOOGL | $351.18 | RSI 55.3
+  Stream B added: ENSG | $176.43 | RSI 53.3
   Stream B added: SIRI | $26.52 | RSI 33.3
-  Stream B added: MRVL | $262.31 | RSI 64.0
   Stream B added: ONTO | $283.5 | RSI 53.5
   Stream B added: MSFT | $498.0 | RSI 54.8
   Stream B added: AMZN | $254.99 | RSI 49.2
-  Sector sentiment derived: 9/11 sectors from 56 stocks
-  [ADVISORY ONLY] HOLD [LOW] GILD: Price movement is in line with the original thesis and there are no new developments to warrant a change in position. (no ledger changes)
+  Stream B added: GOOGL | $351.18 | RSI 55.3
+  Stream B added: NVDA | $228.85 | RSI 59.4
+  Sector sentiment derived: 9/11 sectors from 57 stocks
+  [ADVISORY ONLY] HOLD [LOW] GILD: Current price is within the original thesis' expected rally range, thus no immediate action is recommended. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 62 candidates...
-  Options data: 0/62 | Insider signals: 51/62
+  Fetching options + insider data for 63 candidates...
+  Options data: 0/63 | Insider signals: 52/63
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (62 candidates)...
+Phase 5.5 - Computing score breakdown (63 candidates)...
   Pre-score top 5: ADI(76=42T+34N [vader:BULLISH])  ETN(75=41T+34N [vader:BULLISH])  ILMN(75=42T+33N [vader:BULLISH])  DE(71=36T+35N [vader:BULLISH])  FTNT(71=42T+29N [vader:BULLISH])
   SEC EDGAR 8-K: 2/30 candidates have recent filings
 
@@ -89,9 +90,6 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
     Batch 1/5 
     Batch 2/5 
     Batch 3/5 
-  catalyst_4: NVIDIA parser/validator rejected response: ValueError: duplicate JSON key: catalyst_score
-  catalyst_4: OpenRouter parser/validator rejected response: JSONDecodeError: Unterminated string starting at: line 67 column 817 (char 5702)
-  ↩️  Critical LLM call recovered via NVIDIA-retry.
     Batch 4/5 
     Batch 5/5 
   Catalyst scoring done — 6 auto-dropped, 24 remain
@@ -119,7 +117,7 @@ Phase 5 - News intelligence (24 candidates, 3 layers)...
   News enrichment unavailable - trading continues on verified prices, verified catalysts and the final decision.
 
 Phase 5.5 - Computing score breakdown (24 candidates)...
-  Pre-score top 5: ADI(76=42T+34N [vader:BULLISH])  ETN(75=41T+34N [vader:BULLISH])  ILMN(75=42T+33N [vader:BULLISH])  KEYS(70=43T+27N [vader:BULLISH])  CRWD(69=36T+33N [vader:BULLISH])
+  Pre-score top 5: ADI(76=42T+34N [vader:BULLISH])  ETN(75=41T+34N [vader:BULLISH])  ILMN(75=42T+33N [vader:BULLISH])  FTNT(71=42T+29N [vader:BULLISH])  KEYS(70=43T+27N [vader:BULLISH])
 
 Step 5.5/8: Applying LLM config criteria...
   24 candidates after config criteria
@@ -129,25 +127,21 @@ Step 6/8: LLM final scoring...
 
 Phase 6 - NVIDIA final scoring (24 candidates)...
   Round 1/3: Ranking 24 candidates...
-  Round 1 → Top 10: ['ADI', 'MPWR', 'MCHP', 'MRVL', 'AAPL', 'QCOM', 'ILMN', 'CRWD', 'KEYS', 'ETN']
+  Round 1 → Top 10: ['ADI', 'ETN', 'ILMN', 'FTNT', 'KEYS', 'CRWD', 'A', 'HCA', 'MPWR', 'NVDA']
   Round 2/3: Deep-diving top 10...
   LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
   LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  OpenRouter fallback failed [nvidia/nemotron-3-super-120b-a12b:free]: KeyError: 'choices'
-  OpenRouter fallback failed [z-ai/glm-5.2:free]: HTTPError (HTTP 429)
-  OpenRouter paused for 120s after repeated failures
-  OpenRouter fallback failed [minimax/minimax-m3:free]: HTTPError (HTTP 404)
-  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
-  -> Answered via OpenRouter backup provider.
-  Round 2 → analyses for ['MPWR']
+  -> NVIDIA throttled; answered via OpenRouter.
+  Round 2 → analyses for ['MPWR', 'NVDA', 'ADI', 'KEYS', 'ETN', 'HCA', 'A', 'ILMN', 'FTNT', 'CRWD']
   Round 3/3: Final deliberation...
-  Final pick: MPWR | pre=65 → 85/100 | BUY | 13 LLM calls this run
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
+  Final pick: MPWR | pre=65 → 85/100 | BUY | 12 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=10, wr=80%, HIGH confidence): Bullish momentum stocks with strong RS vs SPY and insider buying have a high win rate (80%) with an average net realized return of +12%.
-│ 2. Rule (n=5, wr=60%, MEDIUM confidence): Stocks with a VIX multiplier above 1.1x and a price above the 50-day moving average have a moderate win rate (60%) with an average net realized return of +8%.
-│ → History taught that stocks with strong momentum and insider buying tend to perform well in low-VIX regimes, while stocks with a VIX multiplier above 1.1x and a strong price trend tend to perform moderately well.
+│ 1. Rule (n=10, wr=80%, HIGH confidence): stocks with 5-day momentum > 10% and earnings > 5 weeks away have a 80% win rate with avg+12% wins.
+│ 2. Rule (n=5, wr=60%, MEDIUM confidence): stocks with a clear upgrade catalyst and insider buying have a 60% win rate with avg+8% wins.
+│ → History taught that high-momentum stocks with long earnings visibility and clear catalysts tend to outperform, while stocks with strong technicals but weak fundamentals are riskier.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
   Entry estimate: close=$1380.75 + 0.3% slippage = $1384.89 (stop/target anchored here)
@@ -164,24 +158,24 @@ Phase 6 - NVIDIA final scoring (24 candidates)...
   Entry:  ~$1384.89   Stop: ~$1313.22   Target: ~$1528.23   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      MPWR shows explosive 20% 5-day momentum, RS vs SPY >8, strong earnings growth 86% YoY and revenue growth 48%, with insider buying and rising volume, supporting continuation of the breakout over the next 4 weeks as AI-driven power demand sustains. Additionally, MPWR has a strong price trend, with a price above the 50-day moving average and a VIX multiplier above 1.1x, indicating a high likelihood of continued momentum in the next 4 weeks.
-  Key Risk: The stock's high price trend and extended nature make it vulnerable to a pullback if the market corrects or if the tech sector experiences a reversal.
-  Bear case: The stock is already extended, and a pause or profit-taking could trigger a 5-10% pullback, especially with the upcoming earnings in ~5 weeks and any broader tech-sector reversal.
+  Why:      MPWR shows a 20.2% 5-day price surge on heavy volume, with an upcoming upgrade catalyst, strong 47.6% revenue growth, and 85.8% earnings growth. The stock is positioned for continued AI-data-center power demand over the next 1-4 weeks.
+  Key Risk: High short interest (5.5% of float) and elevated valuation multiples pose downside risk.
+  Bear case: The stock may be overextended, and a pullback could occur if the upgrade is delayed or if guidance disappoints.
 
   WATCH LIST:
-    ADI     74/100  [Technology]  ADI shows strong momentum with a 12% 5-day momentum and RS vs SPY >6, 
+    NVDA    74/100  [Technology]  NVDA's 6.97% 5-day momentum reflects sustained AI-chip demand, with 10
 █████████████████████████████████████████████████████████████████
   Session left open: the order was rejected, so nothing was decided and a later run may retry.
   Broker: in sync (1 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved MPWR | Stop:1313.22 Target:1528.23
-  Already have ADI on 2026-09-22 - skipping
+  Already have MPWR on 2026-09-22 - skipping
+  OK: Saved NVDA | Stop:220.04 Target:246.46
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 0 evaluated yet | 8 pending
-  WATCH LIST: 0 evaluated yet | 14 pending
+  WATCH LIST: 0 evaluated yet | 15 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
   run-digest (470 chars):
