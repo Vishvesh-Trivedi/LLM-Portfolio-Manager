@@ -14,10 +14,12 @@ Two changes, covered here:
 """
 
 import io
+import pathlib
 import shutil
 import tempfile
 import unittest
 from datetime import datetime
+from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 from contextlib import ExitStack, redirect_stdout
 from unittest.mock import patch
@@ -445,6 +447,85 @@ class BrokerHoldingsAreAudited(unittest.TestCase):
     def test_nothing_held_means_nothing_to_report(self):
         reasons, _ = self.protect([], {})
         self.assertEqual(reasons, [])
+
+
+class TheEquityPeakFollowsTheBroker(unittest.TestCase):
+    """The peak must never be raised from a half-updated ledger.
+
+    load_portfolio writes Alpaca's cash into the ledger before reconciliation
+    removes a position that was sold. For that moment cash already excludes the
+    holding while the holding is still listed, so local arithmetic counts the
+    same money twice. One such save recorded a peak of 127,636 on an account
+    that has never exceeded 102,000, and the 20% drawdown guard then refused
+    every order for four days while the account was up 2%.
+    """
+
+    def setUp(self):
+        import screener_portfolio
+        self.engine = screener_portfolio
+        self.root = tempfile.mkdtemp(prefix='peak-')
+        self.addCleanup(shutil.rmtree, self.root, ignore_errors=True)
+        self.app = SimpleNamespace(
+            PORTFOLIO_JSON=pathlib.Path(self.root) / 'portfolio.json',
+            STARTING_CAPITAL=100000.0, _session_date=lambda: '2026-09-24',
+            _ORDER_REASON=[''], _degrade=lambda reason: None,
+        )
+
+    def ledger(self, **overrides):
+        book = {'cash': 87133.76, 'starting_capital': 100000.0,
+                'positions': [], 'closed_trades': [], 'pending_orders': [],
+                'processed_sessions': [], 'total_realized_pnl': 0.0,
+                'equity_peak': 100000.0, 'created': '2026-09-08',
+                'last_updated': '2026-09-24'}
+        book.update(overrides)
+        return book
+
+    def held(self, ticker, shares, price):
+        return {'trade_id': 't-' + ticker, 'ticker': ticker, 'shares': shares,
+                'entry_price': price, 'cost_basis': round(shares * price, 2),
+                'current_price': price, 'current_value': round(shares * price, 2),
+                'entry_date': '2026-09-18', 'sector': 'Healthcare',
+                'stop_price': round(price * 0.95, 2),
+                'target_price': round(price * 1.1, 2)}
+
+    def test_the_brokers_equity_sets_the_peak_not_local_arithmetic(self):
+        """The exact shape that broke it: broker cash plus a stale position."""
+        book = self.ledger(broker_equity=101968.02,
+                           positions=[self.held('MTD', 18, 1430.44),
+                                      self.held('GILD', 98, 151.37)])
+        saved = self.engine.save_portfolio(self.app, book)
+        # Local arithmetic would say 87,134 + 25,748 + 14,834 = 127,716.
+        self.assertAlmostEqual(saved['equity_peak'], 101968.02, places=2)
+
+    def test_a_healthy_account_is_not_treated_as_a_drawdown(self):
+        book = self.ledger(broker_equity=101968.02,
+                           positions=[self.held('GILD', 98, 151.37)])
+        saved = self.engine.save_portfolio(self.app, book)
+        equity = saved['cash'] + sum(p['current_value'] for p in saved['positions'])
+        self.assertGreater(equity, saved['equity_peak'] * 0.8,
+                           'an account above its start must be able to trade')
+
+    def test_a_real_high_still_raises_the_peak(self):
+        """Guarding against double counting must not stop the peak rising."""
+        book = self.ledger(broker_equity=118400.0,
+                           positions=[self.held('GILD', 98, 151.37)])
+        saved = self.engine.save_portfolio(self.app, book)
+        self.assertAlmostEqual(saved['equity_peak'], 118400.0, places=2)
+
+    def test_without_a_broker_figure_it_falls_back_to_the_ledger(self):
+        book = self.ledger(positions=[self.held('GILD', 98, 151.37)])
+        saved = self.engine.save_portfolio(self.app, book)
+        self.assertAlmostEqual(
+            saved['equity_peak'],
+            max(100000.0, book['cash'] + 98 * 151.37), places=2)
+
+    def test_a_nonsense_broker_figure_is_ignored(self):
+        for bad in (0, -1, 'x', None):
+            with self.subTest(value=bad):
+                book = self.ledger(broker_equity=bad,
+                                   positions=[self.held('GILD', 98, 151.37)])
+                saved = self.engine.save_portfolio(self.app, book)
+                self.assertGreaterEqual(saved['equity_peak'], 100000.0)
 
 
 class MissedSessionsAreNoticed(unittest.TestCase):

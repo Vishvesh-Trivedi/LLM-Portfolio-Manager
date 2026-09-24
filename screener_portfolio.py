@@ -295,8 +295,23 @@ def save_portfolio(app, pf):
     if os.path.lexists(path):
         previous = _read_ledger(path)  # A save cannot silently reset corruption.
         old_peak = previous.get('equity_peak', previous['starting_capital'])
-    equity = work['cash'] + sum(
-        p.get('current_value', p['cost_basis']) for p in work['positions'])
+    # Alpaca's own equity when it is known, because local arithmetic is wrong
+    # at exactly the moment this matters. load_portfolio writes the broker's
+    # cash into the ledger before reconciliation has removed a position that
+    # was sold, so cash already excludes the holding while the holding is still
+    # listed - and the sum counts the same money twice. One such save recorded
+    # a peak of 127,636 on an account that has never exceeded 102,000, and the
+    # 20% drawdown guard then refused every order for four days.
+    #
+    # The peak must never be raised from a state the broker has not confirmed.
+    broker_equity = work.get('broker_equity')
+    try:
+        equity = float(broker_equity)
+        if equity <= 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        equity = work['cash'] + sum(
+            p.get('current_value', p['cost_basis']) for p in work['positions'])
     work['equity_peak'] = max(work['starting_capital'], old_peak,
                               work.get('equity_peak', 0), equity)
     work['last_updated'] = _session(app)
