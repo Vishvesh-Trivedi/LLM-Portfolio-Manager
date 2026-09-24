@@ -567,6 +567,77 @@ class ARejectedOrderSaysWhatRefusedIt(unittest.TestCase):
         self.assertIsNone(health.get('order_reason'))
 
 
+class TheLedgersNumbersMustAgree(unittest.TestCase):
+    """Schema validation asks whether each field is well formed.
+
+    This asks whether they can all be true at once, which is the question that
+    was not being asked. equity_peak stood at 127,636 on an account that could
+    not have exceeded 101,828; every linter, every type and 626 unit tests
+    passed, and the drawdown guard refused every order for four days.
+    """
+
+    def book(self, **overrides):
+        ledger = {
+            'cash': 87133.76, 'starting_capital': 100000.0, 'equity_peak': 101968.02,
+            'total_realized_pnl': 1828.32, 'processed_sessions': ['2026-09-18'],
+            'pending_orders': [],
+            'positions': [{'ticker': 'GILD', 'shares': 98, 'entry_price': 149.58,
+                           'cost_basis': 14658.84, 'current_price': 151.37,
+                           'current_value': 14834.26, 'stop_price': 147.96,
+                           'target_price': 159.00}],
+            'closed_trades': [{'ticker': 'MTD', 'realized_pnl': 1828.32,
+                               'entry_date': '2026-09-18', 'exit_date': '2026-09-22'}],
+        }
+        ledger.update(overrides)
+        return ledger
+
+    def broken(self, **overrides):
+        from qa_validate import check_arithmetic
+        return check_arithmetic(self.book(**overrides))
+
+    def test_a_consistent_ledger_reports_nothing(self):
+        self.assertEqual(self.broken(), [])
+
+    def test_a_peak_the_account_could_never_have_reached_is_caught(self):
+        """The exact failure: cash after a sale plus the sold position."""
+        problems = self.broken(equity_peak=127636.56)
+        self.assertTrue(any('exceeds anything this account' in p for p in problems),
+                        problems)
+
+    def test_a_peak_below_current_equity_is_caught(self):
+        self.assertTrue(any('below current equity' in p
+                            for p in self.broken(equity_peak=50000.0)))
+
+    def test_realised_total_that_disagrees_with_the_trades_is_caught(self):
+        self.assertTrue(any('total_realized_pnl' in p
+                            for p in self.broken(total_realized_pnl=99.0)))
+
+    def test_a_cost_basis_that_is_not_shares_times_entry_is_caught(self):
+        book = self.book()
+        book['positions'][0]['cost_basis'] = 999.0
+        from qa_validate import check_arithmetic
+        self.assertTrue(any('cost_basis' in p for p in check_arithmetic(book)))
+
+    def test_levels_out_of_order_are_caught(self):
+        book = self.book()
+        book['positions'][0]['stop_price'] = 200.0      # above the target
+        from qa_validate import check_arithmetic
+        self.assertTrue(any('stop < entry < target' in p
+                            for p in check_arithmetic(book)))
+
+    def test_a_trade_that_exited_before_it_entered_is_caught(self):
+        book = self.book()
+        book['closed_trades'][0]['exit_date'] = '2026-09-01'
+        from qa_validate import check_arithmetic
+        self.assertTrue(any('before entering' in p for p in check_arithmetic(book)))
+
+    def test_the_same_holding_twice_is_caught(self):
+        book = self.book()
+        book['positions'].append(dict(book['positions'][0]))
+        from qa_validate import check_arithmetic
+        self.assertTrue(any('held twice' in p for p in check_arithmetic(book)))
+
+
 class MissedSessionsAreNoticed(unittest.TestCase):
     """A trading day that was never screened must not vanish quietly.
 

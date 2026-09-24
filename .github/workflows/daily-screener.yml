@@ -144,7 +144,17 @@ jobs:
           SCREENER_DISABLE_ALERTS: '1'
           SCREENER_OUTPUT_DIR: ${{ runner.temp }}/state-validation
         run: |
-          python qa_validate.py --check-state StockScreener/portfolio.json
+          # Check the ledger's arithmetic, but commit either way. A ledger whose
+          # numbers contradict each other is exactly the state worth preserving
+          # - blocking the commit would discard the run's ledger, health and
+          # console log, which are what make it diagnosable. Record the verdict
+          # and fail the step at the end instead.
+          if python qa_validate.py --check-state StockScreener/portfolio.json; then
+            LEDGER_OK=1
+          else
+            LEDGER_OK=0
+            echo "::error title=Ledger arithmetic is inconsistent::See the check-state output above; the state is still committed so it can be inspected."
+          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A -- StockScreener
@@ -166,6 +176,7 @@ jobs:
             echo "could not publish run state after 3 attempts" >&2
             exit 1
           fi
+          [ "$LEDGER_OK" = "1" ] || exit 1
       - name: Upload run artifacts
         if: always()
         uses: actions/upload-artifact@v7.0.1

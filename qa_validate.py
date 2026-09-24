@@ -13,6 +13,71 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def check_arithmetic(portfolio):
+    """Return the ways the ledger's own numbers contradict each other.
+
+    Schema validation asks whether each field is well formed. This asks whether
+    they can all be true at once, which is a different question and the one
+    that was not being asked: equity_peak stood at 127,636 on an account that
+    could not have exceeded 101,828, and the drawdown guard refused every order
+    for four days while the account was up 2%.
+    """
+    broken = []
+    cash = float(portfolio['cash'])
+    start = float(portfolio['starting_capital'])
+    positions = portfolio['positions']
+    closed = portfolio['closed_trades']
+    invested = sum(float(p.get('current_value', p['cost_basis'])) for p in positions)
+    equity = cash + invested
+    realised = sum(float(t.get('realized_pnl', 0)) for t in closed)
+
+    stored_realised = float(portfolio.get('total_realized_pnl', 0))
+    if abs(stored_realised - realised) > 0.01:
+        broken.append(f'total_realized_pnl {stored_realised:,.2f} but the closed '
+                      f'trades sum to {realised:,.2f}')
+
+    # The account cannot have been worth more than it started with, plus
+    # everything it has banked, plus everything it currently holds.
+    peak = float(portfolio.get('equity_peak', 0))
+    ceiling = start + max(0.0, realised) + max(0.0, invested)
+    if peak > ceiling + 0.01:
+        broken.append(f'equity_peak {peak:,.2f} exceeds anything this account '
+                      f'could have been worth ({ceiling:,.2f})')
+    if peak < equity - 0.01:
+        broken.append(f'equity_peak {peak:,.2f} is below current equity {equity:,.2f}')
+
+    seen = set()
+    for position in positions:
+        name = str(position['ticker']).upper()
+        if name in seen:
+            broken.append(f'{name} is held twice')
+        seen.add(name)
+        shares = int(position['shares'])
+        entry = float(position['entry_price'])
+        if abs(float(position['cost_basis']) - shares * entry) > 1.0:
+            broken.append(f'{name} cost_basis {position["cost_basis"]:,.2f} is not '
+                          f'{shares} x {entry:,.2f}')
+        price = position.get('current_price')
+        if price and abs(float(position.get('current_value', 0)) - shares * float(price)) > 1.0:
+            broken.append(f'{name} current_value does not match {shares} x {price}')
+        stop, target = position.get('stop_price'), position.get('target_price')
+        if stop is not None and target is not None:
+            if not float(stop) < entry < float(target):
+                broken.append(f'{name} levels are not stop < entry < target: '
+                              f'{stop} / {entry} / {target}')
+
+    for trade in closed:
+        entered, exited = str(trade.get('entry_date', ''))[:10], str(trade.get('exit_date', ''))[:10]
+        if entered and exited and exited < entered:
+            broken.append(f'{trade.get("ticker")} exited {exited} before entering {entered}')
+
+    sessions = [str(day)[:10] for day in portfolio.get('processed_sessions', [])]
+    if len(sessions) != len(set(sessions)):
+        broken.append('processed_sessions contains a duplicate')
+
+    return broken
+
+
 def check_state(path):
     from screener_portfolio import load_portfolio
 
@@ -20,8 +85,17 @@ def check_state(path):
     before = digest(path)
     portfolio = load_portfolio(SimpleNamespace(PORTFOLIO_JSON=path))
     assert digest(path) == before, 'Read-only ledger validation modified the source'
+
+    broken = check_arithmetic(portfolio)
+    if broken:
+        print(f'Ledger INCONSISTENT - {len(broken)} contradiction(s):')
+        for line in broken:
+            print('  ' + line)
+        raise SystemExit(1)
+
     print(f'Ledger valid: {len(portfolio["positions"])} open, '
-          f'{len(portfolio["closed_trades"])} closed; cash ${portfolio["cash"]:.2f}')
+          f'{len(portfolio["closed_trades"])} closed; cash ${portfolio["cash"]:.2f}; '
+          f'arithmetic consistent')
     return portfolio
 
 
