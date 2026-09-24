@@ -4478,6 +4478,32 @@ def _blocker_words(blocker):
     return phrase
 
 
+def _alpaca_era_trades(portfolio):
+    """Closed trades from after live Alpaca trading began.
+
+    The ledger predates the broker: eleven trades from August were simulated
+    locally, carry no ATR, no broker order id, and a legacy cost basis. Counting
+    them in a summary headed "since Alpaca started" would describe a different
+    system. The boundary is the first trade the broker confirmed - it has a
+    broker_order_id or a basis naming the broker - and everything from that
+    entry date onward belongs to the live era, whether or not each record
+    happens to carry its own marker.
+    """
+    closed = portfolio.get('closed_trades') or []
+
+    def broker_confirmed(trade):
+        return bool(trade.get('broker_order_id')) or 'broker' in str(
+            trade.get('cost_basis_basis', '')).lower()
+
+    confirmed = [t for t in closed if broker_confirmed(t)]
+    if not confirmed:
+        return []
+    since = min(str(t.get('entry_date', ''))[:10] for t in confirmed if t.get('entry_date'))
+    if not since:
+        return confirmed
+    return [t for t in closed if str(t.get('entry_date', ''))[:10] >= since]
+
+
 def _digest_today(events):
     """Plain-language lines for what Alpaca actually did this run."""
     lines = []
@@ -4591,20 +4617,34 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
         health = _HEALTH.as_dict()
         blockers = _trade_readiness()['trade_blockers']
 
-        closed = pf.get('closed_trades') or []
+        # Only the live era. The August trades were simulated locally, before
+        # any of this reached a broker, and counting them would describe a
+        # different system.
+        closed = _alpaca_era_trades(pf)
         if closed:
             won = [t for t in closed if t.get('realized_pnl', 0) > 0]
             lost = [t for t in closed if t.get('realized_pnl', 0) <= 0]
+            banked = sum(float(t.get('realized_pnl', 0)) for t in closed)
             average = (lambda group: sum(t.get('realized_pnl_pct', 0) for t in group)
                        / len(group) if group else 0.0)
-            lines += ['', 'SINCE YOU STARTED',
-                      f'- {len(closed)} trades finished: {len(won)} made money, '
-                      f'{len(lost)} lost money',
-                      f'- Average win {average(won):+.1f}%, average loss '
-                      f'{average(lost):+.1f}%',
-                      f'- Banked so far {_usd(pf.get("total_realized_pnl", 0))}'
-                      + (' profit' if float(pf.get('total_realized_pnl', 0)) >= 0
-                         else ' loss')]
+            trade_word = 'trade' if len(closed) == 1 else 'trades'
+            lines += ['', 'SINCE TRADING ON ALPACA',
+                      f'- {len(closed)} {trade_word} finished: {len(won)} made '
+                      f'money, {len(lost)} lost money']
+            # An average over an empty set is not zero, it is nothing. Printing
+            # "average loss +0.0%" where there have been no losses reads as a
+            # result rather than an absence.
+            record = []
+            if won:
+                record.append(f'average win {average(won):+.1f}%')
+            if lost:
+                record.append(f'average loss {average(lost):+.1f}%')
+            if record:
+                lines.append('- ' + ', '.join(record).capitalize())
+            lines.append(f'- Banked {_usd(banked)}'
+                         + (' profit' if banked >= 0 else ' loss'))
+            if len(closed) < 10:
+                lines.append('- Too few trades to tell whether this works yet')
 
         lines += ['', 'NEXT ORDER']
         if closed_reason:

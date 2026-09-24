@@ -374,49 +374,73 @@ class DeliverySaysWhereItWent(unittest.TestCase):
         self.assertIn('sent', out.getvalue())
 
 
-class TheMessageCarriesTheRecordSinceInception(unittest.TestCase):
-    """"Is it positive?" should be answerable from the message itself.
+class TheRecordCoversTheAlpacaEraOnly(unittest.TestCase):
+    """"Is it positive?" should be answerable from the message.
 
-    The digest gave today's total but never the record behind it, so judging
-    whether the strategy is working meant opening the ledger.
+    The ledger predates the broker: eleven August trades were simulated
+    locally, with no ATR, no broker order id and a legacy cost basis. Counting
+    them under a heading about Alpaca would describe a different system, and
+    would flatter the record with trades this account never actually placed.
     """
+
+    SIMULATED = {'ticker': 'BR', 'realized_pnl': 157.86, 'realized_pnl_pct': 5.5,
+                 'entry_date': '2026-08-04', 'exit_date': '2026-08-20',
+                 'cost_basis_basis': 'legacy_estimate'}
+    BROKER_WIN = {'ticker': 'MTD', 'realized_pnl': 1792.58, 'realized_pnl_pct': 7.1,
+                  'entry_date': '2026-09-18', 'exit_date': '2026-09-22',
+                  'cost_basis_basis': 'broker_adopted',
+                  'broker_order_id': 'e3a9b7ff'}
+    BROKER_LOSS = {'ticker': 'XYZ', 'realized_pnl': -220.0, 'realized_pnl_pct': -4.0,
+                   'entry_date': '2026-09-19', 'exit_date': '2026-09-23',
+                   'cost_basis_basis': 'legacy_estimate'}
 
     def render(self, closed):
         sent = []
         with patch.object(app, '_RUN_EVENTS', []),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
                              lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
-            app.send_run_digest(ledger(closed_trades=closed,
-                                       total_realized_pnl=sum(
-                                           t['realized_pnl'] for t in closed)))
+            app.send_run_digest(ledger(closed_trades=closed))
         return sent[0]
 
-    def trades(self):
-        return [{'ticker': 'MTD', 'realized_pnl': 1792.58, 'realized_pnl_pct': 7.1,
-                 'reason': 'profit_target', 'exit_date': '2026-09-22'},
-                {'ticker': 'FSLR', 'realized_pnl': -109.6, 'realized_pnl_pct': -5.3,
-                 'reason': 'stop_loss', 'exit_date': '2026-09-16'}]
+    def test_simulated_trades_are_left_out(self):
+        text = self.render([self.SIMULATED, self.BROKER_WIN])
+        self.assertIn('SINCE TRADING ON ALPACA', text)
+        self.assertIn('1 trade finished', text)
+        self.assertNotIn('2 trades', text)
 
-    def test_it_reports_how_many_trades_won_and_lost(self):
-        text = self.render(self.trades())
-        self.assertIn('SINCE YOU STARTED', text)
+    def test_a_later_trade_counts_even_without_its_own_marker(self):
+        """Everything after the broker went live belongs to the live era."""
+        text = self.render([self.SIMULATED, self.BROKER_WIN, self.BROKER_LOSS])
         self.assertIn('2 trades finished: 1 made money, 1 lost money', text)
 
-    def test_it_reports_the_average_win_and_loss(self):
-        """The asymmetry is the thing worth seeing, not just the total."""
-        text = self.render(self.trades())
+    def test_it_reports_the_win_and_loss_averages(self):
+        text = self.render([self.BROKER_WIN, self.BROKER_LOSS])
         self.assertIn('+7.1%', text)
-        self.assertIn('-5.3%', text)
+        self.assertIn('-4.0%', text)
 
-    def test_it_reports_what_has_actually_been_banked(self):
-        self.assertIn('$1,683 profit', self.render(self.trades()))
+    def test_an_absent_loss_is_not_printed_as_zero(self):
+        """No losses is an absence, not a result of 0.0%."""
+        text = self.render([self.BROKER_WIN])
+        self.assertIn('Average win +7.1%', text)
+        self.assertNotIn('average loss', text.lower())
+
+    def test_one_trade_is_not_called_trades(self):
+        self.assertIn('1 trade finished', self.render([self.BROKER_WIN]))
+
+    def test_it_banks_only_what_alpaca_traded(self):
+        """1,792 from MTD, not 1,950 including the simulated August win."""
+        self.assertIn('$1,793 profit', self.render([self.SIMULATED, self.BROKER_WIN]))
 
     def test_a_losing_record_is_not_called_profit(self):
-        losing = [{'ticker': 'X', 'realized_pnl': -500.0, 'realized_pnl_pct': -4.0,
-                   'reason': 'stop_loss', 'exit_date': '2026-09-16'}]
-        self.assertIn('$500 loss', self.render(losing))
+        self.assertIn('$220 loss', self.render([self.BROKER_LOSS,
+                                                dict(self.BROKER_WIN,
+                                                     realized_pnl=0.0,
+                                                     entry_date='2026-09-18')]))
 
-    def test_a_portfolio_with_no_history_says_nothing(self):
-        self.assertNotIn('SINCE YOU STARTED', self.render([]))
+    def test_a_thin_record_says_so(self):
+        self.assertIn('Too few trades', self.render([self.BROKER_WIN]))
+
+    def test_nothing_traded_on_alpaca_yet_says_nothing(self):
+        self.assertNotIn('SINCE TRADING ON ALPACA', self.render([self.SIMULATED]))
 
 
 class SectorResolution(unittest.TestCase):

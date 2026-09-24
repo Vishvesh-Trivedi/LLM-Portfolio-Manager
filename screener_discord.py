@@ -80,6 +80,9 @@ def test_mode():
 
 
 _LAST_ERROR = ['']
+# Discord's id for the last message accepted. A run that reports 'sent' can
+# then be checked against what is actually in the channel.
+_LAST_MESSAGE_ID = ['']
 
 
 def last_error():
@@ -168,6 +171,10 @@ def _post(payload, label):
             return _fail('HTTP ' + str(response.status_code)
                          + (' - ' + hint if hint else ''))
         _LAST_ERROR[0] = ''
+        try:
+            _LAST_MESSAGE_ID[0] = str((response.json() or {}).get('id') or '')
+        except ValueError:
+            _LAST_MESSAGE_ID[0] = ''
         return True
     return _fail('gave up after ' + str(_MAX_ATTEMPTS) + ' attempts')
 
@@ -192,10 +199,18 @@ def check_access():
             headers={'Authorization': 'Bot ' + _token()}, timeout=_REQUEST_TIMEOUT)
         if response.status_code == 200:
             try:
-                name = (response.json() or {}).get('name') or _channel_id()
+                channel = response.json() or {}
             except ValueError:
-                name = _channel_id()
-            return True, 'bot can post to #' + str(name)
+                channel = {}
+            name = channel.get('name') or _channel_id()
+            # The server matters as much as the channel. A bot invited to the
+            # wrong guild answers 200 and posts happily into a channel nobody
+            # is watching, which is indistinguishable from success otherwise.
+            guild = channel.get('guild_id')
+            where = 'bot can post to #' + str(name)
+            if guild:
+                where += ' (server ' + str(guild) + ')'
+            return True, where
         if response.status_code == 401:
             return False, 'token rejected by Discord (401) - rotate and update the secret'
         if response.status_code == 403:
@@ -237,7 +252,8 @@ def send(text, label=''):
         # channel it can post to, not that it is the one being watched, and a
         # bare "sent" left that impossible to check from the log.
         print('  Discord ' + label + ': ' + ('sent' if ok else 'failed') + suffix
-              + ' -> channel ' + (_channel_id() or '(unset)'))
+              + ' -> channel ' + (_channel_id() or '(unset)')
+              + (' msg ' + _LAST_MESSAGE_ID[0] if ok and _LAST_MESSAGE_ID[0] else ''))
         return ok
     except Exception as exc:  # defensive: delivery must never reach the trade path
         print('  Discord ' + label + ' error: ' + _redact(type(exc).__name__))
