@@ -14,6 +14,7 @@ Two changes, covered here:
 """
 
 import io
+import json
 import pathlib
 import shutil
 import tempfile
@@ -636,6 +637,58 @@ class TheLedgersNumbersMustAgree(unittest.TestCase):
         book['positions'].append(dict(book['positions'][0]))
         from qa_validate import check_arithmetic
         self.assertTrue(any('held twice' in p for p in check_arithmetic(book)))
+
+
+class LoadingDoesNotPersistAMismatchedLedger(unittest.TestCase):
+    """load_portfolio takes the broker's cash but not its positions.
+
+    Between those two facts the ledger describes no real moment: a holding sold
+    at the broker is already out of the cash and still in the list, so anything
+    derived from both counts the same money twice. Saving there wrote that
+    state to disk, and equity_peak - which is never lowered - kept it.
+    """
+
+    def setUp(self):
+        from tests.test_messages import app
+        self.app = app
+        self.work = tempfile.mkdtemp(prefix='window-')
+        self.addCleanup(shutil.rmtree, self.work, ignore_errors=True)
+        self.ledger = pathlib.Path(self.work) / 'portfolio.json'
+        self.book = {
+            'cash': 61000.0, 'starting_capital': 100000.0, 'equity_peak': 100000.0,
+            'total_realized_pnl': 0.0, 'processed_sessions': [], 'pending_orders': [],
+            'closed_trades': [], 'created': '2026-09-08', 'last_updated': '2026-09-24',
+            'positions': [{'trade_id': 't1', 'ticker': 'MTD', 'shares': 18,
+                           'entry_price': 1403.28, 'cost_basis': 25259.04,
+                           'current_price': 1430.44, 'current_value': 25747.92,
+                           'entry_date': '2026-09-18', 'sector': 'Healthcare',
+                           'stop_price': 1380.85, 'target_price': 1502.46}],
+        }
+        self.ledger.write_text(json.dumps(self.book, indent=2), encoding='utf-8')
+
+    def load(self, broker_cash, broker_equity):
+        with patch.object(self.app, 'PORTFOLIO_JSON', str(self.ledger)),                 patch.object(self.app._portfolio, 'load_portfolio',
+                             return_value=json.loads(self.ledger.read_text(encoding='utf-8'))),                 patch.object(self.app._alpaca, 'trading_enabled', return_value=True),                 patch.object(self.app._alpaca, 'get_account',
+                             return_value={'cash': broker_cash, 'equity': broker_equity}),                 redirect_stdout(io.StringIO()):
+            return self.app.load_portfolio()
+
+    def test_loading_leaves_the_file_alone(self):
+        """MTD has sold: cash is up by its proceeds, the position is still listed."""
+        before = self.ledger.read_text(encoding='utf-8')
+        self.load('87133.76', '101968.02')
+        self.assertEqual(self.ledger.read_text(encoding='utf-8'), before)
+
+    def test_the_stored_peak_is_not_raised_by_the_mismatch(self):
+        self.load('87133.76', '101968.02')
+        stored = json.loads(self.ledger.read_text(encoding='utf-8'))
+        # cash 87,134 + MTD 25,748 would be 112,881 if both were counted.
+        self.assertEqual(stored['equity_peak'], 100000.0)
+
+    def test_the_brokers_cash_still_reaches_the_caller(self):
+        """Not saving must not mean not reading."""
+        pf = self.load('87133.76', '101968.02')
+        self.assertEqual(pf['cash'], 87133.76)
+        self.assertEqual(pf['broker_equity'], 101968.02)
 
 
 class MissedSessionsAreNoticed(unittest.TestCase):

@@ -5249,7 +5249,16 @@ def load_portfolio():
         elif not pf.get('positions'):
             pf['cash'] = ALPACA_PAPER_CAPITAL
         _resize_legacy_pending_orders(pf)
-        save_portfolio(pf)
+        # Deliberately not saved here. At this point cash is the broker's but
+        # the positions are still whatever the last run recorded, so the pair
+        # describes no real moment - a holding sold at the broker is already
+        # out of the cash and still in the list, and any figure derived from
+        # both counts the same money twice. That is how equity_peak reached
+        # 127,636 on an account that never exceeded 102,000.
+        #
+        # sync_with_broker runs next and persists the broker's cash itself,
+        # alongside the position changes that justify it, so nothing is lost by
+        # waiting for a state that is true.
     return pf
 
 
