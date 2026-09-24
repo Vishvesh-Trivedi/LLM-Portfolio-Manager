@@ -555,6 +555,45 @@
       "filled_avg_price": "",
       "qty": "98",
       "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-09-24T22:23:01.103197484Z",
+      "order_id": "a3a119a8-f7d9-4e58-8a5c-6570f95b3a2d",
+      "client_order_id": "5334eff9-4220-42c0-9b86-4fcbfe784a02",
+      "symbol": "AMD",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "25",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-09-24T22:23:01.10318114Z",
+      "order_id": "9abf6b19-5cd8-40d2-8413-d84dfd9c9dec",
+      "client_order_id": "b89e6b30-1a3d-4b6a-bb69-4cc51dc2daae",
+      "symbol": "AMD",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "25",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-09-24T22:23:01.103149813Z",
+      "order_id": "7b327b78-c8ad-46a0-9523-e21ea967fe55",
+      "client_order_id": "lpm-B-AMD-1ad8a41022074bf4bf8d0ced31bf5328",
+      "symbol": "AMD",
+      "status": "accepted",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "25",
+      "side": "buy"
     }
   ],
   "expired_orders": [
