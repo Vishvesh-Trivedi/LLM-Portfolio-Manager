@@ -528,6 +528,45 @@ class TheEquityPeakFollowsTheBroker(unittest.TestCase):
                 self.assertGreaterEqual(saved['equity_peak'], 100000.0)
 
 
+class ARejectedOrderSaysWhatRefusedIt(unittest.TestCase):
+    """run_health is the first artefact anyone reads when a run looks wrong.
+
+    Four days of refused orders carried order_status REJECTED with
+    order_reason None. The reason reached Discord and the console, but the
+    machine-readable record dropped it, so diagnosing it meant reproducing the
+    order planner by hand.
+    """
+
+    def setUp(self):
+        from tests.test_messages import app
+        self.app = app
+        self.output = tempfile.mkdtemp(prefix='health-')
+        self.addCleanup(shutil.rmtree, self.output, ignore_errors=True)
+        patcher = patch.object(app, 'DRIVE_FOLDER', self.output)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def write(self, result, fallback=''):
+        with patch.object(self.app, '_ORDER_REASON', [fallback]),                 redirect_stdout(io.StringIO()):
+            return self.app.write_run_health(result)
+
+    def test_the_refusal_reason_is_recorded(self):
+        health = self.write({'order_status': 'REJECTED',
+                             'order_reason': 'equity drawdown is at least 20%'})
+        self.assertEqual(health['order_status'], 'REJECTED')
+        self.assertEqual(health['order_reason'], 'equity drawdown is at least 20%')
+
+    def test_it_falls_back_to_the_live_reason(self):
+        """A run that died before building a result still knows why."""
+        health = self.write({'order_status': 'REJECTED'},
+                            fallback='maximum positions reached')
+        self.assertEqual(health['order_reason'], 'maximum positions reached')
+
+    def test_a_clean_run_records_no_reason(self):
+        health = self.write({'order_status': 'QUEUED', 'order_reason': ''})
+        self.assertIsNone(health.get('order_reason'))
+
+
 class MissedSessionsAreNoticed(unittest.TestCase):
     """A trading day that was never screened must not vanish quietly.
 

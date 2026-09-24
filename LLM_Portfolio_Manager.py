@@ -6152,10 +6152,17 @@ def write_run_health(result=None):
 
     ok, detail = _alert_health()
     _HEALTH.stage('alerts', ok, detail)
+    # order_reason travels with order_status. A REJECTED status on its own says
+    # an order did not happen without saying what refused it, and this file is
+    # the first thing anyone reads when a run looks wrong. Four days of refused
+    # orders were diagnosable only by reproducing the planner locally, because
+    # the reason reached Discord and the console but never this record.
     health = clean(dict(_HEALTH.as_dict(), date=_session_date(), output=DRIVE_FOLDER,
                         mode=_RUN_MODE, report=_RUN_REPORT,
                         **_trade_readiness(),
-                        order_status=(result or {}).get('order_status', 'NO ORDER')))
+                        order_status=(result or {}).get('order_status', 'NO ORDER'),
+                        order_reason=((result or {}).get('order_reason')
+                                      or _ORDER_REASON[0] or None)))
     atomic_json(os.path.join(DRIVE_FOLDER, 'run_health.json'), health)
     summary = os.environ.get('GITHUB_STEP_SUMMARY')
     if summary:
