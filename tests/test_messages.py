@@ -308,6 +308,72 @@ class TheDigestExplainsItselfAtThisAccountSize(unittest.TestCase):
                             app._blocker_words('missing:catalysts'))
 
 
+class AnOrderPlacedTodayIsWhatHappenedToday(unittest.TestCase):
+    """AMD was ordered and the message opened "Nothing was bought or sold".
+
+    True of fills, and the wrong headline on the day a decision was finally
+    made after three days of refusals. The order appeared only under NEXT
+    ORDER, where it reads as something still to come rather than something
+    that just happened.
+    """
+
+    def render(self, order_session, today='2026-09-24'):
+        book = ledger(pending_orders=[{
+            'ticker': 'AMD', 'shares': 25, 'estimated_entry': 630.89,
+            'signal_date': order_session}])
+        sent = []
+        with patch.object(app, '_session_date', return_value=today),                 patch.object(app, '_RUN_EVENTS', []),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(book)
+        return sent[0]
+
+    def test_an_order_decided_today_leads_the_message(self):
+        text = self.render('2026-09-24')
+        happened = text.split('WHAT HAPPENED TODAY')[1].split('WHAT YOU HOLD')[0]
+        self.assertIn('ORDERED 25 AMD', happened)
+        self.assertIn('$630.89', happened)
+        self.assertNotIn('Nothing was bought or sold', happened)
+
+    def test_it_says_no_money_has_moved_yet(self):
+        """A queued order must not read as a completed purchase."""
+        self.assertIn('nothing spent yet', self.render('2026-09-24'))
+
+    def test_an_order_carried_over_is_not_reported_as_todays_news(self):
+        text = self.render('2026-09-22')
+        happened = text.split('WHAT HAPPENED TODAY')[1].split('WHAT YOU HOLD')[0]
+        self.assertIn('Nothing was bought or sold', happened)
+        # It is still shown as what is coming next.
+        self.assertIn('AMD', text.split('NEXT ORDER')[1])
+
+
+class DeliverySaysWhereItWent(unittest.TestCase):
+    """"sent" alone is not checkable.
+
+    Discord answering 200 says the bot reached a channel it may post to, not
+    that it is the channel being watched - which is exactly the question when
+    the run reports success and nothing appears.
+    """
+
+    def test_a_successful_send_names_the_channel(self):
+        import screener_discord as discord
+
+        class Reply:
+            status_code = 200
+            text = ''
+
+            def json(self):
+                return {}
+
+        # Another module's import leaves SCREENER_DISABLE_ALERTS set, which
+        # silences delivery before it reaches the channel logic.
+        with patch.dict(os.environ, {'DISCORD_BOT_TOKEN': 'tok' * 10,
+                                     'DISCORD_CHANNEL_ID': '1550275967325310996',
+                                     'SCREENER_DISABLE_ALERTS': ''}),                 patch.object(discord.requests, 'post', return_value=Reply()),                 patch.object(discord.time, 'sleep'),                 redirect_stdout(io.StringIO()) as out:
+            self.assertTrue(discord.send('hello', 'run-digest'))
+        self.assertIn('1550275967325310996', out.getvalue())
+        self.assertIn('sent', out.getvalue())
+
+
 class SectorResolution(unittest.TestCase):
     """A bug in our own code must not look like a gap in the data."""
 

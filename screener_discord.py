@@ -233,7 +233,11 @@ def send(text, label=''):
                 time.sleep(0.5)  # stay clear of the per-channel burst limit
         ok = sent == len(chunks)
         suffix = '' if len(chunks) == 1 else ' (' + str(sent) + '/' + str(len(chunks)) + ' parts)'
-        print('  Discord ' + label + ': ' + ('sent' if ok else 'failed') + suffix)
+        # Name the channel. Discord answering 200 only says the bot reached a
+        # channel it can post to, not that it is the one being watched, and a
+        # bare "sent" left that impossible to check from the log.
+        print('  Discord ' + label + ': ' + ('sent' if ok else 'failed') + suffix
+              + ' -> channel ' + (_channel_id() or '(unset)'))
         return ok
     except Exception as exc:  # defensive: delivery must never reach the trade path
         print('  Discord ' + label + ' error: ' + _redact(type(exc).__name__))
@@ -273,7 +277,8 @@ def send_embed(title, description, color=0x5865F2, fields=None, footer='',
         if timestamp:
             embed['timestamp'] = str(timestamp)
         ok = _post({'embeds': [embed], 'allowed_mentions': {'parse': []}}, label)
-        print('  Discord ' + label + ': ' + ('sent' if ok else 'failed'))
+        print('  Discord ' + label + ': ' + ('sent' if ok else 'failed')
+              + ' -> channel ' + (_channel_id() or '(unset)'))
         return ok
     except Exception as exc:
         print('  Discord ' + label + ' error: ' + _redact(type(exc).__name__))

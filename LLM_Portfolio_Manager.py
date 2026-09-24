@@ -4541,6 +4541,20 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                  ('Live paper account.' if live else 'Simulated only - nothing sent to Alpaca.'),
                  '', 'WHAT HAPPENED TODAY']
         today = _digest_today(_RUN_EVENTS)
+        # An order placed today IS what happened today. It was reported only
+        # under NEXT ORDER, so a run that decided to buy still opened with
+        # "Nothing was bought or sold" - true of fills, and misleading as the
+        # headline on the day a decision was finally made.
+        session = _session_date()
+        for order in pending:
+            if str(order.get('signal_date', ''))[:10] != session:
+                continue
+            shares = int(order.get('shares', 0) or 0)
+            price = _num(order.get('estimated_entry'))
+            today.append(
+                f'- ORDERED {shares} {order.get("ticker", "?")}'
+                + (f' at about {_usd(price, True)}' if price else '')
+                + ' - fills at the next open, nothing spent yet')
         lines += today or ['- Nothing was bought or sold']
         if _MISSED_SESSIONS:
             lines.append(f'- NOTE: {", ".join(_MISSED_SESSIONS)} closed without '
