@@ -16,7 +16,7 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-24 00:53
+   Time:   2026-09-24 01:17
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 901 | ETFs: 26
 =================================================================
@@ -36,8 +36,8 @@ Market context...
   VIX:  15.18 (p11.9) -> LOW (p12 risk-on) (1.1x)
   QQQ:  $747.46 | BULLISH (+5.24% vs 50MA)
   SPY today: -0.02%
-  10Y yield: 5.11% (+2.96%)  DXY: 101.18 (+0.75%)  Nikkei: +1.71%
-  Futures:  ES=-0.85%  NQ=-0.98%
+  10Y yield: 5.11% (+2.96%)  DXY: 101.14 (+0.71%)  Nikkei: +1.82%
+  Futures:  ES=-0.83%  NQ=-0.89%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
@@ -45,9 +45,9 @@ Step 3/8: Fetching all data (parallel)...
   OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
   RSS feeds active: 14/16 | Headlines: 84
   Fetching news for all 900 stocks (parallel)...
-  News found: 310/900 stocks have news today
+  News found: 313/900 stocks have news today
   Fetching fundamentals for all 899 stocks (parallel)...
-  Full fundamentals: 443/899 stocks
+  Full fundamentals: 436/899 stocks
   Sector ranks - Top 3: ['Technology', 'Industrials', 'Communication Services'] | Perf: Technology:+3.9% | Industrials:+0.6% | Communication Services:+0.2% | Healthcare:+0.0% | Consumer Cyclical:-0.7%
   Sector flows: TOP Energy +1.0% | BOT Utilities -1.9%
 
@@ -57,94 +57,81 @@ Phase 2 - Technical screening (926 tickers)...
   Passed: 5 | Rejected: Price:0 MA:763 Vol:88 RSI:4 Liq:36 ADX:4
 
 Phase 3 - News screening all 926 stocks...
-  News rescued: 53 stocks → ['ACN', 'ABBV', 'AMD', 'GOOGL', 'ADI', 'AON', 'APP', 'BKR', 'AZO', 'BA']...
+  News rescued: 56 stocks → ['ACN', 'ABBV', 'AMD', 'GOOGL', 'ABT', 'ADI', 'AON', 'APP', 'AZO', 'BKR']...
 
 Phase 4 - Merging candidate pools...
-  Total candidates: 58
-    BOTH (tech+news): 1  TECHNICAL: 4  NEWS: 53
+  Total candidates: 61
+    BOTH (tech+news): 1  TECHNICAL: 4  NEWS: 56
   Earnings risk flags: ['CCL']
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'CFG', 'WMS', 'BALL', 'UAL', 'META', 'MSFT']
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'MAA', 'WMS', 'BALL', 'UAL']
   Stream B added: AAPL | $336.87 | RSI 62.5
   Stream B added: GOOGL | $337.8 | RSI 45.1
-  Stream B added: CFG | $64.62 | RSI 29.7
+  Stream B added: MAA | $117.81 | RSI 21.9
   Stream B added: WMS | $129.78 | RSI 43.6
   Stream B added: BALL | $58.83 | RSI 33.2
   Stream B added: UAL | $110.74 | RSI 47.6
-  Stream B added: META | $744.04 | RSI 76.9
-  Stream B added: MSFT | $500.62 | RSI 56.1
-  Sector sentiment derived: 9/11 sectors from 62 stocks
-  LLM attempt 1/1 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  exit:GILD: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] GILD: Position is up modestly with no new catalysts; still within the expected 1-4 week rally window, so maintain exposure. (no ledger changes)
+  Sector sentiment derived: 10/11 sectors from 64 stocks
+  [ADVISORY ONLY] HOLD [LOW] GILD: The stock is currently meeting expectations and no strong signals are present to exit or add, maintaining a hold position. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 64 candidates...
-  Options data: 0/64 | Insider signals: 49/64
+  Fetching options + insider data for 66 candidates...
+  Options data: 0/66 | Insider signals: 51/66
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (64 candidates)...
+Phase 5.5 - Computing score breakdown (66 candidates)...
   Pre-score top 5: DE(76=41T+35N [vader:BULLISH])  ETN(75=39T+36N [vader:BULLISH])  FTNT(75=46T+29N [vader:BULLISH])  ILMN(74=43T+31N [vader:BULLISH])  A(73=44T+29N [vader:BULLISH])
-  SEC EDGAR 8-K: 2/30 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
   Catalyst scoring: 30 stocks → 5 LLM calls...
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
-  catalyst_1: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
     Batch 1/5 
     Batch 2/5 
     Batch 3/5 
     Batch 4/5 
     Batch 5/5 
-  Catalyst scoring done — 6 auto-dropped, 24 remain
+  Catalyst scoring done — 8 auto-dropped, 22 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (24 candidates, 3 layers)...
-  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
-  news: NVIDIA provider unavailable or returned empty content
-  news: OpenRouter parser/validator rejected response: ValueError: non-object JSON or malformed prefix
-  NVIDIA paused for 120s after repeated failures
-  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  news: NVIDIA-retry parser/validator rejected response: ValueError: market_sentiment has an invalid value
-  News intelligence failed (ValueError: NVIDIA-retry parser/validator rejected response: ValueError: market_sentiment has an invalid value) - neutral baseline for display only
-  News enrichment unavailable - trading continues on verified prices, verified catalysts and the final decision.
+Phase 5 - News intelligence (22 candidates, 3 layers)...
+  Sentiment: NEUTRAL | Adj: +0
+  22 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (24 candidates)...
+Phase 5.5 - Computing score breakdown (22 candidates)...
   Pre-score top 5: DE(76=41T+35N [vader:BULLISH])  ETN(75=39T+36N [vader:BULLISH])  FTNT(75=46T+29N [vader:BULLISH])  ILMN(74=43T+31N [vader:BULLISH])  A(73=44T+29N [vader:BULLISH])
 
 Step 5.5/8: Applying LLM config criteria...
-  24 candidates after config criteria
+  22 candidates after config criteria
   Self-calibration: 14 prior picks, 57% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (24 candidates)...
-  Round 1/3: Ranking 24 candidates...
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
-  -> NVIDIA throttled; answered via OpenRouter.
-  Round 1 failed (ValueError: no JSON object in LLM response) — using pre_score top 10
+Phase 6 - NVIDIA final scoring (22 candidates)...
+  Round 1/3: Ranking 22 candidates...
+  Round 1 → Top 10: ['DE', 'ETN', 'FTNT', 'ILMN', 'A', 'KEYS', 'MU', 'ADI', 'CAT', 'KLAC']
   Round 2/3: Deep-diving top 10...
   LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
   LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  -> NVIDIA throttled; answered via OpenRouter.
-  Round 2 failed (ValueError: no usable deep-dive context)
+  OpenRouter fallback failed [nvidia/nemotron-3-super-120b-a12b:free]: KeyError: 'choices'
+  OpenRouter fallback failed [z-ai/glm-5.2:free]: HTTPError (HTTP 429)
+  OpenRouter paused for 120s after repeated failures
+  OpenRouter fallback failed [minimax/minimax-m3:free]: HTTPError (HTTP 404)
+  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
+  -> Answered via OpenRouter backup provider.
+  Round 2 failed (ValueError: invalid deep-dive candidate context)
   Round 3/3: Final deliberation...
-  Final pick: ILMN | pre=74 → 85/100 | BUY | 12 LLM calls this run
+  final: NVIDIA parser/validator rejected response: JSONDecodeError: Expecting ':' delimiter: line 3 column 148 (char 168)
+  OpenRouter fallback failed [nvidia/nemotron-3-super-120b-a12b:free]: KeyError: 'choices'
+  ↩️  Critical LLM call recovered via OpenRouter.
+  Final pick: ILMN | pre=74 → 82/100 | BUY | 11 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=4, wr=75%, HIGH confidence): Stocks with both high tech scores (>40) and high news scores (>30) tend to perform well in the current regime.
-│ → History suggests that stocks with strong technical and news indicators are more likely to succeed in the current market conditions.
+│ 1. Healthcare sector outperformance (n=2, wr=100%, avg+5.0%, LOW confidence): DXCM and MTD both won, suggesting sector familiarity edge in this regime
+│ 2. Tech sector underperformance (n=4, wr=25%, avg-3.8%, HIGH confidence): COR, AKAM, FSLR lost significantly while only JKHY won, indicating poor risk-reward in tech momentum trades
+│ 3. Strong trend + relative strength winners (n=5, wr=80%, avg+4.4%, MEDIUM confidence): Winners like CPRT, BR, EXPE, AXON, MTD had strong ADX and positive rs_vs_spy, while losers had weaker trend quality
+│ → My history shows Healthcare and Industrials picks with strong trends and relative strength tend to win, while Tech momentum plays frequently reverse sharply.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
   Entry estimate: close=$255.45 + 0.3% slippage = $256.22 (stop/target anchored here)
@@ -153,32 +140,34 @@ Phase 6 - NVIDIA final scoring (24 candidates)...
   TODAY'S PICK  —  Thursday, Sep 24 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 15.2 (LOW (p12 risk-on))  |  QQQ BULLISH  |  SPY -0.71%
-  Macro:   Unavailable
+  Macro:   Market sentiment is neutral with a slight bullish trend in technology sector. Tr
 ─────────────────────────────────────────────────────────────────
   BUY  ILMN  [BOTH]
   Sector:     Healthcare
-  Confidence: 85/100  █████████████████░░░
+  Confidence: 82/100  ████████████████░░░░
   Entry:  ~$256.22   Stop: ~$240.79   Target: ~$287.09   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      ILMN has a strong technical score of 43 and a high news score of 31, indicating a bullish trend in the healthcare sector. With a high RSI of 71.4 and a strong ADX of 30.7, ILMN is well-positioned for a potential breakout in the next 1-4 weeks.
-  Key Risk: A decline in ILMN's earnings growth could negatively impact the stock's price.
-  Bear case: Two specific risks to consider are a potential downturn in the healthcare sector and a decline in ILMN's earnings growth. Additionally, the stock's high short interest ratio of 4.7 could lead to a short squeeze, which may impact the stock's price movement.
+  Why:      ILMN is the only BOTH-sourced candidate with strong trend quality (ADX 30.7), exceptional relative strength (+3.96 vs SPY), volume confirmation (1.31x), and Healthcare sector alignment where my history shows 100% win rate. At 52-week highs with MACD bullish and no earnings risk in the next 4 weeks, the momentum regime supports continuation.
+  Key Risk: Extreme overbought readings (RSI 71.4, Stoch RSI 1.0) combined with negative overnight futures create immediate pullback risk in the first 1-3 sessions.
+  Bear case: 1) RSI at 71.4 and Stoch RSI maxed at 1.0 indicate extreme overbought conditions that could trigger a 3-5% mean-reversion pullback within the first week, especially with ES futures down 0.83% tonight. 2) Short interest at 10.5% with analyst consensus pointing to -20.6% downside suggests fundamental skepticism that could resurface if no fresh catalyst emerges, turning any squeeze dynamic into a momentum collapse.
 
   WATCH LIST:
-    FTNT    74/100  [Technology]  FTNT has a strong technical score of 46 and a high news score of 29, i
+    DE      76/100  [Industrials]  Highest pre_score (76) with insider buying, bullish sentiment, and at 
+    A       74/100  [Healthcare]  Strongest CMF (+0.233) among all candidates with new hh_hl pattern and
 █████████████████████████████████████████████████████████████████
   Session left open: the order was rejected, so nothing was decided and a later run may retry.
   Broker: in sync (1 position(s))
 
 Step 8/8: Saving results...
   Already have ILMN on 2026-09-23 - skipping
-  OK: Saved FTNT | Stop:169.58 Target:196.8
+  Already have DE on 2026-09-23 - skipping
+  OK: Saved A | Stop:158.92 Target:178.09
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 0 evaluated yet | 9 pending
-  WATCH LIST: 0 evaluated yet | 18 pending
+  WATCH LIST: 0 evaluated yet | 19 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
   run-digest (470 chars):
@@ -205,6 +194,6 @@ STATUS
 
   Discord run-digest: sent
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::advisory_news_unavailable | stages: news, round1, round2
+::warning title=Run completed with degradations::see run health | stages: round2
 
-  Completed with degradations (not a failure): advisory_news_unavailable | stages: news, round1, round2
+  Completed with degradations (not a failure): see run health | stages: round2
