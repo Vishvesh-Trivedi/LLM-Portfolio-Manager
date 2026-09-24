@@ -4591,6 +4591,21 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
         health = _HEALTH.as_dict()
         blockers = _trade_readiness()['trade_blockers']
 
+        closed = pf.get('closed_trades') or []
+        if closed:
+            won = [t for t in closed if t.get('realized_pnl', 0) > 0]
+            lost = [t for t in closed if t.get('realized_pnl', 0) <= 0]
+            average = (lambda group: sum(t.get('realized_pnl_pct', 0) for t in group)
+                       / len(group) if group else 0.0)
+            lines += ['', 'SINCE YOU STARTED',
+                      f'- {len(closed)} trades finished: {len(won)} made money, '
+                      f'{len(lost)} lost money',
+                      f'- Average win {average(won):+.1f}%, average loss '
+                      f'{average(lost):+.1f}%',
+                      f'- Banked so far {_usd(pf.get("total_realized_pnl", 0))}'
+                      + (' profit' if float(pf.get('total_realized_pnl', 0)) >= 0
+                         else ' loss')]
+
         lines += ['', 'NEXT ORDER']
         if closed_reason:
             lines.append(f'- None. US markets were shut ({closed_reason})')
@@ -6251,6 +6266,16 @@ def run_screener():
 
     # Always ask Alpaca what actually happened, then tell the operator.
     global _EXECUTION_EVENTS
+    # Name the destination in this run's log. check_access resolves the
+    # channel to its name, but it only ran in the preflight step, whose output
+    # never reaches the committed log - so "sent" could not be checked against
+    # the channel actually being watched.
+    if _discord.enabled():
+        reachable, detail = _discord.check_access()
+        print(f'  Discord: {detail}')
+        if not reachable:
+            _degrade('discord_unreachable')
+
     _EXECUTION_EVENTS = sync_with_broker(portfolio)
 
     # A session that was never screened is invisible otherwise: processed_sessions

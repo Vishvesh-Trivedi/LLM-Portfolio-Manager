@@ -374,6 +374,51 @@ class DeliverySaysWhereItWent(unittest.TestCase):
         self.assertIn('sent', out.getvalue())
 
 
+class TheMessageCarriesTheRecordSinceInception(unittest.TestCase):
+    """"Is it positive?" should be answerable from the message itself.
+
+    The digest gave today's total but never the record behind it, so judging
+    whether the strategy is working meant opening the ledger.
+    """
+
+    def render(self, closed):
+        sent = []
+        with patch.object(app, '_RUN_EVENTS', []),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(ledger(closed_trades=closed,
+                                       total_realized_pnl=sum(
+                                           t['realized_pnl'] for t in closed)))
+        return sent[0]
+
+    def trades(self):
+        return [{'ticker': 'MTD', 'realized_pnl': 1792.58, 'realized_pnl_pct': 7.1,
+                 'reason': 'profit_target', 'exit_date': '2026-09-22'},
+                {'ticker': 'FSLR', 'realized_pnl': -109.6, 'realized_pnl_pct': -5.3,
+                 'reason': 'stop_loss', 'exit_date': '2026-09-16'}]
+
+    def test_it_reports_how_many_trades_won_and_lost(self):
+        text = self.render(self.trades())
+        self.assertIn('SINCE YOU STARTED', text)
+        self.assertIn('2 trades finished: 1 made money, 1 lost money', text)
+
+    def test_it_reports_the_average_win_and_loss(self):
+        """The asymmetry is the thing worth seeing, not just the total."""
+        text = self.render(self.trades())
+        self.assertIn('+7.1%', text)
+        self.assertIn('-5.3%', text)
+
+    def test_it_reports_what_has_actually_been_banked(self):
+        self.assertIn('$1,683 profit', self.render(self.trades()))
+
+    def test_a_losing_record_is_not_called_profit(self):
+        losing = [{'ticker': 'X', 'realized_pnl': -500.0, 'realized_pnl_pct': -4.0,
+                   'reason': 'stop_loss', 'exit_date': '2026-09-16'}]
+        self.assertIn('$500 loss', self.render(losing))
+
+    def test_a_portfolio_with_no_history_says_nothing(self):
+        self.assertNotIn('SINCE YOU STARTED', self.render([]))
+
+
 class SectorResolution(unittest.TestCase):
     """A bug in our own code must not look like a gap in the data."""
 
