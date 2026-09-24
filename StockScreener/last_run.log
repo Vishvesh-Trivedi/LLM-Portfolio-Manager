@@ -16,10 +16,167 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-24 06:09
+   Time:   2026-09-24 22:18
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 901 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Broker sync: Cash set from broker: 87133.76 -> 87133.76
-  No completed trading session (before 16:15 ET); broker state reconciled only
+ALPACA PAPER ACCOUNT: $101,803.38 (+1,803.38 / +1.8% vs $100,000 starting)
+Cash: $87,133.76  |  Positions: 1/5  |  Deployed: 14%  |  Idle: 86%
+Sector exposure: Healthcare: 14%
+Broker P&L: $+1,803.38 all-time  |  no closed trades this week
+  GILD [Healthcare]: 98sh @ $149.5798 → $149.69000244140625 (+11 / +0.1%) | 4d | Stop $147.96 | Target $158.9998
+
+Step 1/8: Updating past results + exit signals...
+
+Step 2/8: Market context...
+
+Market context...
+  VIX:  15.67 (p18.8) -> LOW (p19 risk-on) (1.1x)
+  QQQ:  $741.1 | BULLISH (+4.20% vs 50MA)
+  SPY today: -0.08%
+  10Y yield: 5.16% (+0.90%)  DXY: 101.25 (+0.15%)  Nikkei: +1.38%
+  Futures:  ES=-0.17%  NQ=-0.11%
+
+Step 3/8: Fetching all data (parallel)...
+  Alpaca: 926/926 tickers
+  Downloaded: 926/926 tickers
+  OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
+  RSS feeds active: 14/16 | Headlines: 84
+  Fetching news for all 900 stocks (parallel)...
+  News found: 313/900 stocks have news today
+  Fetching fundamentals for all 899 stocks (parallel)...
+  Full fundamentals: 431/899 stocks
+  Sector ranks - Top 3: ['Communication Services', 'Technology', 'Healthcare'] | Perf: Communication Services:+2.8% | Technology:+2.7% | Healthcare:+0.9% | Industrials:-0.5% | Basic Materials:-0.6%
+  Sector flows: TOP Communication Services +1.2% | BOT Basic Materials -1.1%
+
+Step 4/8: Bidirectional screening...
+
+Phase 2 - Technical screening (926 tickers)...
+  Passed: 10 | Rejected: Price:0 MA:765 Vol:76 RSI:6 Liq:37 ADX:6
+
+Phase 3 - News screening all 926 stocks...
+  News rescued: 55 stocks → ['ADBE', 'ABT', 'ALL', 'ABBV', 'AMGN', 'ADI', 'AON', 'BKR', 'BAC', 'AZO']...
+
+Phase 4 - Merging candidate pools...
+  Total candidates: 65
+    BOTH (tech+news): 1  TECHNICAL: 9  NEWS: 55
+  Earnings risk flags: ['COST']
+
+Step 4.5/8: Stream B - headline ticker extraction...
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'WAB', 'TOST', 'RTX']
+  Stream B added: AAPL | $335.88 | RSI 61.1
+  Stream B added: GOOGL | $342.33 | RSI 48.5
+  Stream B added: WAB | $290.18 | RSI 56.1
+  Stream B added: TOST | $30.12 | RSI 35.6
+  Stream B added: RTX | $188.62 | RSI 27.0
+  Sector sentiment derived: 9/11 sectors from 64 stocks
+  [ADVISORY ONLY] HOLD [LOW] GILD: The stock is currently within the target range and the thesis has not been invalidated, warranting a hold position. (no ledger changes)
+
+Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
+  Fetching options + insider data for 69 candidates...
+  Options data: 0/69 | Insider signals: 55/69
+  Congress trades: all sources unavailable (no cache)
+
+Phase 5.5 - Computing score breakdown (69 candidates)...
+  Pre-score top 5: ILMN(78=45T+33N [vader:BULLISH])  P(77=46T+31N [vader:BULLISH])  HPE(77=44T+33N [vader:BULLISH])  ETN(75=39T+36N [vader:BULLISH])  FTNT(75=44T+31N [vader:BULLISH])
+  SEC EDGAR 8-K: 1/30 candidates have recent filings
+
+Step 4.7/8: LLM catalyst scoring (every candidate)...
+  Catalyst scoring: 30 stocks → 5 LLM calls...
+    Batch 1/5 
+    Batch 2/5 
+    Batch 3/5 
+    Batch 4/5 
+    Batch 5/5 
+  Catalyst scoring done — 3 auto-dropped, 27 remain
+
+Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
+
+Phase 5 - News intelligence (27 candidates, 3 layers)...
+  Sentiment: NEUTRAL | Adj: +0
+  27 candidates after news filter
+
+Phase 5.5 - Computing score breakdown (27 candidates)...
+  Pre-score top 5: ILMN(78=45T+33N [vader:BULLISH])  HPE(77=44T+33N [vader:BULLISH])  P(77=46T+31N [vader:BULLISH])  ETN(75=39T+36N [vader:BULLISH])  FTNT(75=44T+31N [vader:BULLISH])
+
+Step 5.5/8: Applying LLM config criteria...
+  27 candidates after config criteria
+  Self-calibration: 14 prior picks, 57% win rate
+
+Step 6/8: LLM final scoring...
+
+Phase 6 - NVIDIA final scoring (27 candidates)...
+  Round 1/3: Ranking 27 candidates...
+  Round 1 → Top 10: ['ILMN', 'P', 'FTNT', 'IQV', 'JNJ', 'LLY', 'AMD', 'CRWD', 'DHR', 'CRL']
+  Round 2/3: Deep-diving top 10...
+  Round 2 → analyses for ['ILMN', 'P', 'FTNT', 'IQV', 'JNJ', 'LLY', 'AMD', 'CRWD', 'DHR', 'CRL']
+  Round 3/3: Final deliberation...
+  Final pick: AMD | pre=71 → 85/100 | BUY | 11 LLM calls this run
+
+┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
+│ 1. Rule (n=8, wr=80%, HIGH confidence): Stocks with tech_score > 40 and news_score > 30 have a 80% win rate in the next 1-4 weeks.
+│ 2. Rule (n=5, wr=80%, HIGH confidence): Stocks with insider_label = BUYING and news_score > 30 have a 80% win rate in the next 1-4 weeks.
+│ 3. Rule (n=3, wr=67%, MEDIUM confidence): Stocks with tech_score > 40 and momentum_5d > 5 have a 67% win rate in the next 1-4 weeks.
+│ → History taught me to prioritize stocks with strong technicals, high news scores, and insider buying in a VIX 1.1x regime.
+└──────────────────────────────────────────────────────────────
+  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
+  Entry estimate: close=$629.0 + 0.3% slippage = $630.89 (stop/target anchored here)
+
+█████████████████████████████████████████████████████████████████
+  TODAY'S PICK  —  Thursday, Sep 24 2026
+█████████████████████████████████████████████████████████████████
+  Market:  VIX 15.7 (LOW (p19 risk-on))  |  QQQ BULLISH  |  SPY -0.08%
+  Macro:   Market sentiment is neutral with a slight bias towards a bull run due to the ove
+─────────────────────────────────────────────────────────────────
+  BUY  AMD  [BOTH]
+  Sector:     Technology
+  Confidence: 85/100  █████████████████░░░
+  Entry:  ~$630.89   Stop: ~$590.84   Target: ~$710.99   R:R 1:2
+  Score:  
+─────────────────────────────────────────────────────────────────
+  Why:      AMD's strong technicals, high news score, and insider buying make it a compelling 1-4 week trade. The stock's recent price action and momentum indicators suggest a potential upside of 5-10% in the next 1-4 weeks.
+  Key Risk: The key risk is AMD's high valuation, which could make it more vulnerable to a pullback in the event of a market correction.
+  Bear case: Two specific risks in the next 4 weeks are: 1) a potential earnings miss, which could lead to a 5-10% pullback, and 2) a decline in semiconductor demand, which could impact AMD's revenue growth.
+
+  WATCH LIST:
+    P       74/100  [Technology]  P's strong technicals and insider buying make it a potential 1-4 week 
+█████████████████████████████████████████████████████████████████
+  Broker BUY 25 AMD: submitted with stop/target attached
+
+Step 8/8: Saving results...
+  OK: Saved AMD | Stop:590.84 Target:710.99
+  OK: Saved P | Stop:112.18 Target:141.43
+Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+
+────────────────────────────────────────────────────────────
+  CONFIRMED PICKS: 0 evaluated yet | 10 pending
+  WATCH LIST: 0 evaluated yet | 20 pending
+  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+────────────────────────────────────────────────────────────
+  run-digest (450 chars):
+ALPACA - Sep 24 2026
+Live paper account.
+
+WHAT HAPPENED TODAY
+- Nothing was bought or sold
+
+WHAT YOU HOLD (1)
+- GILD: up $11 (+0.1%)  |  98 shares, $149.58 -> $149.69
+  sells at $147.96 or $159.00  |  day 4 of 10
+  Close to its sell price - watch this one
+
+MONEY
+- Cash $87,134  |  In shares $14,670
+- Total $101,803 (up $1,803, +1.8% since start)
+
+NEXT ORDER
+- Buy 25 AMD at about $630.89
+- Fills when the market next opens
+
+STATUS
+- Checks: healthy
+
+  Discord run-digest: sent
+  WhatsApp run-digest: sent

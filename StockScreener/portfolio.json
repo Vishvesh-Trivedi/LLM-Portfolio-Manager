@@ -27,14 +27,14 @@
       "stop_price": 147.96,
       "target_price": 158.9998,
       "sector": "Healthcare",
-      "current_price": 151.3699951171875,
-      "current_value": 14834.26,
+      "current_price": 149.69000244140625,
+      "current_value": 14669.62,
       "cost_basis": 14658.82,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 175.44,
-      "unrealized_pnl_pct": 1.1968221180149508,
-      "hold_days": 3,
-      "held_sessions": 3,
+      "unrealized_pnl": 10.8,
+      "unrealized_pnl_pct": 0.07367578017876131,
+      "hold_days": 4,
+      "held_sessions": 4,
       "hold_sessions": 10,
       "high_watermark": 152.6699981689453,
       "atr_at_entry": 3.14,
@@ -44,9 +44,9 @@
       "broker_order_id": "ded5428d-4f95-4735-8d88-4ca38df70737",
       "broker_partial_fill": false,
       "requested_shares": 98,
-      "quote_date": "2026-09-23",
-      "last_evaluated_session": "2026-09-23",
-      "earnings_days_away": 36,
+      "quote_date": "2026-09-24",
+      "last_evaluated_session": "2026-09-24",
+      "earnings_days_away": 35,
       "indicator_exit_note": ""
     }
   ],
@@ -360,14 +360,45 @@
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
-  "pending_orders": [],
+  "pending_orders": [
+    {
+      "source": "BOTH",
+      "reasoning": "AMD's strong technicals, high news score, and insider buying make it a compelling 1-4 week trade. The stock's recent price action and momentum indicators suggest a potential upside of 5-10% in the next 1-4 weeks.",
+      "confidence": 85,
+      "rsi": 72.7,
+      "vix": 15.67,
+      "vix_regime": "LOW (p19 risk-on)",
+      "qqq_trend": "BULLISH",
+      "earnings_days": 40,
+      "congress": "NEUTRAL",
+      "insider": "BUYING",
+      "position_size_pct": 25,
+      "tech_score": 41,
+      "news_score": 30,
+      "id": "1ad8a410-2207-4bf4-bf8d-0ced31bf5328",
+      "trade_id": "1ad8a410-2207-4bf4-bf8d-0ced31bf5328",
+      "ticker": "AMD",
+      "signal_date": "2026-09-24",
+      "execution_session": "2026-09-25",
+      "estimated_entry": 630.89,
+      "stop_distance": 40.05,
+      "target_distance": 80.1,
+      "sector": "Technology",
+      "atr": 26.7,
+      "amount_usd": 21783.44,
+      "shares": 25,
+      "hold_sessions": 10,
+      "status": "PENDING"
+    }
+  ],
   "processed_sessions": [
     "2026-09-16",
     "2026-09-17",
-    "2026-09-18"
+    "2026-09-18",
+    "2026-09-24"
   ],
   "equity_peak": 101968.02,
-  "broker_equity": 101968.02,
+  "broker_equity": 101776.38,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -565,6 +596,7 @@
   "screened_sessions": [
     "2026-09-21",
     "2026-09-22",
-    "2026-09-23"
+    "2026-09-23",
+    "2026-09-24"
   ]
 }
