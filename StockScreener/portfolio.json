@@ -446,7 +446,7 @@
     "2026-09-25"
   ],
   "equity_peak": 101968.02,
-  "broker_equity": 101856.02,
+  "broker_equity": 101843.77,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -646,7 +646,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-09-25T23:19:51.159591002Z",
+      "timestamp": "2026-09-25T23:19:51.159591Z",
       "order_id": "973def42-a3f5-450e-b64b-5844b2e32cd4",
       "client_order_id": "lpm-P-AMD-1ad8a41022074bf4bf8d304bf9d9",
       "symbol": "AMD",
@@ -659,7 +659,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-09-25T23:19:51.15964356Z",
+      "timestamp": "2026-09-25T23:19:51.159644Z",
       "order_id": "572ed6a5-f0fe-4ccc-a21e-c323f040faa6",
       "client_order_id": "7148dc03-084a-4e9d-91a8-e86f420e72ff",
       "symbol": "AMD",
@@ -668,6 +668,45 @@
       "filled_avg_price": "",
       "qty": "25",
       "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-09-25T23:29:35.740728014Z",
+      "order_id": "d11f039b-a665-44eb-879c-941c020f3be5",
+      "client_order_id": "23dcd477-380e-4454-9e83-8d83ca952e29",
+      "symbol": "CDNS",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "54",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-09-25T23:29:35.740710268Z",
+      "order_id": "bac99354-a468-46d1-820f-4383d4f55f8e",
+      "client_order_id": "ccc12282-e946-4f1a-ac95-68451de78bfc",
+      "symbol": "CDNS",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "54",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-09-25T23:29:35.740674784Z",
+      "order_id": "57cd4b23-5016-4e3d-ad84-eb35fc803e88",
+      "client_order_id": "lpm-B-CDNS-91e5c634a1564efea27308a239aae584",
+      "symbol": "CDNS",
+      "status": "accepted",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "54",
+      "side": "buy"
     }
   ],
   "expired_orders": [
