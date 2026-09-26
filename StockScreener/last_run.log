@@ -16,44 +16,11 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-26 05:37
+   Time:   2026-09-26 06:08
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
   Broker sync: Cash set from broker: 71257.05 -> 71257.05
-  run-digest (767 chars):
-ALPACA - Sep 26 2026
-Live paper account.
-
-WHAT HAPPENED TODAY
-- Nothing was bought or sold
-
-WHAT YOU HOLD (2)
-- AMD: down $111 (-0.7%)  |  25 shares, $635.07 -> $630.63
-  sells at $595.02 or $715.17  |  day 1 of 10
-- GILD: up $132 (+0.9%)  |  98 shares, $149.58 -> $150.93
-  sells at $147.96 or $159.00  |  day 5 of 10
-
-MONEY
-- Cash $71,257  |  In shares $30,557
-- Total $101,814 (up $1,814, +1.8% since start)
-
-SINCE TRADING ON ALPACA
-- 1 trade finished: 1 made money, 0 lost money
-- Average win +7.1%
-- Banked $1,793 profit
-- Too few trades to tell whether this works yet
-
-NEXT ORDER
-- None. US markets were shut (weekend)
-- Your holdings and their sell orders are unchanged
-
-STATUS
-- Checks: healthy
-- Blocked: missing:market_data, missing:catalysts, missing:final
-
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1553279256556208330
-  WhatsApp run-digest: sent
   No completed trading session (weekend); broker state reconciled only
