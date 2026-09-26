@@ -12,7 +12,7 @@
     },
     "session": {
       "success": true,
-      "detail": "already processed"
+      "detail": "weekend"
     },
     "protection": {
       "success": true,
@@ -20,7 +20,7 @@
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 0 sent, 0 failed"
+      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
   "degraded_reasons": [],
@@ -28,9 +28,9 @@
   "attempts": 0,
   "successes": 0,
   "failures": 0,
-  "date": "2026-09-25",
+  "date": "2026-09-26",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "already_processed",
+  "mode": "no_session",
   "report": null,
   "trade_ready": false,
   "trade_blockers": [
