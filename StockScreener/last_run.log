@@ -16,11 +16,193 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-28 06:50
+   Time:   2026-09-28 23:39
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Cash set from broker: 71257.05 -> 71257.05
-  No completed trading session (before 16:15 ET); broker state reconciled only
+  Broker sync: Filled CDNS: 54 @ 322.1806 (broker confirmed)
+  Broker sync: Cash set from broker: 53859.3 -> 53859.3
+  Protection: CDNS 54 sh  stop $312.92 / target $349.75
+ALPACA PAPER ACCOUNT: $101,614.43 (+1,614.43 / +1.6% vs $100,000 starting)
+Cash: $53,859.30  |  Positions: 3/5  |  Deployed: 47%  |  Idle: 53%
+Sector exposure: Technology: 32%  Healthcare: 15%
+Broker P&L: $+1,614.43 all-time  |  no closed trades this week
+  GILD [Healthcare]: 98sh @ $149.5798 → $152.2100067138672 (+258 / +1.8%) | 6d | Stop $147.96 | Target $158.9998
+  AMD [Technology]: 25sh @ $635.0684 → $607.8699951171875 (-680 / -4.3%) | 2d | Stop $595.0184 | Target $715.1684
+  CDNS [Technology]: 54sh @ $322.1806 → $326.70001220703125 (+244 / +1.4%) | 1d | Stop $312.92 | Target $349.7506
+
+Step 1/8: Updating past results + exit signals...
+
+Step 2/8: Market context...
+
+Market context...
+  VIX:  16.07 (p27.7) -> MODERATE (p28 neutral) (1.0x)
+  QQQ:  $736.53 | BULLISH (+3.33% vs 50MA)
+  SPY today: -0.74%
+  10Y yield: 5.24% (+1.08%)  DXY: 101.18 (+0.21%)  Nikkei: +1.30%
+  Futures:  ES=-0.68%  NQ=-0.91%
+
+Step 3/8: Fetching all data (parallel)...
+  Alpaca: 926/926 tickers
+  Downloaded: 926/926 tickers
+  OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
+  RSS feeds active: 14/16 | Headlines: 84
+  Fetching news for all 900 stocks (parallel)...
+  News found: 900/900 stocks have news today
+  Fetching fundamentals for all 897 stocks (parallel)...
+  Full fundamentals: 605/897 stocks
+  Sector ranks - Top 3: ['Healthcare', 'Energy', 'Consumer Defensive'] | Perf: Healthcare:+0.8% | Energy:+0.6% | Consumer Defensive:-0.5% | Technology:-0.9% | Industrials:-0.9%
+  Sector flows: TOP Healthcare +0.3% | BOT Communication Services -1.6%
+
+Step 4/8: Bidirectional screening...
+
+Phase 2 - Technical screening (926 tickers)...
+  Passed: 8 | Rejected: Price:0 MA:752 Vol:105 RSI:0 Liq:26 ADX:9
+
+Phase 3 - News screening all 926 stocks...
+  News rescued: 101 stocks → ['ABT', 'MMM', 'ABBV', 'ALL', 'AAPL', 'AMAT', 'APP', 'AMGN', 'BAC', 'BRK-B']...
+
+Phase 4 - Merging candidate pools...
+  Total candidates: 109
+    BOTH (tech+news): 2  TECHNICAL: 6  NEWS: 101
+  Earnings risk flags: ['CCL', 'MU']
+
+Step 4.5/8: Stream B - headline ticker extraction...
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'WAB', 'NVDA', 'BA', 'AMD', 'KNSL']
+  Stream B added: AAPL | $338.4 | RSI 61.7
+  Stream B added: GOOGL | $342.77 | RSI 48.8
+  Stream B added: WAB | $292.36 | RSI 58.1
+  Stream B added: NVDA | $228.89 | RSI 58.7
+  Stream B added: BA | $184.26 | RSI 27.1
+  Stream B added: AMD | $607.88 | RSI 65.6
+  Stream B added: KNSL | $324.82 | RSI 27.2
+  Sector sentiment derived: 11/11 sectors from 109 stocks
+  [ADVISORY ONLY] HOLD [LOW] GILD: Price has not reached target and is within stop range, maintain current position without change. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] AMD: News surrounding the acquisition of World Labs may have a positive impact on AMD's technicals, but the stock's current price is a 2-session decline, suggesting a potential short-term correction. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: Price has not yet reached stop or target levels, and recent news is neutral to the stock's thesis. (no ledger changes)
+
+Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
+  Fetching options + insider data for 113 candidates...
+  Options data: 0/113 | Insider signals: 84/113
+  Congress trades: all sources unavailable (no cache)
+
+Phase 5.5 - Computing score breakdown (113 candidates)...
+  Pre-score top 5: PM(77=44T+33N [vader:BULLISH])  ILMN(74=43T+31N [vader:BULLISH])  TWLO(74=41T+33N [vader:BULLISH])  TXN(74=42T+32N [vader:BULLISH])  MAR(73=45T+28N [vader:BULLISH])
+  SEC EDGAR 8-K: 3/30 candidates have recent filings
+
+Step 4.7/8: LLM catalyst scoring (every candidate)...
+  Catalyst scoring: 30 stocks → 5 LLM calls...
+    Batch 1/5 
+    Batch 2/5 
+    Batch 3/5 
+    Batch 4/5 
+    Batch 5/5 
+  Catalyst scoring done — 7 auto-dropped, 23 remain
+
+Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
+
+Phase 5 - News intelligence (23 candidates, 3 layers)...
+  Sentiment: NEUTRAL | Adj: +0
+  23 candidates after news filter
+
+Phase 5.5 - Computing score breakdown (23 candidates)...
+  Pre-score top 5: PM(77=44T+33N [vader:BULLISH])  ILMN(74=43T+31N [vader:BULLISH])  TWLO(74=41T+33N [vader:BULLISH])  TXN(74=42T+32N [vader:BULLISH])  MAR(73=45T+28N [vader:BULLISH])
+
+Step 5.5/8: Applying LLM config criteria...
+  23 candidates after config criteria
+  Self-calibration: 14 prior picks, 57% win rate
+
+Step 6/8: LLM final scoring...
+
+Phase 6 - NVIDIA final scoring (23 candidates)...
+  Round 1/3: Ranking 23 candidates...
+  Round 1 → Top 10: ['PM', 'TWLO', 'TXN', 'DHR', 'OKTA', 'WAB', 'VLO', 'AMAT', 'LRCX', 'NTAP']
+  Round 2/3: Deep-diving top 10...
+  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: RetryError
+  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> ibm/granite-34b-code-instruct (transient failure status=429)
+  -> NVIDIA throttled; answered via OpenRouter.
+  Round 2 → analyses for ['TXN', 'AMAT', 'OKTA', 'DHR', 'WAB', 'LRCX', 'NTAP', 'TWLO', 'PM', 'VLO']
+  Round 3/3: Final deliberation...
+  LLM model fallback: ibm/granite-34b-code-instruct -> meta/llama-3.2-90b-vision-instruct (404 model unavailable)
+  LLM attempt 1/2 failed [ibm/granite-34b-code-instruct]: HTTPError (HTTP 404)
+  Final pick: DHR | pre=72 → 85/100 | BUY | 13 LLM calls this run
+
+┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
+│ 1. Rule (n=5, wr=80%, HIGH confidence): Stocks with strong earnings growth (>20%), high insider buying score (>1.5), and low short interest (<3%) tend to perform well in the next 1-4 weeks.
+│ → History taught me that stocks with strong earnings growth, high insider buying, and low short interest are more likely to succeed in the next 1-4 weeks, especially in a moderate VIX regime.
+└──────────────────────────────────────────────────────────────
+  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
+  Entry estimate: close=$227.34 + 0.3% slippage = $228.02 (stop/target anchored here)
+
+█████████████████████████████████████████████████████████████████
+  TODAY'S PICK  —  Monday, Sep 28 2026
+█████████████████████████████████████████████████████████████████
+  Market:  VIX 16.1 (MODERATE (p28 neutral))  |  QQQ BULLISH  |  SPY -0.76%
+  Macro:   The US stock market is experiencing a decline, with the S&P 500, Dow, and Nasdaq
+─────────────────────────────────────────────────────────────────
+  BUY  DHR  [TECHNICAL]
+  Sector:     Healthcare
+  Confidence: 85/100  █████████████████░░░
+  Entry:  ~$228.02   Stop: ~$220.64   Target: ~$242.78   R:R 1:2
+  Score:  
+─────────────────────────────────────────────────────────────────
+  Why:      Danaher's strong earnings growth of 59.7%, high insider buying score, and low short interest make it an attractive pick in the next 1-4 weeks. The stock's defensive sector and modest 5-day gain also suggest resilience.
+  Key Risk: Earnings miss or disappointing guidance in 23 days.
+  Bear case: The stock's elevated RSI of 71.4 may indicate overbought conditions, and earnings in 23 days present a risk if results disappoint. The modest upside target of 1.5% limits the reward.
+
+  WATCH LIST:
+    TXN     74/100  [Technology]  Texas Instruments' solid momentum, rising money flow, and insider buyi
+    OKTA    72/100  [Unknown]  Okta's strong uptrend, solid 5-day momentum, and positive money flow m
+█████████████████████████████████████████████████████████████████
+  Broker BUY 59 DHR: submitted with stop/target attached
+
+Step 8/8: Saving results...
+  OK: Saved DHR | Stop:220.64 Target:242.78
+  OK: Saved TXN | Stop:266.41 Target:302.05
+  OK: Saved OKTA | Stop:186.7 Target:233.1
+Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+
+────────────────────────────────────────────────────────────
+  CONFIRMED PICKS: 0 evaluated yet | 12 pending
+  WATCH LIST: 1/2 wins (50.0%) | avg 10d -3.0% | 21 pending
+  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+────────────────────────────────────────────────────────────
+  run-digest (1007 chars):
+ALPACA - Sep 28 2026
+Live paper account.
+
+WHAT HAPPENED TODAY
+- BOUGHT 54 CDNS at $322.18 ($17,398)
+- CDNS protected: sells at $312.92 or $349.75
+- ORDERED 59 DHR at about $228.02 - fills at the next open, nothing spent yet
+
+WHAT YOU HOLD (3)
+- AMD: down $680 (-4.3%)  |  25 shares, $635.07 -> $607.87
+  sells at $595.02 or $715.17  |  day 2 of 10
+- CDNS: up $244 (+1.4%)  |  54 shares, $322.18 -> $326.70
+  sells at $312.92 or $349.75  |  day 1 of 10
+- GILD: up $258 (+1.8%)  |  98 shares, $149.58 -> $152.21
+  sells at $147.96 or $159.00  |  day 6 of 10
+
+MONEY
+- Cash $53,859  |  In shares $47,755
+- Total $101,614 (up $1,614, +1.6% since start)
+- 32% of everything is in one industry (Technology) - a bad week there hits the whole account
+
+SINCE TRADING ON ALPACA
+- 1 trade finished: 1 made money, 0 lost money
+- Average win +7.1%
+- Banked $1,793 profit
+- Too few trades to tell whether this works yet
+
+NEXT ORDER
+- Buy 59 DHR at about $228.02
+- Fills when the market next opens
+
+STATUS
+- Checks: healthy
+
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1554278374656966781
+  WhatsApp run-digest: sent
