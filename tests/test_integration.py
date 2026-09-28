@@ -334,7 +334,8 @@ class IntegrationTests(unittest.TestCase):
         # because the real summary follows a few hours later on the same day.
         # Nothing is owed here: the ledger records the recent sessions as
         # screened, so the pre-close run has no earlier session to finish.
-        self.seed_sessions(['2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'])
+        self.seed_sessions(['2026-09-02', '2026-09-03', '2026-09-04', '2026-09-08',
+                            '2026-09-09', '2026-09-10', '2026-09-11'])
         for instant, summary in ((datetime(2026, 9, 12, 17), True),
                                  (datetime(2026, 9, 7, 17), True),
                                  (datetime(2026, 9, 11, 16, 14), False)):
@@ -370,6 +371,37 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(APP._session_date(), '2026-09-10')
         self.assertIn('2026-09-10', self.ledger()['screened_sessions'])
 
+    def test_a_late_cron_landing_on_a_weekend_still_finishes_friday(self):
+        """The gate says more than one thing, and any of them can hide a debt.
+
+        Catching up only on 'before 16:15 ET' left the same hole one day over:
+        a Friday-evening cron delivered at 01:58 Saturday is told 'weekend' and
+        stops, so Friday is skipped for exactly the reason Monday was. What
+        matters is whether a closed session is owed, not which excuse the gate
+        happens to give for this particular minute.
+        """
+        self.pipeline()
+        self.seed_sessions([])
+        Clock.instant = datetime(2026, 9, 12, 1, 58, tzinfo=ZoneInfo('America/New_York'))
+        self.assertEqual(APP._session_gate(Clock.instant), 'weekend')
+
+        self.assertIsNotNone(APP.run_screener(), 'Friday must still be screened')
+        self.assertEqual(APP._RUN_MODE, 'screening')
+        self.assertEqual(APP._session_date(), '2026-09-11')
+        self.assertIn('2026-09-11', self.ledger()['screened_sessions'])
+
+    def test_the_session_date_is_released_after_a_catch_up_run(self):
+        """A catch-up date that outlived its run would misdate every later one."""
+        self.pipeline()
+        self.seed_sessions([])
+        Clock.instant = datetime(2026, 9, 11, 1, 58, tzinfo=ZoneInfo('America/New_York'))
+        APP.run_screener()
+        self.assertEqual(APP._session_date(), '2026-09-10')
+        # The next run owes nothing, so it is back on the calendar day.
+        Clock.instant = datetime(2026, 9, 11, 17, tzinfo=ZoneInfo('America/New_York'))
+        APP.run_screener()
+        self.assertEqual(APP._session_date(), '2026-09-11')
+
     def test_a_pre_close_run_with_nothing_owed_still_does_nothing(self):
         """Catching up must not turn every early run into a screen."""
         self.pipeline()
@@ -397,6 +429,10 @@ class IntegrationTests(unittest.TestCase):
         returned before anything asked Alpaca what had happened.
         """
         self.pipeline()
+        # Owing nothing, so it is the gate that stops this run rather than a
+        # catch-up finishing an earlier session.
+        self.seed_sessions(['2026-09-02', '2026-09-03', '2026-09-04', '2026-09-08',
+                            '2026-09-09', '2026-09-10', '2026-09-11'])
         Clock.instant = datetime(2026, 9, 12, 17, tzinfo=ZoneInfo('America/New_York'))
         events = [{'kind': 'fill', 'severity': 'info', 'symbol': 'AAA',
                    'summary': 'AAA filled', 'shares': 5, 'price': 10.0}]
@@ -432,6 +468,8 @@ class IntegrationTests(unittest.TestCase):
         WhatsApp.
         """
         self.pipeline()
+        self.seed_sessions(['2026-09-02', '2026-09-03', '2026-09-04', '2026-09-08',
+                            '2026-09-09', '2026-09-10', '2026-09-11'])
         Clock.instant = datetime(2026, 9, 12, 17, tzinfo=ZoneInfo('America/New_York'))
         with patch.object(APP, 'sync_with_broker', return_value=[]), \
                 patch.object(APP, 'protect_positions', return_value=[]):
@@ -962,6 +1000,10 @@ class IntegrationTests(unittest.TestCase):
         in the Discord digest, and printed as a warning annotation.
         """
         self.pipeline()
+        # The run below screens 2026-09-11; seeding the sessions before it means
+        # the Saturday run that follows owes nothing and reports 'no_session'.
+        self.seed_sessions(['2026-09-02', '2026-09-03', '2026-09-04',
+                            '2026-09-08', '2026-09-09', '2026-09-10'])
         self.bad_stage = 'news'
         self.assertEqual(APP.main(), 0)
         self.report.assert_called_once()

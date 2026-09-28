@@ -6340,13 +6340,19 @@ def run_screener():
     # session. The crons that should have screened it arrived after midnight,
     # by which time "today" had moved on and the session was skipped for good.
     _CATCH_UP_SESSION[0] = ''
-    if reason == 'before 16:15 ET':
+    if reason:
+        # Any closed gate, not just a weekday before the close. A cron meant
+        # for Friday evening routinely lands on Saturday, where the gate says
+        # "weekend" and Friday would be skipped for exactly the same reason a
+        # Monday cron landing on Tuesday skipped Monday. What matters is
+        # whether a session closed unscreened, not what today happens to be.
         pending_session = _catch_up_session(portfolio, _et_now)
         if pending_session:
             _CATCH_UP_SESSION[0] = pending_session
             reason = ''
             print(f'  Catching up: {pending_session} closed without being '
-                  f'screened; processing it now')
+                  f'screened; processing it now instead of reporting '
+                  f'"{_session_gate(_et_now)}"')
     try:
         if hasattr(_alpaca, 'sync_order_statuses'):
             portfolio['alpaca_order_ledger'] = _alpaca.sync_order_statuses(portfolio.get('alpaca_order_ledger'))
