@@ -242,6 +242,14 @@ class IntegrationTests(unittest.TestCase):
             payload = '{"incomplete":'
         return response(payload)
 
+    def seed_sessions(self, screened):
+        """Create the ledger with a given screening history."""
+        book = APP._portfolio.load_portfolio(APP)
+        book['screened_sessions'] = list(screened)
+        book['processed_sessions'] = []
+        APP._portfolio.save_portfolio(APP, book)
+        return book
+
     def ledger(self):
         return json.loads(Path(APP.PORTFOLIO_JSON).read_text(encoding='utf-8'))
 
@@ -324,6 +332,9 @@ class IntegrationTests(unittest.TestCase):
         self.pipeline()
         # A shut market reports; a weekday still waiting for the close does not,
         # because the real summary follows a few hours later on the same day.
+        # Nothing is owed here: the ledger records the recent sessions as
+        # screened, so the pre-close run has no earlier session to finish.
+        self.seed_sessions(['2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'])
         for instant, summary in ((datetime(2026, 9, 12, 17), True),
                                  (datetime(2026, 9, 7, 17), True),
                                  (datetime(2026, 9, 11, 16, 14), False)):
@@ -336,6 +347,48 @@ class IntegrationTests(unittest.TestCase):
         for mock in (self.monitor, self.probe, self.context, self.download,
                      self.post, self.alert):
             mock.assert_not_called()
+
+    def test_a_late_run_finishes_the_session_it_was_meant_for(self):
+        """The failure that stopped a week of trading.
+
+        GitHub delivered the evening crons up to nine hours late. A cron meant
+        for Monday evening arriving at 01:58 Tuesday asked "is it after 16:15 ET
+        today?", got Tuesday, and answered no - so Monday's completed session was
+        never considered and was skipped permanently. Every run reported healthy
+        while nothing was screened.
+        """
+        self.pipeline()
+        # Thursday's session closed and nothing screened it. It is now early
+        # Friday morning, long before Friday's close.
+        self.seed_sessions([])
+        Clock.instant = datetime(2026, 9, 11, 1, 58, tzinfo=ZoneInfo('America/New_York'))
+
+        result = APP.run_screener()
+        self.assertIsNotNone(result, 'the owed session must be screened')
+        self.assertEqual(APP._RUN_MODE, 'screening')
+        # It works on the session that closed, not on the calendar day it woke.
+        self.assertEqual(APP._session_date(), '2026-09-10')
+        self.assertIn('2026-09-10', self.ledger()['screened_sessions'])
+
+    def test_a_pre_close_run_with_nothing_owed_still_does_nothing(self):
+        """Catching up must not turn every early run into a screen."""
+        self.pipeline()
+        # Every closed session inside the look-back window is accounted for.
+        self.seed_sessions(['2026-09-08', '2026-09-09', '2026-09-10'])
+        Clock.instant = datetime(2026, 9, 11, 1, 58, tzinfo=ZoneInfo('America/New_York'))
+        self.assertIsNone(APP.run_screener())
+        self.assertEqual(APP._RUN_MODE, 'no_session')
+
+    def test_it_does_not_reach_back_for_a_stale_session(self):
+        """Deciding on week-old market data is worse than skipping it."""
+        book = {'processed_sessions': [], 'screened_sessions': []}
+        now = datetime(2026, 9, 18, 1, 58, tzinfo=ZoneInfo('America/New_York'))
+        self.assertEqual(APP._catch_up_session(book, now, lookback=2), '2026-09-17')
+        # Beyond the window it is reported by _missed_sessions, not screened.
+        self.assertEqual(
+            APP._catch_up_session({'processed_sessions': [],
+                                   'screened_sessions': ['2026-09-17', '2026-09-16']},
+                                  now, lookback=2), '')
 
     def test_weekend_run_reconciles_the_broker_but_never_trades(self):
         """A fill is a fact even when this run may not screen.

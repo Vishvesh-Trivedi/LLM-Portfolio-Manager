@@ -194,6 +194,32 @@ def _degrade(reason):
     _HEALTH.degrade(reason)
 
 
+def _catch_up_session(portfolio, now=None, lookback=5):
+    """The most recent closed session that was never screened, or ''.
+
+    Only looks back a few days: screening a stale session means deciding on
+    market data from days ago, which is worth doing for yesterday and not worth
+    doing for last week. Anything older is reported by _missed_sessions instead
+    and left for a human.
+    """
+    from zoneinfo import ZoneInfo
+    now = now or datetime.now(ZoneInfo('America/New_York'))
+    seen = {str(day)[:10] for day in portfolio.get('processed_sessions', []) or []}
+    seen |= {str(day)[:10] for day in portfolio.get('screened_sessions', []) or []}
+    today = now.strftime('%Y-%m-%d')
+    for back in range(1, max(1, int(lookback)) + 1):
+        day = now - timedelta(days=back)
+        stamp = day.strftime('%Y-%m-%d')
+        if stamp >= today or stamp in seen:
+            continue
+        # 17:00 ET is safely past the gate, so '' means this really was a
+        # session that closed and should have been screened.
+        if _session_gate(day.replace(hour=17, minute=0, second=0, microsecond=0)):
+            continue
+        return stamp
+    return ''
+
+
 def _missed_sessions(portfolio, lookback=14, now=None):
     """Completed trading sessions this ledger never processed, oldest first.
 
@@ -231,9 +257,24 @@ def _missed_sessions(portfolio, lookback=14, now=None):
     return sorted(missed)
 
 
+# Set for the length of a run that is finishing an earlier session. Empty
+# means "today", which is every ordinary run.
+_CATCH_UP_SESSION = ['']
+
+
 def _session_date():
-    """Current New York calendar date; tests may patch this function explicitly."""
+    """The session this run is working on.
+
+    Normally the current New York date. When a run starts too late to be the
+    one its cron intended - GitHub has delivered these up to nine hours behind
+    - it may instead be finishing a session that closed earlier and was never
+    screened, and every date in the run has to agree about which one that is.
+
+    Tests may patch this function explicitly.
+    """
     from zoneinfo import ZoneInfo
+    if _CATCH_UP_SESSION[0]:
+        return _CATCH_UP_SESSION[0]
     return datetime.now(ZoneInfo('America/New_York')).strftime('%Y-%m-%d')
 
 
@@ -6294,6 +6335,18 @@ def run_screener():
 
     load_config_overrides()
     portfolio = load_portfolio()
+
+    # A run that is too early for today's close may still owe an earlier
+    # session. The crons that should have screened it arrived after midnight,
+    # by which time "today" had moved on and the session was skipped for good.
+    _CATCH_UP_SESSION[0] = ''
+    if reason == 'before 16:15 ET':
+        pending_session = _catch_up_session(portfolio, _et_now)
+        if pending_session:
+            _CATCH_UP_SESSION[0] = pending_session
+            reason = ''
+            print(f'  Catching up: {pending_session} closed without being '
+                  f'screened; processing it now')
     try:
         if hasattr(_alpaca, 'sync_order_statuses'):
             portfolio['alpaca_order_ledger'] = _alpaca.sync_order_statuses(portfolio.get('alpaca_order_ledger'))
