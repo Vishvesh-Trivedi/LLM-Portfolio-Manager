@@ -14,10 +14,10 @@ on:
     # concurrency group below stops two from overlapping. Extra entries
     # therefore cost almost nothing and remove the single point of failure.
     #
-    # All six land on the same New York session date: 01:30 UTC is 21:30 ET on
-    # the same weekday. The earlier ones fall before the 16:15 ET gate in
-    # winter and simply reconcile without screening, which is also what is
-    # wanted.
+    # The six evening entries all land on the same New York session date:
+    # 01:11 UTC is 21:11 ET on the same weekday. The earliest fall before the
+    # 16:15 ET gate in winter, where they now finish the previous session
+    # rather than doing nothing.
     # Deliberately odd minutes. Every one of these used to be :30, which after
     # :00 is the minute most of GitHub asks for - and a scheduled job waits
     # behind everything else queued at the same instant. Asking at a time few
@@ -27,7 +27,23 @@ on:
     - cron: '41 22 * * *'   # around the earliest start actually observed
     - cron: '07 23 * * *'   # around the median start
     - cron: '53 0 * * *'    # past the worst start observed
-    - cron: '11 1 * * *'    # last chance before the next session
+    - cron: '11 1 * * *'    # last chance that evening
+    #
+    # Morning entries, which exist because the evening ones are not reliable.
+    # Measured over the nine days to 2026-09-28 the scheduler's median delay is
+    # 48 minutes and its 90th percentile is five hours; on 2026-09-25 the 01:11
+    # entry was delivered at 05:30 and again at 06:09. Until now the only cover
+    # for a dropped evening was another evening entry drifting into the small
+    # hours by accident.
+    #
+    # A run here finishes the previous session rather than the current one, and
+    # costs the strategy nothing: all three land before the opening bell in both
+    # daylight regimes, so the order still queues for the same open it would
+    # have queued for had the evening run placed it. Anything that finds the
+    # session already processed exits within seconds.
+    - cron: '13 9 * * *'    # 05:13 ET in summer / 04:13 ET in winter
+    - cron: '47 10 * * *'   # 06:47 ET / 05:47 ET
+    - cron: '29 12 * * *'   # 08:29 ET / 07:29 ET - last one still pre-open
   workflow_dispatch:
     inputs:
       qa_only:

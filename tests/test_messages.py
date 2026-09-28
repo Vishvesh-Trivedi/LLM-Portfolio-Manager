@@ -192,8 +192,8 @@ class ClosedMarketSummary(unittest.TestCase):
 class WhatsAppAllowanceIsSpentOnce(unittest.TestCase):
     """CallMeBot stops delivering when its allowance runs out.
 
-    The schedule makes six attempts a day so a dropped cron cannot lose the
-    session. Sending all six to WhatsApp exhausts the allowance in a day and
+    The schedule makes nine attempts a day so a dropped cron cannot lose the
+    session. Sending all nine to WhatsApp exhausts the allowance in a day and
     the one message that matters never arrives.
     """
 
