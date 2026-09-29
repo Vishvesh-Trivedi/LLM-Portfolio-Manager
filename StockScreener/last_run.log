@@ -16,7 +16,7 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-29 22:17
+   Time:   2026-09-29 23:45
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
@@ -40,18 +40,18 @@ Market context...
   VIX:  16.04 (p26.8) -> MODERATE (p27 neutral) (1.0x)
   QQQ:  $737.93 | BULLISH (+3.40% vs 50MA)
   SPY today: -0.18%
-  10Y yield: 5.26% (+0.38%)  DXY: 101.38 (+0.18%)  Nikkei: -0.73%
-  Futures:  ES=-0.02%  NQ=+0.41%
+  10Y yield: 5.26% (+0.38%)  DXY: 101.41 (+0.21%)  Nikkei: -0.73%
+  Futures:  ES=-0.01%  NQ=+0.41%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
   Downloaded: 926/926 tickers
-  OK: NVIDIA models verified by JSON probe (2 answering chat): active = meta/llama-3.2-11b-vision-instruct
+  OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
   RSS feeds active: 14/16 | Headlines: 84
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 896 stocks (parallel)...
-  Full fundamentals: 412/896 stocks
+  Full fundamentals: 433/896 stocks
   Sector ranks - Top 3: ['Healthcare', 'Utilities', 'Technology'] | Perf: Healthcare:+1.1% | Utilities:-0.1% | Technology:-0.4% | Industrials:-0.6% | Consumer Defensive:-0.8%
   Sector flows: TOP Utilities +1.1% | BOT Energy -0.9%
 
@@ -68,63 +68,58 @@ Phase 4 - Merging candidate pools...
     BOTH (tech+news): 0  TECHNICAL: 6  NEWS: 0
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'WAB', 'SO', 'AMD', 'MSFT', 'NVDA']
+  Stream B: Processing headline mentions: ['AAPL', 'MU', 'NTAP', 'WAB']
   Stream B added: AAPL | $329.58 | RSI 51.1
-  Stream B added: GOOGL | $340.95 | RSI 47.4
+  Stream B added: MU | $1064.97 | RSI 59.8
+  Stream B added: NTAP | $209.23 | RSI 66.1
   Stream B added: WAB | $291.19 | RSI 56.3
-  Stream B added: SO | $83.45 | RSI 30.0
-  Stream B added: AMD | $607.67 | RSI 65.5
-  Stream B added: MSFT | $508.92 | RSI 58.2
-  Stream B added: NVDA | $227.24 | RSI 56.6
-  Sector sentiment derived: 4/11 sectors from 6 stocks
-  [ADVISORY ONLY] HOLD [LOW] GILD: No strong reason to exit or add to the current position, and the thesis remains intact with no fresh news impacting the market. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] AMD: The stock is near its stop price, but there's no fresh news to change the thesis, so holding is the best course of action for now. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock is holding steady with minimal news and no significant market volatility, suggesting a wait-and-see approach. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] DHR: No significant market or stock-specific news, and current price is near the original entry price, suggesting a stable position. (no ledger changes)
+  Sector sentiment derived: 3/11 sectors from 5 stocks
+  [ADVISORY ONLY] HOLD [LOW] GILD: Price has rallied as expected, but no fresh news supports a strong exit or additional entry, and the thesis remains intact. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] AMD: Price is currently below the stop-loss, but holding to see if the thesis plays out, with no fresh news and bullish market conditions. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock is holding near its entry price, and there is no fresh news to justify a change in position, so holding is the best option for now. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] DHR: Position is currently near the entry price and the market conditions are stable, with no fresh news and a bullish QQQ trend. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 9 candidates...
-  Options data: 0/9 | Insider signals: 8/9
+  Fetching options + insider data for 7 candidates...
+  Options data: 0/7 | Insider signals: 6/7
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (9 candidates)...
-  Pre-score top 5: TWLO(61=46T+15N [vader:NEUTRAL])  HLT(58=43T+15N [vader:NEUTRAL])  TT(56=43T+13N [vader:NEUTRAL])  MSFT(56=38T+18N [vader:NEUTRAL])  WAB(55=40T+15N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (7 candidates)...
+  Pre-score top 5: TWLO(61=46T+15N [vader:NEUTRAL])  HLT(58=43T+15N [vader:NEUTRAL])  TT(58=43T+15N [vader:NEUTRAL])  NTAP(58=42T+16N [vader:NEUTRAL])  WAB(55=40T+15N [vader:NEUTRAL])
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
-  Catalyst scoring: 9 stocks → 2 LLM calls...
-  catalyst_1: NVIDIA parser/validator rejected response: ValueError: duplicate JSON key: catalyst_score
-  catalyst_1: OpenRouter parser/validator rejected response: JSONDecodeError: Unterminated string starting at: line 1 column 374 (char 373)
-  ↩️  Critical LLM call recovered via NVIDIA-retry.
+  Catalyst scoring: 7 stocks → 2 LLM calls...
     Batch 1/2 
     Batch 2/2 
-  Catalyst scoring done — 2 auto-dropped, 7 remain
+  Catalyst scoring done — 2 auto-dropped, 5 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (7 candidates, 3 layers)...
+Phase 5 - News intelligence (5 candidates, 3 layers)...
   Sentiment: NEUTRAL | Adj: +0
-  7 candidates after news filter
+  5 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (7 candidates)...
-  Pre-score top 5: TWLO(61=46T+15N [vader:NEUTRAL])  HLT(58=43T+15N [vader:NEUTRAL])  MSFT(56=38T+18N [vader:NEUTRAL])  TT(56=43T+13N [vader:NEUTRAL])  NVDA(55=37T+18N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (5 candidates)...
+  Pre-score top 5: TWLO(61=46T+15N [vader:NEUTRAL])  HLT(58=43T+15N [vader:NEUTRAL])  NTAP(58=42T+16N [vader:NEUTRAL])  TT(58=43T+15N [vader:NEUTRAL])  AAPL(38=22T+16N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  7 candidates after config criteria
+  5 candidates after config criteria
   Self-calibration: 14 prior picks, 57% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (7 candidates)...
-  Round 1/3: Ranking 7 candidates...
-  Round 1 → Top 10: ['TWLO', 'HLT', 'TT', 'NVDA', 'WAB', 'AAPL', 'MSFT']
+Phase 6 - NVIDIA final scoring (5 candidates)...
+  Round 1/3: Ranking 5 candidates...
+  Round 1 → Top 10: ['TWLO', 'HLT', 'NTAP', 'TT', 'AAPL']
   Round 2/3: Deep-diving top 10...
-  Round 2 → analyses for ['TWLO', 'HLT', 'MSFT', 'TT', 'NVDA', 'WAB']
+  Round 2 → analyses for ['TWLO', 'HLT', 'NTAP', 'TT']
   Round 3/3: Final deliberation...
-  Final pick: TWLO | pre=61 → 85/100 | BUY | 12 LLM calls this run
+  Final pick: TWLO | pre=61 → 82/100 | BUY | 11 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=5, wr=80%, HIGH confidence): Tech stocks with high short interest and recent momentum tend to perform well in moderate volatility environments.
-│ → History suggests that tech stocks with high short interest and recent momentum tend to perform well in moderate volatility environments, but this pattern is not foolproof and should be approached with caution.
+│ 1. Rule (n=10, wr=80%, HIGH confidence): Regime matches today; catalyst quality > 50; earnings risk false.
+│ 2. Rule (n=7, wr=71%, MEDIUM confidence): Sector is Technology; short ratio < 3; upside pct > 5%.
+│ → History taught that in a moderate VIX regime, stocks with high catalyst quality and low earnings risk tend to perform better, and that Technology sector stocks with low short ratios and high upside potential are also attractive.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
   Entry estimate: close=$290.83 + 0.3% slippage = $291.7 (stop/target anchored here)
@@ -133,32 +128,32 @@ Phase 6 - NVIDIA final scoring (7 candidates)...
   TODAY'S PICK  —  Tuesday, Sep 29 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 16.0 (MODERATE (p27 neutral))  |  QQQ BULLISH  |  SPY -0.15%
-  Macro:   The US market is experiencing mixed sentiment with some companies posting positi
+  Macro:   US market extends losses from elevated yield pressure, with the S&P 500 and Dow 
 ─────────────────────────────────────────────────────────────────
   BUY  TWLO  [TECHNICAL]
   Sector:     Unknown
-  Confidence: 85/100  █████████████████░░░
+  Confidence: 82/100  ████████████████░░░░
   Entry:  ~$291.7   Stop: ~$270.44   Target: ~$334.21   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      TWLO is poised for a breakout above 300, driven by the strength of the tech sector and potential catalysts such as earnings beats or positive guidance. The stock's high short interest could lead to a squeeze if the price falls, but this is a risk that is currently outweighed by the potential reward.
-  Key Risk: The key risk is that the market could correct, leading to a decline in the stock price.
-  Bear case: Two specific risks in the next 4 weeks are: (1) a market correction could lead to a decline in the stock price, and (2) the stock's high short interest could lead to a squeeze if the price falls.
+  Why:      TWLO's steady price momentum and strong relative strength vs. the S&P 500 make it a more attractive trade than holding cash, as it has the potential to outperform the broader market in the next 1-4 weeks. Additionally, TWLO's low short ratio of null indicates a low level of short selling, which could also contribute to its bullish momentum.
+  Key Risk: TWLO's high short-term price volatility could lead to increased price swings in the next 1-4 weeks.
+  Bear case: One risk for TWLO is its high short-term price volatility, with a vol ratio of 2.58. This could lead to increased price swings in the next 1-4 weeks, making it a riskier trade. Additionally, TWLO's 52-week price change is -3.0%, indicating a relatively flat performance over the past year, which could suggest that the stock is due for a correction.
 
   WATCH LIST:
-    MSFT    74/100  [Technology]  MSFT is a strong fundamental stock with a high revenue growth rate and
+    NTAP    79/100  [Technology]  NTAP has a strong 5-day momentum of 6.58, indicating a potential uptre
 █████████████████████████████████████████████████████████████████
   Session left open: the order was rejected, so nothing was decided and a later run may retry.
   Broker: in sync (4 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved TWLO | Stop:270.44 Target:334.21
-  OK: Saved MSFT | Stop:491.64 Target:543.48
+  Already have TWLO on 2026-09-29 - skipping
+  OK: Saved NTAP | Stop:198.44 Target:230.8
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 0 evaluated yet | 13 pending
-  WATCH LIST: 1/2 wins (50.0%) | avg 10d -3.0% | 22 pending
+  WATCH LIST: 1/2 wins (50.0%) | avg 10d -3.0% | 23 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
   run-digest (1024 chars):
@@ -196,5 +191,5 @@ Why: it would have put too much of your money into one industry
 STATUS
 - Checks: healthy
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1554619382351528038
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1554641479136182313
   WhatsApp run-digest: sent
