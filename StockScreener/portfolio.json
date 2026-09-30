@@ -512,7 +512,7 @@
     "2026-09-29"
   ],
   "equity_peak": 101968.02,
-  "broker_equity": 101337.47,
+  "broker_equity": 101310.97,
   "alpaca_order_ledger": [
     {
       "source": "poll",
