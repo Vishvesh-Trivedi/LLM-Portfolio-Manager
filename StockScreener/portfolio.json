@@ -497,7 +497,7 @@
   "total_realized_pnl": 1828.32,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.5724,
-  "last_updated": "2026-09-29",
+  "last_updated": "2026-09-30",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
@@ -512,7 +512,7 @@
     "2026-09-29"
   ],
   "equity_peak": 101968.02,
-  "broker_equity": 101390.97,
+  "broker_equity": 101337.47,
   "alpaca_order_ledger": [
     {
       "source": "poll",
