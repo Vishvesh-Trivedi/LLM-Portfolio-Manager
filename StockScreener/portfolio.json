@@ -511,7 +511,7 @@
     "2026-09-28"
   ],
   "equity_peak": 101968.02,
-  "broker_equity": 101443.47,
+  "broker_equity": 101390.97,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -841,7 +841,7 @@
     {
       "source": "poll",
       "event": "new",
-      "timestamp": "2026-09-29T15:45:46.022002937Z",
+      "timestamp": "2026-09-29T15:45:46.022003Z",
       "order_id": "d1540c61-4db6-4a6b-b13c-00963c3b69e8",
       "client_order_id": "lpm-P-DHR-9894e74b0025485b846a7d7a31a0",
       "symbol": "DHR",
@@ -854,7 +854,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-09-29T15:45:46.010134527Z",
+      "timestamp": "2026-09-29T15:45:46.010135Z",
       "order_id": "fd5bebd2-c105-4d8d-83c5-82d68f819d0f",
       "client_order_id": "7ee2a084-c66b-4875-8b63-318a24edee8d",
       "symbol": "DHR",

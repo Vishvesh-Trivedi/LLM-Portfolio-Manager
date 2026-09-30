@@ -1,5 +1,5 @@
 {
-  "status": "degraded",
+  "status": "healthy",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
       "attempts": 11,
@@ -69,8 +69,8 @@
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": false,
-      "detail": "ValueError: ranking contains invalid candidate tickers"
+      "success": true,
+      "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
       "success": true,
