@@ -2,9 +2,29 @@
   "status": "healthy",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 11,
-      "successes": 11,
-      "failures": 0
+      "attempts": 10,
+      "successes": 9,
+      "failures": 1
+    },
+    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
+      "attempts": 3,
+      "successes": 2,
+      "failures": 1
+    },
+    "OpenRouter:z-ai/glm-5.2:free": {
+      "attempts": 1,
+      "successes": 0,
+      "failures": 1
+    },
+    "OpenRouter:minimax/minimax-m3:free": {
+      "attempts": 1,
+      "successes": 0,
+      "failures": 1
+    },
+    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
+      "attempts": 1,
+      "successes": 0,
+      "failures": 1
     }
   },
   "stages": {
@@ -34,7 +54,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "7/9 covered; missing: TWLO, WAB; selected sector checked by order planner"
+      "detail": "2/3 covered; missing: TWLO; selected sector checked by order planner"
     },
     "exit:GILD": {
       "success": true,
@@ -58,11 +78,7 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "9/9 verified"
-    },
-    "catalyst_2": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "3/3 verified"
     },
     "news": {
       "success": true,
@@ -78,7 +94,7 @@
     },
     "final": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "broker": {
       "success": true,
@@ -90,16 +106,16 @@
     }
   },
   "degraded_reasons": [],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
-  "attempts": 11,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
+  "attempts": 16,
   "successes": 11,
-  "failures": 0,
+  "failures": 5,
   "date": "2026-09-29",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": true,
   "trade_blockers": [],
-  "order_status": "REJECTED",
-  "order_reason": "Order not queued: unknown sector"
+  "order_status": "NO ORDER",
+  "order_reason": "No qualifying BUY signal"
 }
