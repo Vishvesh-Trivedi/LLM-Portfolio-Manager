@@ -1,5 +1,5 @@
 {
-  "status": "healthy",
+  "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
       "attempts": 11,
@@ -34,7 +34,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "5/7 covered; missing: TWLO, WAB; selected sector checked by order planner"
+      "detail": "7/9 covered; missing: TWLO, WAB; selected sector checked by order planner"
     },
     "exit:GILD": {
       "success": true,
@@ -58,7 +58,7 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "7/7 verified"
+      "detail": "9/9 verified"
     },
     "catalyst_2": {
       "success": true,
@@ -69,8 +69,8 @@
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
+      "success": false,
+      "detail": "ValueError: ranking contains invalid candidate tickers"
     },
     "round2": {
       "success": true,
