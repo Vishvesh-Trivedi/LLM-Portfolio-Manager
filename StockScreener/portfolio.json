@@ -1,5 +1,5 @@
 {
-  "cash": 40479.28,
+  "cash": 40479.27,
   "starting_capital": 100000.0,
   "positions": [
     {
@@ -512,7 +512,7 @@
     "2026-09-29"
   ],
   "equity_peak": 101968.02,
-  "broker_equity": 101310.97,
+  "broker_equity": 101238.02,
   "alpaca_order_ledger": [
     {
       "source": "poll",
