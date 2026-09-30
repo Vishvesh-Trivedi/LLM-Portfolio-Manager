@@ -33,14 +33,14 @@ tr:last-child td{border-bottom:none}
 <body>
 <div class="wrap"><section role="status" style="background:white;border-left:5px solid #16803c;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: HEALTHY</b><br>No recorded stage failures<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Wednesday September 30 2026  02:05 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Wednesday September 30 2026  23:58 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
-    <div class="mi"><div class="ml">VIX</div><div class="mv">16.0 &nbsp;MODERATE (p27 </div></div>
+    <div class="mi"><div class="ml">VIX</div><div class="mv">16.3 &nbsp;MODERATE (p33 </div></div>
     <div class="mi"><div class="ml">SPY Today</div>
-        <div class="mv" style="color:#f44336">-0.15%</div></div>
+        <div class="mv" style="color:#f44336">-0.27%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BULLISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US stock futures are drifting higher as yields pause, oil prices slide, and the S&amp;P 500 and Dow extend losses from elevated yield pressure. The Fed&#x27;s main infla</div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">Market sentiment remains neutral with the S&amp;P 500 and Dow ending lower as investors shrug off cooler-than-expected inflation data, while tech stocks powered thr</div>
   </div>
 
   <div class="tabs">
@@ -54,24 +54,65 @@ tr:last-child td{border-bottom:none}
   <div id="t-buy" class="tp on">
     <div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
-    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History shows only modest edge with low confidence, requiring strong catalysts to exceed 80 threshold.</p>
-    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule: Overall win rate in MID_VIX_NEUTRAL regime 57% (n=14, wr=57%, LOW confidence)</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule: When macd_bull true, win rate 50% (n=8, wr=50%, LOW confidence)</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule: When rsi between 60-70, win rate 55% (n=6, wr=55%, LOW confidence)</li></ul>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History taught me to prioritize stocks with strong technicals and lower earnings risks, while avoiding those with high short ratios and upcoming earnings announcements.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=5, wr=60%, HIGH confidence): Stocks with high short ratios and earnings within 2 weeks have lower win rates and higher loss magnitudes.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=3, wr=67%, HIGH confidence): Stocks with strong technicals and high upside percentages have higher win rates and lower loss magnitudes.</li></ul>
     <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-29 23:50</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Regime matches today; catalyst quality > 50; earnings risk false.</li><li style="padding:2px 0">Rule (n=7, wr=71%, MEDIUM confidence): Sector is Technology; short ratio < 3; upside pct > 5%.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-29 22:22</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Tech stocks with high short interest and recent momentum tend to perform well in moderate volatility environments.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-28 23:47</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with strong earnings growth (>20%), high insider buying score (>1.5), and low short interest (<3%) tend to perform well in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-25 23:29</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with ADX above 20 and CMF above 0.1 are more likely to outperform in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=7, wr=71%, HIGH confidence): Stocks with RSI above 50 and 5-day momentum above 3% are more likely to continue their upward trend in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=4, wr=50%, LOW confidence): Stocks with earnings risk and short interest above 10% are more likely to underperform in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-09-24 22:23</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=8, wr=80%, HIGH confidence): Stocks with tech_score > 40 and news_score > 30 have a 80% win rate in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with insider_label = BUYING and news_score > 30 have a 80% win rate in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=3, wr=67%, MEDIUM confidence): Stocks with tech_score > 40 and momentum_5d > 5 have a 67% win rate in the next 1-4 weeks.</li></ul></div></details>
   </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
-                margin-bottom:14px;border-left:8px solid #546e7a">
-      <div style="font-size:28px;font-weight:800;color:#546e7a;margin-bottom:6px">
-        NO PICK TODAY
+                margin-bottom:14px;border-left:8px solid #2196f3">
+      <div style="font-size:28px;font-weight:800;color:#2196f3;margin-bottom:6px">
+        QUEUED MSFT — next session Open
       </div>
       <div style="color:#aaa;font-size:13px">
-        2026-09-30 &nbsp;·&nbsp;  &nbsp;·&nbsp; 
+        2026-09-30 &nbsp;·&nbsp; Technology &nbsp;·&nbsp; BOTH
       </div>
             
-      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: No qualifying BUY signal</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div>
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>QUEUED</b>: Queued MSFT for the next session Open; not filled<br>Next session Open, subject to execution checks; no cash debited.</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">LLM score (uncalibrated)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">85/100</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
+            <div style="background:#2196f3;border-radius:99px;height:6px;width:85%"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Reference price (not a fill)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">514.45</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">496.89 / 549.58</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1:2.0</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
+                  font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
+          <b>LLM narrative (not verified facts)</b><br>
+          MSFT could see a 1-4 week bull run driven by its deepened ties with Clickhouse, which could lead to further growth and potential upside in its stock price. Additionally, MSFT&#x27;s strong technicals, including a 60.1 RSI and 34.0 ADX, indicate a potential breakout.
+      </div>
+      <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
+                  border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
+          Risk (LLM narrative): MSFT&#x27;s high short ratio and upcoming earnings announcement increase its risk profile, making it essential to monitor its price action closely in the coming weeks.
+      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-09-30)</b><br>ticker=MSFT; sector=Technology; source=BOTH; rsi=60.1; short_ratio=3.2; short_pct_float=0.9</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
-      <p style="color:#aaa;padding:8px 0">No watch picks today.</p>
+      
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">LRCX</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Technology</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">LLM narrative: LRCX could see a 1-4 week bull run driven by Applied Materials&#x27; record $7 billion of chipmaking tools in fiscal Q3 2026,</div>
+      </div>
     </div>
   </div>
 
@@ -81,7 +122,7 @@ tr:last-child td{border-bottom:none}
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
-        <div style="font-size:28px;font-weight:700">USD 101,340</div>
+        <div style="font-size:28px;font-weight:700">USD 101,282</div>
                 <div style="color:#00c853;font-size:15px;margin-top:2px">+1.3% vs Alpaca paper capital</div>
       </div>
       <div>
@@ -98,63 +139,63 @@ tr:last-child td{border-bottom:none}
                   box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
           <div>
+            <span style="font-size:20px;font-weight:700">CDNS</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +2.5%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          54 shares &nbsp;·&nbsp; Value USD 17,830
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+432</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 316.4</span><span>Target 349.7506</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:41%;background:#00c853;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:17%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:41%;width:4px;height:16px;top:-4px;
+                        background:#00c853;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 322.1806 &nbsp;·&nbsp; Current 330.18499755859375</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:30%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 3 of 10</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
             <span style="font-size:20px;font-weight:700">GILD</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +1.1%</span>
+          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -0.4%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          98 shares &nbsp;·&nbsp; Value USD 14,825
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+167</span>
+          98 shares &nbsp;·&nbsp; Value USD 14,607
+          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-52</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
             <span>Stop 147.96</span><span>Target 158.9998</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:30%;background:#00c853;
+            <div style="position:absolute;left:0;width:10%;background:#f44336;
                         border-radius:4px;height:8px;opacity:.35"></div>
             <div style="position:absolute;left:15%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:30%;width:4px;height:16px;top:-4px;
-                        background:#00c853;border-radius:2px"></div>
+            <div style="position:absolute;left:10%;width:4px;height:16px;top:-4px;
+                        background:#f44336;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 149.5798 &nbsp;·&nbsp; Current 151.27999877929688</div>
+          <div style="font-size:11px;color:#999">Entry 149.5798 &nbsp;·&nbsp; Current 149.0500030517578</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:70%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:80%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 7 of 10</div>
-      </div>
-      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
-                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div>
-            <span style="font-size:20px;font-weight:700">CDNS</span>
-            <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
-          </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +0.6%</span>
-        </div>
-        <div style="color:#555;font-size:13px;margin-top:4px">
-          54 shares &nbsp;·&nbsp; Value USD 17,505
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+107</span>
-        </div>
-        
-          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 312.92</span><span>Target 349.7506</span>
-          </div>
-          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:31%;background:#00c853;
-                        border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:25%;width:3px;height:14px;top:-3px;
-                        background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:31%;width:4px;height:16px;top:-4px;
-                        background:#00c853;border-radius:2px"></div>
-          </div>
-          <div style="font-size:11px;color:#999">Entry 322.1806 &nbsp;·&nbsp; Current 324.1700134277344</div>
-        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:20%"></div>
-        </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 2 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 8 of 10</div>
       </div>
       <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
                   box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
@@ -163,46 +204,15 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">DHR</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -0.3%</span>
+          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -2.3%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          59 shares &nbsp;·&nbsp; Value USD 13,340
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-40</span>
+          59 shares &nbsp;·&nbsp; Value USD 13,071
+          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-309</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
             <span>Stop 219.4</span><span>Target 241.54</span>
-          </div>
-          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:30%;background:#f44336;
-                        border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
-                        background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:30%;width:4px;height:16px;top:-4px;
-                        background:#f44336;border-radius:2px"></div>
-          </div>
-          <div style="font-size:11px;color:#999">Entry 226.78 &nbsp;·&nbsp; Current 226.11000061035156</div>
-        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:10%"></div>
-        </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 1 of 10</div>
-      </div>
-      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
-                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div>
-            <span style="font-size:20px;font-weight:700">AMD</span>
-            <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
-          </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -4.3%</span>
-        </div>
-        <div style="color:#555;font-size:13px;margin-top:4px">
-          25 shares &nbsp;·&nbsp; Value USD 15,189
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-687</span>
-        </div>
-        
-          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 595.0184</span><span>Target 715.1684</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
             <div style="position:absolute;left:0;width:10%;background:#f44336;
@@ -212,11 +222,42 @@ tr:last-child td{border-bottom:none}
             <div style="position:absolute;left:10%;width:4px;height:16px;top:-4px;
                         background:#f44336;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 635.0684 &nbsp;·&nbsp; Current 607.5700073242188</div>
+          <div style="font-size:11px;color:#999">Entry 226.78 &nbsp;·&nbsp; Current 221.5500030517578</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:30%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:20%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 3 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 2 of 10</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">AMD</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -3.7%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          25 shares &nbsp;·&nbsp; Value USD 15,294
+          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-583</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 595.0184</span><span>Target 715.1684</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:14%;background:#f44336;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:14%;width:4px;height:16px;top:-4px;
+                        background:#f44336;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 635.0684 &nbsp;·&nbsp; Current 611.760009765625</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:40%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 4 of 10</div>
       </div>
   </div>
 
@@ -259,23 +300,12 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
                   padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <span style="font-size:17px;font-weight:700">AMD</span>
-          <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">2.1% above stop</div>
-          <div style="font-size:12px;color:#888">Current 607.5700073242188 &nbsp;·&nbsp; Stop 595.0184</div>
-        </div>
-      </div>
-      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
-                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div>
           <span style="font-size:17px;font-weight:700">GILD</span>
           <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">2.2% above stop</div>
-          <div style="font-size:12px;color:#888">Current 151.27999877929688 &nbsp;·&nbsp; Stop 147.96</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">0.7% above stop</div>
+          <div style="font-size:12px;color:#888">Current 149.0500030517578 &nbsp;·&nbsp; Stop 147.96</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
@@ -285,8 +315,19 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">3.0% above stop</div>
-          <div style="font-size:12px;color:#888">Current 226.11000061035156 &nbsp;·&nbsp; Stop 219.4</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">1.0% above stop</div>
+          <div style="font-size:12px;color:#888">Current 221.5500030517578 &nbsp;·&nbsp; Stop 219.4</div>
+        </div>
+      </div>
+      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
+                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:17px;font-weight:700">AMD</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.7% above stop</div>
+          <div style="font-size:12px;color:#888">Current 611.760009765625 &nbsp;·&nbsp; Stop 595.0184</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
@@ -296,8 +337,8 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">3.5% above stop</div>
-          <div style="font-size:12px;color:#888">Current 324.1700134277344 &nbsp;·&nbsp; Stop 312.92</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">4.2% above stop</div>
+          <div style="font-size:12px;color:#888">Current 330.18499755859375 &nbsp;·&nbsp; Stop 316.4</div>
         </div>
       </div>
     </div>

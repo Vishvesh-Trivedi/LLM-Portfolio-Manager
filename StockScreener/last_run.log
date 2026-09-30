@@ -16,11 +16,190 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-09-30 18:04
+   Time:   2026-09-30 23:54
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
   Broker sync: Cash set from broker: 40479.27 -> 40479.27
-  No completed trading session (before 16:15 ET); broker state reconciled only
+  Protection: CDNS 54 sh  stop $316.40 / target $349.75 (replaced)
+ALPACA PAPER ACCOUNT: $101,281.61 (+1,281.61 / +1.3% vs $100,000 starting)
+Cash: $40,479.27  |  Positions: 4/5  |  Deployed: 60%  |  Idle: 40%
+Sector exposure: Technology: 33%  Healthcare: 27%
+Broker P&L: $+1,281.61 all-time  |  no closed trades this week
+  GILD [Healthcare]: 98sh @ $149.5798 → $149.0500030517578 (-52 / -0.4%) | 8d | Stop $147.96 | Target $158.9998
+  AMD [Technology]: 25sh @ $635.0684 → $611.760009765625 (-583 / -3.7%) | 4d | Stop $595.0184 | Target $715.1684
+  CDNS [Technology]: 54sh @ $322.1806 → $330.18499755859375 (+432 / +2.5%) | 3d | Stop $316.4 | Target $349.7506
+  DHR [Healthcare]: 59sh @ $226.78 → $221.5500030517578 (-309 / -2.3%) | 2d | Stop $219.4 | Target $241.54
+
+Step 1/8: Updating past results + exit signals...
+
+Step 2/8: Market context...
+
+Market context...
+  VIX:  16.34 (p32.7) -> MODERATE (p33 neutral) (1.0x)
+  QQQ:  $739.77 | BULLISH (+3.56% vs 50MA)
+  SPY today: -0.21%
+  10Y yield: 5.29% (+0.67%)  DXY: 101.46 (+0.09%)  Nikkei: -0.60%
+  Futures:  ES=+0.14%  NQ=+0.70%
+
+Step 3/8: Fetching all data (parallel)...
+  Alpaca: 926/926 tickers
+  Downloaded: 926/926 tickers
+  OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
+  RSS feeds active: 14/16 | Headlines: 84
+  Fetching news for all 900 stocks (parallel)...
+  News found: 314/900 stocks have news today
+  Fetching fundamentals for all 896 stocks (parallel)...
+  Full fundamentals: 432/896 stocks
+  Sector ranks - Top 3: ['Technology', 'Utilities', 'Healthcare'] | Perf: Technology:+0.5% | Utilities:+0.1% | Healthcare:-0.8% | Industrials:-1.1% | Consumer Cyclical:-1.3%
+  Sector flows: TOP Technology +0.6% | BOT Consumer Defensive -1.5%
+
+Step 4/8: Bidirectional screening...
+
+Phase 2 - Technical screening (926 tickers)...
+  Passed: 5 | Rejected: Price:0 MA:776 Vol:91 RSI:1 Liq:20 ADX:7
+
+Phase 3 - News screening all 926 stocks...
+  News rescued: 61 stocks → ['MMM', 'ABT', 'AKAM', 'ABBV', 'ALL', 'AXP', 'ANET', 'ADP', 'AZO', 'BAC']...
+
+Phase 4 - Merging candidate pools...
+  Total candidates: 66
+    BOTH (tech+news): 2  TECHNICAL: 3  NEWS: 61
+
+Step 4.5/8: Stream B - headline ticker extraction...
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'MGM', 'PLD', 'APPF', 'APA', 'WAB']
+  Stream B added: AAPL | $333.21 | RSI 54.5
+  Stream B added: GOOGL | $344.1 | RSI 50.2
+  Stream B added: MGM | $31.05 | RSI 12.3
+  Stream B added: PLD | $129.85 | RSI 29.2
+  Stream B added: APPF | $200.53 | RSI 42.9
+  Stream B added: APA | $41.54 | RSI 43.8
+  Stream B added: WAB | $287.69 | RSI 51.3
+  Sector sentiment derived: 11/11 sectors from 70 stocks
+  [ADVISORY ONLY] HOLD [LOW] GILD: Current price is within the thesis range and there is no fresh news, suggesting a hold position for now. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] AMD: Stock is currently underperforming its original thesis and near its stop price, requiring a cautious approach. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock is holding above the stop price and the current momentum is positive, but no strong catalysts are present to drive the price up. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] DHR: Price has dipped slightly, but remains within the original thesis range, suggesting a wait-and-see approach for further direction. (no ledger changes)
+
+Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
+  Fetching options + insider data for 72 candidates...
+  Options data: 0/72 | Insider signals: 54/72
+  Congress trades: all sources unavailable (no cache)
+
+Phase 5.5 - Computing score breakdown (72 candidates)...
+  Pre-score top 5: LRCX(79=43T+36N [vader:BULLISH])  MSFT(78=44T+34N [vader:BULLISH])  HPE(76=43T+33N [vader:BULLISH])  AMGN(74=43T+31N [vader:BULLISH])  LITE(71=39T+32N [vader:BULLISH])
+  SEC EDGAR 8-K: 4/30 candidates have recent filings
+
+Step 4.7/8: LLM catalyst scoring (every candidate)...
+  Catalyst scoring: 30 stocks → 5 LLM calls...
+    Batch 1/5 
+    Batch 2/5 
+    Batch 3/5 
+    Batch 4/5 
+    Batch 5/5 
+  Catalyst scoring done — 7 auto-dropped, 23 remain
+
+Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
+
+Phase 5 - News intelligence (23 candidates, 3 layers)...
+  Sentiment: NEUTRAL | Adj: +0
+  23 candidates after news filter
+
+Phase 5.5 - Computing score breakdown (23 candidates)...
+  Pre-score top 5: LRCX(79=43T+36N [vader:BULLISH])  MSFT(78=44T+34N [vader:BULLISH])  KLAC(70=37T+33N [vader:BULLISH])  P(70=39T+31N [vader:BULLISH])  CCL(68=36T+32N [vader:BULLISH])
+
+Step 5.5/8: Applying LLM config criteria...
+  23 candidates after config criteria
+  Self-calibration: 14 prior picks, 57% win rate
+
+Step 6/8: LLM final scoring...
+
+Phase 6 - NVIDIA final scoring (23 candidates)...
+  Round 1/3: Ranking 23 candidates...
+  Round 1 → Top 10: ['KLAC', 'LRCX', 'DELL', 'MSFT', 'P', 'CCL', 'BE', 'ILMN', 'IQV', 'FIX']
+  Round 2/3: Deep-diving top 10...
+  Round 2 → analyses for ['LRCX', 'MSFT', 'KLAC', 'P', 'CCL', 'BE', 'ILMN', 'IQV', 'FIX', 'DELL']
+  Round 3/3: Final deliberation...
+  Final pick: MSFT | pre=78 → 85/100 | BUY | 14 LLM calls this run
+
+┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
+│ 1. Rule (n=5, wr=60%, HIGH confidence): Stocks with high short ratios and earnings within 2 weeks have lower win rates and higher loss magnitudes.
+│ 2. Rule (n=3, wr=67%, HIGH confidence): Stocks with strong technicals and high upside percentages have higher win rates and lower loss magnitudes.
+│ → History taught me to prioritize stocks with strong technicals and lower earnings risks, while avoiding those with high short ratios and upcoming earnings announcements.
+└──────────────────────────────────────────────────────────────
+  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
+  Entry estimate: close=$512.91 + 0.3% slippage = $514.45 (stop/target anchored here)
+
+█████████████████████████████████████████████████████████████████
+  TODAY'S PICK  —  Wednesday, Sep 30 2026
+█████████████████████████████████████████████████████████████████
+  Market:  VIX 16.3 (MODERATE (p33 neutral))  |  QQQ BULLISH  |  SPY -0.27%
+  Macro:   Market sentiment remains neutral with the S&P 500 and Dow ending lower as invest
+─────────────────────────────────────────────────────────────────
+  BUY  MSFT  [BOTH]
+  Sector:     Technology
+  Confidence: 85/100  █████████████████░░░
+  Entry:  ~$514.45   Stop: ~$496.89   Target: ~$549.58   R:R 1:2
+  Score:  
+─────────────────────────────────────────────────────────────────
+  Why:      MSFT could see a 1-4 week bull run driven by its deepened ties with Clickhouse, which could lead to further growth and potential upside in its stock price. Additionally, MSFT's strong technicals, including a 60.1 RSI and 34.0 ADX, indicate a potential breakout.
+  Key Risk: MSFT's high short ratio and upcoming earnings announcement increase its risk profile, making it essential to monitor its price action closely in the coming weeks.
+  Bear case: Two specific risks in the next 4 weeks are the potential for a short squeeze due to its high short ratio of 3.2, and the elevated risk and volatility associated with its upcoming earnings announcement in 28 days.
+
+  WATCH LIST:
+    LRCX    74/100  [Technology]  LRCX could see a 1-4 week bull run driven by Applied Materials' record
+█████████████████████████████████████████████████████████████████
+  Broker BUY 14 MSFT: submitted with stop/target attached
+
+Step 8/8: Saving results...
+  OK: Saved MSFT | Stop:496.89 Target:549.58
+  OK: Saved LRCX | Stop:308.92 Target:367.78
+Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+
+────────────────────────────────────────────────────────────
+  CONFIRMED PICKS: 2/2 wins (100.0%) | avg 10d +6.5% | 12 pending
+  WATCH LIST: 2/4 wins (50.0%) | avg 10d -1.3% | 23 pending
+  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+────────────────────────────────────────────────────────────
+  run-digest (1163 chars):
+ALPACA - Sep 30 2026
+Live paper account.
+
+WHAT HAPPENED TODAY
+- CDNS protected: sells at $316.40 or $349.75
+- ORDERED 14 MSFT at about $514.45 - fills at the next open, nothing spent yet
+
+WHAT YOU HOLD (4)
+- AMD: down $583 (-3.7%)  |  25 shares, $635.07 -> $611.76
+  sells at $595.02 or $715.17  |  day 4 of 10
+- DHR: down $309 (-2.3%)  |  59 shares, $226.78 -> $221.55
+  sells at $219.40 or $241.54  |  day 2 of 10
+  Close to its sell price - watch this one
+- GILD: down $52 (-0.4%)  |  98 shares, $149.58 -> $149.05
+  sells at $147.96 or $159.00  |  day 8 of 10
+  Close to its sell price - watch this one
+- CDNS: up $432 (+2.5%)  |  54 shares, $322.18 -> $330.18
+  sells at $316.40 or $349.75  |  day 3 of 10
+
+MONEY
+- Cash $40,479  |  In shares $60,802
+- Total $101,282 (up $1,282, +1.3% since start)
+- 33% of everything is in one industry (Technology) - a bad week there hits the whole account
+
+SINCE TRADING ON ALPACA
+- 1 trade finished: 1 made money, 0 lost money
+- Average win +7.1%
+- Banked $1,793 profit
+- Too few trades to tell whether this works yet
+
+NEXT ORDER
+- Buy 14 MSFT at about $514.45
+- Fills when the market next opens
+
+STATUS
+- Checks: healthy
+
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1555005946399301734
+  WhatsApp run-digest: sent
