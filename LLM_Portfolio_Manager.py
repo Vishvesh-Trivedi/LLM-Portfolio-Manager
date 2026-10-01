@@ -5895,8 +5895,11 @@ def reconcile_broker(portfolio):
         # ordinary rather than rare: it delivers the morning entries a median of
         # seven hours late, putting them in the middle of the session.
         #
-        # Nothing is lost by waiting. The pending order stays in the ledger and
-        # the next post-close run sends it.
+        # This is a backstop, not the main defence: run_screener will not screen
+        # a past session while the market is open, so an order should not exist
+        # to defer. If one does - queued earlier and never submitted - the next
+        # broker sync expires it as "no matching Alpaca order found". Losing a
+        # trade and saying so is acceptable; a mis-sized position is not.
         #
         # Sells are not deferred. Leaving a position unexited is the larger risk,
         # and an exit does not depend on the entry anchor.
@@ -6384,7 +6387,16 @@ def run_screener():
     # session. The crons that should have screened it arrived after midnight,
     # by which time "today" had moved on and the session was skipped for good.
     _CATCH_UP_SESSION[0] = ''
-    if reason:
+    # Only while the market is shut. A catch-up screens a past session and
+    # queues an order sized and bracketed off that session's close, and the
+    # order is type=market: sent during trading hours it fills at once, against
+    # levels it was never anchored to. Deferring the submission instead does not
+    # work - the next broker sync finds a pending order with nothing matching at
+    # Alpaca and expires it as "no matching Alpaca order found", so the trade is
+    # lost and reported as expired. Not creating it is the honest version of the
+    # same outcome, and the retimed morning entries land pre-open precisely so
+    # this path stays rare.
+    if reason and not _market_is_open(_et_now):
         # Any closed gate, not just a weekday before the close. A cron meant
         # for Friday evening routinely lands on Saturday, where the gate says
         # "weekend" and Friday would be skipped for exactly the same reason a

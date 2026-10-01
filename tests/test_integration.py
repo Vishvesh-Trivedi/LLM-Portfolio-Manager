@@ -402,6 +402,36 @@ class IntegrationTests(unittest.TestCase):
         APP.run_screener()
         self.assertEqual(APP._session_date(), '2026-09-11')
 
+    def test_a_catch_up_does_not_run_while_the_market_is_open(self):
+        """Screening mid-session would queue an order that cannot be placed.
+
+        A catch-up decides on a past session's close and sizes the order, stop
+        and target from it. The order is type=market, so sent during trading
+        hours it fills immediately against levels it was never anchored to.
+        Deferring the submission does not rescue it either: the next broker sync
+        finds a pending order with nothing matching at Alpaca and expires it as
+        'no matching Alpaca order found'. So the session is left for a run that
+        lands while the market is shut, which is what the morning entries are
+        timed for.
+        """
+        self.pipeline()
+        self.seed_sessions([])                    # Thursday is owed
+        # Friday 11:00 ET: the gate is shut for Friday, and Thursday is owed,
+        # but the market is open right now.
+        Clock.instant = datetime(2026, 9, 11, 11, 0, tzinfo=ZoneInfo('America/New_York'))
+        self.assertEqual(APP._session_gate(Clock.instant), 'before 16:15 ET')
+        self.assertEqual(APP._catch_up_session(self.ledger(), Clock.instant), '2026-09-10')
+        self.assertTrue(APP._market_is_open(Clock.instant))
+
+        self.assertIsNone(APP.run_screener())
+        self.assertEqual(APP._RUN_MODE, 'no_session')
+        self.assertNotIn('2026-09-10', self.ledger()['screened_sessions'])
+
+        # The same debt is picked up once the market has shut.
+        Clock.instant = datetime(2026, 9, 11, 1, 58, tzinfo=ZoneInfo('America/New_York'))
+        self.assertIsNotNone(APP.run_screener())
+        self.assertIn('2026-09-10', self.ledger()['screened_sessions'])
+
     def test_a_pre_close_run_with_nothing_owed_still_does_nothing(self):
         """Catching up must not turn every early run into a screen."""
         self.pipeline()
