@@ -401,6 +401,40 @@ class TheRecordCoversTheAlpacaEraOnly(unittest.TestCase):
             app.send_run_digest(ledger(closed_trades=closed))
         return sent[0]
 
+    def closed_market(self, **kwargs):
+        """Render the digest for a run that never screened."""
+        sent = []
+        with patch.object(app, '_RUN_EVENTS', []),                 patch.object(app, '_RUN_MODE', 'no_session'),                 patch.object(app, '_trade_readiness', return_value={
+                    'trade_ready': False,
+                    'trade_blockers': ['missing:market_data', 'missing:catalysts',
+                                       'missing:final']}),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(ledger(**kwargs), closed_reason='weekend')
+        return sent[0]
+
+    def test_a_shut_market_is_not_reported_as_blocked(self):
+        """The stages were never attempted, so they are not faults.
+
+        A weekend run reported 'Blocked: missing:market_data, missing:catalysts,
+        missing:final' under STATUS while its own checks said healthy. Nothing
+        was broken - there was no session to screen - and the line sent people
+        looking for a break that was not there.
+        """
+        text = self.closed_market()
+        self.assertNotIn('Blocked', text)
+        self.assertNotIn('missing:market_data', text)
+        self.assertIn('US markets were shut (weekend)', text)
+
+    def test_a_screening_run_still_says_what_blocked_it(self):
+        """Suppressing the noise must not suppress a real blocker."""
+        sent = []
+        with patch.object(app, '_RUN_EVENTS', []),                 patch.object(app, '_RUN_MODE', 'screening'),                 patch.object(app, '_trade_readiness', return_value={
+                    'trade_ready': False,
+                    'trade_blockers': ['broker_discrepancy:GILD absent at Alpaca']}),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(ledger())
+        self.assertIn('Blocked', sent[0])
+
     def test_simulated_trades_are_left_out(self):
         text = self.render([self.SIMULATED, self.BROKER_WIN])
         self.assertIn('SINCE TRADING ON ALPACA', text)
@@ -420,8 +454,37 @@ class TheRecordCoversTheAlpacaEraOnly(unittest.TestCase):
     def test_an_absent_loss_is_not_printed_as_zero(self):
         """No losses is an absence, not a result of 0.0%."""
         text = self.render([self.BROKER_WIN])
-        self.assertIn('Average win +7.1%', text)
+        self.assertIn('average +7.1%', text)
+        self.assertNotIn('lost $', text.lower())
+
+    def test_it_reports_a_win_rate(self):
+        text = self.render([self.BROKER_WIN, self.BROKER_LOSS])
+        self.assertIn('Win rate 50% (1 of 2)', text)
+
+    def test_it_says_how_much_the_losses_cost(self):
+        """A count and a percentage never said what the losses were worth.
+
+        'XYZ lost money' appeared with no dollar figure attached to it anywhere
+        in the message; only the net banked total was shown.
+        """
+        text = self.render([self.BROKER_WIN, self.BROKER_LOSS])
+        self.assertIn('Lost $220', text)
+        self.assertIn('Won $1,793', text)
+
+    def test_a_break_even_trade_is_not_counted_as_a_loss(self):
+        """It produced '3 lost money' next to 'average loss +0.0%'.
+
+        Three positions were closed at exactly their entry price by the
+        sell-matching bug, and the digest filed all three as losses - which reads
+        as a result rather than as nothing having been recorded.
+        """
+        flat = dict(self.BROKER_WIN, ticker='FLAT', realized_pnl=0.0,
+                    realized_pnl_pct=0.0)
+        text = self.render([self.BROKER_WIN, flat])
+        self.assertIn('1 made money, 0 lost money, 1 broke even', text)
         self.assertNotIn('average loss', text.lower())
+        # With a break-even in the set, the rate is over what actually moved.
+        self.assertIn('Win rate 100% (1 of 1 that moved)', text)
 
     def test_one_trade_is_not_called_trades(self):
         self.assertIn('1 trade finished', self.render([self.BROKER_WIN]))

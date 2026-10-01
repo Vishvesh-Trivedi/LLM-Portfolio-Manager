@@ -4656,32 +4656,66 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                 break
 
         health = _HEALTH.as_dict()
-        blockers = _trade_readiness()['trade_blockers']
+        # A blocker explains why a screening run did not order. On a run that
+        # never screened - market shut, or the session already decided - the core
+        # stages were never attempted, so 'missing:market_data' is the absence of
+        # an attempt rather than a fault. Printing it under STATUS as
+        # 'Blocked: missing:market_data, missing:catalysts, missing:final' on a
+        # weekend made a healthy run look broken and sent people looking for a
+        # break that was not there.
+        screened = _RUN_MODE == 'screening' and not closed_reason
+        blockers = _trade_readiness()['trade_blockers'] if screened else []
 
         # Only the live era. The August trades were simulated locally, before
         # any of this reached a broker, and counting them would describe a
         # different system.
         closed = _alpaca_era_trades(pf)
         if closed:
-            won = [t for t in closed if t.get('realized_pnl', 0) > 0]
-            lost = [t for t in closed if t.get('realized_pnl', 0) <= 0]
-            banked = sum(float(t.get('realized_pnl', 0)) for t in closed)
-            average = (lambda group: sum(t.get('realized_pnl_pct', 0) for t in group)
-                       / len(group) if group else 0.0)
+            def _realised(trade):
+                try:
+                    return float(trade.get('realized_pnl', 0) or 0)
+                except (TypeError, ValueError):
+                    return 0.0
+
+            # A trade that returned exactly nothing did not lose money. Filing
+            # it under 'lost' produced '3 lost money' alongside 'average loss
+            # +0.0%', which reads as a result rather than as nothing having
+            # happened - and three of those were really wins mispriced by the
+            # sell-matching bug fixed in screener_broker_sync.
+            won = [t for t in closed if _realised(t) > 0]
+            lost = [t for t in closed if _realised(t) < 0]
+            flat = [t for t in closed if _realised(t) == 0]
+            banked = sum(_realised(t) for t in closed)
+            gained = sum(_realised(t) for t in won)
+            dropped = sum(_realised(t) for t in lost)
+            average = (lambda group: sum(float(t.get('realized_pnl_pct', 0) or 0)
+                                         for t in group) / len(group) if group else 0.0)
             trade_word = 'trade' if len(closed) == 1 else 'trades'
+            tally = f'{len(won)} made money, {len(lost)} lost money'
+            if flat:
+                tally += f', {len(flat)} broke even'
             lines += ['', 'SINCE TRADING ON ALPACA',
-                      f'- {len(closed)} {trade_word} finished: {len(won)} made '
-                      f'money, {len(lost)} lost money']
+                      f'- {len(closed)} {trade_word} finished: {tally}']
+            # The win rate is over trades that actually moved; a break-even
+            # trade is neither a win nor a loss and would distort either way.
+            decided = len(won) + len(lost)
+            if decided:
+                of = f'{len(won)} of {decided}' + (' that moved' if flat else '')
+                lines.append(f'- Win rate {len(won) / decided * 100:.0f}% ({of})')
             # An average over an empty set is not zero, it is nothing. Printing
             # "average loss +0.0%" where there have been no losses reads as a
             # result rather than an absence.
-            record = []
+            # Counts and percentages alone never said how much money the
+            # losses actually cost, so a run could report '3 lost money' with no
+            # figure attached to it anywhere in the message.
             if won:
-                record.append(f'average win {average(won):+.1f}%')
+                lines.append(f'- Won {_usd(gained)} across {len(won)} '
+                             f'{"trade" if len(won) == 1 else "trades"} '
+                             f'(average {average(won):+.1f}%)')
             if lost:
-                record.append(f'average loss {average(lost):+.1f}%')
-            if record:
-                lines.append('- ' + ', '.join(record).capitalize())
+                lines.append(f'- Lost {_usd(abs(dropped))} across {len(lost)} '
+                             f'{"trade" if len(lost) == 1 else "trades"} '
+                             f'(average {average(lost):+.1f}%)')
             lines.append(f'- Banked {_usd(banked)}'
                          + (' profit' if banked >= 0 else ' loss'))
             if len(closed) < 10:

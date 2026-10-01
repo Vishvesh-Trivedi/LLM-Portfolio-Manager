@@ -104,10 +104,27 @@ def _event(kind, severity, symbol, summary, **fields):
 
 
 def _index_orders(orders):
-    """Index broker orders by ledger ref and by (symbol, side).
+    """Index broker orders by (ledger ref, side) and by (symbol, side).
 
     Newest-first ordering is preserved so a re-entered symbol resolves to its
     most recent order when only the weak (symbol, side) fallback is available.
+
+    The ref index is keyed by side because one ledger record has two orders at
+    the broker: the buy that opened the position carries the pending-order id,
+    and the sell that closes it carries the trade_id, which is the same string.
+    Keying on the ref alone kept whichever Alpaca happened to list first, so the
+    search for the closing sell could return the opening buy - and did. On
+    2026-10-01 GILD, CDNS and DHR were each closed at their own entry price, in
+    their own entry session, for exactly 0.00:
+
+      Closed GILD: 98 @ 149.5798   entry 149.5798, entry_date == exit_date
+      Closed CDNS: 54 @ 322.1806   entry 322.1806
+      Closed DHR:  59 @ 226.78     entry 226.78
+
+    Cash came from the broker and was right, so the account value stayed
+    correct while 874.98 of realised profit vanished from the trade record and
+    three winners were filed as neutral - which is also what the strategy's own
+    history, and every win-rate number derived from it, was then learning from.
     """
     by_ref, by_symbol_side = {}, {}
     for order in orders or []:
@@ -118,8 +135,8 @@ def _index_orders(orders):
             continue
         side = str(order.get('side', '') or '').strip().lower()
         ref = _norm_ref(_parse_ref(order.get('client_order_id')))
-        if ref and ref not in by_ref:
-            by_ref[ref] = order
+        if ref and (ref, side) not in by_ref:
+            by_ref[(ref, side)] = order
         by_symbol_side.setdefault((symbol, side), []).append(order)
     return by_ref, by_symbol_side
 
@@ -148,7 +165,7 @@ def _match_order(record_id, symbol, side, by_ref, by_symbol_side, used,
     filled sell sat one entry further down.
     """
     ref = _norm_ref(record_id)
-    order = by_ref.get(ref)
+    order = by_ref.get((ref, side))
     if order is not None and id(order) not in used:
         used.add(id(order))
         return order, True

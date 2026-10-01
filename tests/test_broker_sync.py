@@ -349,5 +349,77 @@ class BrokerSyncTests(unittest.TestCase):
         self.assertNotIn('position_vanished', kinds(plan))
 
 
+
+class OneLedgerRecordHasTwoOrdersAtTheBroker(unittest.TestCase):
+    """The buy that opens a position and the sell that closes it share a ref.
+
+    _client_order_id embeds the pending-order id on a buy and the trade_id on a
+    sell, and when a pending order fills the position inherits that id - so both
+    strings are equal and only the B/S marker distinguishes them. Indexing by
+    ref alone kept whichever Alpaca listed first, so the search for the closing
+    sell could return the opening buy. On 2026-10-01 it did, for three positions
+    at once: each was closed at its own entry price in its own entry session for
+    exactly 0.00, hiding 874.98 of realised profit and filing three winners as
+    neutral.
+    """
+
+    def book(self):
+        return {'positions': [position(trade_id='abc', ticker='GILD', shares=98,
+                                       entry_price=149.5798, cost_basis=14658.82,
+                                       entry_date='2026-09-21')],
+                'pending_orders': [], 'closed_trades': [], 'cash': 40479.27,
+                'total_realized_pnl': 0.0}
+
+    def orders(self, buy_first):
+        buy = order(order_id='o-buy', client_order_id='lpm-B-x-abc', symbol='GILD',
+                    side='buy', filled_qty=98, filled_avg_price=149.5798,
+                    filled_at='2026-09-21T13:30:05Z')
+        sell = order(order_id='o-sell', client_order_id='lpm-S-x-abc', symbol='GILD',
+                     side='sell', filled_qty=98, filled_avg_price=158.00,
+                     filled_at='2026-10-01T19:55:00Z')
+        return [buy, sell] if buy_first else [sell, buy]
+
+    def closed_at(self, buy_first):
+        plan = plan_broker_sync(self.book(),
+                                snapshot(orders=self.orders(buy_first)),
+                                '2026-10-01')
+        closes = [a for a in plan['actions'] if a['op'] == 'close_position']
+        self.assertEqual(len(closes), 1, plan['events'])
+        return closes[0]
+
+    def test_the_closing_sell_is_found_whichever_order_alpaca_lists_first(self):
+        for buy_first in (True, False):
+            with self.subTest(buy_first=buy_first):
+                action = self.closed_at(buy_first)
+                self.assertAlmostEqual(action['price'], 158.00, places=2)
+                self.assertEqual(action['session'], '2026-10-01')
+
+    def test_the_exit_is_never_priced_at_the_entry(self):
+        """The symptom that made three winners look like nothing happened."""
+        for buy_first in (True, False):
+            with self.subTest(buy_first=buy_first):
+                action = self.closed_at(buy_first)
+                self.assertNotAlmostEqual(action['price'], 149.5798, places=2)
+                realised = action['price'] * action['shares'] - 14658.82
+                self.assertGreater(realised, 800.0)
+
+    def test_the_exit_is_never_dated_in_the_entry_session(self):
+        for buy_first in (True, False):
+            with self.subTest(buy_first=buy_first):
+                self.assertNotEqual(self.closed_at(buy_first)['session'], '2026-09-21')
+
+    def test_a_pending_buy_is_still_matched_to_the_buy(self):
+        """Keying by side must not send the pending matcher to the sell."""
+        book = {'positions': [], 'closed_trades': [], 'cash': 40479.27,
+                'total_realized_pnl': 0.0,
+                'pending_orders': [pending(id='abc', ticker='GILD', shares=98,
+                                           estimated_entry=149.0)]}
+        plan = plan_broker_sync(book, snapshot(orders=self.orders(buy_first=False)),
+                                '2026-10-01')
+        fills = [a for a in plan['actions'] if a['op'] == 'fill_pending']
+        self.assertEqual(len(fills), 1, plan['events'])
+        self.assertAlmostEqual(fills[0]['price'], 149.5798, places=2)
+
+
 if __name__ == '__main__':
     unittest.main()
