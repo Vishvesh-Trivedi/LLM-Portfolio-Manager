@@ -73,6 +73,14 @@ on:
         description: 'Only post the plain-English explanation of the strategy to Discord, then stop'
         type: boolean
         default: false
+      repair_exits:
+        description: 'Rebuild closed trades that were recorded at their own entry price (dry run unless repair_write is also set)'
+        type: boolean
+        default: false
+      repair_write:
+        description: 'With repair_exits: actually write the corrected exits to the ledger'
+        type: boolean
+        default: false
 
 concurrency:
   group: daily-screener
@@ -121,9 +129,27 @@ jobs:
           PYTHONUNBUFFERED: '1'
         run: python -u explain_strategy.py --send
 
+      # Reads Alpaca's real sell fills and rebuilds exits that the old
+      # side-blind order match recorded at their own entry price. Dry run unless
+      # repair_write is also set, and it refuses rather than guess when Alpaca
+      # cannot be read - the whole point is that the correction comes from the
+      # broker rather than from a quote or a cash difference.
+      - name: Repair mispriced exits
+        if: ${{ inputs.repair_exits == true }}
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_PAPER: ${{ secrets.ALPACA_PAPER }}
+          SCREENER_LIVE_BROKER: ${{ secrets.SCREENER_LIVE_BROKER }}
+          SCREENER_OUTPUT_DIR: ${{ github.workspace }}/StockScreener
+          PYTHONUNBUFFERED: '1'
+        run: |
+          python -u repair_exits.py ${{ inputs.repair_write == true && '--write' || '' }}
+          python -u qa_validate.py --check-state StockScreener/portfolio.json
+
       - name: Preflight readiness check
         id: preflight
-        if: ${{ inputs.qa_only != true && inputs.strategy_explainer != true }}
+        if: ${{ inputs.qa_only != true && inputs.strategy_explainer != true && inputs.repair_exits != true }}
         continue-on-error: true
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
@@ -141,7 +167,7 @@ jobs:
 
       - name: Run screener
         id: screener
-        if: ${{ inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true }}
+        if: ${{ inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true && inputs.repair_exits != true }}
         env:
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -160,12 +186,12 @@ jobs:
           python -u LLM_Portfolio_Manager.py 2>&1 | tee ${{ runner.temp }}/screener.log
 
       - name: Publish a redacted console log
-        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true }}
+        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true && inputs.repair_exits != true }}
         run: |
           python qa_validate.py --redact-log \
             ${{ runner.temp }}/screener.log StockScreener/last_run.log
       - name: Commit validated portfolio state
-        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true && steps.tests.outcome == 'success' && steps.screener.outcome != 'skipped' }}
+        if: ${{ always() && inputs.qa_only != true && inputs.preflight_only != true && inputs.strategy_explainer != true && steps.tests.outcome == 'success' && (steps.screener.outcome != 'skipped' || (inputs.repair_exits == true && inputs.repair_write == true)) }}
         env:
           SCREENER_SKIP_UNIVERSE_FETCH: '1'
           SCREENER_DISABLE_ALERTS: '1'
