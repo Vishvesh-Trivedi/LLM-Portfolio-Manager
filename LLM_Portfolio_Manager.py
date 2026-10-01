@@ -5881,10 +5881,37 @@ def reconcile_broker(portfolio):
             return
         refs = _ledger_refs_by_symbol(portfolio)
         levels = _entry_levels_by_symbol(portfolio)
-        submitted, failed = 0, 0
+        # Every order here is type=market, tif=day, which the strategy relies on
+        # being submitted after the close so it fills at the next open: the share
+        # count, the stop and the target are all derived from that session's close
+        # and ATR. A market buy sent while the market is open fills immediately at
+        # a price those levels were never anchored to, which breaks the 1%-risk
+        # sizing and can leave the take-profit at or below the fill.
+        #
+        # Every buy in this system is anchored to a past close, so the condition
+        # is simply whether the market is open - not whether this run is a catch-up.
+        # A run that merely lands mid-session has a pending order sized off the
+        # previous close and is exposed in exactly the same way. GitHub makes that
+        # ordinary rather than rare: it delivers the morning entries a median of
+        # seven hours late, putting them in the middle of the session.
+        #
+        # Nothing is lost by waiting. The pending order stays in the ledger and
+        # the next post-close run sends it.
+        #
+        # Sells are not deferred. Leaving a position unexited is the larger risk,
+        # and an exit does not depend on the entry anchor.
+        defer_buys = _market_is_open()
+        submitted, failed, deferred = 0, 0, 0
         for side, symbol, qty in actions:
             ref = refs.get((side, symbol), '')
             stop, target = levels.get(symbol, (None, None))
+            if side == 'buy' and defer_buys:
+                deferred += 1
+                print(f'  Broker BUY {qty} {symbol}: deferred - the market is '
+                      f'open, so a market order would fill away from the close '
+                      f'its levels were sized against. The next post-close run '
+                      f'sends it.')
+                continue
             if side == 'sell' and symbol not in ledger_shares:
                 # A full liquidation carries no client_order_id, so the ledger
                 # id is stamped via an explicit sell order when we know the
@@ -5906,8 +5933,10 @@ def reconcile_broker(portfolio):
                 failed += 1
                 print(f'  Broker {side.upper()} {qty} {symbol}: FAILED')
         _HEALTH.stage('broker', failed == 0,
-                      f'{submitted} order(s) submitted, {failed} failed '
-                      f'(equity ${account.get("equity", "?")})')
+                      f'{submitted} order(s) submitted, {failed} failed'
+                      + (f', {deferred} buy(s) deferred to the next close'
+                         if deferred else '')
+                      + f' (equity ${account.get("equity", "?")})')
     except Exception as exc:  # defensive: mirroring is best-effort only
         _HEALTH.stage('broker', True, 'reconcile skipped: ' + type(exc).__name__)
 
@@ -6087,6 +6116,21 @@ def _session_gate(et_now):
         return 'weekend'
     holiday = _us_market_holiday(et_now)
     return holiday or ('before 16:15 ET' if (et_now.hour, et_now.minute) < (16, 15) else '')
+
+
+def _market_is_open(et_now=None):
+    """True during regular trading hours on a session day.
+
+    Used to decide whether a market order will fill now or wait for the next
+    open. Early-close days are treated as open until 16:00, which is the
+    conservative direction: it defers an order rather than firing one blind.
+    """
+    from zoneinfo import ZoneInfo
+    et_now = et_now or datetime.now(ZoneInfo('America/New_York'))
+    et_now = et_now.astimezone(ZoneInfo('America/New_York'))
+    if et_now.weekday() >= 5 or _us_market_holiday(et_now):
+        return False
+    return (9, 30) <= (et_now.hour, et_now.minute) < (16, 0)
 
 
 # Stages that must succeed before ANY order is queued. Each earns its place by

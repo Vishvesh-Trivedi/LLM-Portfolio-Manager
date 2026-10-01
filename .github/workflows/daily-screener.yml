@@ -37,13 +37,24 @@ on:
     # hours by accident.
     #
     # A run here finishes the previous session rather than the current one, and
-    # costs the strategy nothing: all three land before the opening bell in both
-    # daylight regimes, so the order still queues for the same open it would
-    # have queued for had the evening run placed it. Anything that finds the
-    # session already processed exits within seconds.
-    - cron: '13 9 * * *'    # 05:13 ET in summer / 04:13 ET in winter
-    - cron: '47 10 * * *'   # 06:47 ET / 05:47 ET
-    - cron: '29 12 * * *'   # 08:29 ET / 07:29 ET - last one still pre-open
+    # is timed so that it lands before the opening bell whether GitHub is punctual
+    # or not. That matters because an order is sized and bracketed off a past
+    # close and has to fill at an open rather than mid-session.
+    #
+    # The first version of these entries was set at 09:13, 10:47 and 12:29 UTC on
+    # the theory that the nominal times were pre-open. All nine deliveries then
+    # arrived a median of 438 minutes late and every single one landed in the
+    # middle of the session, where reconcile_broker now defers the buy rather
+    # than filling it against levels it was never sized for.
+    #
+    # So the delay is budgeted for instead of assumed away. These three are safe
+    # at both ends of it: delivered on time they fall between the previous close
+    # and the next open, and delivered eight hours late they still land before
+    # 09:30 ET in either daylight regime. Anything that finds the session already
+    # processed exits within seconds.
+    - cron: '19 2 * * *'    # on time 22:19 ET, 8h late 06:19 ET
+    - cron: '41 3 * * *'    # on time 23:41 ET, 8h late 07:41 ET
+    - cron: '07 5 * * *'    # on time 01:07 ET, 8h late 09:07 ET
   workflow_dispatch:
     inputs:
       qa_only:
