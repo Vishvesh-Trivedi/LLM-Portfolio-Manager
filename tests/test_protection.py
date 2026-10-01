@@ -605,9 +605,42 @@ class TheLedgersNumbersMustAgree(unittest.TestCase):
         self.assertTrue(any('exceeds anything this account' in p for p in problems),
                         problems)
 
-    def test_a_peak_below_current_equity_is_caught(self):
-        self.assertTrue(any('below current equity' in p
+    def test_a_peak_below_the_equity_it_was_set_from_is_caught(self):
+        self.assertTrue(any('below the equity it was set from' in p
                             for p in self.broken(equity_peak=50000.0)))
+
+    def test_a_price_tick_after_the_broker_sync_is_not_a_contradiction(self):
+        """The peak and the check must read the same number.
+
+        save_portfolio sets the peak from broker_equity. Comparing it against a
+        locally re-marked cash + current_value compares two different measures
+        and disagrees by however much prices moved since Alpaca reported the
+        account - here 99 dollars, which is an ordinary afternoon. Because the
+        screener is gated behind the regression step, that false alarm made
+        runs 173 and 174 on 2026-10-01 skip trading altogether.
+        """
+        book = self.book(broker_equity=101985.79, equity_peak=101985.79,
+                         cash=79526.76)
+        book['positions'] = [
+            {'ticker': 'AMD', 'shares': 25, 'entry_price': 607.87,
+             'cost_basis': 15196.75, 'current_price': 611.76,
+             'current_value': 15294.00, 'stop_price': 598.00,
+             'target_price': 640.00},
+            {'ticker': 'MSFT', 'shares': 14, 'entry_price': 515.00,
+             'cost_basis': 7210.00, 'current_price': 518.8629,
+             'current_value': 7264.08, 'stop_price': 505.00,
+             'target_price': 540.00}]
+        # Locally re-marked equity is above the stored peak, as it should be.
+        local = book['cash'] + sum(p['current_value'] for p in book['positions'])
+        self.assertGreater(local, book['equity_peak'])
+        from qa_validate import check_arithmetic
+        self.assertEqual(check_arithmetic(book), [])
+
+    def test_a_peak_below_a_broker_equity_it_should_have_lifted_is_caught(self):
+        """Aligning the measures must not disable the check."""
+        problems = self.broken(broker_equity=101985.79, equity_peak=50000.0)
+        self.assertTrue(any('below the equity it was set from' in p
+                            for p in problems), problems)
 
     def test_realised_total_that_disagrees_with_the_trades_is_caught(self):
         self.assertTrue(any('total_realized_pnl' in p

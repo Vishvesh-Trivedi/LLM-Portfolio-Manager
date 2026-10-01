@@ -43,8 +43,17 @@ def check_arithmetic(portfolio):
     if peak > ceiling + 0.01:
         broken.append(f'equity_peak {peak:,.2f} exceeds anything this account '
                       f'could have been worth ({ceiling:,.2f})')
-    if peak < equity - 0.01:
-        broken.append(f'equity_peak {peak:,.2f} is below current equity {equity:,.2f}')
+    # Compare the peak against the same measure that sets it. save_portfolio
+    # prefers broker_equity, so checking it against a locally re-marked
+    # cash + current_value compares two different numbers and trips whenever a
+    # price ticks up after the broker reported the account - which is most days.
+    # That false alarm failed the regression step, and because the screener is
+    # gated behind it, runs 173 and 174 on 2026-10-01 skipped trading entirely
+    # over a 99-dollar discrepancy.
+    marked = float(portfolio.get('broker_equity') or 0) or equity
+    if peak < marked - 0.01:
+        broken.append(f'equity_peak {peak:,.2f} is below the equity it was set '
+                      f'from ({marked:,.2f})')
 
     seen = set()
     for position in positions:
