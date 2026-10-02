@@ -16,24 +16,23 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-02 22:44
+   Time:   2026-10-02 23:49
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Filled CDNS: 51 @ 356.1259 (broker confirmed)
-  Broker sync: Marked AMD at 632.75 (broker)
-  Broker sync: Marked MSFT at 517.21 (broker)
+  Broker sync: Marked AMD at 633.34 (broker)
+  Broker sync: Marked MSFT at 517.1 (broker)
+  Broker sync: Marked CDNS at 351.55 (broker)
   Broker sync: Cash set from broker: 61363.37 -> 61363.37
-  Protection: CDNS 51 sh  stop $339.51 / target $389.37
-ALPACA PAPER ACCOUNT: $102,375.39 (+2,375.39 / +2.4% vs $100,000 starting)
+ALPACA PAPER ACCOUNT: $102,365.32 (+2,365.32 / +2.4% vs $100,000 starting)
 Cash: $61,363.37  |  Positions: 3/5  |  Deployed: 40%  |  Idle: 60%
 Sector exposure: Technology: 40%
-Broker P&L: $+2,375.39 all-time  |  no closed trades this week
-  AMD [Technology]: 25sh @ $635.0684 → $633.9099731445312 (-29 / -0.2%) | 6d | Stop $595.0184 | Target $715.1684
-  MSFT [Technology]: 14sh @ $518.8629 → $517.530029296875 (-19 / -0.3%) | 2d | Stop $501.3029 | Target $553.9929
-  CDNS [Technology]: 51sh @ $356.1259 → $351.3500061035156 (-244 / -1.3%) | 1d | Stop $339.5059 | Target $389.3659
+Broker P&L: $+2,365.32 all-time  |  no closed trades this week
+  AMD [Technology]: 25sh @ $635.0684 → $633.34 (-43 / -0.3%) | 6d | Stop $595.0184 | Target $715.1684
+  MSFT [Technology]: 14sh @ $518.8629 → $517.1 (-25 / -0.3%) | 2d | Stop $501.3029 | Target $553.9929
+  CDNS [Technology]: 51sh @ $356.1259 → $351.55 (-233 / -1.3%) | 1d | Stop $339.5059 | Target $389.3659
 
 Step 1/8: Updating past results + exit signals...
 
@@ -49,12 +48,12 @@ Market context...
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
   Downloaded: 926/926 tickers
-  OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-11b-vision-instruct
+  OK: NVIDIA models verified by JSON probe (2 answering chat): active = meta/llama-3.2-11b-vision-instruct
   RSS feeds active: 14/16 | Headlines: 84
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 897 stocks (parallel)...
-  Full fundamentals: 412/897 stocks
+  Full fundamentals: 435/897 stocks
   Sector ranks - Top 3: ['Technology', 'Utilities', 'Energy'] | Perf: Technology:+2.8% | Utilities:+1.4% | Energy:+1.2% | Consumer Cyclical:+1.0% | Industrials:+0.7%
   Sector flows: TOP Consumer Cyclical +1.1% | BOT Healthcare -0.0%
 
@@ -71,20 +70,18 @@ Phase 4 - Merging candidate pools...
     BOTH (tech+news): 0  TECHNICAL: 10  NEWS: 0
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'NVDA', 'BA', 'EQIX', 'WAB']
+  Stream B: Processing headline mentions: ['AAPL', 'NVDA', 'BA', 'EQIX', 'WAB', 'NVDA', 'BA']
   Stream B added: AAPL | $333.75 | RSI 54.7
   Stream B added: NVDA | $234.0 | RSI 63.0
   Stream B added: BA | $193.56 | RSI 41.2
   Stream B added: EQIX | $1025.89 | RSI 48.3
   Stream B added: WAB | $287.68 | RSI 51.3
-  Sector sentiment derived: 6/11 sectors from 11 stocks
-  LLM attempt 1/1 failed [meta/llama-3.2-11b-vision-instruct]: RetryError
-  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=429)
-  exit:AMD: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] AMD: AMD is trading slightly below entry with no new news, stop far below and target well above, so holding is appropriate. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] MSFT: MSFT remains within the expected trading range, and the original thesis has not been invalidated by recent market news or price action. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] CDNS: Current price remains above the stop-loss level, and the overall market conditions are bullish, supporting the original thesis. (no ledger changes)
+  Stream B added: NVDA | $234.0 | RSI 63.0
+  Stream B added: BA | $193.56 | RSI 41.2
+  Sector sentiment derived: 6/11 sectors from 12 stocks
+  [ADVISORY ONLY] HOLD [LOW] AMD: The stock's recent price movement is within expected bounds, and no fresh news is available, indicating a stable position. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] MSFT: No significant market news or price movement to warrant an action at this time. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock is showing a strong breakout pattern but has already moved 1.2849% against the entry price, and there's no fresh news, so it's best to hold for now. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
   Fetching options + insider data for 15 candidates...
@@ -92,7 +89,7 @@ Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
   Congress trades: all sources unavailable (no cache)
 
 Phase 5.5 - Computing score breakdown (15 candidates)...
-  Pre-score top 5: ADI(62=44T+18N [vader:NEUTRAL])  ON(61=47T+14N [vader:NEUTRAL])  NVDA(61=43T+18N [vader:NEUTRAL])  CCL(60=44T+16N [vader:NEUTRAL])  TT(59=46T+13N [vader:NEUTRAL])
+  Pre-score top 5: ADI(62=44T+18N [vader:NEUTRAL])  ON(61=47T+14N [vader:NEUTRAL])  TT(61=46T+15N [vader:NEUTRAL])  NVDA(61=43T+18N [vader:NEUTRAL])  CCL(60=44T+16N [vader:NEUTRAL])
   SEC EDGAR 8-K: 4/15 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
@@ -100,38 +97,35 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
     Batch 1/3 
     Batch 2/3 
     Batch 3/3 
-  Catalyst scoring done — 3 auto-dropped, 12 remain
+  Catalyst scoring done — 5 auto-dropped, 10 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (12 candidates, 3 layers)...
+Phase 5 - News intelligence (10 candidates, 3 layers)...
   Sentiment: NEUTRAL | Adj: +0
-  12 candidates after news filter
+  10 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (12 candidates)...
-  Pre-score top 5: ADI(62=44T+18N [vader:NEUTRAL])  NVDA(61=43T+18N [vader:NEUTRAL])  ON(61=47T+14N [vader:NEUTRAL])  CCL(60=44T+16N [vader:NEUTRAL])  HPE(58=41T+17N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (10 candidates)...
+  Pre-score top 5: NVDA(61=43T+18N [vader:NEUTRAL])  ON(61=47T+14N [vader:NEUTRAL])  CCL(60=44T+16N [vader:NEUTRAL])  HPE(58=41T+17N [vader:NEUTRAL])  MPWR(56=41T+15N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  12 candidates after config criteria
+  10 candidates after config criteria
   Self-calibration: 17 prior picks, 47% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (12 candidates)...
-  Round 1/3: Ranking 12 candidates...
-  Round 1 → Top 10: ['ADI', 'NVDA', 'ON', 'CCL', 'HPE', 'MPWR', 'ILMN', 'TWLO', 'PSX', 'BA']
+Phase 6 - NVIDIA final scoring (10 candidates)...
+  Round 1/3: Ranking 10 candidates...
+  Round 1 → Top 10: ['NVDA', 'ON', 'HPE', 'MPWR', 'PSX', 'AAPL', 'WAB', 'BA', 'EQIX']
   Round 2/3: Deep-diving top 10...
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
-  -> NVIDIA throttled; answered via OpenRouter.
-  Round 2 failed (ValueError: no usable deep-dive context)
+  Round 2 → analyses for ['NVDA', 'ON', 'HPE', 'MPWR', 'PSX', 'AAPL', 'WAB', 'BA', 'EQIX']
   Round 3/3: Final deliberation...
   Final pick: NVDA | pre=61 → 85/100 | BUY | 11 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=7, wr=71%, HIGH confidence): Stocks with a VIX multiplier above 1.0x, a technical score above 40, and a news score above 15 have a 71% win rate.
-│ 2. Rule (n=3, wr=100%, LOW confidence): Stocks with a momentum score above 10, a trend quality above 8, and a sector bonus above 1 have a 100% win rate.
-│ → History taught me to focus on stocks with a VIX multiplier above 1.0x, a technical score above 40, and a news score above 15, as they have a higher win rate.
+│ 1. Rule (n=10, wr=80%, HIGH confidence): Stocks with high momentum and low volatility in the MID_VIX_BULL regime tend to perform well.
+│ 2. Rule (n=5, wr=80%, HIGH confidence): Stocks with strong breakout momentum in the MID_VIX_BULL regime tend to outperform.
+│ → History suggests that stocks with high momentum and low volatility in the MID_VIX_BULL regime tend to perform well, and stocks with strong breakout momentum in the same regime tend to outperform.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
   Entry estimate: close=$234.0 + 0.3% slippage = $234.7 (stop/target anchored here)
@@ -140,7 +134,7 @@ Phase 6 - NVIDIA final scoring (12 candidates)...
   TODAY'S PICK  —  Friday, Oct 02 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 15.3 (LOW (p15 risk-on))  |  QQQ BULLISH  |  SPY +0.73%
-  Macro:   The US stock market ended the week higher as a weak jobs report cooled rate hike
+  Macro:   The US economy added just 29,000 jobs in September, cooling rate hike bets and c
 ─────────────────────────────────────────────────────────────────
   BUY  NVDA  [NEWS]
   Sector:     Technology
@@ -148,21 +142,19 @@ Phase 6 - NVIDIA final scoring (12 candidates)...
   Entry:  ~$234.7   Stop: ~$227.03   Target: ~$250.03   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      NVDA is a top pick due to its strong technical score of 43, news score of 18, and VIX multiplier of 1.1x. The stock has a high momentum score of 10 and a trend quality of 6, indicating a strong upward trend.
-  Key Risk: The key risk is a decline in demand for NVIDIA's products, which could negatively impact the stock price.
-  Bear case: Two specific risks in the next 4 weeks are: 1) a potential decline in demand for NVIDIA's products, and 2) a surprise announcement from a competitor that could negatively impact NVIDIA's stock price.
+  Why:      NVDA has high momentum and low volatility in the MID_VIX_BULL regime, and its recent price action suggests a strong breakout. Additionally, NVDA's strong fundamentals, including 105.9% revenue growth and 127.8% earnings growth, support a bullish thesis.
+  Key Risk: NVDA's high short interest and recent price decline could lead to a short squeeze or trend reversal, negatively impacting the stock price.
+  Bear case: The bear case for NVDA is that the stock's high short interest (2.3) could lead to a short squeeze, causing the stock price to decline. Additionally, the recent decline in the stock price could be a sign of a larger trend reversal.
 
   WATCH LIST:
-    ADI     74/100  [Technology]  ADI is a watch candidate due to its strong technical score of 44 and n
-    ON      71/100  [Technology]  ON is a watch candidate due to its strong technical score of 47 and ne
+    ON      74/100  [Technology]  ON has strong breakout momentum in the MID_VIX_BULL regime, but its hi
 █████████████████████████████████████████████████████████████████
   Session left open: the order was rejected, so nothing was decided and a later run may retry.
   Broker: in sync (3 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved NVDA | Stop:227.03 Target:250.03
-  OK: Saved ADI | Stop:401.62 Target:448.73
-  OK: Saved ON | Stop:79.45 Target:95.74
+  Already have NVDA on 2026-10-02 - skipping
+  Already have ON on 2026-10-02 - skipping
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
@@ -170,25 +162,24 @@ Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/S
   WATCH LIST: 3/8 wins (37.5%) | avg 10d -2.4% | 23 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1215 chars):
+  run-digest (1159 chars):
 ALPACA - Oct 02 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- BOUGHT 51 CDNS at $356.13 ($18,162)
-- CDNS protected: sells at $339.51 or $389.37
+- Nothing was bought or sold
 
 WHAT YOU HOLD (3)
-- CDNS: down $244 (-1.3%)  |  51 shares, $356.13 -> $351.35
+- CDNS: down $233 (-1.3%)  |  51 shares, $356.13 -> $351.55
   sells at $339.51 or $389.37  |  day 1 of 10
-- MSFT: down $19 (-0.3%)  |  14 shares, $518.86 -> $517.53
+- MSFT: down $25 (-0.3%)  |  14 shares, $518.86 -> $517.10
   sells at $501.30 or $553.99  |  day 2 of 10
-- AMD: down $29 (-0.2%)  |  25 shares, $635.07 -> $633.91
+- AMD: down $43 (-0.3%)  |  25 shares, $635.07 -> $633.34
   sells at $595.02 or $715.17  |  day 6 of 10
 
 MONEY
-- Cash $61,363  |  In shares $41,012
-- Total $102,352 (up $2,352, +2.4% since start)
+- Cash $61,363  |  In shares $41,002
+- Total $102,365 (up $2,365, +2.4% since start)
 - NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 - 40% of everything is in one industry (Technology) - a bad week there hits the whole account
 
@@ -204,10 +195,7 @@ NEXT ORDER
 - Why: the amount set aside was too small to buy even one share safely
 
 STATUS
-- Checks: degraded
+- Checks: healthy
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1555713765968715839
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1555729573344321629
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::see run health | stages: round2
-
-  Completed with degradations (not a failure): see run health | stages: round2
