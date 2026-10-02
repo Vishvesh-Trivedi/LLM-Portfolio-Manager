@@ -891,5 +891,96 @@ class OneMessagePerRun(unittest.TestCase):
         health.assert_called_once()
 
 
+
+class TheTradeRecordMustExplainTheBrokerAccount(unittest.TestCase):
+    """Everything the account made is either banked or sitting in a position.
+
+    When it is neither, a trade is recorded wrongly. Nothing checked this, which
+    is how three exits priced at their own entry went unnoticed for days: cash is
+    broker-authoritative, so the account value stayed correct while the record was
+    short by 874.97.
+
+    Reported, never fatal. The equity_peak invariant was fatal, fired on a
+    99-dollar measurement difference, and skipped trading on two runs.
+    """
+
+    def book(self, **overrides):
+        ledger = {
+            'cash': 79526.76, 'starting_capital': 100000.0,
+            'broker_equity': 102229.56, 'equity_peak': 102229.56,
+            'total_realized_pnl': 1792.58, 'processed_sessions': [], 'pending_orders': [],
+            'positions': [{'ticker': 'AMD', 'shares': 25, 'entry_price': 635.0684,
+                           'cost_basis': 15876.71, 'current_price': 619.60,
+                           'current_value': 15490.00, 'unrealized_pnl': -386.71,
+                           'stop_price': 595.02, 'target_price': 715.17}],
+            'closed_trades': [{'ticker': 'MTD', 'realized_pnl': 1792.58,
+                               'realized_pnl_pct': 7.1, 'entry_date': '2026-09-18',
+                               'exit_date': '2026-09-22',
+                               'cost_basis_basis': 'broker_adopted',
+                               'broker_order_id': 'e3a9b7ff'}],
+        }
+        ledger.update(overrides)
+        return ledger
+
+    def test_the_live_874_gap_is_measured(self):
+        """The real ledger on 2026-10-02, with one position for brevity."""
+        from LLM_Portfolio_Manager import _unexplained_gap
+        # 102,229.56 - 100,000 = 2,229.56 gained; banked 1,792.58, open -386.71.
+        self.assertAlmostEqual(_unexplained_gap(self.book()), 823.69, places=2)
+
+    def test_a_reconciled_account_reports_no_gap(self):
+        from LLM_Portfolio_Manager import _gap_is_material, _unexplained_gap
+        # Bank the missing profit and the account adds up again.
+        book = self.book()
+        book['closed_trades'].append(
+            {'ticker': 'GILD', 'realized_pnl': 823.69, 'realized_pnl_pct': 5.6,
+             'entry_date': '2026-09-21', 'exit_date': '2026-10-01',
+             'cost_basis_basis': 'broker_confirmed_fill', 'broker_order_id': 'x'})
+        gap = _unexplained_gap(book)
+        self.assertAlmostEqual(gap, 0.0, places=2)
+        self.assertFalse(_gap_is_material(book, gap))
+
+    def test_fees_and_rounding_do_not_trip_it(self):
+        from LLM_Portfolio_Manager import _gap_is_material
+        book = self.book()
+        for small in (0.0, 1.5, -4.25, 24.0):
+            with self.subTest(gap=small):
+                self.assertFalse(_gap_is_material(book, small))
+
+    def test_a_real_discrepancy_does_trip_it(self):
+        from LLM_Portfolio_Manager import _gap_is_material
+        book = self.book()
+        for big in (874.97, -874.97, 200.0):
+            with self.subTest(gap=big):
+                self.assertTrue(_gap_is_material(book, big))
+
+    def test_the_august_simulations_are_not_counted_as_broker_money(self):
+        """Their +35.74 was never real; counting it builds in a false gap."""
+        from LLM_Portfolio_Manager import _unexplained_gap
+        book = self.book()
+        before = _unexplained_gap(book)
+        book['closed_trades'].insert(0, {
+            'ticker': 'BR', 'realized_pnl': 157.86, 'realized_pnl_pct': 5.5,
+            'entry_date': '2026-08-04', 'exit_date': '2026-08-20',
+            'cost_basis_basis': 'legacy_estimate'})
+        self.assertAlmostEqual(_unexplained_gap(book), before, places=2)
+
+    def test_no_broker_equity_means_no_claim(self):
+        from LLM_Portfolio_Manager import _unexplained_gap
+        book = self.book()
+        book.pop('broker_equity')
+        self.assertEqual(_unexplained_gap(book), 0.0)
+
+    def test_the_gap_never_fails_state_validation(self):
+        """A notice must not gate the screener, as a fatal invariant once did."""
+        import inspect
+
+        import qa_validate
+        body = inspect.getsource(qa_validate.check_state)
+        notice = body.split('NOTICE')[1].split('print')[0] if 'NOTICE' in body else ''
+        self.assertNotIn('SystemExit', notice)
+        self.assertNotIn('raise', notice)
+
+
 if __name__ == '__main__':
     unittest.main()

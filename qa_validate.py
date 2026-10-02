@@ -102,6 +102,25 @@ def check_state(path):
             print('  ' + line)
         raise SystemExit(1)
 
+    # Reported, never fatal. Everything the account has made should be banked in
+    # a closed trade or held in an open one; when it is neither, a trade is
+    # recorded wrongly. That is what three exits priced at their own entry looked
+    # like, and it went unnoticed for days because cash is broker-authoritative,
+    # so the account value stayed correct while the record was short by 874.97.
+    #
+    # Not a contradiction that fails the build: the equity_peak invariant was
+    # fatal, fired on a 99-dollar measurement difference, and skipped trading on
+    # two runs because the screener is gated behind these tests.
+    try:
+        import LLM_Portfolio_Manager as app
+        gap = app._unexplained_gap(portfolio)
+        if app._gap_is_material(portfolio, gap):
+            print(f'NOTICE: ${abs(gap):,.2f} of the broker account is not explained '
+                  f'by the trade record (banked + open). A closed trade is likely '
+                  f'recorded wrong; see repair_exits.py.')
+    except Exception as exc:  # noqa: BLE001 - a notice must never break validation
+        print(f'note: broker reconciliation check skipped ({type(exc).__name__})')
+
     print(f'Ledger valid: {len(portfolio["positions"])} open, '
           f'{len(portfolio["closed_trades"])} closed; cash ${portfolio["cash"]:.2f}; '
           f'arithmetic consistent')

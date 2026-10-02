@@ -4585,6 +4585,50 @@ def _digest_today(events):
     return lines
 
 
+def _unexplained_gap(pf):
+    """How much of the broker's gain the trade record cannot account for.
+
+    Everything the account has made should be either banked in a closed trade or
+    sitting in an open one. When it is neither, a trade has been recorded wrongly
+    - and because cash comes from the broker, the account value stays right while
+    the record rots, which is exactly how the sell-matching bug survived.
+
+    Only the Alpaca era counts: the August trades were simulated locally and
+    their +35.74 was never real money, so including them would build in a
+    permanent false gap.
+
+    Returns 0.0 when there is no broker equity to compare against.
+    """
+    try:
+        equity = float(pf.get('broker_equity') or 0)
+        if equity <= 0:
+            return 0.0
+        start = float(pf.get('starting_capital', STARTING_CAPITAL) or STARTING_CAPITAL)
+        banked = sum(float(t.get('realized_pnl', 0) or 0)
+                     for t in _alpaca_era_trades(pf))
+        open_pnl = sum(float(p.get('unrealized_pnl', 0) or 0)
+                       for p in pf.get('positions', []) or [])
+        return round((equity - start) - (banked + open_pnl), 2)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _gap_is_material(pf, gap):
+    """A threshold loose enough that fees and rounding never trip it.
+
+    Deliberately reported and never fatal. The equity_peak invariant I made
+    fatal fired on a 99-dollar measurement difference and, because the screener
+    is gated behind the tests, skipped trading entirely on two runs. A number
+    that cannot be reconciled is worth saying out loud and is not worth refusing
+    to trade over.
+    """
+    try:
+        equity = float(pf.get('broker_equity') or 0)
+    except (TypeError, ValueError):
+        equity = 0.0
+    return abs(gap) > max(25.0, equity * 0.00025)
+
+
 def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                     target_price=None, no_pick_reason='', closed_reason=''):
     """Post ONE message covering the whole run. Never raises into the run.
@@ -4663,6 +4707,15 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
         if unpriced:
             lines.append(f'- {", ".join(unpriced)} not yet priced since the fill, '
                          f'so shown at cost')
+        # Everything the account has made is either banked or sitting in an open
+        # position. When the two do not add up to what Alpaca holds, a trade has
+        # been recorded wrongly - which is what three exits priced at their own
+        # entry looked like from here, and what nothing was checking.
+        gap = _unexplained_gap(pf)
+        if _gap_is_material(pf, gap):
+            lines.append(f'- NOTE {_usd(abs(gap))} of the account is '
+                         f'{"unaccounted for" if gap > 0 else "double-counted"} '
+                         f'by the trade record - a closed trade is recorded wrong')
 
         # Concentration is enforced when a position is opened and never after,
         # so a book can drift past its limits as holdings appreciate - and
