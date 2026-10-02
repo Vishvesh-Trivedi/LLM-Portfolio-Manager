@@ -4595,7 +4595,15 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
         cash = float(pf.get('cash', 0) or 0)
         start = float(pf.get('starting_capital', STARTING_CAPITAL) or STARTING_CAPITAL)
         invested = sum(p.get('current_value', p.get('cost_basis', 0)) for p in positions)
-        total = cash + invested
+        # Alpaca's own equity is the account, and the message is headed ALPACA.
+        # Adding cash to locally marked positions gave a different number - on
+        # 2026-10-01 it read $102,085 against the broker's $101,985.79 - so the
+        # headline figure disagreed with the account it claimed to describe.
+        # Positions are now marked from the broker too, which should close that
+        # gap at source; this makes the total unable to drift even if a mark is
+        # missing.
+        broker_total = _num(pf.get('broker_equity'))
+        total = broker_total if broker_total and broker_total > 0 else cash + invested
         pnl = total - start
         live = _alpaca.trading_enabled()
 
@@ -4638,6 +4646,16 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
                   f'- Cash {_usd(cash)}  |  In shares {_usd(invested)}',
                   f'- Total {_usd(total)} ({"up" if pnl >= 0 else "down"} {_usd(pnl)}, '
                   f'{(pnl / start * 100) if start else 0:+.1f}% since start)']
+        # A position whose price is still its own fill has never been marked, and
+        # reporting it as "up $0 (+0.0%)" states a result for something that was
+        # never measured.
+        unpriced = [p.get('ticker', '?') for p in positions
+                    if _num(p.get('current_price')) and _num(p.get('entry_price'))
+                    and abs(_num(p.get('current_price')) - _num(p.get('entry_price'))) < 0.005
+                    and not p.get('quote_date')]
+        if unpriced:
+            lines.append(f'- {", ".join(unpriced)} not yet priced since the fill, '
+                         f'so shown at cost')
 
         # Concentration is enforced when a position is opened and never after,
         # so a book can drift past its limits as holdings appreciate - and
@@ -4701,7 +4719,12 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
             decided = len(won) + len(lost)
             if decided:
                 of = f'{len(won)} of {decided}' + (' that moved' if flat else '')
-                lines.append(f'- Win rate {len(won) / decided * 100:.0f}% ({of})')
+                # '100%' directly above 'too few trades to tell whether this
+                # works yet' reads as a result contradicting its own caveat. One
+                # trade does not have a win rate; say so on the same line rather
+                # than leaving the number to be quoted on its own.
+                caveat = ' - far too small a sample to mean anything' if decided < 5 else ''
+                lines.append(f'- Win rate {len(won) / decided * 100:.0f}% ({of}){caveat}')
             # An average over an empty set is not zero, it is nothing. Printing
             # "average loss +0.0%" where there have been no losses reads as a
             # result rather than an absence.

@@ -421,5 +421,67 @@ class OneLedgerRecordHasTwoOrdersAtTheBroker(unittest.TestCase):
         self.assertAlmostEqual(fills[0]['price'], 149.5798, places=2)
 
 
+
+class AlpacaPricesEveryHoldingAndItWasBeingDiscarded(unittest.TestCase):
+    """The broker marks every position on every read; only adoptions used it.
+
+    So the reported value came from a separate market-data fetch instead: a
+    session stale for AMD on 2026-10-01 (quote_date 2026-09-30 under an Oct 01
+    heading) and never taken at all for MSFT, whose current_price was its own
+    fill and whose quote_stale said False. That is why the digest's account total
+    missed the broker's equity by 99.05.
+    """
+
+    def book(self, **kwargs):
+        base = {'positions': [position(trade_id='t-amd', ticker='AMD', shares=25,
+                                       entry_price=635.0684, cost_basis=15876.71,
+                                       entry_date='2026-09-25',
+                                       current_price=611.76, current_value=15294.0)],
+                'pending_orders': [], 'closed_trades': [], 'cash': 79526.76,
+                'total_realized_pnl': 0.0}
+        base.update(kwargs)
+        return base
+
+    def held(self, price):
+        return {'AMD': {'symbol': 'AMD', 'qty': 25, 'avg_entry_price': 635.0684,
+                        'current_price': price, 'market_value': round(price * 25, 2)}}
+
+    def marks(self, price):
+        plan = plan_broker_sync(self.book(), snapshot(positions=self.held(price)),
+                                '2026-10-01')
+        return [a for a in plan['actions'] if a['op'] == 'mark_position']
+
+    def test_the_broker_price_is_taken(self):
+        self.assertEqual(self.marks(609.14)[0]['current_price'], 609.14)
+
+    def test_a_price_that_already_agrees_is_not_rewritten(self):
+        self.assertEqual(self.marks(611.76), [])
+
+    def test_a_position_never_priced_since_its_fill_is_marked(self):
+        """MSFT's live state: current_price equal to entry, no quote_date."""
+        book = self.book(positions=[position(
+            trade_id='t-msft', ticker='MSFT', shares=14, entry_price=518.8629,
+            cost_basis=7264.08, entry_date='2026-10-01',
+            current_price=518.8629, current_value=7264.08)])
+        plan = plan_broker_sync(book, snapshot(positions={
+            'MSFT': {'symbol': 'MSFT', 'qty': 14, 'avg_entry_price': 518.8629,
+                     'current_price': 523.40, 'market_value': 7327.60}}), '2026-10-01')
+        marks = [a for a in plan['actions'] if a['op'] == 'mark_position']
+        self.assertEqual(len(marks), 1)
+        self.assertEqual(marks[0]['current_price'], 523.40)
+
+    def test_marking_happens_after_the_share_count_is_settled(self):
+        """Value and unrealised must be computed on the confirmed share count."""
+        from screener_portfolio import _BROKER_OP_ORDER
+        self.assertLess(_BROKER_OP_ORDER.index('resize_position'),
+                        _BROKER_OP_ORDER.index('mark_position'))
+        self.assertLess(_BROKER_OP_ORDER.index('reprice_position'),
+                        _BROKER_OP_ORDER.index('mark_position'))
+        self.assertLess(_BROKER_OP_ORDER.index('fill_pending'),
+                        _BROKER_OP_ORDER.index('mark_position'))
+        # Cash is still written last so it is never re-derived locally.
+        self.assertEqual(_BROKER_OP_ORDER[-1], 'set_cash')
+
+
 if __name__ == '__main__':
     unittest.main()

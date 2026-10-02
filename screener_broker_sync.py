@@ -355,6 +355,21 @@ def _plan_positions(ledger, broker, by_ref, by_symbol_side, used, session,
                 f'{symbol}: cost basis corrected ${ledger_entry:,.2f} → ${broker_entry:,.2f} from Alpaca',
                 ledger_price=ledger_entry, broker_price=broker_entry))
 
+        # Alpaca prices every holding on every read. Until now that was thrown
+        # away unless the position was being adopted, so the reported value came
+        # from a separate market-data fetch - a session stale for AMD on
+        # 2026-10-01, and never taken at all for MSFT, whose "current" price was
+        # its own fill. Marking from the broker is what makes the digest's total
+        # agree with the account instead of missing it by 99.05.
+        broker_mark = _positive(broker_position.get('current_price'))
+        ledger_mark = _positive(position.get('current_price'))
+        if broker_mark is not None and (
+                ledger_mark is None or abs(broker_mark - ledger_mark) >= 0.005):
+            actions.append({'op': 'mark_position', 'trade_id': trade_id,
+                            'symbol': symbol,
+                            'current_price': round(broker_mark, 4),
+                            'session': session})
+
     pending_symbols = {_symbol(o.get('ticker'))
                        for o in ledger.get('pending_orders', []) or []
                        if isinstance(o, dict)}

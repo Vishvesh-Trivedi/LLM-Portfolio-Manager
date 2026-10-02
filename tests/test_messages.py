@@ -457,6 +457,40 @@ class TheRecordCoversTheAlpacaEraOnly(unittest.TestCase):
         self.assertIn('average +7.1%', text)
         self.assertNotIn('lost $', text.lower())
 
+    def test_the_total_is_the_brokers_equity_not_local_arithmetic(self):
+        """The message is headed ALPACA, so the total has to be the account.
+
+        Cash plus locally marked positions gave $102,085 against the broker's
+        $101,985.79 on 2026-10-01 - the headline figure disagreed with the
+        account it claimed to describe.
+        """
+        sent = []
+        with patch.object(app, '_RUN_EVENTS', []),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(ledger(broker_equity=101985.79))
+        self.assertIn('Total $101,986', sent[0])
+
+    def test_without_a_broker_equity_it_falls_back_to_the_local_sum(self):
+        sent = []
+        book = ledger()
+        book.pop('broker_equity', None)
+        with patch.object(app, '_RUN_EVENTS', []),                 patch.object(app._alpaca, 'trading_enabled', return_value=True),                 patch.object(app._discord, 'enabled', return_value=True),                 patch.object(app._discord, 'send',
+                             lambda text, label='': sent.append(text) or True),                 redirect_stdout(io.StringIO()):
+            app.send_run_digest(book)
+        self.assertIn('Total $', sent[0])
+
+    def test_a_single_trade_is_not_presented_as_a_win_rate(self):
+        """'Win rate 100%' sat directly above 'too few trades to tell'."""
+        text = self.render([self.BROKER_WIN])
+        self.assertIn('far too small a sample', text)
+
+    def test_a_real_sample_is_not_caveated(self):
+        many = [dict(self.BROKER_WIN, ticker=f'W{i}') for i in range(4)]
+        many += [dict(self.BROKER_LOSS, ticker=f'L{i}') for i in range(2)]
+        text = self.render(many)
+        self.assertIn('Win rate 67% (4 of 6)', text)
+        self.assertNotIn('far too small a sample', text)
+
     def test_it_reports_a_win_rate(self):
         text = self.render([self.BROKER_WIN, self.BROKER_LOSS])
         self.assertIn('Win rate 50% (1 of 2)', text)

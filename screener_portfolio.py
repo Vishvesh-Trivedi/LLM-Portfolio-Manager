@@ -672,6 +672,39 @@ def _apply_reprice_position(app, work, action):
     return ('Repriced ' + pos['ticker'] + ': ' + str(previous) + ' -> ' + str(entry))
 
 
+def _apply_mark_position(app, work, action):
+    """Mark a held position at Alpaca's own current price.
+
+    Alpaca reports a current price for every holding on every run and it was
+    being discarded for positions the ledger already knew; only an adoption used
+    it. So the reported value came from a separate market-data fetch that could
+    be a session old, or never taken at all - a freshly filled position is
+    written with current_price equal to its entry and quote_stale False, so MSFT
+    showed "up $0 (+0.0%)" on a price that was simply its own fill.
+
+    That is also why the digest's account total disagreed with the broker's
+    equity by 99.05 on 2026-10-01: one side was Alpaca, the other was local
+    arithmetic over stale marks.
+
+    high_watermark is deliberately NOT touched. It anchors the trailing stop off
+    session closes, and feeding an intraday mark into it would tighten stops on a
+    number the rest of that logic never uses.
+    """
+    pos = _find(work['positions'], 'trade_id', action['trade_id'])
+    if pos is None:
+        raise ValueError('position not found: ' + str(action['trade_id']))
+    current = _positive(action['current_price'], 'current_price')
+    pos['current_price'] = current
+    pos['current_value'] = round(current * pos['shares'], 2)
+    basis = _positive(pos.get('cost_basis'), 'cost_basis')
+    pos['unrealized_pnl'] = round(pos['current_value'] - basis, 2)
+    pos['unrealized_pnl_pct'] = (pos['current_value'] / basis - 1) * 100
+    pos['quote_stale'] = False
+    pos['quote_date'] = _date(action['session']).isoformat()
+    pos['mark_basis'] = 'broker_current_price'
+    return ('Marked ' + pos['ticker'] + ' at ' + str(current) + ' (broker)')
+
+
 def _apply_adopt_position(app, work, action):
     symbol = _text(action['symbol'], 'symbol').upper()
     if any(p['ticker'].strip().upper() == symbol for p in work['positions']):
@@ -745,14 +778,18 @@ _BROKER_OPS = {
     'close_position': _apply_close_position,
     'resize_position': _apply_resize_position,
     'reprice_position': _apply_reprice_position,
+    'mark_position': _apply_mark_position,
     'adopt_position': _apply_adopt_position,
     'set_cash': _apply_set_cash,
 }
 # Positions settle before cash so the broker balance is written last and is
 # never re-derived from local arithmetic.
+# Marking comes after the share count and cost basis are settled, so the value
+# and the unrealised figure are computed from the numbers Alpaca just confirmed
+# rather than from the ones the ledger arrived with.
 _BROKER_OP_ORDER = ('fill_pending', 'expire_pending', 'close_position',
-                    'resize_position', 'reprice_position', 'adopt_position',
-                    'set_cash')
+                    'resize_position', 'reprice_position', 'mark_position',
+                    'adopt_position', 'set_cash')
 
 
 def apply_broker_state(app, pf, plan):
