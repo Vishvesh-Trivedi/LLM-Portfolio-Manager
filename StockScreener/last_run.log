@@ -16,14 +16,14 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-02 01:49
+   Time:   2026-10-02 02:07
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked AMD at 618.19 (broker)
-  Broker sync: Marked MSFT at 514.75 (broker)
+  Broker sync: Marked AMD at 619.6 (broker)
+  Broker sync: Marked MSFT at 515.2 (broker)
   Broker sync: Cash set from broker: 79526.76 -> 79526.76
   run-digest (845 chars):
 ALPACA - Oct 01 2026
@@ -33,14 +33,14 @@ WHAT HAPPENED TODAY
 - ORDERED 51 CDNS at about $351.72 - fills at the next open, nothing spent yet
 
 WHAT YOU HOLD (2)
-- AMD: down $422 (-2.7%)  |  25 shares, $635.07 -> $618.19
+- AMD: down $387 (-2.4%)  |  25 shares, $635.07 -> $619.60
   sells at $595.02 or $715.17  |  day 5 of 10
-- MSFT: down $58 (-0.8%)  |  14 shares, $518.86 -> $514.75
+- MSFT: down $51 (-0.7%)  |  14 shares, $518.86 -> $515.20
   sells at $501.30 or $553.99  |  day 1 of 10
 
 MONEY
-- Cash $79,527  |  In shares $22,661
-- Total $102,188 (up $2,188, +2.2% since start)
+- Cash $79,527  |  In shares $22,703
+- Total $102,230 (up $2,230, +2.2% since start)
 
 SINCE TRADING ON ALPACA
 - 4 trades finished: 1 made money, 0 lost money, 3 broke even
@@ -56,4 +56,4 @@ NEXT ORDER
 STATUS
 - Checks: healthy
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1555396229985476629
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1555400839659528263
