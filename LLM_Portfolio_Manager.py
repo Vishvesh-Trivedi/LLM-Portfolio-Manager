@@ -4172,10 +4172,17 @@ def _why_no_trade(pick, no_pick_reason, order_reason, candidates=None):
         else:
             plain = 'the order did not pass the safety checks'
 
-    lines = ['Why: ' + plain]
+    # What happened, then why. Leading with 'Why:' put the explanation above the
+    # thing it explained - the section read 'NEXT ORDER / Why: it would have put
+    # too much of your money into one industry / - It wanted UTHR', which has to
+    # be read backwards to make sense.
+    lines = []
     ticker = str(pick.get('ticker', '') or '').upper()
     if ticker and ticker != 'NONE' and signal == 'BUY':
-        lines.append(f'- It wanted {ticker}, but the order was not placed')
+        lines.append(f'- Nothing. It wanted {ticker}, but the order was not placed')
+    else:
+        lines.append('- Nothing ordered')
+    lines.append('- Why: ' + plain)
     if candidates:
         lines.append(f'- Looked at {len(candidates)} shortlisted stocks')
     # Keep the raw wording only when nothing above recognised it, so an

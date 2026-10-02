@@ -491,6 +491,25 @@ class TheRecordCoversTheAlpacaEraOnly(unittest.TestCase):
         self.assertIn('Win rate 67% (4 of 6)', text)
         self.assertNotIn('far too small a sample', text)
 
+    def test_the_refusal_says_what_happened_before_it_says_why(self):
+        """It read 'Why: ... / - It wanted UTHR', which is backwards.
+
+        Live on 2026-10-01: 'NEXT ORDER / Why: it would have put too much of your
+        money into one industry / - It wanted UTHR, but the order was not placed'.
+        """
+        lines = app._why_no_trade(
+            {'ticker': 'UTHR', 'signal': 'BUY', 'confidence': 84},
+            '', 'rejected: sector exposure would exceed the cap')
+        self.assertIn('UTHR', lines[0])
+        self.assertTrue(lines[1].startswith('- Why:'), lines)
+        # Every line is a bullet, so none of them floats outside the list.
+        self.assertTrue(all(line.startswith('- ') for line in lines), lines)
+
+    def test_a_no_pick_refusal_still_leads_with_the_outcome(self):
+        lines = app._why_no_trade({'signal': 'NO PICK', 'confidence': 61}, '', '')
+        self.assertEqual(lines[0], '- Nothing ordered')
+        self.assertTrue(lines[1].startswith('- Why:'), lines)
+
     def test_it_reports_a_win_rate(self):
         text = self.render([self.BROKER_WIN, self.BROKER_LOSS])
         self.assertIn('Win rate 50% (1 of 2)', text)
