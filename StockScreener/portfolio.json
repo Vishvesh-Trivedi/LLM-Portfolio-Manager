@@ -27,12 +27,12 @@
       "stop_price": 595.0184,
       "target_price": 715.1684,
       "sector": "Technology",
-      "current_price": 615.72998046875,
-      "current_value": 15393.25,
+      "current_price": 620.0,
+      "current_value": 15500.0,
       "cost_basis": 15876.71,
       "brokerage_in": 0.0,
-      "unrealized_pnl": -483.46,
-      "unrealized_pnl_pct": -3.045089316363392,
+      "unrealized_pnl": -376.71,
+      "unrealized_pnl_pct": -2.3727207966889763,
       "hold_days": 5,
       "held_sessions": 5,
       "hold_sessions": 10,
@@ -47,7 +47,8 @@
       "quote_date": "2026-10-01",
       "last_evaluated_session": "2026-10-01",
       "earnings_days_away": 33,
-      "indicator_exit_note": ""
+      "indicator_exit_note": "",
+      "mark_basis": "broker_current_price"
     },
     {
       "source": "BOTH",
@@ -74,12 +75,12 @@
       "stop_price": 501.3029,
       "target_price": 553.9929,
       "sector": "Technology",
-      "current_price": 512.7999877929688,
-      "current_value": 7179.2,
+      "current_price": 515.25,
+      "current_value": 7213.5,
       "cost_basis": 7264.08,
       "brokerage_in": 0.0,
-      "unrealized_pnl": -84.88,
-      "unrealized_pnl_pct": -1.1684893338179125,
+      "unrealized_pnl": -50.58,
+      "unrealized_pnl_pct": -0.6963029041530344,
       "hold_days": 1,
       "held_sessions": 1,
       "hold_sessions": 10,
@@ -94,7 +95,8 @@
       "quote_date": "2026-10-01",
       "last_evaluated_session": "2026-10-01",
       "earnings_days_away": 27,
-      "indicator_exit_note": ""
+      "indicator_exit_note": "",
+      "mark_basis": "broker_current_price"
     }
   ],
   "closed_trades": [
@@ -587,7 +589,37 @@
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
-  "pending_orders": [],
+  "pending_orders": [
+    {
+      "source": "TECHNICAL",
+      "reasoning": "CDNS shows a strong breakout pattern (hh_hl true) with a 7.5% 5-day gain, RSI 70.6, high ADX (24.7), and insider buying, indicating a high probability of short-term success. The stock's strong volume (1.9x average) and solid earnings growth also support its bullish case.",
+      "confidence": 85,
+      "rsi": 70.6,
+      "vix": 16.39,
+      "vix_regime": "MODERATE (p35 neutral)",
+      "qqq_trend": "BULLISH",
+      "earnings_days": 24,
+      "congress": "NEUTRAL",
+      "insider": "BUYING",
+      "position_size_pct": 25,
+      "tech_score": 41,
+      "news_score": 18,
+      "id": "e00cf910-a878-4eed-9705-64ec1f90abc9",
+      "trade_id": "e00cf910-a878-4eed-9705-64ec1f90abc9",
+      "ticker": "CDNS",
+      "signal_date": "2026-10-01",
+      "execution_session": "2026-10-02",
+      "estimated_entry": 351.72,
+      "stop_distance": 16.62,
+      "target_distance": 33.24,
+      "sector": "Technology",
+      "atr": 11.08,
+      "amount_usd": 19881.69,
+      "shares": 51,
+      "hold_sessions": 10,
+      "status": "PENDING"
+    }
+  ],
   "processed_sessions": [
     "2026-09-16",
     "2026-09-17",
@@ -596,10 +628,11 @@
     "2026-09-25",
     "2026-09-28",
     "2026-09-29",
-    "2026-09-30"
+    "2026-09-30",
+    "2026-10-01"
   ],
-  "equity_peak": 102161.08,
-  "broker_equity": 102161.08,
+  "equity_peak": 102240.26,
+  "broker_equity": 102240.26,
   "alpaca_order_ledger": [
     {
       "source": "poll",

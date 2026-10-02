@@ -1,5 +1,5 @@
 {
-  "status": "degraded",
+  "status": "healthy",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
       "attempts": 9,
@@ -20,7 +20,7 @@
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "1 applied, 0 failed; no changes"
+      "detail": "3 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -44,7 +44,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "11/16 covered; missing: TMO, TT, UTHR, MAT, WAB; selected sector checked by order planner"
+      "detail": "13/16 covered; missing: UTHR, WAB, MAT; selected sector checked by order planner"
     },
     "exit:AMD": {
       "success": true,
@@ -79,8 +79,8 @@
       "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
-      "success": false,
-      "detail": "JSONDecodeError: Expecting ':' delimiter: line 1 column 311 (char 310)"
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
       "success": true,
@@ -88,7 +88,7 @@
     },
     "broker": {
       "success": true,
-      "detail": "In sync: 2 position(s) match Alpaca"
+      "detail": "1 order(s) submitted, 0 failed (equity $102248.51)"
     },
     "alerts": {
       "success": true,
@@ -106,6 +106,6 @@
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": true,
   "trade_blockers": [],
-  "order_status": "REJECTED",
-  "order_reason": "Order not queued: unknown sector"
+  "order_status": "QUEUED",
+  "order_reason": "Queued CDNS for the next session Open; not filled"
 }
