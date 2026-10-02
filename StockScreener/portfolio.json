@@ -27,14 +27,14 @@
       "stop_price": 595.0184,
       "target_price": 715.1684,
       "sector": "Technology",
-      "current_price": 611.760009765625,
-      "current_value": 15294.0,
+      "current_price": 615.72998046875,
+      "current_value": 15393.25,
       "cost_basis": 15876.71,
       "brokerage_in": 0.0,
-      "unrealized_pnl": -582.71,
-      "unrealized_pnl_pct": -3.6702188299716942,
-      "hold_days": 4,
-      "held_sessions": 4,
+      "unrealized_pnl": -483.46,
+      "unrealized_pnl_pct": -3.045089316363392,
+      "hold_days": 5,
+      "held_sessions": 5,
       "hold_sessions": 10,
       "high_watermark": 635.0684,
       "atr_at_entry": 26.7,
@@ -44,9 +44,9 @@
       "broker_order_id": "7b327b78-c8ad-46a0-9523-e21ea967fe55",
       "broker_partial_fill": false,
       "requested_shares": 25,
-      "quote_date": "2026-09-30",
-      "last_evaluated_session": "2026-09-30",
-      "earnings_days_away": 34,
+      "quote_date": "2026-10-01",
+      "last_evaluated_session": "2026-10-01",
+      "earnings_days_away": 33,
       "indicator_exit_note": ""
     },
     {
@@ -74,14 +74,14 @@
       "stop_price": 501.3029,
       "target_price": 553.9929,
       "sector": "Technology",
-      "current_price": 518.8629,
-      "current_value": 7264.08,
+      "current_price": 512.7999877929688,
+      "current_value": 7179.2,
       "cost_basis": 7264.08,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 0.0,
-      "unrealized_pnl_pct": 0.0,
-      "hold_days": 0,
-      "held_sessions": 0,
+      "unrealized_pnl": -84.88,
+      "unrealized_pnl_pct": -1.1684893338179125,
+      "hold_days": 1,
+      "held_sessions": 1,
       "hold_sessions": 10,
       "high_watermark": 518.8629,
       "atr_at_entry": 11.71,
@@ -90,7 +90,11 @@
       "cost_basis_basis": "broker_confirmed_fill",
       "broker_order_id": "3b767c98-ae6c-4a62-80fe-5b47f2efd46e",
       "broker_partial_fill": false,
-      "requested_shares": 14
+      "requested_shares": 14,
+      "quote_date": "2026-10-01",
+      "last_evaluated_session": "2026-10-01",
+      "earnings_days_away": 27,
+      "indicator_exit_note": ""
     }
   ],
   "closed_trades": [
@@ -594,8 +598,8 @@
     "2026-09-29",
     "2026-09-30"
   ],
-  "equity_peak": 101985.79,
-  "broker_equity": 101985.79,
+  "equity_peak": 102161.08,
+  "broker_equity": 102161.08,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -1016,7 +1020,7 @@
     {
       "source": "poll",
       "event": "new",
-      "timestamp": "2026-10-01T16:23:15.586989151Z",
+      "timestamp": "2026-10-01T16:23:15.586989Z",
       "order_id": "b5ef0f96-19af-4347-bd0c-4f8a2eedd1e4",
       "client_order_id": "lpm-P-MSFT-ae7301da4fa94c87afc36a9ae572",
       "symbol": "MSFT",
@@ -1029,7 +1033,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-10-01T16:23:15.581509032Z",
+      "timestamp": "2026-10-01T16:23:15.581509Z",
       "order_id": "16cc9e8d-ef45-4dd4-be27-77e012704ff0",
       "client_order_id": "67e5fbc1-509a-4143-863c-743484273bff",
       "symbol": "MSFT",
@@ -1084,6 +1088,7 @@
     "2026-09-25",
     "2026-09-28",
     "2026-09-29",
-    "2026-09-30"
+    "2026-09-30",
+    "2026-10-01"
   ]
 }

@@ -16,53 +16,182 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-01 16:23
+   Time:   2026-10-01 23:55
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Filled MSFT: 14 @ 518.8629 (broker confirmed)
-  Broker sync: Closed GILD: 98 @ 149.5798 (broker confirmed)
-  Broker sync: Closed CDNS: 54 @ 322.1806 (broker confirmed)
-  Broker sync: Closed DHR: 59 @ 226.78 (broker confirmed)
   Broker sync: Cash set from broker: 79526.76 -> 79526.76
-  Protection: MSFT 14 sh  stop $501.30 / target $553.99 (replaced)
-  run-digest (955 chars):
+ALPACA PAPER ACCOUNT: $102,099.21 (+2,099.21 / +2.1% vs $100,000 starting)
+Cash: $79,526.76  |  Positions: 2/5  |  Deployed: 22%  |  Idle: 78%
+Sector exposure: Technology: 22%
+Broker P&L: $+2,099.21 all-time  |  no closed trades this week
+  AMD [Technology]: 25sh @ $635.0684 → $615.72998046875 (-483 / -3.0%) | 5d | Stop $595.0184 | Target $715.1684
+  MSFT [Technology]: 14sh @ $518.8629 → $512.7999877929688 (-85 / -1.2%) | 1d | Stop $501.3029 | Target $553.9929
+
+Step 1/8: Updating past results + exit signals...
+
+Step 2/8: Market context...
+
+Market context...
+  VIX:  16.39 (p35.0) -> MODERATE (p35 neutral) (1.0x)
+  QQQ:  $742.03 | BULLISH (+3.77% vs 50MA)
+  SPY today: +0.18%
+  10Y yield: 5.24% (-1.00%)  DXY: 102.0 (+0.54%)  Nikkei: +1.94%
+  Futures:  ES=+0.17%  NQ=+0.37%
+
+Step 3/8: Fetching all data (parallel)...
+  Alpaca: 926/926 tickers
+  Downloaded: 926/926 tickers
+  OK: NVIDIA models verified by JSON probe (2 answering chat): active = meta/llama-3.2-11b-vision-instruct
+  RSS feeds active: 14/16 | Headlines: 84
+  Fetching news for all 900 stocks (parallel)...
+  News found: 0/900 stocks have news today
+  Fetching fundamentals for all 898 stocks (parallel)...
+  Full fundamentals: 411/898 stocks
+  Sector ranks - Top 3: ['Energy', 'Technology', 'Utilities'] | Perf: Energy:+1.0% | Technology:+0.8% | Utilities:+0.4% | Industrials:-1.0% | Consumer Cyclical:-1.6%
+  Sector flows: TOP Energy +2.0% | BOT Healthcare -1.3%
+
+Step 4/8: Bidirectional screening...
+
+Phase 2 - Technical screening (926 tickers)...
+  Passed: 11 | Rejected: Price:0 MA:747 Vol:98 RSI:2 Liq:31 ADX:11
+
+Phase 3 - News screening all 926 stocks...
+  News rescued: 0 stocks → []
+
+Phase 4 - Merging candidate pools...
+  Total candidates: 11
+    BOTH (tech+news): 0  TECHNICAL: 11  NEWS: 0
+
+Step 4.5/8: Stream B - headline ticker extraction...
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'MU', 'MAT', 'NVDA', 'WAB']
+  Stream B added: AAPL | $330.44 | RSI 51.5
+  Stream B added: GOOGL | $338.38 | RSI 45.5
+  Stream B added: MU | $1098.15 | RSI 63.7
+  Stream B added: MAT | $15.03 | RSI 63.1
+  Stream B added: NVDA | $231.04 | RSI 60.3
+  Stream B added: WAB | $287.85 | RSI 51.5
+  Sector sentiment derived: 4/11 sectors from 11 stocks
+  [ADVISORY ONLY] HOLD [LOW] AMD: Stock price is below target but above stop, and no fresh news is present, suggesting a hold position. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] MSFT: Price is within the original thesis range and no fresh news has been released, indicating a stable market condition (no ledger changes)
+
+Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
+  Fetching options + insider data for 16 candidates...
+  Options data: 0/16 | Insider signals: 13/16
+  Congress trades: all sources unavailable (no cache)
+
+Phase 5.5 - Computing score breakdown (16 candidates)...
+  Pre-score top 5: MU(67=49T+18N [vader:NEUTRAL])  UTHR(63=48T+15N [vader:NEUTRAL])  MAT(61=48T+13N [vader:NEUTRAL])  NTAP(60=44T+16N [vader:NEUTRAL])  CDNS(59=41T+18N [vader:NEUTRAL])
+  SEC EDGAR 8-K: 4/16 candidates have recent filings
+
+Step 4.7/8: LLM catalyst scoring (every candidate)...
+  Catalyst scoring: 16 stocks → 3 LLM calls...
+    Batch 1/3 
+    Batch 2/3 
+    Batch 3/3 
+  Catalyst scoring done — 3 auto-dropped, 13 remain
+
+Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
+
+Phase 5 - News intelligence (13 candidates, 3 layers)...
+  Sentiment: NEUTRAL | Adj: +0
+  13 candidates after news filter
+
+Phase 5.5 - Computing score breakdown (13 candidates)...
+  Pre-score top 5: MU(67=49T+18N [vader:NEUTRAL])  UTHR(63=48T+15N [vader:NEUTRAL])  NTAP(60=44T+16N [vader:NEUTRAL])  CDNS(59=41T+18N [vader:NEUTRAL])  NVDA(59=41T+18N [vader:NEUTRAL])
+
+Step 5.5/8: Applying LLM config criteria...
+  13 candidates after config criteria
+  Self-calibration: 17 prior picks, 47% win rate
+
+Step 6/8: LLM final scoring...
+
+Phase 6 - NVIDIA final scoring (13 candidates)...
+  Round 1/3: Ranking 13 candidates...
+  Round 1 → Top 10: ['MU', 'KLAC', 'NVDA', 'CTSH', 'CDNS', 'NTAP', 'PSX', 'A', 'MRNA', 'AAPL']
+  Round 2/3: Deep-diving top 10...
+  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
+  -> NVIDIA throttled; answered via OpenRouter.
+  Round 2 failed (JSONDecodeError: Expecting ':' delimiter: line 1 column 311 (char 310))
+  Round 3/3: Final deliberation...
+  Final pick: UTHR | pre=63 → 85/100 | BUY | 10 LLM calls this run
+
+┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
+│ 1. Rule (n=5, wr=80%, HIGH confidence): Stocks with sector_bonus in tech_bd > 1 and momentum > 9 have a high win rate in MID_VIX_BULL regime
+│ 2. Rule (n=3, wr=67%, LOW confidence): Stocks with insider_label BUYING have a higher win rate than those without
+│ → History shows that stocks with strong technicals and insider buying tend to outperform in the current regime.
+└──────────────────────────────────────────────────────────────
+  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
+  Entry estimate: close=$571.03 + 0.3% slippage = $572.74 (stop/target anchored here)
+
+█████████████████████████████████████████████████████████████████
+  TODAY'S PICK  —  Friday, Oct 02 2026
+█████████████████████████████████████████████████████████████████
+  Market:  VIX 16.4 (MODERATE (p35 neutral))  |  QQQ BULLISH  |  SPY +0.23%
+  Macro:   Market sentiment remains neutral with the S&P 500, Nasdaq, and Dow futures inchi
+─────────────────────────────────────────────────────────────────
+  BUY  UTHR  [TECHNICAL]
+  Sector:     Unknown
+  Confidence: 85/100  █████████████████░░░
+  Entry:  ~$572.74   Stop: ~$545.97   Target: ~$626.29   R:R 1:2
+  Score:  
+─────────────────────────────────────────────────────────────────
+  Why:      UTHR has a strong technical score with high momentum and a high RSI, indicating a potential breakout. Insider buying is also present, which is a bullish signal.
+  Key Risk: UTHR's unknown sector may lead to unexpected volatility.
+  Bear case: UTHR's sector is unknown, which may increase uncertainty. Additionally, the stock's high RSI may indicate overbought conditions.
+
+  WATCH LIST:
+    NTAP    74/100  [Technology]  NTAP has a strong technical score with high momentum and a high RSI, i
+█████████████████████████████████████████████████████████████████
+  Session left open: the order was rejected, so nothing was decided and a later run may retry.
+  Broker: in sync (2 position(s))
+
+Step 8/8: Saving results...
+  OK: Saved UTHR | Stop:545.97 Target:626.29
+  OK: Saved NTAP | Stop:204.92 Target:235.61
+Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+
+────────────────────────────────────────────────────────────
+  CONFIRMED PICKS: 2/6 wins (33.3%) | avg 10d +1.6% | 9 pending
+  WATCH LIST: 2/5 wins (40.0%) | avg 10d -2.8% | 23 pending
+  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+────────────────────────────────────────────────────────────
+  run-digest (799 chars):
 ALPACA - Oct 01 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- BOUGHT 14 MSFT at $518.86 ($7,264)
-- SOLD 98 GILD at $149.58 — made $0
-- SOLD 54 CDNS at $322.18 — made $0
-- SOLD 59 DHR at $226.78 — made $0
-- MSFT protected: sells at $501.30 or $553.99
+- Nothing was bought or sold
 
 WHAT YOU HOLD (2)
-- AMD: down $583 (-3.7%)  |  25 shares, $635.07 -> $611.76
-  sells at $595.02 or $715.17  |  day 4 of 10
-- MSFT: up $0 (+0.0%)  |  14 shares, $518.86 -> $518.86
-  sells at $501.30 or $553.99  |  day 0 of 10
+- AMD: down $483 (-3.0%)  |  25 shares, $635.07 -> $615.73
+  sells at $595.02 or $715.17  |  day 5 of 10
+- MSFT: down $85 (-1.2%)  |  14 shares, $518.86 -> $512.80
+  sells at $501.30 or $553.99  |  day 1 of 10
 
 MONEY
-- Cash $79,527  |  In shares $22,558
-- Total $102,085 (up $2,085, +2.1% since start)
+- Cash $79,527  |  In shares $22,572
+- Total $102,099 (up $2,099, +2.1% since start)
 
 SINCE TRADING ON ALPACA
-- 4 trades finished: 1 made money, 3 lost money
-- Average win +7.1%, average loss +0.0%
+- 4 trades finished: 1 made money, 0 lost money, 3 broke even
+- Win rate 100% (1 of 1 that moved)
+- Won $1,793 across 1 trade (average +7.1%)
 - Banked $1,793 profit
 - Too few trades to tell whether this works yet
 
 NEXT ORDER
-- None. US markets were shut (before 16:15 ET)
-- Your holdings and their sell orders are unchanged
+Why: it would have put too much of your money into one industry
+- It wanted UTHR, but the order was not placed
 
 STATUS
-- Checks: healthy
-- Blocked: missing:market_data, missing:catalysts, missing:final
+- Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1555253777123123275
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1555369080985493505
   WhatsApp run-digest: sent
-  No completed trading session (before 16:15 ET); broker state reconciled only
+::warning title=Run completed with degradations::see run health | stages: round2
+
+  Completed with degradations (not a failure): see run health | stages: round2
