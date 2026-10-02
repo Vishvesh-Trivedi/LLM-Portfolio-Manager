@@ -268,6 +268,85 @@ def _publish(pf, work):
     return pf
 
 
+def alpaca_era_trades(portfolio):
+    """Closed trades from after live Alpaca trading began.
+
+    The ledger predates the broker: thirteen trades from August were simulated
+    locally, carry no ATR, no broker order id and a legacy cost basis. Counting
+    them in a broker reconciliation would build in a permanent false gap, since
+    their profit was never real money. The boundary is the first trade the broker
+    confirmed, and everything from its entry date onward is the live era.
+
+    Lives here rather than in the app so qa_validate can reconcile without
+    importing the app, whose import reads the ticker universe over the network.
+    """
+    closed = portfolio.get('closed_trades') or []
+
+    def broker_confirmed(trade):
+        return bool(trade.get('broker_order_id')) or 'broker' in str(
+            trade.get('cost_basis_basis', '')).lower()
+
+    confirmed = [t for t in closed if broker_confirmed(t)]
+    if not confirmed:
+        return []
+    since = min(str(t.get('entry_date', ''))[:10]
+                for t in confirmed if t.get('entry_date'))
+    if not since:
+        return confirmed
+    return [t for t in closed if str(t.get('entry_date', ''))[:10] >= since]
+
+
+def unexplained_gap(portfolio, starting_capital=None):
+    """Realised money the trade record does not account for.
+
+    Cash, plus what was paid for what is still held, minus the starting capital,
+    must equal everything banked. Any difference is realised money no closed
+    trade records - which is what three exits priced at their own entry looked
+    like from the outside, and what nothing was checking while cash stayed
+    broker-authoritative and every internal check passed.
+
+    Current prices cancel out of that identity, deliberately. The first version
+    of this compared the broker's equity snapshot against locally re-marked
+    unrealised P&L, and marks drifting 0.5% from the snapshot was enough to
+    report a correct ledger as broken (measured: -113.52). That is the same
+    cross-source comparison that made the equity_peak invariant fire on a
+    99-dollar measurement difference and skip trading on two runs. This version
+    reads no price at all.
+
+    It only has force when cash comes from the broker. With cash maintained
+    locally the identity holds by construction and this returns ~0, so it cannot
+    raise a false alarm on a simulated run.
+    """
+    try:
+        cash = float(portfolio['cash'])
+        # The ledger's own figure wins. ``starting_capital`` is only a fallback
+        # for a ledger that has none: the app's configured default is whatever
+        # that deployment is set to, and passing it ahead of the ledger made the
+        # gap wrong by the difference between them - 90,000 in the test config.
+        start = float(portfolio.get('starting_capital') or starting_capital or 0)
+        if start <= 0:
+            return 0.0
+        held = sum(float(p.get('cost_basis', 0) or 0)
+                   for p in portfolio.get('positions', []) or [])
+        banked = sum(float(t.get('realized_pnl', 0) or 0)
+                     for t in alpaca_era_trades(portfolio))
+        return round((cash + held) - (start + banked), 2)
+    except (TypeError, ValueError, KeyError):
+        return 0.0
+
+
+def gap_is_material(portfolio, gap):
+    """Loose enough that fees, rounding and a dividend cannot trip it.
+
+    Reported, never fatal, and never the reason a run refuses to trade.
+    """
+    try:
+        start = float(portfolio.get('starting_capital', 0) or 0)
+    except (TypeError, ValueError):
+        start = 0.0
+    return abs(gap) > max(50.0, start * 0.0005)
+
+
 def load_portfolio(app):
     """Read only the canonical path; a corrupt existing file is a fatal error."""
     path = Path(app.PORTFOLIO_JSON)

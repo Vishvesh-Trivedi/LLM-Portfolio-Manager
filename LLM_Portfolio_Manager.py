@@ -4529,27 +4529,11 @@ def _blocker_words(blocker):
 def _alpaca_era_trades(portfolio):
     """Closed trades from after live Alpaca trading began.
 
-    The ledger predates the broker: eleven trades from August were simulated
-    locally, carry no ATR, no broker order id, and a legacy cost basis. Counting
-    them in a summary headed "since Alpaca started" would describe a different
-    system. The boundary is the first trade the broker confirmed - it has a
-    broker_order_id or a basis naming the broker - and everything from that
-    entry date onward belongs to the live era, whether or not each record
-    happens to carry its own marker.
+    Implemented in screener_portfolio so qa_validate can reconcile without
+    importing this module, whose import reads the ticker universe over the
+    network.
     """
-    closed = portfolio.get('closed_trades') or []
-
-    def broker_confirmed(trade):
-        return bool(trade.get('broker_order_id')) or 'broker' in str(
-            trade.get('cost_basis_basis', '')).lower()
-
-    confirmed = [t for t in closed if broker_confirmed(t)]
-    if not confirmed:
-        return []
-    since = min(str(t.get('entry_date', ''))[:10] for t in confirmed if t.get('entry_date'))
-    if not since:
-        return confirmed
-    return [t for t in closed if str(t.get('entry_date', ''))[:10] >= since]
+    return _portfolio.alpaca_era_trades(portfolio)
 
 
 def _digest_today(events):
@@ -4586,47 +4570,14 @@ def _digest_today(events):
 
 
 def _unexplained_gap(pf):
-    """How much of the broker's gain the trade record cannot account for.
-
-    Everything the account has made should be either banked in a closed trade or
-    sitting in an open one. When it is neither, a trade has been recorded wrongly
-    - and because cash comes from the broker, the account value stays right while
-    the record rots, which is exactly how the sell-matching bug survived.
-
-    Only the Alpaca era counts: the August trades were simulated locally and
-    their +35.74 was never real money, so including them would build in a
-    permanent false gap.
-
-    Returns 0.0 when there is no broker equity to compare against.
-    """
-    try:
-        equity = float(pf.get('broker_equity') or 0)
-        if equity <= 0:
-            return 0.0
-        start = float(pf.get('starting_capital', STARTING_CAPITAL) or STARTING_CAPITAL)
-        banked = sum(float(t.get('realized_pnl', 0) or 0)
-                     for t in _alpaca_era_trades(pf))
-        open_pnl = sum(float(p.get('unrealized_pnl', 0) or 0)
-                       for p in pf.get('positions', []) or [])
-        return round((equity - start) - (banked + open_pnl), 2)
-    except (TypeError, ValueError):
-        return 0.0
+    """Realised money the trade record does not account for; see
+    screener_portfolio.unexplained_gap. Reads no price, by design."""
+    return _portfolio.unexplained_gap(pf, STARTING_CAPITAL)
 
 
 def _gap_is_material(pf, gap):
-    """A threshold loose enough that fees and rounding never trip it.
-
-    Deliberately reported and never fatal. The equity_peak invariant I made
-    fatal fired on a 99-dollar measurement difference and, because the screener
-    is gated behind the tests, skipped trading entirely on two runs. A number
-    that cannot be reconciled is worth saying out loud and is not worth refusing
-    to trade over.
-    """
-    try:
-        equity = float(pf.get('broker_equity') or 0)
-    except (TypeError, ValueError):
-        equity = 0.0
-    return abs(gap) > max(25.0, equity * 0.00025)
+    """Reported, never fatal - see screener_portfolio.gap_is_material."""
+    return _portfolio.gap_is_material(pf, gap)
 
 
 def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
@@ -4713,9 +4664,9 @@ def send_run_digest(portfolio, pick=None, entry=None, stop_price=None,
         # entry looked like from here, and what nothing was checking.
         gap = _unexplained_gap(pf)
         if _gap_is_material(pf, gap):
-            lines.append(f'- NOTE {_usd(abs(gap))} of the account is '
-                         f'{"unaccounted for" if gap > 0 else "double-counted"} '
-                         f'by the trade record - a closed trade is recorded wrong')
+            lines.append(f'- NOTE {_usd(abs(gap))} of realised money is not '
+                         f'accounted for by any closed trade - one is probably '
+                         f'recorded wrong')
 
         # Concentration is enforced when a position is opened and never after,
         # so a book can drift past its limits as holdings appreciate - and

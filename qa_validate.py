@@ -8,6 +8,8 @@ import shutil
 import tempfile
 from types import SimpleNamespace
 
+import screener_portfolio as _reconcile
+
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -111,15 +113,15 @@ def check_state(path):
     # Not a contradiction that fails the build: the equity_peak invariant was
     # fatal, fired on a 99-dollar measurement difference, and skipped trading on
     # two runs because the screener is gated behind these tests.
-    try:
-        import LLM_Portfolio_Manager as app
-        gap = app._unexplained_gap(portfolio)
-        if app._gap_is_material(portfolio, gap):
-            print(f'NOTICE: ${abs(gap):,.2f} of the broker account is not explained '
-                  f'by the trade record (banked + open). A closed trade is likely '
-                  f'recorded wrong; see repair_exits.py.')
-    except Exception as exc:  # noqa: BLE001 - a notice must never break validation
-        print(f'note: broker reconciliation check skipped ({type(exc).__name__})')
+    # screener_portfolio, not the app: importing the app reads the ticker
+    # universe over the network and calls load_dotenv, neither of which belongs
+    # in a read-only validation - and the broad except would have turned a failed
+    # fetch into a silently skipped reconciliation on the run that needed it most.
+    gap = _reconcile.unexplained_gap(portfolio)
+    if _reconcile.gap_is_material(portfolio, gap):
+        print(f'NOTICE: ${abs(gap):,.2f} of realised money is not accounted for by '
+              f'any closed trade. One is probably recorded wrong; see '
+              f'repair_exits.py. This is a notice, not a failure.')
 
     print(f'Ledger valid: {len(portfolio["positions"])} open, '
           f'{len(portfolio["closed_trades"])} closed; cash ${portfolio["cash"]:.2f}; '

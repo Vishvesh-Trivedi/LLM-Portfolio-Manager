@@ -922,18 +922,18 @@ class TheTradeRecordMustExplainTheBrokerAccount(unittest.TestCase):
         ledger.update(overrides)
         return ledger
 
-    def test_the_live_874_gap_is_measured(self):
-        """The real ledger on 2026-10-02, with one position for brevity."""
+    def test_the_gap_is_realised_money_no_trade_accounts_for(self):
+        """cash + what was paid for what is held, vs start + what was banked."""
         from LLM_Portfolio_Manager import _unexplained_gap
-        # 102,229.56 - 100,000 = 2,229.56 gained; banked 1,792.58, open -386.71.
-        self.assertAlmostEqual(_unexplained_gap(self.book()), 823.69, places=2)
+        # 79,526.76 + 15,876.71 - (100,000 + 1,792.58) = -6,389.11
+        self.assertAlmostEqual(_unexplained_gap(self.book()), -6389.11, places=2)
 
     def test_a_reconciled_account_reports_no_gap(self):
         from LLM_Portfolio_Manager import _gap_is_material, _unexplained_gap
         # Bank the missing profit and the account adds up again.
         book = self.book()
         book['closed_trades'].append(
-            {'ticker': 'GILD', 'realized_pnl': 823.69, 'realized_pnl_pct': 5.6,
+            {'ticker': 'GILD', 'realized_pnl': -6389.11, 'realized_pnl_pct': -5.6,
              'entry_date': '2026-09-21', 'exit_date': '2026-10-01',
              'cost_basis_basis': 'broker_confirmed_fill', 'broker_order_id': 'x'})
         gap = _unexplained_gap(book)
@@ -943,7 +943,7 @@ class TheTradeRecordMustExplainTheBrokerAccount(unittest.TestCase):
     def test_fees_and_rounding_do_not_trip_it(self):
         from LLM_Portfolio_Manager import _gap_is_material
         book = self.book()
-        for small in (0.0, 1.5, -4.25, 24.0):
+        for small in (0.0, 1.5, -4.25, 49.0):
             with self.subTest(gap=small):
                 self.assertFalse(_gap_is_material(book, small))
 
@@ -965,21 +965,87 @@ class TheTradeRecordMustExplainTheBrokerAccount(unittest.TestCase):
             'cost_basis_basis': 'legacy_estimate'})
         self.assertAlmostEqual(_unexplained_gap(book), before, places=2)
 
-    def test_no_broker_equity_means_no_claim(self):
+    def test_the_ledgers_own_starting_capital_wins(self):
+        """The app's configured default must not override the ledger.
+
+        _unexplained_gap passes STARTING_CAPITAL as a fallback. Taking it ahead
+        of the ledger's own figure made the gap wrong by the difference between
+        them - 90,000 under the test configuration.
+        """
+        from screener_portfolio import unexplained_gap
+        book = self.book()
+        self.assertAlmostEqual(unexplained_gap(book, starting_capital=10000.0),
+                               unexplained_gap(book), places=2)
+
+    def test_without_any_starting_capital_it_makes_no_claim(self):
+        from screener_portfolio import unexplained_gap
+        book = self.book()
+        book['starting_capital'] = 0
+        self.assertEqual(unexplained_gap(book), 0.0)
+
+    def test_a_material_gap_does_not_fail_state_validation(self):
+        """Runs check_state for real: a notice must never gate the screener.
+
+        The previous version of this test scraped the source for 'raise' inside
+        a window it located by string search, so planting raise SystemExit(1) in
+        the notice path passed, and deleting the block entirely passed trivially
+        because the window came back empty. The one regression it existed to
+        prevent was unguarded.
+        """
+        import json
+        import subprocess
+        import sys
+        import tempfile
+        from pathlib import Path
+
+        # Built from the committed ledger, which is schema-valid, then cash is
+        # moved so a material gap exists whether or not the repair has run.
+        root = Path(__file__).resolve().parent.parent
+        book = json.loads((root / 'StockScreener' / 'portfolio.json')
+                          .read_text(encoding='utf-8'))
+        book['cash'] = float(book['cash']) + 5000.0
+        with tempfile.TemporaryDirectory(prefix='gap-') as tmp:
+            path = Path(tmp) / 'portfolio.json'
+            path.write_text(json.dumps(book), encoding='utf-8')
+            done = subprocess.run(
+                [sys.executable, 'qa_validate.py', '--check-state', str(path)],
+                capture_output=True, text=True, cwd=str(root),
+                # The exit code is the assertion; raising on it would hide it.
+                check=False)
+        self.assertEqual(done.returncode, 0,
+                         'a notice must not fail validation: '
+                         + done.stdout + done.stderr)
+        self.assertIn('NOTICE', done.stdout)
+        self.assertIn('not a failure', done.stdout)
+        self.assertIn('Ledger valid', done.stdout)
+
+    def test_the_gap_reads_no_price_at_all(self):
+        """Marks drifting from the broker must not invent a discrepancy.
+
+        The first version compared the broker's equity snapshot against locally
+        re-marked unrealised P&L. With the ledger correct, moving the marks 0.5%
+        produced -113.52 and 1.0% produced -227.04, both reported to Discord as a
+        mis-recorded trade - the same cross-source comparison that made the
+        equity_peak invariant fire on a 99-dollar difference.
+        """
+        import copy
+
         from LLM_Portfolio_Manager import _unexplained_gap
         book = self.book()
-        book.pop('broker_equity')
-        self.assertEqual(_unexplained_gap(book), 0.0)
-
-    def test_the_gap_never_fails_state_validation(self):
-        """A notice must not gate the screener, as a fatal invariant once did."""
-        import inspect
-
-        import qa_validate
-        body = inspect.getsource(qa_validate.check_state)
-        notice = body.split('NOTICE')[1].split('print')[0] if 'NOTICE' in body else ''
-        self.assertNotIn('SystemExit', notice)
-        self.assertNotIn('raise', notice)
+        base = _unexplained_gap(book)
+        for pct in (0.005, 0.01, 0.10, -0.10):
+            with self.subTest(drift=pct):
+                moved = copy.deepcopy(book)
+                for p in moved['positions']:
+                    p['current_price'] = float(p['current_price']) * (1 + pct)
+                    p['current_value'] = round(p['current_price'] * p['shares'], 2)
+                    p['unrealized_pnl'] = round(
+                        p['current_value'] - float(p['cost_basis']), 2)
+                self.assertAlmostEqual(_unexplained_gap(moved), base, places=2)
+        # And no broker_equity either, since it is not consulted.
+        stripped = copy.deepcopy(book)
+        stripped.pop('broker_equity')
+        self.assertAlmostEqual(_unexplained_gap(stripped), base, places=2)
 
 
 if __name__ == '__main__':
