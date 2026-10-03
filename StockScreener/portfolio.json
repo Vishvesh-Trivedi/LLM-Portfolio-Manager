@@ -1,5 +1,5 @@
 {
-  "cash": 61363.37,
+  "cash": 61363.36,
   "starting_capital": 100000.0,
   "positions": [
     {
@@ -650,7 +650,7 @@
     "2026-10-01"
   ],
   "equity_peak": 102385.89,
-  "broker_equity": 102375.39,
+  "broker_equity": 102375.38,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -1136,7 +1136,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-10-02T22:44:11.943527407Z",
+      "timestamp": "2026-10-02T22:44:11.943527Z",
       "order_id": "3522a07e-efbb-4468-ad51-95f660e40586",
       "client_order_id": "5f7622a5-4e21-41ea-97de-0382a96cf667",
       "symbol": "CDNS",
@@ -1149,7 +1149,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-10-02T22:44:11.943498443Z",
+      "timestamp": "2026-10-02T22:44:11.943498Z",
       "order_id": "17d267cc-a657-4bc1-a7bd-885adbc78c4a",
       "client_order_id": "lpm-P-CDNS-e00cf910a8784eed9705467f86a0",
       "symbol": "CDNS",
