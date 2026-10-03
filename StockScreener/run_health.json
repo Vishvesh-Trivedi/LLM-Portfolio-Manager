@@ -1,16 +1,26 @@
 {
-  "status": "healthy",
+  "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
       "attempts": 11,
-      "successes": 11,
+      "successes": 10,
+      "failures": 1
+    },
+    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
+      "attempts": 1,
+      "successes": 1,
+      "failures": 0
+    },
+    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
+      "attempts": 1,
+      "successes": 1,
       "failures": 0
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "4 applied, 0 failed; no changes"
+      "detail": "3 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -34,7 +44,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "12/15 covered; missing: TWLO, UTHR, WAB; selected sector checked by order planner"
+      "detail": "15/19 covered; missing: TWLO, UTHR, WAB, WDC; selected sector checked by order planner"
     },
     "exit:AMD": {
       "success": true,
@@ -54,13 +64,17 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "15/15 verified"
+      "detail": "19/19 verified"
     },
     "catalyst_2": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "catalyst_3": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalyst_4": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
@@ -73,8 +87,8 @@
       "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
-      "success": true,
-      "detail": "Optional analysis context available; not a decision contract"
+      "success": false,
+      "detail": "ValueError: no usable deep-dive context"
     },
     "final": {
       "success": true,
@@ -90,10 +104,10 @@
     }
   },
   "degraded_reasons": [],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
-  "attempts": 11,
-  "successes": 11,
-  "failures": 0,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free, NVIDIA:meta/llama-3.2-90b-vision-instruct",
+  "attempts": 13,
+  "successes": 12,
+  "failures": 1,
   "date": "2026-10-02",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
