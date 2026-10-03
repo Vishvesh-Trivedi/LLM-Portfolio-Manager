@@ -16,14 +16,12 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-03 00:34
+   Time:   2026-10-03 01:27
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked AMD at 633.25 (broker)
-  Broker sync: Marked MSFT at 517.19 (broker)
   Broker sync: Cash set from broker: 61363.37 -> 61363.37
 ALPACA PAPER ACCOUNT: $102,364.33 (+2,364.33 / +2.4% vs $100,000 starting)
 Cash: $61,363.37  |  Positions: 3/5  |  Deployed: 40%  |  Idle: 60%
@@ -52,7 +50,7 @@ Step 3/8: Fetching all data (parallel)...
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 897 stocks (parallel)...
-  Full fundamentals: 434/897 stocks
+  Full fundamentals: 430/897 stocks
   Sector ranks - Top 3: ['Technology', 'Utilities', 'Energy'] | Perf: Technology:+2.8% | Utilities:+1.4% | Energy:+1.2% | Consumer Cyclical:+1.0% | Industrials:+0.7%
   Sector flows: TOP Consumer Cyclical +1.1% | BOT Healthcare -0.0%
 
@@ -69,68 +67,63 @@ Phase 4 - Merging candidate pools...
     BOTH (tech+news): 0  TECHNICAL: 10  NEWS: 0
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'WAB', 'NVDA', 'BA', 'EQIX', 'TSLA', 'WDC', 'STX']
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'WAB', 'NVDA', 'BA', 'EQIX']
   Stream B added: AAPL | $333.75 | RSI 54.7
   Stream B added: GOOGL | $343.47 | RSI 49.9
   Stream B added: WAB | $287.68 | RSI 51.3
   Stream B added: NVDA | $234.0 | RSI 63.0
   Stream B added: BA | $193.56 | RSI 41.2
   Stream B added: EQIX | $1025.89 | RSI 48.3
-  Stream B added: TSLA | $370.64 | RSI 55.0
-  Stream B added: WDC | $415.37 | RSI 39.2
-  Stream B added: STX | $848.78 | RSI 46.4
-  Sector sentiment derived: 7/11 sectors from 15 stocks
-  [ADVISORY ONLY] HOLD [LOW] AMD: Technical indicators and news score remain strong, but the stock has pulled back slightly, and no fresh news is available. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] MSFT: No fresh news and current price is near stop-loss level, suggesting a cautious approach. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock has shown a strong breakout pattern but the current price has pulled back, suggesting caution and a hold position. (no ledger changes)
+  Sector sentiment derived: 7/11 sectors from 13 stocks
+  [ADVISORY ONLY] HOLD [LOW] AMD: No significant changes in market conditions or news to justify immediate action. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] MSFT: Current price is close to stop loss, no fresh news to justify action, holding for now. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock is experiencing a minor correction but remains in a strong breakout pattern with supportive technical indicators. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 19 candidates...
-  Options data: 0/19 | Insider signals: 15/19
+  Fetching options + insider data for 16 candidates...
+  Options data: 0/16 | Insider signals: 13/16
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (19 candidates)...
+Phase 5.5 - Computing score breakdown (16 candidates)...
   Pre-score top 5: ADI(62=44T+18N [vader:NEUTRAL])  ON(61=47T+14N [vader:NEUTRAL])  TT(61=46T+15N [vader:NEUTRAL])  NVDA(61=43T+18N [vader:NEUTRAL])  CCL(60=44T+16N [vader:NEUTRAL])
-  SEC EDGAR 8-K: 5/19 candidates have recent filings
+  SEC EDGAR 8-K: 4/16 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
-  Catalyst scoring: 19 stocks → 4 LLM calls...
-    Batch 1/4 
-    Batch 2/4 
-    Batch 3/4 
-    Batch 4/4 
-  Catalyst scoring done — 7 auto-dropped, 12 remain
+  Catalyst scoring: 16 stocks → 3 LLM calls...
+    Batch 1/3 
+    Batch 2/3 
+    Batch 3/3 
+  Catalyst scoring done — 8 auto-dropped, 8 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (12 candidates, 3 layers)...
+Phase 5 - News intelligence (8 candidates, 3 layers)...
+  news: NVIDIA parser/validator rejected response: ValueError: unknown ticker: VGZ
+  ↩️  Critical LLM call recovered via OpenRouter.
   Sentiment: BULLISH | Adj: +0
-  12 candidates after news filter
+  8 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (12 candidates)...
-  Pre-score top 5: NVDA(65=43T+22N [vader:NEUTRAL])  ON(65=47T+18N [vader:NEUTRAL])  TT(65=46T+19N [vader:NEUTRAL])  CCL(64=44T+20N [vader:NEUTRAL])  HPE(62=41T+21N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (8 candidates)...
+  Pre-score top 5: ON(65=47T+18N [vader:NEUTRAL])  HPE(62=41T+21N [vader:NEUTRAL])  MPWR(60=41T+19N [vader:NEUTRAL])  TWLO(58=39T+19N [vader:NEUTRAL])  PSX(57=37T+20N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  12 candidates after config criteria
+  8 candidates after config criteria
   Self-calibration: 17 prior picks, 47% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (12 candidates)...
-  Round 1/3: Ranking 12 candidates...
-  Round 1 → Top 10: ['NVDA', 'ON', 'HPE', 'MPWR', 'PSX', 'AAPL', 'GOOGL', 'EQIX', 'TSLA', 'WDC']
+Phase 6 - NVIDIA final scoring (8 candidates)...
+  Round 1/3: Ranking 8 candidates...
+  Round 1 failed (ValueError: ranking contains invalid candidate tickers) — using pre_score top 10
   Round 2/3: Deep-diving top 10...
-  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
-  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  -> NVIDIA throttled; answered via OpenRouter.
-  Round 2 failed (ValueError: no usable deep-dive context)
+  Round 2 → analyses for ['ON', 'HPE', 'MPWR', 'TWLO', 'PSX', 'WAB', 'GOOGL', 'BA']
   Round 3/3: Final deliberation...
-  Final pick: ON | pre=65 → 85/100 | BUY | 12 LLM calls this run
+  Final pick: ON | pre=65 → 85/100 | BUY | 11 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=5, wr=60%, HIGH confidence): Stocks in the Technology sector with a high momentum score (>40) tend to perform well in the MID_VIX_BULL regime.
-│ 2. Rule (n=3, wr=67%, HIGH confidence): Stocks with a high analyst rating (>2.0) and a low short ratio (<3.0) tend to outperform in the MID_VIX_BULL regime.
-│ → History suggests that stocks in the Technology sector with high momentum scores and high analyst ratings tend to perform well in the MID_VIX_BULL regime, which is the current market condition.
+│ 1. Rule (n=14, wr=57%, LOW confidence): In MID_VIX_NEUTRAL regime, picks with strong earnings growth and low earnings risk tend to have a higher win rate.
+│ 2. Rule (n=2, wr=100%, HIGH confidence): Picks with high insider buying activity and stable ADX tend to have a higher win rate.
+│ → History suggests that in the MID_VIX_NEUTRAL regime, strong earnings growth and low earnings risk are associated with a higher win rate, while high insider buying activity and stable ADX are also important indicators of a successful trade.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
   Entry estimate: close=$84.88 + 0.3% slippage = $85.13 (stop/target anchored here)
@@ -139,7 +132,7 @@ Phase 6 - NVIDIA final scoring (12 candidates)...
   TODAY'S PICK  —  Saturday, Oct 03 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 15.3 (LOW (p15 risk-on))  |  QQQ BULLISH  |  SPY +0.73%
-  Macro:   US market ends week higher as weak jobs report cools rate hike bets, with S&P 50
+  Macro:   U.S. job growth slowed sharply in September with only 29,000 jobs added, cooling
 ─────────────────────────────────────────────────────────────────
   BUY  ON  [TECHNICAL]
   Sector:     Technology
@@ -147,24 +140,24 @@ Phase 6 - NVIDIA final scoring (12 candidates)...
   Entry:  ~$85.13   Stop: ~$79.7   Target: ~$95.99   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      ON is a strong pick due to its high momentum score (47) and high analyst rating (2.1), which align with the derived rules. The stock has also shown a significant price movement in the last 5 days, with a momentum score of 12.16%.
-  Key Risk: High volatility ratio could lead to a sharp decline.
-  Bear case: One potential risk is that the stock's high volatility ratio (3.08) could lead to a sharp decline if the market turns bearish. Another risk is that the stock's high price (84.88) could lead to a correction if investors become risk-averse.
+  Why:      ON Semiconductor is well-positioned to benefit from the ongoing semiconductor shortage, with recent strong momentum in a relatively low-ADX environment. The company's diversified product portfolio and strong revenue growth make it an attractive pick for the next 1-4 weeks.
+  Key Risk: The stock's high valuation is a key risk, as it makes the company more vulnerable to a potential short squeeze.
+  Bear case: A potential bear case for ON Semiconductor is a sudden increase in inventory levels, which could lead to a decrease in demand for the company's products. Additionally, the stock's high valuation and relatively low short interest make it vulnerable to a potential short squeeze.
 
   WATCH LIST:
-    NVDA    74/100  [Technology]  NVDA is a strong candidate due to its high momentum score (43) and hig
+    HPE     74/100  [Technology]  Hewlett Packard Enterprise is poised for a near-term breakout, with re
 █████████████████████████████████████████████████████████████████
   Session left open: the order was rejected, so nothing was decided and a later run may retry.
   Broker: in sync (3 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved ON | Stop:79.7 Target:95.99
-  OK: Saved NVDA | Stop:226.34 Target:249.33
+  Already have ON on 2026-10-02 - skipping
+  OK: Saved HPE | Stop:63.99 Target:79.97
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 3/7 wins (42.9%) | avg 10d +1.7% | 11 pending
-  WATCH LIST: 3/8 wins (37.5%) | avg 10d -2.4% | 24 pending
+  WATCH LIST: 3/8 wins (37.5%) | avg 10d -2.4% | 25 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
   run-digest (1158 chars):
@@ -202,8 +195,8 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1555741398576271394
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1555753935703375884
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::see run health | stages: round2
+::warning title=Run completed with degradations::see run health | stages: round1
 
-  Completed with degradations (not a failure): see run health | stages: round2
+  Completed with degradations (not a failure): see run health | stages: round1
