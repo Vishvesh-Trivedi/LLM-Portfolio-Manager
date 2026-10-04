@@ -20,7 +20,7 @@
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
+      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
   "degraded_reasons": [],
@@ -28,7 +28,7 @@
   "attempts": 0,
   "successes": 0,
   "failures": 0,
-  "date": "2026-10-03",
+  "date": "2026-10-04",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "no_session",
   "report": null,
