@@ -20,7 +20,7 @@
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
+      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
     }
   },
   "degraded_reasons": [],
