@@ -4,7 +4,7 @@
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "4 applied, 0 failed; no changes"
+      "detail": "3 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
