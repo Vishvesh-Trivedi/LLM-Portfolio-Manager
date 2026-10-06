@@ -2,25 +2,35 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 4,
-      "successes": 3,
+      "attempts": 11,
+      "successes": 10,
       "failures": 1
     },
     "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
-      "attempts": 3,
-      "successes": 3,
-      "failures": 0
+      "attempts": 1,
+      "successes": 0,
+      "failures": 1
+    },
+    "OpenRouter:z-ai/glm-5.2:free": {
+      "attempts": 1,
+      "successes": 0,
+      "failures": 1
+    },
+    "OpenRouter:minimax/minimax-m3:free": {
+      "attempts": 1,
+      "successes": 0,
+      "failures": 1
     },
     "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 4,
-      "successes": 3,
+      "attempts": 2,
+      "successes": 1,
       "failures": 1
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "4 applied, 0 failed; no changes"
+      "detail": "3 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -46,6 +56,18 @@
       "success": true,
       "detail": "10/14 covered; missing: TWLO, UTHR, DOCS, WAB; selected sector checked by order planner"
     },
+    "exit:AMD": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "exit:MSFT": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "exit:CDNS": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
     "catalyst_1": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
@@ -56,7 +78,7 @@
     },
     "catalyst_2": {
       "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "catalyst_3": {
       "success": true,
@@ -64,7 +86,7 @@
     },
     "news": {
       "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
       "success": true,
@@ -88,27 +110,19 @@
     }
   },
   "degraded_reasons": [
-    "stale_quote:AMD",
-    "stale_quote:MSFT",
-    "stale_quote:CDNS",
-    "paper_horizon_unavailable:META",
-    "paper_horizon_unavailable:HPE",
-    "paper_horizon_unavailable:FTNT",
-    "paper_horizon_unavailable:COIN"
+    "protection_rejected:MSFT"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free, NVIDIA:meta/llama-3.2-90b-vision-instruct",
-  "attempts": 11,
-  "successes": 9,
-  "failures": 2,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, NVIDIA:meta/llama-3.2-90b-vision-instruct",
+  "attempts": 16,
+  "successes": 11,
+  "failures": 5,
   "date": "2026-10-05",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
-    "stale_quote:AMD",
-    "stale_quote:MSFT",
-    "stale_quote:CDNS"
+    "protection_rejected:MSFT"
   ],
   "order_status": "NO ORDER",
   "order_reason": "Data/LLM validation incomplete; no new order queued."
