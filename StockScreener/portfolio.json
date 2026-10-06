@@ -27,19 +27,19 @@
       "stop_price": 595.0184,
       "target_price": 715.1684,
       "sector": "Technology",
-      "current_price": 628.1,
-      "current_value": 15702.5,
+      "current_price": 634.0,
+      "current_value": 15850.0,
       "cost_basis": 15876.71,
       "brokerage_in": 0.0,
-      "unrealized_pnl": -174.21,
-      "unrealized_pnl_pct": -1.0972676329037867,
+      "unrealized_pnl": -26.71,
+      "unrealized_pnl_pct": -0.16823384693679388,
       "hold_days": 6,
       "held_sessions": 6,
       "hold_sessions": 10,
       "high_watermark": 635.0684,
       "atr_at_entry": 26.7,
       "filled_at_open": true,
-      "quote_stale": false,
+      "quote_stale": true,
       "cost_basis_basis": "broker_confirmed_fill",
       "broker_order_id": "7b327b78-c8ad-46a0-9523-e21ea967fe55",
       "broker_partial_fill": false,
@@ -48,7 +48,8 @@
       "last_evaluated_session": "2026-10-02",
       "earnings_days_away": 32,
       "indicator_exit_note": "",
-      "mark_basis": "broker_current_price"
+      "mark_basis": "broker_current_price",
+      "update_error": "quote gap: missing/invalid exact session 2026-10-05"
     },
     {
       "source": "BOTH",
@@ -75,19 +76,19 @@
       "stop_price": 501.3029,
       "target_price": 553.9929,
       "sector": "Technology",
-      "current_price": 520.4983,
-      "current_value": 7286.98,
+      "current_price": 525.53,
+      "current_value": 7357.42,
       "cost_basis": 7264.08,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 22.9,
-      "unrealized_pnl_pct": 0.31524983205031276,
+      "unrealized_pnl": 93.34,
+      "unrealized_pnl_pct": 1.284952808889761,
       "hold_days": 2,
       "held_sessions": 2,
       "hold_sessions": 10,
       "high_watermark": 518.8629,
       "atr_at_entry": 11.71,
       "filled_at_open": true,
-      "quote_stale": false,
+      "quote_stale": true,
       "cost_basis_basis": "broker_confirmed_fill",
       "broker_order_id": "3b767c98-ae6c-4a62-80fe-5b47f2efd46e",
       "broker_partial_fill": false,
@@ -96,7 +97,8 @@
       "last_evaluated_session": "2026-10-02",
       "earnings_days_away": 26,
       "indicator_exit_note": "",
-      "mark_basis": "broker_current_price"
+      "mark_basis": "broker_current_price",
+      "update_error": "quote gap: missing/invalid exact session 2026-10-05"
     },
     {
       "source": "TECHNICAL",
@@ -123,19 +125,19 @@
       "stop_price": 339.5059,
       "target_price": 389.3659,
       "sector": "Technology",
-      "current_price": 355.5,
-      "current_value": 18130.5,
+      "current_price": 353.82,
+      "current_value": 18044.82,
       "cost_basis": 18162.42,
       "brokerage_in": 0.0,
-      "unrealized_pnl": -31.92,
-      "unrealized_pnl_pct": -0.17574750501309078,
+      "unrealized_pnl": -117.6,
+      "unrealized_pnl_pct": -0.6474908079429853,
       "hold_days": 1,
       "held_sessions": 1,
       "hold_sessions": 10,
       "high_watermark": 356.1259,
       "atr_at_entry": 11.08,
       "filled_at_open": true,
-      "quote_stale": false,
+      "quote_stale": true,
       "cost_basis_basis": "broker_confirmed_fill",
       "broker_order_id": "c1785c15-2190-41ab-b0f8-85e6348466e2",
       "broker_partial_fill": false,
@@ -144,7 +146,8 @@
       "last_evaluated_session": "2026-10-02",
       "earnings_days_away": 24,
       "indicator_exit_note": "",
-      "mark_basis": "broker_current_price"
+      "mark_basis": "broker_current_price",
+      "update_error": "quote gap: missing/invalid exact session 2026-10-05"
     }
   ],
   "closed_trades": [
@@ -649,8 +652,8 @@
     "2026-09-30",
     "2026-10-01"
   ],
-  "equity_peak": 102580.55,
-  "broker_equity": 102483.34,
+  "equity_peak": 102615.6,
+  "broker_equity": 102615.6,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -1206,6 +1209,7 @@
     "2026-09-29",
     "2026-09-30",
     "2026-10-01",
-    "2026-10-02"
+    "2026-10-02",
+    "2026-10-05"
   ]
 }
