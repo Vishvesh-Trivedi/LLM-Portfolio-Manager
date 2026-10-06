@@ -2,8 +2,8 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 9,
-      "successes": 8,
+      "attempts": 10,
+      "successes": 9,
       "failures": 1
     },
     "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
@@ -12,15 +12,15 @@
       "failures": 0
     },
     "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 3,
-      "successes": 2,
-      "failures": 1
+      "attempts": 1,
+      "successes": 1,
+      "failures": 0
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "4 applied, 0 failed; no changes"
+      "detail": "2 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -44,7 +44,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "10/13 covered; missing: TWLO, UTHR, WAB; selected sector checked by order planner"
+      "detail": "11/16 covered; missing: TT, TWLO, UTHR, WAB, WDC; selected sector checked by order planner"
     },
     "exit:AMD": {
       "success": true,
@@ -60,11 +60,11 @@
     },
     "catalyst_1": {
       "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "catalysts": {
       "success": true,
-      "detail": "13/13 verified"
+      "detail": "16/16 verified"
     },
     "catalyst_2": {
       "success": true,
@@ -83,8 +83,8 @@
       "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
-      "success": true,
-      "detail": "Optional analysis context available; not a decision contract"
+      "success": false,
+      "detail": "ValueError: no usable deep-dive context"
     },
     "final": {
       "success": true,
@@ -103,9 +103,9 @@
     "protection_stale:MSFT"
   ],
   "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free, NVIDIA:meta/llama-3.2-90b-vision-instruct",
-  "attempts": 13,
+  "attempts": 12,
   "successes": 11,
-  "failures": 2,
+  "failures": 1,
   "date": "2026-10-05",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",

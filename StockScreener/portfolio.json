@@ -27,12 +27,12 @@
       "stop_price": 595.0184,
       "target_price": 715.1684,
       "sector": "Technology",
-      "current_price": 632.55,
-      "current_value": 15813.75,
+      "current_price": 631.45,
+      "current_value": 15786.25,
       "cost_basis": 15876.71,
       "brokerage_in": 0.0,
-      "unrealized_pnl": -62.96,
-      "unrealized_pnl_pct": -0.39655570958969655,
+      "unrealized_pnl": -90.46,
+      "unrealized_pnl_pct": -0.5697653984988005,
       "hold_days": 7,
       "held_sessions": 7,
       "hold_sessions": 10,
@@ -650,7 +650,7 @@
     "2026-10-01"
   ],
   "equity_peak": 102615.6,
-  "broker_equity": 102579.77,
+  "broker_equity": 102552.27,
   "alpaca_order_ledger": [
     {
       "source": "poll",
