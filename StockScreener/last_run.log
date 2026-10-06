@@ -16,14 +16,188 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-06 11:58
+   Time:   2026-10-06 23:51
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked AMD at 641.9 (broker)
-  Broker sync: Marked MSFT at 530.2 (broker)
-  Broker sync: Marked CDNS at 356.0 (broker)
+  Broker sync: Marked AMD at 651.88 (broker)
+  Broker sync: Marked MSFT at 529.4 (broker)
+  Broker sync: Marked CDNS at 359.99 (broker)
   Broker sync: Cash set from broker: 61363.36 -> 61363.36
-  No completed trading session (before 16:15 ET); broker state reconciled only
+  Protection: AMD 25 sh  stop $609.37 / target $715.17 (replaced)
+  Protection: MSFT 14 sh  stop $511.73 / target $553.99 (replaced)
+  Protection: CDNS 51 sh  stop $342.93 / target $389.37 (replaced)
+ALPACA PAPER ACCOUNT: $103,346.11 (+3,346.11 / +3.4% vs $100,000 starting)
+Cash: $61,363.36  |  Positions: 3/5  |  Deployed: 41%  |  Idle: 59%
+Sector exposure: Technology: 41%
+Broker P&L: $+3,346.11 all-time  |  no closed trades this week
+  AMD [Technology]: 25sh @ $635.0684 → $649.4199829101562 (+359 / +2.3%) | 8d | Stop $609.37 | Target $715.1684
+  MSFT [Technology]: 14sh @ $518.8629 → $529.2999877929688 (+146 / +2.0%) | 4d | Stop $511.73 | Target $553.9929
+  CDNS [Technology]: 51sh @ $356.1259 → $359.54998779296875 (+175 / +1.0%) | 3d | Stop $342.93 | Target $389.3659
+
+Step 1/8: Updating past results + exit signals...
+
+Step 2/8: Market context...
+
+Market context...
+  VIX:  15.01 (p11.0) -> LOW (p11 risk-on) (1.1x)
+  QQQ:  $759.66 | BULLISH (+5.62% vs 50MA)
+  SPY today: +0.55%
+  10Y yield: 5.27% (-0.77%)  DXY: 101.89 (-0.27%)  Nikkei: +2.40%
+  Futures:  ES=+0.69%  NQ=+0.55%
+
+Step 3/8: Fetching all data (parallel)...
+  Alpaca: 926/926 tickers
+  Downloaded: 926/926 tickers
+  OK: NVIDIA models verified by JSON probe (2 answering chat): active = meta/llama-3.2-11b-vision-instruct
+  RSS feeds active: 13/16 | Headlines: 78
+  Fetching news for all 900 stocks (parallel)...
+  News found: 0/900 stocks have news today
+  Fetching fundamentals for all 894 stocks (parallel)...
+  Full fundamentals: 436/894 stocks
+  Sector ranks - Top 3: ['Utilities', 'Energy', 'Technology'] | Perf: Utilities:+4.4% | Energy:+3.7% | Technology:+3.2% | Industrials:+2.8% | Consumer Cyclical:+2.6%
+  Sector flows: TOP Utilities +3.0% | BOT Healthcare -0.2%
+
+Step 4/8: Bidirectional screening...
+
+Phase 2 - Technical screening (923 tickers)...
+  Passed: 11 | Rejected: Price:0 MA:679 Vol:156 RSI:4 Liq:32 ADX:15
+
+Phase 3 - News screening all 923 stocks...
+  News rescued: 0 stocks → []
+
+Phase 4 - Merging candidate pools...
+  Total candidates: 11
+    BOTH (tech+news): 0  TECHNICAL: 11  NEWS: 0
+
+Step 4.5/8: Stream B - headline ticker extraction...
+  Sector sentiment derived: 4/11 sectors from 10 stocks
+  [ADVISORY ONLY] HOLD [LOW] AMD: Recent price action supports holding the position, but no fresh news or strong catalysts are present to drive further gains. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] MSFT: Current price is near the target, suggesting a potential pause in the bull run, and no fresh news is available to justify a change in position. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: No significant market news and the stock has held its breakout pattern, but further analysis is required before making a trade decision. (no ledger changes)
+
+Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
+  Fetching options + insider data for 11 candidates...
+  Options data: 0/11 | Insider signals: 9/11
+  Congress trades: all sources unavailable (no cache)
+
+Phase 5.5 - Computing score breakdown (11 candidates)...
+  Pre-score top 5: LIN(68=51T+17N [vader:NEUTRAL])  CRL(65=48T+17N [vader:NEUTRAL])  MRVL(64=46T+18N [vader:NEUTRAL])  ILMN(59=44T+15N [vader:NEUTRAL])  TT(57=42T+15N [vader:NEUTRAL])
+
+Step 4.7/8: LLM catalyst scoring (every candidate)...
+  Catalyst scoring: 11 stocks → 2 LLM calls...
+    Batch 1/2 
+    Batch 2/2 
+  Catalyst scoring done — 0 auto-dropped, 11 remain
+
+Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
+
+Phase 5 - News intelligence (11 candidates, 3 layers)...
+  Sentiment: BULLISH | Adj: +0
+  11 candidates after news filter
+
+Phase 5.5 - Computing score breakdown (11 candidates)...
+  Pre-score top 5: LIN(72=51T+21N [vader:NEUTRAL])  CRL(69=48T+21N [vader:NEUTRAL])  MRVL(68=46T+22N [vader:NEUTRAL])  ILMN(63=44T+19N [vader:NEUTRAL])  TT(61=42T+19N [vader:NEUTRAL])
+
+Step 5.5/8: Applying LLM config criteria...
+  11 candidates after config criteria
+  Self-calibration: 17 prior picks, 47% win rate
+
+Step 6/8: LLM final scoring...
+
+Phase 6 - NVIDIA final scoring (11 candidates)...
+  Round 1/3: Ranking 11 candidates...
+  Round 1 → Top 10: ['FTNT', 'KEYS', 'HUM', 'TT', 'MRVL', 'LIN', 'CRL', 'ILMN', 'RVTY', 'TMO']
+  Round 2/3: Deep-diving top 10...
+  Round 2 → analyses for ['LIN', 'CRL', 'MRVL', 'ILMN', 'TT', 'FTNT', 'HUM', 'KEYS', 'RVTY', 'TMO']
+  Round 3/3: Final deliberation...
+  final: NVIDIA parser/validator rejected response: JSONDecodeError: Expecting ':' delimiter: line 3 column 239 (char 259)
+  OpenRouter fallback failed [nvidia/nemotron-3-super-120b-a12b:free]: ValueError: empty LLM response
+  OpenRouter fallback failed [z-ai/glm-5.2:free]: HTTPError (HTTP 404)
+  OpenRouter paused for 120s after repeated failures
+  OpenRouter fallback failed [minimax/minimax-m3:free]: HTTPError (HTTP 404)
+  final: OpenRouter provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via NVIDIA-retry.
+  Final pick: MRVL | pre=68 → 85/100 | BUY | 11 LLM calls this run
+
+┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
+│ 1. Rule (n=10, wr=80%, HIGH confidence): Stocks with a tech score above 45 and a recent breakout above their 50-day moving average have a 80% win rate in the current regime.
+│ 2. Rule (n=5, wr=60%, HIGH confidence): Stocks with a momentum score above 5 and a short ratio below 3 have a 60% win rate in the current regime.
+│ → History taught me to prioritize stocks with strong technicals and recent momentum in the current regime.
+└──────────────────────────────────────────────────────────────
+  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
+  Entry estimate: close=$287.2 + 0.3% slippage = $288.06 (stop/target anchored here)
+
+█████████████████████████████████████████████████████████████████
+  TODAY'S PICK  —  Tuesday, Oct 06 2026
+█████████████████████████████████████████████████████████████████
+  Market:  VIX 15.0 (LOW (p11 risk-on))  |  QQQ BULLISH  |  SPY +0.53%
+  Macro:   The S&P 500 and Nasdaq 100 have reached record highs, driven by strong quarterly
+─────────────────────────────────────────────────────────────────
+  BUY  MRVL  [TECHNICAL]
+  Sector:     Technology
+  Confidence: 85/100  █████████████████░░░
+  Entry:  ~$288.06   Stop: ~$268.08   Target: ~$328.02   R:R 1:2
+  Score:  
+─────────────────────────────────────────────────────────────────
+  Why:      MRVL has a strong technical setup, including a recent breakout above its 50-day moving average and a relative strength index (RSI) of 69.9. The stock has a momentum score of 8.74 and a short-term reason of 'Recent strong momentum.'
+  Key Risk: The stock's high short ratio and short percentage float could lead to a short squeeze.
+  Bear case: A bear case for MRVL could be a decline in the company's earnings, which could negatively impact the stock's price. Additionally, the stock's high short ratio of 1.3 and short percentage float of 4.2 could lead to a short squeeze, which could negatively impact the stock's price.
+
+  WATCH LIST:
+    HUM     74/100  [Healthcare]  HUM has a strong technical setup, including a recent breakout above it
+█████████████████████████████████████████████████████████████████
+  Session left open: the order was rejected, so nothing was decided and a later run may retry.
+  Broker: in sync (3 position(s))
+
+Step 8/8: Saving results...
+  OK: Saved MRVL | Stop:268.08 Target:328.02
+  OK: Saved HUM | Stop:385.08 Target:442.72
+Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+
+────────────────────────────────────────────────────────────
+  CONFIRMED PICKS: 5/10 wins (50.0%) | avg 10d +2.5% | 9 pending
+  WATCH LIST: 9/15 wins (60.0%) | avg 10d +0.4% | 23 pending
+  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+────────────────────────────────────────────────────────────
+  run-digest (1263 chars):
+ALPACA - Oct 06 2026
+Live paper account.
+
+WHAT HAPPENED TODAY
+- AMD protected: sells at $609.37 or $715.17
+- MSFT protected: sells at $511.73 or $553.99
+- CDNS protected: sells at $342.93 or $389.37
+
+WHAT YOU HOLD (3)
+- CDNS: up $175 (+1.0%)  |  51 shares, $356.13 -> $359.55
+  sells at $342.93 or $389.37  |  day 3 of 10
+- MSFT: up $146 (+2.0%)  |  14 shares, $518.86 -> $529.30
+  sells at $511.73 or $553.99  |  day 4 of 10
+- AMD: up $359 (+2.3%)  |  25 shares, $635.07 -> $649.42
+  sells at $609.37 or $715.17  |  day 8 of 10
+
+MONEY
+- Cash $61,363  |  In shares $41,983
+- Total $103,431 (up $3,431, +3.4% since start)
+- NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
+- 41% of everything is in one industry (Technology) - a bad week there hits the whole account
+
+SINCE TRADING ON ALPACA
+- 4 trades finished: 1 made money, 0 lost money, 3 broke even
+- Win rate 100% (1 of 1 that moved) - far too small a sample to mean anything
+- Won $1,793 across 1 trade (average +7.1%)
+- Banked $1,793 profit
+- Too few trades to tell whether this works yet
+
+NEXT ORDER
+- Nothing. It wanted MRVL, but the order was not placed
+- Why: the amount set aside was too small to buy even one share safely
+
+STATUS
+- Checks: healthy
+
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1557179724592316438
+  WhatsApp run-digest: sent
