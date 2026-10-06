@@ -16,14 +16,14 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-06 06:55
+   Time:   2026-10-06 07:32
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked AMD at 634.38 (broker)
-  Broker sync: Marked MSFT at 526.6 (broker)
+  Broker sync: Marked AMD at 632.91 (broker)
+  Broker sync: Marked MSFT at 526.32 (broker)
   Broker sync: Cash set from broker: 61363.36 -> 61363.36
   run-digest (1131 chars):
 ALPACA - Oct 06 2026
@@ -35,14 +35,14 @@ WHAT HAPPENED TODAY
 WHAT YOU HOLD (3)
 - CDNS: down $118 (-0.6%)  |  51 shares, $356.13 -> $353.82
   sells at $339.51 or $389.37  |  day 2 of 10
-- AMD: down $17 (-0.1%)  |  25 shares, $635.07 -> $634.38
+- AMD: down $54 (-0.3%)  |  25 shares, $635.07 -> $632.91
   sells at $595.02 or $715.17  |  day 7 of 10
-- MSFT: up $108 (+1.5%)  |  14 shares, $518.86 -> $526.60
+- MSFT: up $104 (+1.4%)  |  14 shares, $518.86 -> $526.32
   sells at $507.61 or $553.99  |  day 3 of 10
 
 MONEY
-- Cash $61,363  |  In shares $41,277
-- Total $102,640 (up $2,640, +2.6% since start)
+- Cash $61,363  |  In shares $41,236
+- Total $102,599 (up $2,599, +2.6% since start)
 - NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 - 40% of everything is in one industry (Technology) - a bad week there hits the whole account
 
@@ -60,7 +60,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1556922895735984159
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1556932066661240884
   WhatsApp run-digest: sent
   No completed trading session (before 16:15 ET); broker state reconciled only
 ::warning title=Run completed with degradations::protection_stale:MSFT
