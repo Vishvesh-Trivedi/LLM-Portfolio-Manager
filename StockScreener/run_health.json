@@ -2,24 +2,14 @@
   "status": "healthy",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 11,
-      "successes": 11,
+      "attempts": 10,
+      "successes": 10,
       "failures": 0
     },
     "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
       "attempts": 1,
-      "successes": 0,
-      "failures": 1
-    },
-    "OpenRouter:z-ai/glm-5.2:free": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
-    },
-    "OpenRouter:minimax/minimax-m3:free": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
+      "successes": 1,
+      "failures": 0
     }
   },
   "stages": {
@@ -37,7 +27,7 @@
     },
     "protection": {
       "success": true,
-      "detail": "0 placed, 3 moved, 0 without levels"
+      "detail": "0 placed, 0 moved, 0 without levels"
     },
     "market_context": {
       "success": true,
@@ -77,7 +67,7 @@
     },
     "news": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "round1": {
       "success": true,
@@ -89,7 +79,7 @@
     },
     "final": {
       "success": true,
-      "detail": "NVIDIA-retry: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "broker": {
       "success": true,
@@ -101,10 +91,10 @@
     }
   },
   "degraded_reasons": [],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
-  "attempts": 14,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
+  "attempts": 11,
   "successes": 11,
-  "failures": 3,
+  "failures": 0,
   "date": "2026-10-06",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",

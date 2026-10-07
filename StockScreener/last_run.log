@@ -16,26 +16,23 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-06 23:51
+   Time:   2026-10-07 00:50
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked AMD at 651.88 (broker)
-  Broker sync: Marked MSFT at 529.4 (broker)
+  Broker sync: Marked AMD at 653.9 (broker)
+  Broker sync: Marked MSFT at 529.79 (broker)
   Broker sync: Marked CDNS at 359.99 (broker)
   Broker sync: Cash set from broker: 61363.36 -> 61363.36
-  Protection: AMD 25 sh  stop $609.37 / target $715.17 (replaced)
-  Protection: MSFT 14 sh  stop $511.73 / target $553.99 (replaced)
-  Protection: CDNS 51 sh  stop $342.93 / target $389.37 (replaced)
-ALPACA PAPER ACCOUNT: $103,346.11 (+3,346.11 / +3.4% vs $100,000 starting)
+ALPACA PAPER ACCOUNT: $103,487.41 (+3,487.41 / +3.5% vs $100,000 starting)
 Cash: $61,363.36  |  Positions: 3/5  |  Deployed: 41%  |  Idle: 59%
 Sector exposure: Technology: 41%
-Broker P&L: $+3,346.11 all-time  |  no closed trades this week
-  AMD [Technology]: 25sh @ $635.0684 → $649.4199829101562 (+359 / +2.3%) | 8d | Stop $609.37 | Target $715.1684
-  MSFT [Technology]: 14sh @ $518.8629 → $529.2999877929688 (+146 / +2.0%) | 4d | Stop $511.73 | Target $553.9929
-  CDNS [Technology]: 51sh @ $356.1259 → $359.54998779296875 (+175 / +1.0%) | 3d | Stop $342.93 | Target $389.3659
+Broker P&L: $+3,487.41 all-time  |  no closed trades this week
+  AMD [Technology]: 25sh @ $635.0684 → $653.9 (+471 / +3.0%) | 8d | Stop $609.37 | Target $715.1684
+  MSFT [Technology]: 14sh @ $518.8629 → $529.79 (+153 / +2.1%) | 4d | Stop $511.73 | Target $553.9929
+  CDNS [Technology]: 51sh @ $356.1259 → $359.99 (+197 / +1.1%) | 3d | Stop $342.93 | Target $389.3659
 
 Step 1/8: Updating past results + exit signals...
 
@@ -45,8 +42,8 @@ Market context...
   VIX:  15.01 (p11.0) -> LOW (p11 risk-on) (1.1x)
   QQQ:  $759.66 | BULLISH (+5.62% vs 50MA)
   SPY today: +0.55%
-  10Y yield: 5.27% (-0.77%)  DXY: 101.89 (-0.27%)  Nikkei: +2.40%
-  Futures:  ES=+0.69%  NQ=+0.55%
+  10Y yield: 5.27% (-0.77%)  DXY: 101.94 (-0.23%)  Nikkei: +0.03%
+  Futures:  ES=+0.73%  NQ=+0.61%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
@@ -56,7 +53,7 @@ Step 3/8: Fetching all data (parallel)...
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 894 stocks (parallel)...
-  Full fundamentals: 436/894 stocks
+  Full fundamentals: 442/894 stocks
   Sector ranks - Top 3: ['Utilities', 'Energy', 'Technology'] | Perf: Utilities:+4.4% | Energy:+3.7% | Technology:+3.2% | Industrials:+2.8% | Consumer Cyclical:+2.6%
   Sector flows: TOP Utilities +3.0% | BOT Healthcare -0.2%
 
@@ -74,9 +71,9 @@ Phase 4 - Merging candidate pools...
 
 Step 4.5/8: Stream B - headline ticker extraction...
   Sector sentiment derived: 4/11 sectors from 10 stocks
-  [ADVISORY ONLY] HOLD [LOW] AMD: Recent price action supports holding the position, but no fresh news or strong catalysts are present to drive further gains. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] MSFT: Current price is near the target, suggesting a potential pause in the bull run, and no fresh news is available to justify a change in position. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] CDNS: No significant market news and the stock has held its breakout pattern, but further analysis is required before making a trade decision. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] AMD: The stock's recent price movement is within expected range and no fresh news is available, indicating no immediate action is required. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] MSFT: No fresh news and price has moved within expected range, holding current position. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: The position has gained 1.085042631984079% and the market is stable with no fresh news, maintaining the current HOLD position. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
   Fetching options + insider data for 11 candidates...
@@ -90,51 +87,46 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
   Catalyst scoring: 11 stocks → 2 LLM calls...
     Batch 1/2 
     Batch 2/2 
-  Catalyst scoring done — 0 auto-dropped, 11 remain
+  Catalyst scoring done — 4 auto-dropped, 7 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (11 candidates, 3 layers)...
-  Sentiment: BULLISH | Adj: +0
-  11 candidates after news filter
+Phase 5 - News intelligence (7 candidates, 3 layers)...
+  news: NVIDIA parser/validator rejected response: ValueError: market_sentiment has an invalid value
+  ↩️  Critical LLM call recovered via OpenRouter.
+  Sentiment: NEUTRAL | Adj: +0
+  7 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (11 candidates)...
-  Pre-score top 5: LIN(72=51T+21N [vader:NEUTRAL])  CRL(69=48T+21N [vader:NEUTRAL])  MRVL(68=46T+22N [vader:NEUTRAL])  ILMN(63=44T+19N [vader:NEUTRAL])  TT(61=42T+19N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (7 candidates)...
+  Pre-score top 5: LIN(68=51T+17N [vader:NEUTRAL])  CRL(65=48T+17N [vader:NEUTRAL])  MRVL(64=46T+18N [vader:NEUTRAL])  TT(57=42T+15N [vader:NEUTRAL])  FTNT(56=41T+15N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  11 candidates after config criteria
+  7 candidates after config criteria
   Self-calibration: 17 prior picks, 47% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (11 candidates)...
-  Round 1/3: Ranking 11 candidates...
-  Round 1 → Top 10: ['FTNT', 'KEYS', 'HUM', 'TT', 'MRVL', 'LIN', 'CRL', 'ILMN', 'RVTY', 'TMO']
+Phase 6 - NVIDIA final scoring (7 candidates)...
+  Round 1/3: Ranking 7 candidates...
+  Round 1 → Top 10: ['LIN', 'MRVL', 'KEYS', 'FTNT', 'HUM', 'TT', 'CRL', 'LIN', 'KEYS', 'HUM']
   Round 2/3: Deep-diving top 10...
-  Round 2 → analyses for ['LIN', 'CRL', 'MRVL', 'ILMN', 'TT', 'FTNT', 'HUM', 'KEYS', 'RVTY', 'TMO']
+  Round 2 → analyses for ['LIN', 'MRVL', 'TT', 'FTNT', 'HUM', 'KEYS']
   Round 3/3: Final deliberation...
-  final: NVIDIA parser/validator rejected response: JSONDecodeError: Expecting ':' delimiter: line 3 column 239 (char 259)
-  OpenRouter fallback failed [nvidia/nemotron-3-super-120b-a12b:free]: ValueError: empty LLM response
-  OpenRouter fallback failed [z-ai/glm-5.2:free]: HTTPError (HTTP 404)
-  OpenRouter paused for 120s after repeated failures
-  OpenRouter fallback failed [minimax/minimax-m3:free]: HTTPError (HTTP 404)
-  final: OpenRouter provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via NVIDIA-retry.
-  Final pick: MRVL | pre=68 → 85/100 | BUY | 11 LLM calls this run
+  Final pick: MRVL | pre=64 → 85/100 | BUY | 10 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=10, wr=80%, HIGH confidence): Stocks with a tech score above 45 and a recent breakout above their 50-day moving average have a 80% win rate in the current regime.
-│ 2. Rule (n=5, wr=60%, HIGH confidence): Stocks with a momentum score above 5 and a short ratio below 3 have a 60% win rate in the current regime.
-│ → History taught me to prioritize stocks with strong technicals and recent momentum in the current regime.
+│ 1. Rule (n=10, wr=80%, HIGH confidence): Regime matches TODAY'S REGIME and sector is Technology.
+│ 2. Rule (n=5, wr=60%, MEDIUM confidence): Catalyst quality is high for tickers with earnings > 21 days away.
+│ → History taught that regime matches and catalyst quality are key factors in determining the success of 1-4 week trades.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
   Entry estimate: close=$287.2 + 0.3% slippage = $288.06 (stop/target anchored here)
 
 █████████████████████████████████████████████████████████████████
-  TODAY'S PICK  —  Tuesday, Oct 06 2026
+  TODAY'S PICK  —  Wednesday, Oct 07 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 15.0 (LOW (p11 risk-on))  |  QQQ BULLISH  |  SPY +0.53%
-  Macro:   The S&P 500 and Nasdaq 100 have reached record highs, driven by strong quarterly
+  Macro:   U.S. equity indices reached new record highs as technology and industrial stocks
 ─────────────────────────────────────────────────────────────────
   BUY  MRVL  [TECHNICAL]
   Sector:     Technology
@@ -142,46 +134,44 @@ Phase 6 - NVIDIA final scoring (11 candidates)...
   Entry:  ~$288.06   Stop: ~$268.08   Target: ~$328.02   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      MRVL has a strong technical setup, including a recent breakout above its 50-day moving average and a relative strength index (RSI) of 69.9. The stock has a momentum score of 8.74 and a short-term reason of 'Recent strong momentum.'
-  Key Risk: The stock's high short ratio and short percentage float could lead to a short squeeze.
-  Bear case: A bear case for MRVL could be a decline in the company's earnings, which could negatively impact the stock's price. Additionally, the stock's high short ratio of 1.3 and short percentage float of 4.2 could lead to a short squeeze, which could negatively impact the stock's price.
+  Why:      MRVL's strong 8.7% 5-day momentum and potential breakout could continue due to its strong fundamentals, including 36.5% revenue growth and 50.0% earnings growth. Additionally, the company's insider buying activity suggests confidence in the company's prospects.
+  Key Risk: The risk of a short squeeze is higher than usual due to the high short interest ratio.
+  Bear case: MRVL's high short interest ratio of 1.3 and 4.2% short float could lead to a short squeeze if the stock continues to rise. Additionally, the company's 55 days away from earnings could lead to volatility if earnings are not met.
 
   WATCH LIST:
-    HUM     74/100  [Healthcare]  HUM has a strong technical setup, including a recent breakout above it
+    LIN     74/100  [Basic Materials]  LIN's recent price increase with a 3.2% 5-day momentum could continue 
 █████████████████████████████████████████████████████████████████
   Session left open: the order was rejected, so nothing was decided and a later run may retry.
   Broker: in sync (3 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved MRVL | Stop:268.08 Target:328.02
-  OK: Saved HUM | Stop:385.08 Target:442.72
+  Already have MRVL on 2026-10-06 - skipping
+  OK: Saved LIN | Stop:478.01 Target:513.97
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 5/10 wins (50.0%) | avg 10d +2.5% | 9 pending
-  WATCH LIST: 9/15 wins (60.0%) | avg 10d +0.4% | 23 pending
+  WATCH LIST: 9/15 wins (60.0%) | avg 10d +0.4% | 24 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1263 chars):
+  run-digest (1155 chars):
 ALPACA - Oct 06 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- AMD protected: sells at $609.37 or $715.17
-- MSFT protected: sells at $511.73 or $553.99
-- CDNS protected: sells at $342.93 or $389.37
+- Nothing was bought or sold
 
 WHAT YOU HOLD (3)
-- CDNS: up $175 (+1.0%)  |  51 shares, $356.13 -> $359.55
+- CDNS: up $197 (+1.1%)  |  51 shares, $356.13 -> $359.99
   sells at $342.93 or $389.37  |  day 3 of 10
-- MSFT: up $146 (+2.0%)  |  14 shares, $518.86 -> $529.30
+- MSFT: up $153 (+2.1%)  |  14 shares, $518.86 -> $529.79
   sells at $511.73 or $553.99  |  day 4 of 10
-- AMD: up $359 (+2.3%)  |  25 shares, $635.07 -> $649.42
+- AMD: up $471 (+3.0%)  |  25 shares, $635.07 -> $653.90
   sells at $609.37 or $715.17  |  day 8 of 10
 
 MONEY
-- Cash $61,363  |  In shares $41,983
-- Total $103,431 (up $3,431, +3.4% since start)
+- Cash $61,363  |  In shares $42,124
+- Total $103,487 (up $3,487, +3.5% since start)
 - NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 - 41% of everything is in one industry (Technology) - a bad week there hits the whole account
 
@@ -199,5 +189,5 @@ NEXT ORDER
 STATUS
 - Checks: healthy
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1557179724592316438
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1557194201731432499
   WhatsApp run-digest: sent
