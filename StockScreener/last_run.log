@@ -16,27 +16,25 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-08 02:16
+   Time:   2026-10-08 02:38
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked AMD at 648.84 (broker)
-  Broker sync: Marked MSFT at 529.58 (broker)
+  Broker sync: Marked AMD at 650.25 (broker)
+  Broker sync: Marked MSFT at 529.74 (broker)
+  Broker sync: Marked CDNS at 355.3 (broker)
+  Broker sync: Marked LIN at 484.63 (broker)
   Broker sync: Cash set from broker: 46214.92 -> 46214.92
-  Protection: the old MSFT order has not cleared yet; replacing anyway
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"14","held_for_orders":"14","message":"insufficient qty available for order (requested: 14, available: 0)","related_orders":["df69408f-520d-4e67-95cc-13
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"14","held_for_orders":"14","message":"insufficient qty available for order (requested: 14, available: 0)","related_orders":["df69408f-520d-4e67-95cc-13
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"14","held_for_orders":"14","message":"insufficient qty available for order (requested: 14, available: 0)","related_orders":["df69408f-520d-4e67-95cc-13
-ALPACA PAPER ACCOUNT: $102,943.56 (+2,943.56 / +2.9% vs $100,000 starting)
+ALPACA PAPER ACCOUNT: $103,031.36 (+3,031.36 / +3.0% vs $100,000 starting)
 Cash: $46,214.92  |  Positions: 4/5  |  Deployed: 55%  |  Idle: 45%
 Sector exposure: Technology: 41%  Basic Materials: 15%
-Broker P&L: $+2,943.56 all-time  |  no closed trades this week
-  AMD [Technology]: 25sh @ $635.0684 → $645.8599853515625 (+270 / +1.7%) | 9d | Stop $609.37 | Target $715.1684
-  MSFT [Technology]: 14sh @ $518.8629 → $529.760009765625 (+153 / +2.1%) | 5d | Stop $512.2 | Target $553.9929
-  CDNS [Technology]: 51sh @ $356.1259 → $356.1199951171875 (-0 / -0.0%) | 4d | Stop $342.93 | Target $389.3659
-  LIN [Basic Materials]: 31sh @ $488.6594 → $483.9800109863281 (-145 / -1.0%) | 1d | Stop $476.6794 | Target $512.6294
+Broker P&L: $+3,031.36 all-time  |  no closed trades this week
+  AMD [Technology]: 25sh @ $635.0684 → $650.25 (+380 / +2.4%) | 9d | Stop $609.37 | Target $715.1684
+  MSFT [Technology]: 14sh @ $518.8629 → $529.74 (+152 / +2.1%) | 5d | Stop $512.2 | Target $553.9929
+  CDNS [Technology]: 51sh @ $356.1259 → $355.3 (-42 / -0.2%) | 4d | Stop $342.93 | Target $389.3659
+  LIN [Basic Materials]: 31sh @ $488.6594 → $484.63 (-125 / -0.8%) | 1d | Stop $476.6794 | Target $512.6294
 
 Step 1/8: Updating past results + exit signals...
 
@@ -46,7 +44,7 @@ Market context...
   VIX:  15.08 (p11.8) -> LOW (p12 risk-on) (1.1x)
   QQQ:  $757.73 | BULLISH (+5.11% vs 50MA)
   SPY today: -0.24%
-  10Y yield: 5.28% (+0.21%)  DXY: 102.15 (+0.31%)  Nikkei: -0.89%
+  10Y yield: 5.28% (+0.21%)  DXY: 102.17 (+0.33%)  Nikkei: -0.84%
   Futures:  ES=-0.23%  NQ=-0.13%
 
 Step 3/8: Fetching all data (parallel)...
@@ -57,7 +55,7 @@ Step 3/8: Fetching all data (parallel)...
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 894 stocks (parallel)...
-  Full fundamentals: 438/894 stocks
+  Full fundamentals: 455/894 stocks
   Sector ranks - Top 3: ['Utilities', 'Consumer Cyclical', 'Technology'] | Perf: Utilities:+3.8% | Consumer Cyclical:+2.4% | Technology:+1.8% | Consumer Defensive:+1.7% | Healthcare:+1.6%
   Sector flows: TOP Healthcare +1.0% | BOT Industrials -2.2%
 
@@ -74,44 +72,45 @@ Phase 4 - Merging candidate pools...
     BOTH (tech+news): 0  TECHNICAL: 10  NEWS: 0
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'AMD', 'NVDA', 'MRVL']
+  Stream B: Processing headline mentions: ['AAPL', 'AMD', 'NVDA', 'MRVL', 'GOOGL', 'BMY', 'SCHW', 'MRVL']
   Stream B added: AAPL | $336.58 | RSI 57.6
-  Stream B added: GOOGL | $350.53 | RSI 55.8
   Stream B added: AMD | $645.9 | RSI 70.8
   Stream B added: NVDA | $237.4 | RSI 64.3
   Stream B added: MRVL | $284.72 | RSI 68.1
-  Sector sentiment derived: 5/11 sectors from 12 stocks
-  [ADVISORY ONLY] HOLD [LOW] AMD: The stock is experiencing a minor pullback, but technicals and news remain supportive, warranting a hold position. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] MSFT: Price has reached a new high, but with no fresh news, there is no clear indication of a strong trend reversal, so holding is the safest option. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] CDNS: Current price is near the entry price and the breakout pattern is still intact, no strong reason to exit or add. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] LIN: LIN's current price movement is in line with the original thesis, but the recent price increase is not strong enough to warrant an exit or addition, so holding is the most appropriate action for now. (no ledger changes)
+  Stream B added: GOOGL | $350.53 | RSI 55.8
+  Stream B added: BMY | $59.69 | RSI 35.4
+  Stream B added: SCHW | $95.57 | RSI 30.3
+  Stream B added: MRVL | $284.72 | RSI 68.1
+  Sector sentiment derived: 6/11 sectors from 14 stocks
+  [ADVISORY ONLY] HOLD [LOW] AMD: Recent price action and technicals justify holding current position, but no fresh catalysts are present, and VIX is moderately elevated. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] MSFT: The stock is holding above the stop price and has not reached its target, with no fresh news and a bullish QQQ market indicator. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: Breakout pattern and recent price action show no signs of immediate reversal, but high VIX and QQQ's bullish trend warrant caution. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] LIN: Price is currently within the original thesis range and the momentum indicator is still strong, but the price has not yet reached the target, so holding is recommended to wait for further confirmation. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 13 candidates...
-  Options data: 0/13 | Insider signals: 9/13
+  Fetching options + insider data for 15 candidates...
+  Options data: 14/15 | Insider signals: 0/15
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (13 candidates)...
-  Pre-score top 5: HPE(61=44T+17N [vader:NEUTRAL])  TT(59=44T+15N [vader:NEUTRAL])  NVDA(58=40T+18N [vader:NEUTRAL])  A(57=42T+15N [vader:NEUTRAL])  PSX(55=39T+16N [vader:NEUTRAL])
-  SEC EDGAR 8-K: 2/13 candidates have recent filings
+Phase 5.5 - Computing score breakdown (15 candidates)...
+  Pre-score top 5: HPE(61=44T+17N [vader:NEUTRAL])  A(59=42T+17N [vader:NEUTRAL])  TT(59=44T+15N [vader:NEUTRAL])  NVDA(57=40T+17N [vader:NEUTRAL])  ON(55=40T+15N [vader:NEUTRAL])
+  SEC EDGAR 8-K: 2/15 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
-  Catalyst scoring: 13 stocks → 3 LLM calls...
+  Catalyst scoring: 15 stocks → 3 LLM calls...
     Batch 1/3 
     Batch 2/3 
     Batch 3/3 
-  Catalyst scoring done — 1 auto-dropped, 12 remain
+  Catalyst scoring done — 3 auto-dropped, 12 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
 Phase 5 - News intelligence (12 candidates, 3 layers)...
-  news: NVIDIA parser/validator rejected response: ValueError: unknown ticker: X
-  ↩️  Critical LLM call recovered via OpenRouter.
-  Sentiment: BULLISH | Adj: +9
+  Sentiment: BEARISH | Adj: -1
   12 candidates after news filter
 
 Phase 5.5 - Computing score breakdown (12 candidates)...
-  Pre-score top 5: HPE(65=44T+21N [vader:NEUTRAL])  TT(63=44T+19N [vader:NEUTRAL])  NVDA(62=40T+22N [vader:NEUTRAL])  A(61=42T+19N [vader:NEUTRAL])  GOOGL(59=37T+22N [vader:NEUTRAL])
+  Pre-score top 5: A(56=42T+14N [vader:NEUTRAL])  TT(56=44T+12N [vader:NEUTRAL])  NVDA(54=40T+14N [vader:NEUTRAL])  GOOGL(52=37T+15N [vader:NEUTRAL])  ON(52=40T+12N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
   12 candidates after config criteria
@@ -121,16 +120,18 @@ Step 6/8: LLM final scoring...
 
 Phase 6 - NVIDIA final scoring (12 candidates)...
   Round 1/3: Ranking 12 candidates...
-  Round 1 → Top 10: ['HPE', 'ON', 'MRVL', 'AAPL', 'CRWD', 'GOOGL', 'PSX', 'HUM', 'ILMN', 'TT']
+  Round 1 → Top 10: ['A', 'ON', 'HUM', 'MRVL', 'PSX', 'ILMN', 'AAPL', 'CRWD', 'TT', 'GOOGL']
   Round 2/3: Deep-diving top 10...
-  Round 2 → analyses for ['HPE', 'GOOGL', 'PSX', 'HUM', 'ILMN', 'ON', 'MRVL', 'AAPL', 'CRWD']
+  LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
+  -> NVIDIA throttled; answered via OpenRouter.
+  Round 2 failed (ValueError: no usable deep-dive context)
   Round 3/3: Final deliberation...
-  Final pick: HPE | pre=65 → 85/100 | BUY | 12 LLM calls this run
+  Final pick: NVDA | pre=54 → 84/100 | BUY | 12 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=10, wr=80%, HIGH confidence): candidates with strong short-term momentum (ADXTrend>20) and moderate ADX (ADX<30) have a 80% win rate with an average magnitude of +10%.
-│ 2. Rule (n=5, wr=60%, MEDIUM confidence): candidates with high short interest (short_ratio>3) and recent price increase (momentum_5d>0) have a 60% win rate with an average magnitude of +8%.
-│ → History taught that regime-specific rules are more effective, and candidates with strong short-term momentum and moderate ADX have a higher win rate in the MID_VIX_BULL regime.
+│ 1. Rule (n=7, wr=57%, HIGH confidence): Technology sector picks tend to perform well in MID_VIX_BULL regimes, with a focus on momentum and breakout setups.
+│ → History taught me that in MID_VIX_BULL regimes, Technology sector picks with strong momentum and breakout setups tend to outperform, especially when earnings risk is low.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
 
@@ -138,26 +139,26 @@ Phase 6 - NVIDIA final scoring (12 candidates)...
   TODAY'S PICK  —  Thursday, Oct 08 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 15.1 (LOW (p12 risk-on))  |  QQQ BULLISH  |  SPY -0.25%
-  Macro:   U.S. equity futures were steady as the market pulled back from recent records wh
+  Macro:   U.S. stock futures steady after Wall St retreats from records; yields climb, cau
 ─────────────────────────────────────────────────────────────────
   NO PICK TODAY
   Data/LLM validation incomplete; no new order queued.
 
   WATCH LIST:
-    GOOGL   74/100  [Communication Services]  GOOGL is likely to see a short-term breakout above $350 due to its pot
+    MRVL    74/100  [Technology]  Marvell Technology is a potential buy candidate due to its strong mome
 █████████████████████████████████████████████████████████████████
   Broker: in sync (4 position(s))
 
 Step 8/8: Saving results...
-  Already have GOOGL on 2026-10-07 - skipping
+  OK: Saved MRVL | Stop:265.54 Target:323.09
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 6/11 wins (54.5%) | avg 10d +2.8% | 9 pending
-  WATCH LIST: 12/19 wins (63.2%) | avg 10d +0.4% | 23 pending
+  WATCH LIST: 12/19 wins (63.2%) | avg 10d +0.4% | 24 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1325 chars):
+  run-digest (1302 chars):
 ALPACA - Oct 07 2026
 Live paper account.
 
@@ -165,19 +166,19 @@ WHAT HAPPENED TODAY
 - Nothing was bought or sold
 
 WHAT YOU HOLD (4)
-- LIN: down $145 (-1.0%)  |  31 shares, $488.66 -> $483.98
+- LIN: down $125 (-0.8%)  |  31 shares, $488.66 -> $484.63
   sells at $476.68 or $512.63  |  day 1 of 10
   Close to its sell price - watch this one
-- CDNS: down $0 (-0.0%)  |  51 shares, $356.13 -> $356.12
+- CDNS: down $42 (-0.2%)  |  51 shares, $356.13 -> $355.30
   sells at $342.93 or $389.37  |  day 4 of 10
-- AMD: up $270 (+1.7%)  |  25 shares, $635.07 -> $645.86
-  sells at $609.37 or $715.17  |  day 9 of 10
-- MSFT: up $153 (+2.1%)  |  14 shares, $518.86 -> $529.76
+- MSFT: up $152 (+2.1%)  |  14 shares, $518.86 -> $529.74
   sells at $512.20 or $553.99  |  day 5 of 10
+- AMD: up $380 (+2.4%)  |  25 shares, $635.07 -> $650.25
+  sells at $609.37 or $715.17  |  day 9 of 10
 
 MONEY
-- Cash $46,215  |  In shares $56,729
-- Total $102,979 (up $2,979, +3.0% since start)
+- Cash $46,215  |  In shares $56,816
+- Total $103,031 (up $3,031, +3.0% since start)
 - NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 - 41% of everything is in one industry (Technology) - a bad week there hits the whole account
 
@@ -190,14 +191,14 @@ SINCE TRADING ON ALPACA
 
 NEXT ORDER
 - Nothing ordered, because:
-  a stop order was refused by Alpaca, so no new risk was added until that is sorted
+  an old stop could not be cancelled, so no new risk was added
 
 STATUS
 - Checks: degraded
-- Blocked: protection_rejected:MSFT
+- Blocked: protection_stale:MSFT
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1557578548015796225
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1557584628494377072
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::protection_rejected:MSFT
+::warning title=Run completed with degradations::protection_stale:MSFT | stages: round2
 
-  Completed with degradations (not a failure): protection_rejected:MSFT
+  Completed with degradations (not a failure): protection_stale:MSFT | stages: round2
