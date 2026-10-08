@@ -16,15 +16,14 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-08 06:43
+   Time:   2026-10-08 07:21
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 902 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked AMD at 641.6 (broker)
-  Broker sync: Marked MSFT at 528.43 (broker)
-  Broker sync: Marked LIN at 483.42 (broker)
+  Broker sync: Marked AMD at 639.13 (broker)
+  Broker sync: Marked MSFT at 529.08 (broker)
   Broker sync: Cash set from broker: 46214.92 -> 46214.92
   run-digest (1277 chars):
 ALPACA - Oct 08 2026
@@ -39,14 +38,14 @@ WHAT YOU HOLD (4)
   Close to its sell price - watch this one
 - CDNS: down $42 (-0.2%)  |  51 shares, $356.13 -> $355.30
   sells at $342.93 or $389.37  |  day 4 of 10
-- AMD: up $163 (+1.0%)  |  25 shares, $635.07 -> $641.60
+- AMD: up $102 (+0.6%)  |  25 shares, $635.07 -> $639.13
   sells at $609.37 or $715.17  |  day 9 of 10
-- MSFT: up $134 (+1.8%)  |  14 shares, $518.86 -> $528.43
+- MSFT: up $143 (+2.0%)  |  14 shares, $518.86 -> $529.08
   sells at $512.20 or $553.99  |  day 5 of 10
 
 MONEY
-- Cash $46,215  |  In shares $56,544
-- Total $102,759 (up $2,759, +2.8% since start)
+- Cash $46,215  |  In shares $56,492
+- Total $102,707 (up $2,707, +2.7% since start)
 - NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 - 40% of everything is in one industry (Technology) - a bad week there hits the whole account
 
@@ -64,7 +63,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1557644516373176341
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1557654041553534976
   WhatsApp run-digest: sent
   No completed trading session (before 16:15 ET); broker state reconciled only
 ::warning title=Run completed with degradations::protection_stale:MSFT
