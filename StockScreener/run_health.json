@@ -5,17 +5,12 @@
       "attempts": 8,
       "successes": 8,
       "failures": 0
-    },
-    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
-      "attempts": 1,
-      "successes": 1,
-      "failures": 0
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "5 applied, 0 failed; fill=1"
+      "detail": "4 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -27,7 +22,7 @@
     },
     "protection": {
       "success": true,
-      "detail": "1 placed, 0 moved, 0 without levels"
+      "detail": "0 placed, 0 moved, 0 without levels"
     },
     "market_context": {
       "success": true,
@@ -39,7 +34,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "12/13 covered; missing: UTHR; selected sector checked by order planner"
+      "detail": "13/14 covered; missing: UTHR; selected sector checked by order planner"
     },
     "catalyst_1": {
       "success": true,
@@ -47,7 +42,7 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "13/13 verified"
+      "detail": "14/14 verified"
     },
     "catalyst_2": {
       "success": true,
@@ -59,15 +54,15 @@
     },
     "news": {
       "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
+      "success": false,
+      "detail": "ValueError: ranking contains invalid candidate tickers"
     },
     "round2": {
-      "success": false,
-      "detail": "ValueError: no usable deep-dive context"
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
       "success": true,
@@ -93,9 +88,9 @@
     "paper_horizon_unavailable:FTNT",
     "paper_horizon_unavailable:A"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free",
-  "attempts": 9,
-  "successes": 9,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
+  "attempts": 8,
+  "successes": 8,
   "failures": 0,
   "date": "2026-10-07",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
