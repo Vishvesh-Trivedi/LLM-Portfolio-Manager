@@ -1,10 +1,10 @@
 {
-  "status": "degraded",
+  "status": "healthy",
   "providers": {},
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "3 applied, 0 failed; no changes"
+      "detail": "5 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -16,16 +16,14 @@
     },
     "protection": {
       "success": true,
-      "detail": "0 placed, 0 moved, 0 without levels"
+      "detail": "1 placed, 0 moved, 0 without levels"
     },
     "alerts": {
       "success": true,
       "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
-  "degraded_reasons": [
-    "protection_stale:MSFT"
-  ],
+  "degraded_reasons": [],
   "label": "No successful LLM response",
   "attempts": 0,
   "successes": 0,
@@ -38,8 +36,7 @@
   "trade_blockers": [
     "missing:market_data",
     "missing:catalysts",
-    "missing:final",
-    "protection_stale:MSFT"
+    "missing:final"
   ],
   "order_status": "NO ORDER",
   "order_reason": null
