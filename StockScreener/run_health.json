@@ -16,11 +16,11 @@
     },
     "protection": {
       "success": true,
-      "detail": "1 placed, 0 moved, 0 without levels"
+      "detail": "0 placed, 0 moved, 0 without levels"
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
+      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
     }
   },
   "degraded_reasons": [],
