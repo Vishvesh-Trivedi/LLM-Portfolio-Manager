@@ -1,10 +1,26 @@
 {
-  "status": "healthy",
-  "providers": {},
+  "status": "degraded",
+  "providers": {
+    "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
+      "attempts": 7,
+      "successes": 6,
+      "failures": 1
+    },
+    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
+      "attempts": 2,
+      "successes": 2,
+      "failures": 0
+    },
+    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
+      "attempts": 1,
+      "successes": 1,
+      "failures": 0
+    }
+  },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "4 applied, 0 failed; no changes"
+      "detail": "5 applied, 0 failed; exit_filled=1"
     },
     "missed_sessions": {
       "success": true,
@@ -12,32 +28,82 @@
     },
     "session": {
       "success": true,
-      "detail": "before 16:15 ET"
+      "detail": "Completed session after 16:15 ET"
     },
     "protection": {
       "success": true,
       "detail": "0 placed, 0 moved, 0 without levels"
     },
+    "market_context": {
+      "success": true,
+      "detail": "Exact-session VIX available"
+    },
+    "market_data": {
+      "success": true,
+      "detail": "925/926 exact-session quotes; missing: VYLR"
+    },
+    "fundamental_coverage": {
+      "success": true,
+      "detail": "10/12 covered; missing: TLN, WHR; selected sector checked by order planner"
+    },
+    "catalyst_1": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalysts": {
+      "success": true,
+      "detail": "12/12 verified"
+    },
+    "catalyst_2": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "news": {
+      "success": false,
+      "detail": "ValueError: NVIDIA-retry parser/validator rejected response: ValueError: unknown sector: Energy (sentiment enrichment skipped)"
+    },
+    "round1": {
+      "success": true,
+      "detail": "Optional ranking context available; not a decision contract"
+    },
+    "round2": {
+      "success": false,
+      "detail": "ValueError: no usable deep-dive context"
+    },
+    "final": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "broker": {
+      "success": true,
+      "detail": "In sync: 3 position(s) match Alpaca"
+    },
     "alerts": {
       "success": true,
-      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
+      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
-  "degraded_reasons": [],
-  "label": "No successful LLM response",
-  "attempts": 0,
-  "successes": 0,
-  "failures": 0,
+  "degraded_reasons": [
+    "stale_quote:MSFT",
+    "stale_quote:CDNS",
+    "stale_quote:LIN",
+    "paper_horizon_unavailable:LRCX",
+    "advisory_news_unavailable"
+  ],
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free, NVIDIA:meta/llama-3.2-90b-vision-instruct",
+  "attempts": 10,
+  "successes": 9,
+  "failures": 1,
   "date": "2026-10-09",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "no_session",
-  "report": null,
+  "mode": "screening",
+  "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
-    "missing:market_data",
-    "missing:catalysts",
-    "missing:final"
+    "stale_quote:MSFT",
+    "stale_quote:CDNS",
+    "stale_quote:LIN"
   ],
   "order_status": "NO ORDER",
-  "order_reason": null
+  "order_reason": "Data/LLM validation incomplete; no new order queued."
 }
