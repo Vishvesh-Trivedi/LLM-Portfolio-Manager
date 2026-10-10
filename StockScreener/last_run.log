@@ -16,17 +16,13 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-10 01:55
+   Time:   2026-10-10 02:14
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
   Broker sync: Cash set from broker: 61444.91 -> 61444.91
-  Protection: the old MSFT order has not cleared yet; replacing anyway
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"14","held_for_orders":"14","message":"insufficient qty available for order (requested: 14, available: 0)","related_orders":["18ad1310-9fe8-4f89-a389-6b
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"14","held_for_orders":"14","message":"insufficient qty available for order (requested: 14, available: 0)","related_orders":["18ad1310-9fe8-4f89-a389-6b
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"14","held_for_orders":"14","message":"insufficient qty available for order (requested: 14, available: 0)","related_orders":["18ad1310-9fe8-4f89-a389-6b
 ALPACA PAPER ACCOUNT: $101,926.36 (+1,926.36 / +1.9% vs $100,000 starting)
 Cash: $61,444.91  |  Positions: 3/5  |  Deployed: 40%  |  Idle: 60%
 Sector exposure: Technology: 25%  Basic Materials: 15%
@@ -52,11 +48,11 @@ Step 3/8: Fetching all data (parallel)...
 Batch downloading 1 tickers (1 API call)...
   Downloaded: 925/926 tickers
   OK: NVIDIA models verified by JSON probe (2 answering chat): active = meta/llama-3.2-11b-vision-instruct
-  RSS feeds active: 12/16 | Headlines: 72
+  RSS feeds active: 13/16 | Headlines: 78
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 896 stocks (parallel)...
-  Full fundamentals: 444/896 stocks
+  Full fundamentals: 425/896 stocks
   Sector ranks - Top 3: ['Utilities', 'Consumer Defensive', 'Energy'] | Perf: Utilities:+3.6% | Consumer Defensive:+3.0% | Energy:+2.6% | Real Estate:+2.3% | Consumer Cyclical:+2.2%
   Sector flows: TOP Real Estate +1.9% | BOT Communication Services -1.5%
 
@@ -73,60 +69,79 @@ Phase 4 - Merging candidate pools...
     BOTH (tech+news): 0  TECHNICAL: 6  NEWS: 0
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'TWLO', 'MSFT', 'NFLX', 'GOOGL']
-  Stream B added: AAPL | $336.47 | RSI 55.9
+  Stream B: Processing headline mentions: ['TWLO', 'GOOGL', 'AAPL', 'NFLX', 'MSFT', 'CRWD', 'NVDA', 'MU', 'ORCL', 'QLYS', 'GOOGL', 'AAPL', 'NFLX', 'MSFT', 'TWLO', 'GOOGL', 'AAPL', 'NFLX', 'MSFT', 'CRWD', 'NVDA', 'MU', 'ORCL', 'QLYS']
   Stream B added: TWLO | $289.24 | RSI 59.2
-  Stream B added: MSFT | $535.2 | RSI 67.4
-  Stream B added: NFLX | $70.31 | RSI 43.8
   Stream B added: GOOGL | $351.63 | RSI 56.4
-  Sector sentiment derived: 4/11 sectors from 9 stocks
-  [ADVISORY ONLY] HOLD [LOW] MSFT: Market conditions are stable and no fresh news has been released, supporting a hold position. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock is holding its breakout pattern, but there are no fresh news and the market conditions are neutral, so a hold is recommended for now. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] LIN: No significant changes in market conditions or news, and position is not at stop or target levels. (no ledger changes)
+  Stream B added: AAPL | $336.47 | RSI 55.9
+  Stream B added: NFLX | $70.31 | RSI 43.8
+  Stream B added: MSFT | $535.2 | RSI 67.4
+  Stream B added: CRWD | $275.06 | RSI 62.6
+  Stream B added: NVDA | $229.35 | RSI 53.0
+  Stream B added: MU | $1029.13 | RSI 50.2
+  Stream B added: ORCL | $141.46 | RSI 48.3
+  Stream B added: QLYS | $202.66 | RSI 64.2
+  Stream B added: GOOGL | $351.63 | RSI 56.4
+  Stream B added: AAPL | $336.47 | RSI 55.9
+  Stream B added: NFLX | $70.31 | RSI 43.8
+  Stream B added: MSFT | $535.2 | RSI 67.4
+  Stream B added: TWLO | $289.24 | RSI 59.2
+  Stream B added: GOOGL | $351.63 | RSI 56.4
+  Stream B added: AAPL | $336.47 | RSI 55.9
+  Stream B added: NFLX | $70.31 | RSI 43.8
+  Stream B added: MSFT | $535.2 | RSI 67.4
+  Stream B added: CRWD | $275.06 | RSI 62.6
+  Stream B added: NVDA | $229.35 | RSI 53.0
+  Stream B added: MU | $1029.13 | RSI 50.2
+  Stream B added: ORCL | $141.46 | RSI 48.3
+  Stream B added: QLYS | $202.66 | RSI 64.2
+  Sector sentiment derived: 4/11 sectors from 11 stocks
+  [ADVISORY ONLY] HOLD [LOW] MSFT: No fresh news and current price is near target, but not exceeding it, suggesting a cautious approach. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CDNS: The stock is holding its breakout pattern, but the current price has dipped below the original thesis' stop price, indicating a cautious approach is warranted, and no immediate action is required. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] LIN: The current price is close to the stop level, but the overall trend remains bullish, suggesting a hold for now. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 10 candidates...
-  Options data: 0/10 | Insider signals: 8/10
+  Fetching options + insider data for 15 candidates...
+  Options data: 0/15 | Insider signals: 13/15
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (10 candidates)...
-  Pre-score top 5: VEEV(66=49T+17N [vader:NEUTRAL])  ANET(61=43T+18N [vader:NEUTRAL])  HUM(61=47T+14N [vader:NEUTRAL])  TLN(57=44T+13N [vader:NEUTRAL])  KEYS(54=37T+17N [vader:NEUTRAL])
-  SEC EDGAR 8-K: 1/10 candidates have recent filings
+Phase 5.5 - Computing score breakdown (15 candidates)...
+  Pre-score top 5: VEEV(64=49T+15N [vader:NEUTRAL])  ANET(61=43T+18N [vader:NEUTRAL])  HUM(61=47T+14N [vader:NEUTRAL])  QLYS(58=43T+15N [vader:NEUTRAL])  TLN(57=44T+13N [vader:NEUTRAL])
+  SEC EDGAR 8-K: 1/15 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
-  Catalyst scoring: 10 stocks → 2 LLM calls...
-    Batch 1/2 
-    Batch 2/2 
-  Catalyst scoring done — 2 auto-dropped, 8 remain
+  Catalyst scoring: 15 stocks → 3 LLM calls...
+    Batch 1/3 
+    Batch 2/3 
+    Batch 3/3 
+  Catalyst scoring done — 5 auto-dropped, 10 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (8 candidates, 3 layers)...
+Phase 5 - News intelligence (10 candidates, 3 layers)...
   Sentiment: NEUTRAL | Adj: +0
-  8 candidates after news filter
+  10 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (8 candidates)...
-  Pre-score top 5: VEEV(66=49T+17N [vader:NEUTRAL])  ANET(61=43T+18N [vader:NEUTRAL])  TLN(57=44T+13N [vader:NEUTRAL])  KEYS(54=37T+17N [vader:NEUTRAL])  CBOE(51=36T+15N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (10 candidates)...
+  Pre-score top 5: ANET(61=43T+18N [vader:NEUTRAL])  HUM(61=47T+14N [vader:NEUTRAL])  TLN(57=44T+13N [vader:NEUTRAL])  KEYS(54=37T+17N [vader:NEUTRAL])  CBOE(51=36T+15N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  8 candidates after config criteria
+  10 candidates after config criteria
   Self-calibration: 18 prior picks, 44% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (8 candidates)...
-  Round 1/3: Ranking 8 candidates...
-  Round 1 → Top 10: ['VEEV', 'ANET', 'CBOE', 'KEYS', 'GOOGL', 'AAPL', 'TLN', 'NFLX']
+Phase 6 - NVIDIA final scoring (10 candidates)...
+  Round 1/3: Ranking 10 candidates...
+  Round 1 → Top 10: ['ANET', 'HUM', 'TLN', 'KEYS', 'CBOE', 'GOOGL', 'CRWD', 'AAPL', 'MU', 'NFLX']
   Round 2/3: Deep-diving top 10...
-  Round 2 → analyses for ['VEEV', 'ANET', 'KEYS', 'CBOE', 'GOOGL', 'AAPL', 'NFLX']
+  Round 2 → analyses for ['ANET', 'HUM', 'KEYS', 'CBOE', 'GOOGL', 'CRWD', 'AAPL', 'MU', 'NFLX']
   Round 3/3: Final deliberation...
-  Final pick: VEEV | pre=66 → 85/100 | BUY | 10 LLM calls this run
+  Final pick: ANET | pre=61 → 85/100 | BUY | 11 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=10, wr=80%, HIGH confidence): Stocks with VIX < 15 and recent price momentum > 3% tend to outperform in the next 4 weeks.
-│ 2. Rule (n=5, wr=60%, MEDIUM confidence): Stocks with upcoming earnings in < 30 days and strong technicals tend to outperform in the next 4 weeks.
-│ 3. Rule (n=3, wr=50%, LOW confidence): Stocks with high short interest and moderate RSI tend to underperform in the next 4 weeks.
-│ → History suggests that stocks with strong recent price momentum and upcoming earnings tend to outperform in low-volatility regimes.
+│ 1. Rule (n=10, wr=80%, HIGH confidence): Bullish stocks with strong technicals, low short interest, and recent earnings beats have a higher win rate (80%) with an average magnitude of +12% wins.
+│ 2. Rule (n=5, wr=60%, MEDIUM confidence): Stocks with high short interest and recent earnings beats have a lower win rate (60%) with an average magnitude of +5% wins.
+│ → History suggests that stocks with strong technicals and recent earnings beats have a higher win rate in low VIX regimes, while stocks with high short interest and recent earnings beats have a lower win rate with smaller average wins.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
 
@@ -134,26 +149,26 @@ Phase 6 - NVIDIA final scoring (8 candidates)...
   TODAY'S PICK  —  Saturday, Oct 10 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 14.8 (LOW (p8 risk-on))  |  QQQ BULLISH  |  SPY +0.60%
-  Macro:   Market sentiment is neutral with a slight bullish trend. The VIX is at 14.84, in
+  Macro:   US markets ended the week higher, with the S&P 500, Nasdaq 100, and Dow Jones al
 ─────────────────────────────────────────────────────────────────
   NO PICK TODAY
   Data/LLM validation incomplete; no new order queued.
 
   WATCH LIST:
-    ANET    74/100  [Technology]  ANET is a good candidate for a 1-4 week trade due to its upcoming earn
+    HUM     74/100  [Healthcare]  HUM has strong 5-day momentum and recent breakout from its 50-day movi
 █████████████████████████████████████████████████████████████████
   Broker: in sync (3 position(s))
 
 Step 8/8: Saving results...
-  Already have ANET on 2026-10-09 - skipping
+  OK: Saved HUM | Stop:403.23 Target:486.75
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 6/12 wins (50.0%) | avg 10d +2.2% | 9 pending
-  WATCH LIST: 14/21 wins (66.7%) | avg 10d +1.5% | 26 pending
+  WATCH LIST: 14/21 wins (66.7%) | avg 10d +1.5% | 27 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1172 chars):
+  run-digest (1148 chars):
 ALPACA - Oct 09 2026
 Live paper account.
 
@@ -171,7 +186,7 @@ WHAT YOU HOLD (3)
 
 MONEY
 - Cash $61,445  |  In shares $40,481
-- Total $101,940 (up $1,940, +1.9% since start)
+- Total $101,926 (up $1,926, +1.9% since start)
 - NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 
 SINCE TRADING ON ALPACA
@@ -184,14 +199,14 @@ SINCE TRADING ON ALPACA
 
 NEXT ORDER
 - Nothing ordered, because:
-  a stop order was refused by Alpaca, so no new risk was added until that is sorted
+  an old stop could not be cancelled, so no new risk was added
 
 STATUS
 - Checks: degraded
-- Blocked: protection_rejected:MSFT
+- Blocked: protection_stale:MSFT
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1558297973786677249
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1558302835324620861
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::protection_rejected:MSFT
+::warning title=Run completed with degradations::protection_stale:MSFT
 
-  Completed with degradations (not a failure): protection_rejected:MSFT
+  Completed with degradations (not a failure): protection_stale:MSFT

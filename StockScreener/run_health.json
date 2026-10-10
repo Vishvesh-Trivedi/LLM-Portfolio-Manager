@@ -2,8 +2,8 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 10,
-      "successes": 10,
+      "attempts": 11,
+      "successes": 11,
       "failures": 0
     }
   },
@@ -34,7 +34,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "9/10 covered; missing: TLN; selected sector checked by order planner"
+      "detail": "11/15 covered; missing: VEEV, TLN, TWLO, QLYS; selected sector checked by order planner"
     },
     "exit:MSFT": {
       "success": true,
@@ -54,9 +54,13 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "10/10 verified"
+      "detail": "15/15 verified"
     },
     "catalyst_2": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalyst_3": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
@@ -86,11 +90,11 @@
     }
   },
   "degraded_reasons": [
-    "protection_rejected:MSFT"
+    "protection_stale:MSFT"
   ],
   "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
-  "attempts": 10,
-  "successes": 10,
+  "attempts": 11,
+  "successes": 11,
   "failures": 0,
   "date": "2026-10-09",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
@@ -98,7 +102,7 @@
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
-    "protection_rejected:MSFT"
+    "protection_stale:MSFT"
   ],
   "order_status": "NO ORDER",
   "order_reason": "Data/LLM validation incomplete; no new order queued."
