@@ -1,12 +1,6 @@
 {
   "status": "degraded",
-  "providers": {
-    "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 11,
-      "successes": 11,
-      "failures": 0
-    }
-  },
+  "providers": {},
   "stages": {
     "broker_sync": {
       "success": true,
@@ -18,71 +12,11 @@
     },
     "session": {
       "success": true,
-      "detail": "Completed session after 16:15 ET"
+      "detail": "weekend"
     },
     "protection": {
       "success": true,
       "detail": "0 placed, 0 moved, 0 without levels"
-    },
-    "market_context": {
-      "success": true,
-      "detail": "Exact-session VIX available"
-    },
-    "market_data": {
-      "success": true,
-      "detail": "925/926 exact-session quotes; missing: VYLR"
-    },
-    "fundamental_coverage": {
-      "success": true,
-      "detail": "11/15 covered; missing: VEEV, TLN, TWLO, QLYS; selected sector checked by order planner"
-    },
-    "exit:MSFT": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "exit:CDNS": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "exit:LIN": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalyst_1": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalysts": {
-      "success": true,
-      "detail": "15/15 verified"
-    },
-    "catalyst_2": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalyst_3": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "news": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
-    },
-    "round2": {
-      "success": true,
-      "detail": "Optional analysis context available; not a decision contract"
-    },
-    "final": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "broker": {
-      "success": true,
-      "detail": "In sync: 3 position(s) match Alpaca"
     },
     "alerts": {
       "success": true,
@@ -92,18 +26,21 @@
   "degraded_reasons": [
     "protection_stale:MSFT"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
-  "attempts": 11,
-  "successes": 11,
+  "label": "No successful LLM response",
+  "attempts": 0,
+  "successes": 0,
   "failures": 0,
-  "date": "2026-10-09",
+  "date": "2026-10-10",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "screening",
-  "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
+  "mode": "no_session",
+  "report": null,
   "trade_ready": false,
   "trade_blockers": [
+    "missing:market_data",
+    "missing:catalysts",
+    "missing:final",
     "protection_stale:MSFT"
   ],
   "order_status": "NO ORDER",
-  "order_reason": "Data/LLM validation incomplete; no new order queued."
+  "order_reason": null
 }
