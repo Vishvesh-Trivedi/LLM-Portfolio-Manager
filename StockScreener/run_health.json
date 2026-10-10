@@ -3,24 +3,14 @@
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
       "attempts": 7,
-      "successes": 6,
-      "failures": 1
-    },
-    "OpenRouter:nvidia/nemotron-3-super-120b-a12b:free": {
-      "attempts": 2,
-      "successes": 2,
-      "failures": 0
-    },
-    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 1,
-      "successes": 1,
+      "successes": 7,
       "failures": 0
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "5 applied, 0 failed; exit_filled=1"
+      "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -44,7 +34,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "10/12 covered; missing: TLN, WHR; selected sector checked by order planner"
+      "detail": "10/11 covered; missing: TLN; selected sector checked by order planner"
     },
     "catalyst_1": {
       "success": true,
@@ -52,23 +42,23 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "12/12 verified"
+      "detail": "11/11 verified"
     },
     "catalyst_2": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "news": {
-      "success": false,
-      "detail": "ValueError: NVIDIA-retry parser/validator rejected response: ValueError: unknown sector: Energy (sentiment enrichment skipped)"
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
+      "success": false,
+      "detail": "ValueError: ranking contains invalid candidate tickers"
     },
     "round2": {
-      "success": false,
-      "detail": "ValueError: no usable deep-dive context"
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
       "success": true,
@@ -87,13 +77,12 @@
     "stale_quote:MSFT",
     "stale_quote:CDNS",
     "stale_quote:LIN",
-    "paper_horizon_unavailable:LRCX",
-    "advisory_news_unavailable"
+    "paper_horizon_unavailable:LRCX"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-super-120b-a12b:free, NVIDIA:meta/llama-3.2-90b-vision-instruct",
-  "attempts": 10,
-  "successes": 9,
-  "failures": 1,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct",
+  "attempts": 7,
+  "successes": 7,
+  "failures": 0,
   "date": "2026-10-09",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
