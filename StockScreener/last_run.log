@@ -16,13 +16,13 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-10 07:02
+   Time:   2026-10-10 08:29
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Cash set from broker: 61444.91 -> 61444.91
+  Broker sync: Cash set from broker: 61444.58 -> 61444.58
   No completed trading session (weekend); broker state reconciled only
 ::warning title=Run completed with degradations::protection_stale:MSFT
 
