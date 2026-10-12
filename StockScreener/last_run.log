@@ -16,52 +16,14 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-12 09:11
+   Time:   2026-10-12 11:18
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked MSFT at 536.5 (broker)
-  Broker sync: Marked CDNS at 350.01 (broker)
+  Broker sync: Marked MSFT at 536.6131 (broker)
+  Broker sync: Marked CDNS at 352.44 (broker)
+  Broker sync: Marked LIN at 483.9 (broker)
   Broker sync: Cash set from broker: 61444.58 -> 61444.58
-  Protection: MSFT 14 sh  stop $517.51 / target $553.99
-  run-digest (1139 chars):
-ALPACA - Oct 12 2026
-Live paper account.
-
-WHAT HAPPENED TODAY
-- MSFT protected: sells at $517.51 or $553.99
-
-WHAT YOU HOLD (3)
-- CDNS: down $312 (-1.7%)  |  51 shares, $356.13 -> $350.01
-  sells at $342.93 or $389.37  |  day 6 of 10
-- LIN: down $138 (-0.9%)  |  31 shares, $488.66 -> $484.21
-  sells at $476.68 or $512.63  |  day 3 of 10
-  Close to its sell price - watch this one
-- MSFT: up $247 (+3.4%)  |  14 shares, $518.86 -> $536.50
-  sells at $517.51 or $553.99  |  day 7 of 10
-
-MONEY
-- Cash $61,445  |  In shares $40,372
-- Total $101,817 (up $1,817, +1.8% since start)
-- NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
-
-SINCE TRADING ON ALPACA
-- 5 trades finished: 1 made money, 1 lost money, 3 broke even
-- Win rate 50% (1 of 2 that moved) - far too small a sample to mean anything
-- Won $1,793 across 1 trade (average +7.1%)
-- Lost $647 across 1 trade (average -4.1%)
-- Banked $1,146 profit
-- Too few trades to tell whether this works yet
-
-NEXT ORDER
-- None. US markets were shut (before 16:15 ET)
-- Your holdings and their sell orders are unchanged
-
-STATUS
-- Checks: healthy
-
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1559131337040859177
-  WhatsApp run-digest: sent
   No completed trading session (before 16:15 ET); broker state reconciled only
