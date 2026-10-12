@@ -16,13 +16,13 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-12 06:38
+   Time:   2026-10-12 07:19
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked MSFT at 536.64 (broker)
+  Broker sync: Marked MSFT at 536.17 (broker)
   Broker sync: Cash set from broker: 61444.58 -> 61444.58
   run-digest (1123 chars):
 ALPACA - Oct 12 2026
@@ -37,12 +37,12 @@ WHAT YOU HOLD (3)
 - LIN: down $138 (-0.9%)  |  31 shares, $488.66 -> $484.21
   sells at $476.68 or $512.63  |  day 3 of 10
   Close to its sell price - watch this one
-- MSFT: up $249 (+3.4%)  |  14 shares, $518.86 -> $536.64
+- MSFT: up $242 (+3.3%)  |  14 shares, $518.86 -> $536.17
   sells at $517.51 or $553.99  |  day 7 of 10
 
 MONEY
-- Cash $61,445  |  In shares $40,518
-- Total $101,963 (up $1,963, +2.0% since start)
+- Cash $61,445  |  In shares $40,512
+- Total $101,956 (up $1,956, +2.0% since start)
 - NOTE $874 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 
 SINCE TRADING ON ALPACA
@@ -60,7 +60,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1559093014662619178
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1559103294369173537
   WhatsApp run-digest: sent
   No completed trading session (before 16:15 ET); broker state reconciled only
 ::warning title=Run completed with degradations::protection_stale:MSFT
