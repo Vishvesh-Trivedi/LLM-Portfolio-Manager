@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LLM Portfolio Manager — 2026-10-10</title>
+<title>LLM Portfolio Manager — 2026-10-13</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
@@ -31,16 +31,16 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>protection_stale:MSFT<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>protection_rejected:MSFT<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Saturday October 10 2026  02:19 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Tuesday October 13 2026  02:07 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-11b-vision-instruct &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
-    <div class="mi"><div class="ml">VIX</div><div class="mv">14.8 &nbsp;LOW (p8 risk-o</div></div>
+    <div class="mi"><div class="ml">VIX</div><div class="mv">15.2 &nbsp;LOW (p15 risk-</div></div>
     <div class="mi"><div class="ml">SPY Today</div>
-        <div class="mv" style="color:#00c853">+0.60%</div></div>
+        <div class="mv" style="color:#f44336">-0.06%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BULLISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US markets ended the week higher, with the S&amp;P 500, Nasdaq 100, and Dow Jones all closing in positive territory. Traders are now looking ahead to earnings seaso</div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US stock futures are steady as bank earnings and inflation data loom, with strategists flagging potential market movers. The S&amp;P 500 is near records, and the IM</div>
   </div>
 
   <div class="tabs">
@@ -54,9 +54,9 @@ tr:last-child td{border-bottom:none}
   <div id="t-buy" class="tp on">
     <div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
-    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that stocks with strong technicals and recent earnings beats have a higher win rate in low VIX regimes, while stocks with high short interest and recent earnings beats have a lower win rate with smaller average wins.</p>
-    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=10, wr=80%, HIGH confidence): Bullish stocks with strong technicals, low short interest, and recent earnings beats have a higher win rate (80%) with an average magnitude of +12% wins.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=5, wr=60%, MEDIUM confidence): Stocks with high short interest and recent earnings beats have a lower win rate (60%) with an average magnitude of +5% wins.</li></ul>
-    <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-09 02:59</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): In the MID_VIX_BULL regime, stocks with positive 5-day momentum, insider buying, and a moderate RSI (below 70) tend to outperform the market in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=3, wr=67%, LOW confidence): Stocks with a high short ratio (> 5) and negative CMF tend to underperform the market in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-09 02:38</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Strong short-term trend and technical indicators (RSI > 50, ADX > 20) in combination with a bullish sentiment (Vader sentiment > 5) and a strong catalyst (earnings within 2 weeks) result in a high-confidence buy signal.</li><li style="padding:2px 0">Rule (n=5, wr=60%, MEDIUM confidence): A relatively low price and potential for a technical breakout (RSI > 50, ADX > 20) in combination with a neutral sentiment (Vader sentiment < 5) and no strong catalyst (earnings > 2 weeks) result in a medium-confidence buy signal.</li><li style="padding:2px 0">Rule (n=3, wr=40%, LOW confidence): A strong short-term trend (RSI > 50, ADX > 20) in combination with a bearish sentiment (Vader sentiment < 5) and a weak catalyst (no earnings within 2 weeks) result in a low-confidence buy signal.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-09 01:23</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=14, wr=57%, HIGH confidence): In MID_VIX_NEUTRAL regime, stocks with tech_score > 40 and insider_label=BUYING tend to perform well.</li><li style="padding:2px 0">Rule (n=2, wr=100%, LOW confidence): In MID_VIX_BULL regime, stocks with momentum_5d > 4 and sector=Technology tend to perform well.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-09 00:28</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=14, wr=57%, HIGH confidence): Stocks with high momentum scores (> 40) and moderate to high analyst ratings (> 1.5) have a higher win rate and larger average gains in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with strong short-term breakout potential and low earnings risk have a higher win rate and larger average gains in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-08 02:45</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=7, wr=57%, HIGH confidence): Technology sector picks tend to perform well in MID_VIX_BULL regimes, with a focus on momentum and breakout setups.</li></ul></div></details>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that in MID_VIX_BULL regime, stocks with strong technicals and high upside potential tend to outperform.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=10, wr=80%, HIGH confidence): Stocks with 5-day momentum &gt; 7% and RSI &gt; 60 tend to outperform in MID_VIX_BULL regime.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=5, wr=80%, HIGH confidence): Stocks with upside potential &gt; 10% and short ratio &lt; 3 tend to outperform in MID_VIX_BULL regime.</li></ul>
+    <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-10 02:19</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Bullish stocks with strong technicals, low short interest, and recent earnings beats have a higher win rate (80%) with an average magnitude of +12% wins.</li><li style="padding:2px 0">Rule (n=5, wr=60%, MEDIUM confidence): Stocks with high short interest and recent earnings beats have a lower win rate (60%) with an average magnitude of +5% wins.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-10 01:59</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with VIX < 15 and recent price momentum > 3% tend to outperform in the next 4 weeks.</li><li style="padding:2px 0">Rule (n=5, wr=60%, MEDIUM confidence): Stocks with upcoming earnings in < 30 days and strong technicals tend to outperform in the next 4 weeks.</li><li style="padding:2px 0">Rule (n=3, wr=50%, LOW confidence): Stocks with high short interest and moderate RSI tend to underperform in the next 4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-10 01:05</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with strong revenue growth (above 20%) and improving technicals (RSI above 60, MACD bullish) tend to outperform in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): Stocks with high short interest (above 2%) and improving technicals (RSI above 60, MACD bullish) tend to experience a short squeeze in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=8, wr=70%, MEDIUM confidence): Stocks with upcoming earnings in the next 1-4 weeks and strong technicals (RSI above 60, MACD bullish) tend to experience significant price movement in the next 1-4 weeks.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-10 00:10</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=4, wr=50%, LOW confidence): Technical sector picks with high tech_score tend to perform well in the LOW_VIX_BULL regime.</li><li style="padding:2px 0">Rule (n=6, wr=83%, HIGH confidence): Picks with high insider buying scores tend to perform well.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-10-09 02:59</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=5, wr=80%, HIGH confidence): In the MID_VIX_BULL regime, stocks with positive 5-day momentum, insider buying, and a moderate RSI (below 70) tend to outperform the market in the next 1-4 weeks.</li><li style="padding:2px 0">Rule (n=3, wr=67%, LOW confidence): Stocks with a high short ratio (> 5) and negative CMF tend to underperform the market in the next 1-4 weeks.</li></ul></div></details>
   </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
                 margin-bottom:14px;border-left:8px solid #546e7a">
@@ -64,10 +64,10 @@ tr:last-child td{border-bottom:none}
         NO PICK TODAY
       </div>
       <div style="color:#aaa;font-size:13px">
-        2026-10-10 &nbsp;·&nbsp; Technology &nbsp;·&nbsp; TECHNICAL
+        2026-10-13 &nbsp;·&nbsp; Healthcare &nbsp;·&nbsp; TECHNICAL
       </div>
             <div style="margin-top:10px;color:#ffb3b3;font-size:12px">LLM failure reason: Data/LLM validation incomplete; no new order queued.</div>
-      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: Data/LLM validation incomplete; no new order queued.</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-10-09)</b><br>ticker=ANET; sector=Technology; source=TECHNICAL; rsi=64.8; short_ratio=2.6; short_pct_float=1.3</div>
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: Data/LLM validation incomplete; no new order queued.</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-10-12)</b><br>ticker=HUM; sector=Healthcare; source=TECHNICAL; rsi=66.6; short_ratio=2.6; short_pct_float=2.6</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
@@ -75,13 +75,13 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
                   border-radius:6px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <span style="font-weight:700;font-size:16px">HUM</span>
-          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Healthcare</span>
+          <span style="font-weight:700;font-size:16px">CBOE</span>
+          <span style="color:#888;font-size:13px">79/100 &nbsp;·&nbsp; Financial Services</span>
         </div>
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
-          <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:79%"></div>
         </div>
-        <div style="font-size:13px;color:#555">LLM narrative: HUM has strong 5-day momentum and recent breakout from its 50-day moving average, making it a promising short-term trade</div>
+        <div style="font-size:13px;color:#555">LLM narrative: CBOE is experiencing a short-term uptrend with a 7.1% 5-day momentum. The stock has a strong technical setup, with a rel</div>
       </div>
     </div>
   </div>
@@ -92,7 +92,7 @@ tr:last-child td{border-bottom:none}
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
-        <div style="font-size:28px;font-weight:700">USD 101,926</div>
+        <div style="font-size:28px;font-weight:700">USD 101,898</div>
                 <div style="color:#00c853;font-size:15px;margin-top:2px">+1.9% vs Alpaca paper capital</div>
       </div>
       <div>
@@ -112,60 +112,29 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">MSFT</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +3.1%</span>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +4.3%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          14 shares &nbsp;·&nbsp; Value USD 7,491
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+227</span>
+          14 shares &nbsp;·&nbsp; Value USD 7,576
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+312</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 517.51</span><span>Target 553.9929</span>
+            <span>Stop 523.59</span><span>Target 553.9929</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:48%;background:#00c853;
+            <div style="position:absolute;left:0;width:58%;background:#00c853;
                         border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:4%;width:3px;height:14px;top:-3px;
+            <div style="position:absolute;left:2%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:48%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:58%;width:4px;height:16px;top:-4px;
                         background:#00c853;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 518.8629 &nbsp;·&nbsp; Current 535.0700073242188</div>
+          <div style="font-size:11px;color:#999">Entry 518.8629 &nbsp;·&nbsp; Current 541.1500244140625</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:70%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:80%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 7 of 10</div>
-      </div>
-      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
-                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div>
-            <span style="font-size:20px;font-weight:700">CDNS</span>
-            <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
-          </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -0.9%</span>
-        </div>
-        <div style="color:#555;font-size:13px;margin-top:4px">
-          51 shares &nbsp;·&nbsp; Value USD 17,995
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-168</span>
-        </div>
-        
-          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 342.93</span><span>Target 389.3659</span>
-          </div>
-          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:21%;background:#f44336;
-                        border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:28%;width:3px;height:14px;top:-3px;
-                        background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:21%;width:4px;height:16px;top:-4px;
-                        background:#f44336;border-radius:2px"></div>
-          </div>
-          <div style="font-size:11px;color:#999">Entry 356.1259 &nbsp;·&nbsp; Current 352.8399963378906</div>
-        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:60%"></div>
-        </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 6 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 8 of 10</div>
       </div>
       <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
                   box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
@@ -174,29 +143,60 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">LIN</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Basic Materials</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -1.0%</span>
+          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -0.3%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          31 shares &nbsp;·&nbsp; Value USD 14,996
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-153</span>
+          31 shares &nbsp;·&nbsp; Value USD 15,108
+          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-41</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
             <span>Stop 476.6794</span><span>Target 512.6294</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:20%;background:#f44336;
+            <div style="position:absolute;left:0;width:30%;background:#f44336;
                         border-radius:4px;height:8px;opacity:.35"></div>
             <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:20%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:30%;width:4px;height:16px;top:-4px;
                         background:#f44336;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 488.6594 &nbsp;·&nbsp; Current 483.7300109863281</div>
+          <div style="font-size:11px;color:#999">Entry 488.6594 &nbsp;·&nbsp; Current 487.3500061035156</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:30%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:40%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 3 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 4 of 10</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">CDNS</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -2.2%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          51 shares &nbsp;·&nbsp; Value USD 17,769
+          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-393</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 342.93</span><span>Target 389.3659</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:12%;background:#f44336;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:28%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:12%;width:4px;height:16px;top:-4px;
+                        background:#f44336;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 356.1259 &nbsp;·&nbsp; Current 348.4200134277344</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:70%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 7 of 10</div>
       </div>
   </div>
 
@@ -239,23 +239,23 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
                   padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <span style="font-size:17px;font-weight:700">LIN</span>
-          <span style="color:#888;font-size:13px;margin-left:8px">Basic Materials</span>
+          <span style="font-size:17px;font-weight:700">CDNS</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">1.5% above stop</div>
-          <div style="font-size:12px;color:#888">Current 483.7300109863281 &nbsp;·&nbsp; Stop 476.6794</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">1.6% above stop</div>
+          <div style="font-size:12px;color:#888">Current 348.4200134277344 &nbsp;·&nbsp; Stop 342.93</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
                   padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <span style="font-size:17px;font-weight:700">CDNS</span>
-          <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
+          <span style="font-size:17px;font-weight:700">LIN</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">Basic Materials</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">2.8% above stop</div>
-          <div style="font-size:12px;color:#888">Current 352.8399963378906 &nbsp;·&nbsp; Stop 342.93</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.2% above stop</div>
+          <div style="font-size:12px;color:#888">Current 487.3500061035156 &nbsp;·&nbsp; Stop 476.6794</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
@@ -265,8 +265,8 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Technology</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">3.3% above stop</div>
-          <div style="font-size:12px;color:#888">Current 535.0700073242188 &nbsp;·&nbsp; Stop 517.51</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">3.2% above stop</div>
+          <div style="font-size:12px;color:#888">Current 541.1500244140625 &nbsp;·&nbsp; Stop 523.59</div>
         </div>
       </div>
     </div>
