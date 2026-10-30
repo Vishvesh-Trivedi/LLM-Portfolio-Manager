@@ -1,30 +1,25 @@
 {
   "status": "degraded",
   "providers": {
-    "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 10,
+    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
+      "attempts": 11,
       "successes": 8,
-      "failures": 2
+      "failures": 3
     },
     "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 2,
-      "successes": 2,
+      "attempts": 3,
+      "successes": 3,
       "failures": 0
-    },
-    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "3 applied, 0 failed; working=1"
+      "detail": "3 applied, 0 failed; working=2"
     },
     "missed_sessions": {
       "success": false,
-      "detail": "2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26"
+      "detail": "2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23"
     },
     "session": {
       "success": true,
@@ -44,7 +39,11 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "29/31 covered; missing: V, WM; selected sector checked by order planner"
+      "detail": "26/28 covered; missing: UPS, WDAY; selected sector checked by order planner"
+    },
+    "exit:LIN": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "catalyst_1": {
       "success": true,
@@ -52,15 +51,15 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "30/30 verified"
+      "detail": "28/28 verified"
     },
     "catalyst_2": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "catalyst_3": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "catalyst_4": {
       "success": true,
@@ -68,7 +67,7 @@
     },
     "catalyst_5": {
       "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "news": {
       "success": true,
@@ -87,8 +86,8 @@
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "broker": {
-      "success": false,
-      "detail": "1 order(s) submitted, 1 failed (equity $102135.33)"
+      "success": true,
+      "detail": "2 order(s) submitted, 0 failed (equity $102124)"
     },
     "alerts": {
       "success": true,
@@ -101,19 +100,18 @@
     "session_never_screened:2026-10-20",
     "session_never_screened:2026-10-21",
     "session_never_screened:2026-10-22",
-    "session_never_screened:2026-10-23",
-    "session_never_screened:2026-10-26"
+    "session_never_screened:2026-10-23"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
+  "label": "NVIDIA:meta/llama-3.2-90b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
   "attempts": 14,
-  "successes": 10,
-  "failures": 4,
-  "date": "2026-10-27",
+  "successes": 11,
+  "failures": 3,
+  "date": "2026-10-26",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": true,
   "trade_blockers": [],
   "order_status": "QUEUED",
-  "order_reason": "Queued CDNS for the next session Open; not filled"
+  "order_reason": "Queued RTX for the next session Open; not filled"
 }
