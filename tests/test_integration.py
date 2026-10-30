@@ -1731,6 +1731,120 @@ class IntegrationTests(unittest.TestCase):
             APP.reconcile_broker(ledger)
         self.assertEqual([(a[0], a[2]) for a in submitted], [('MTD', 'sell')])
 
+    def exit_through_protection(self, sell_ok=True, cancel_ok=True, protect_ok=True,
+                                held=31):
+        """An exit on a holding whose shares a resting stop/target reserves.
+
+        Run of 2026-10-30: LIN and MSFT reached the end of their hold period and
+        Alpaca refused both sells - "insufficient qty available", every share
+        held by the protective OCO the screener itself had placed.
+        """
+        APP._BROKER_SYNC_OK[0] = True
+        calls = []
+        ledger = {'positions': [{'ticker': 'LIN', 'shares': 31, 'trade_id': 'tid-lin',
+                                 'exit_requested': {'reason': 'hold_period',
+                                                    'session': '2026-10-29'}}],
+                  'pending_orders': []}
+        guard = {'LIN': {'order_id': 'oco-1', 'qty': 31, 'stop': 491.46, 'limit': 512.63}}
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(APP._alpaca, 'get_account', return_value={'equity': '100000'}), \
+                patch.object(APP._alpaca, 'effective_shares_by_symbol',
+                             return_value={'LIN': 31}), \
+                patch.object(APP._alpaca, 'protective_orders_by_symbol', return_value=guard), \
+                patch.object(APP._alpaca, 'cancel_order',
+                             side_effect=lambda oid: calls.append(('cancel', oid)) or cancel_ok), \
+                patch.object(APP._alpaca, 'await_order_released', return_value=True), \
+                patch.object(APP._alpaca, 'positions_by_symbol',
+                             **({'side_effect': RuntimeError('positions unreadable')}
+                                if held is None else {'return_value': {'LIN': held}})), \
+                patch.object(APP._alpaca, 'submit_market_order',
+                             side_effect=lambda s, q, side, **k: self.sell(calls, side, s, q, sell_ok)), \
+                patch.object(APP._alpaca, 'submit_protective_oco',
+                             side_effect=lambda s, q, stop, limit, **k:
+                             calls.append(('protect', s, q, stop, limit))
+                             or ({'id': 'p'} if protect_ok else None)), \
+                patch.object(APP.time, 'sleep'), \
+                patch.object(APP, '_HEALTH', APP.RunHealth()), \
+                redirect_stdout(io.StringIO()):
+            APP.reconcile_broker(ledger)
+            health = APP._HEALTH.as_dict()
+            self.exit_degraded = health['degraded_reasons']
+            return calls, health['stages']['broker']['success']
+
+    @staticmethod
+    def sell(calls, side, symbol, qty, sell_ok):
+        calls.append((side, symbol, qty))
+        if sell_ok == 'raise':
+            raise RuntimeError('order ledger write failed')
+        return {'id': 'x'} if sell_ok else None
+
+    def test_an_exit_cancels_the_protection_holding_its_shares_before_selling(self):
+        calls, ok = self.exit_through_protection()
+        self.assertEqual(calls, [('cancel', 'oco-1'), ('sell', 'LIN', 31)])
+        self.assertTrue(ok)
+
+    def test_a_refused_exit_puts_the_protection_back(self):
+        calls, ok = self.exit_through_protection(sell_ok=False)
+        self.assertEqual(calls, [('cancel', 'oco-1'), ('sell', 'LIN', 31),
+                                 ('protect', 'LIN', 31, 491.46, 512.63)])
+        self.assertFalse(ok)
+
+    def test_no_sell_is_sent_when_the_protection_cannot_be_cancelled(self):
+        calls, ok = self.exit_through_protection(cancel_ok=False)
+        self.assertEqual(calls, [('cancel', 'oco-1')])
+        self.assertFalse(ok)
+
+    def test_a_sell_that_raises_still_puts_the_protection_back(self):
+        calls, ok = self.exit_through_protection(sell_ok='raise')
+        self.assertEqual(calls[-1], ('protect', 'LIN', 31, 491.46, 512.63))
+        self.assertFalse(ok)
+
+    def test_no_sell_when_the_stop_filled_before_the_cancel(self):
+        """A 404 cancel can mean the stop just filled; selling would open a short."""
+        calls, ok = self.exit_through_protection(held=0)
+        self.assertEqual(calls, [('cancel', 'oco-1')])
+        self.assertTrue(ok)
+
+    def test_only_the_shares_still_held_are_sold(self):
+        calls, _ = self.exit_through_protection(held=20)
+        self.assertEqual(calls, [('cancel', 'oco-1'), ('sell', 'LIN', 20)])
+
+    def test_a_close_all_exit_restores_nothing_over_the_sold_shares(self):
+        """Without a trade id the exit is close_position, which sells everything."""
+        APP._BROKER_SYNC_OK[0] = True
+        calls = []
+        ledger = {'positions': [{'ticker': 'LIN', 'shares': 31,
+                                 'exit_requested': {'reason': 'hold_period'}}],
+                  'pending_orders': []}
+        guard = {'LIN': {'order_id': 'oco-1', 'qty': 31, 'stop': 491.46, 'limit': 512.63}}
+        with patch.object(APP._alpaca, 'trading_enabled', return_value=True), \
+                patch.object(APP._alpaca, 'get_account', return_value={'equity': '100000'}), \
+                patch.object(APP._alpaca, 'effective_shares_by_symbol', return_value={'LIN': 20}), \
+                patch.object(APP._alpaca, 'protective_orders_by_symbol', return_value=guard), \
+                patch.object(APP._alpaca, 'cancel_order', return_value=True), \
+                patch.object(APP._alpaca, 'await_order_released', return_value=True), \
+                patch.object(APP._alpaca, 'positions_by_symbol', return_value={'LIN': 31}), \
+                patch.object(APP._alpaca, 'close_position',
+                             side_effect=lambda s: calls.append(('close', s)) or {'id': 'c'}), \
+                patch.object(APP._alpaca, 'submit_protective_oco',
+                             side_effect=lambda *a, **k: calls.append(('protect',) + a)), \
+                patch.object(APP, '_HEALTH', APP.RunHealth()), \
+                redirect_stdout(io.StringIO()):
+            APP.reconcile_broker(ledger)
+        self.assertEqual(calls, [('close', 'LIN')])
+
+    def test_an_unreadable_holding_is_not_sold_and_stays_protected(self):
+        calls, ok = self.exit_through_protection(held=None)
+        self.assertEqual(calls, [('cancel', 'oco-1'),
+                                 ('protect', 'LIN', 31, 491.46, 512.63)])
+        self.assertFalse(ok)
+
+    def test_a_restore_that_keeps_being_refused_is_retried_then_reported(self):
+        calls, ok = self.exit_through_protection(sell_ok=False, protect_ok=False)
+        self.assertEqual([c[0] for c in calls].count('protect'), 3)
+        self.assertIn('protection_rejected:LIN', self.exit_degraded)
+        self.assertFalse(ok)
+
 
 IntegrationTests.real_report = staticmethod(APP.save_html_report)
 IntegrationTests.real_whatsapp = staticmethod(APP.send_whatsapp)

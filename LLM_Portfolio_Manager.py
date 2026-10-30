@@ -5995,6 +5995,20 @@ def reconcile_broker(portfolio):
         # Sells are not deferred. Leaving a position unexited is the larger risk,
         # and an exit does not depend on the entry anchor.
         defer_buys = _market_is_open()
+        # Every held long carries a resting GTC stop/target that reserves all of
+        # its shares, so Alpaca refuses an exit sell with "insufficient qty
+        # available" until that order is cancelled. On 2026-10-30 the hold
+        # period ended for LIN and MSFT and both sells were refused that way:
+        # the exit could only ever happen if the stop or target fired.
+        protection = {}
+        if any(side == 'sell' for side, _, _ in actions):
+            try:
+                protection = _alpaca.protective_orders_by_symbol() or {}
+            except Exception as exc:
+                protection = {}
+                print(f'  Broker: could not read resting stop/targets '
+                      f'({type(exc).__name__}); an exit they hold shares for '
+                      f'will be refused')
         submitted, failed, deferred = 0, 0, 0
         for side, symbol, qty in actions:
             ref = refs.get((side, symbol), '')
@@ -6006,16 +6020,58 @@ def reconcile_broker(portfolio):
                       f'its levels were sized against. The next post-close run '
                       f'sends it.')
                 continue
-            if side == 'sell' and symbol not in ledger_shares:
-                # A full liquidation carries no client_order_id, so the ledger
-                # id is stamped via an explicit sell order when we know the
-                # position it belongs to; otherwise fall back to close-all.
-                ok = (_alpaca.submit_market_order(symbol, qty, side, ref=ref) is not None
-                      if ref else _alpaca.close_position(symbol) is not None)
-            else:
-                ok = _alpaca.submit_market_order(
-                    symbol, qty, side, ref=ref,
-                    stop_price=stop, target_price=target) is not None
+            guard = protection.get(symbol) if side == 'sell' else None
+            held = None
+            if guard:
+                if not _alpaca.cancel_order(guard.get('order_id')):
+                    failed += 1
+                    print(f'  Broker SELL {qty} {symbol}: FAILED - its stop/target '
+                          f'order could not be cancelled to free the shares')
+                    continue
+                if not _alpaca.await_order_released(guard.get('order_id'), attempts=12):
+                    print(f'  Broker: the {symbol} stop/target has not cleared yet; '
+                          f'selling anyway')
+                # A cancel answered 404 may mean the stop or target just filled.
+                # Selling the original quantity then would open a short, so sell
+                # only what is still held - and nothing when that is unknown.
+                try:
+                    held = int(_alpaca.positions_by_symbol().get(symbol, 0))
+                except Exception:
+                    held = None
+                if held == 0:
+                    print(f'  Broker SELL {qty} {symbol}: not needed - its '
+                          f'stop/target already filled')
+                    continue
+                if held is not None:
+                    qty = min(int(qty), held)
+            try:
+                if guard and held is None:
+                    print(f'  Broker SELL {qty} {symbol}: not sent - could not '
+                          f'confirm the shares are still held')
+                    ok = False
+                elif side == 'sell' and symbol not in ledger_shares:
+                    # A full liquidation carries no client_order_id, so the ledger
+                    # id is stamped via an explicit sell order when we know the
+                    # position it belongs to; otherwise fall back to close-all.
+                    if ref:
+                        ok = _alpaca.submit_market_order(symbol, qty, side, ref=ref) is not None
+                    else:
+                        ok = _alpaca.close_position(symbol) is not None
+                        # Close-all sells the whole holding, whatever qty says,
+                        # so nothing is left to put protection back on.
+                        if held is not None:
+                            qty = held
+                else:
+                    ok = _alpaca.submit_market_order(
+                        symbol, qty, side, ref=ref,
+                        stop_price=stop, target_price=target) is not None
+            except Exception as exc:
+                # With its protection already cancelled, a raise must still
+                # reach the restore below rather than the outer handler.
+                if not guard:
+                    raise
+                print(f'  Broker SELL {qty} {symbol}: raised {type(exc).__name__}')
+                ok = False
             if ok:
                 submitted += 1
                 guarded = (' with stop/target attached'
@@ -6026,6 +6082,27 @@ def reconcile_broker(portfolio):
             else:
                 failed += 1
                 print(f'  Broker {side.upper()} {qty} {symbol}: FAILED')
+            if guard:
+                # Whatever is still held must not stay unguarded until the next
+                # run: all of it when the sell was refused, the rest when only
+                # part of the holding was sold.
+                # Retried as protect_positions does: the cancel may still be
+                # settling, and until it does it reserves the shares.
+                before = held if held is not None else int(guard.get('qty') or 0)
+                remaining = before - (int(qty) if ok else 0)
+                restored = remaining <= 0
+                for attempt in range(3 if remaining > 0 else 0):
+                    restored = _alpaca.submit_protective_oco(
+                        symbol, remaining, guard.get('stop'), guard.get('limit'),
+                        ref=ref) is not None
+                    if restored:
+                        break
+                    if attempt < 2:
+                        time.sleep(1.0)
+                if not restored:
+                    _degrade('protection_rejected:' + symbol)
+                    print(f'  Broker: could not restore the stop/target on '
+                          f'{remaining} {symbol}; it is unprotected')
         _HEALTH.stage('broker', failed == 0,
                       f'{submitted} order(s) submitted, {failed} failed'
                       + (f', {deferred} buy(s) deferred to the next close'
