@@ -656,8 +656,34 @@ class TheLedgersNumbersMustAgree(unittest.TestCase):
         book = self.book()
         book['positions'][0]['stop_price'] = 200.0      # above the target
         from qa_validate import check_arithmetic
-        self.assertTrue(any('stop < entry < target' in p
+        self.assertTrue(any('not both below target' in p
                             for p in check_arithmetic(book)))
+
+    def test_a_trailed_stop_above_entry_is_not_a_contradiction(self):
+        """The ratchet lifts a winner's stop past its entry: run of 2026-10-13.
+
+        MSFT as committed: 541.15 - 1.5 x 11.71 = 523.59 over a 518.86 entry.
+        """
+        book = self.book()
+        book['positions'][0].update(
+            ticker='MSFT', shares=14, entry_price=518.8629, cost_basis=7264.08,
+            current_price=541.15, current_value=7576.10, stop_price=523.59,
+            target_price=553.9929, high_watermark=541.15, atr_at_entry=11.71)
+        from qa_validate import check_arithmetic
+        self.assertEqual(check_arithmetic(book), [])
+
+    def test_a_stop_above_entry_no_trail_could_have_set_is_caught(self):
+        from qa_validate import check_arithmetic
+        for fields, expected in (
+                ({}, 'cannot be checked'),                               # nothing to trail from
+                ({'high_watermark': 'n/a', 'atr_at_entry': 1.0}, 'cannot be checked'),
+                ({'high_watermark': 155.20, 'atr_at_entry': 0}, 'no trail'),  # never ratcheted
+                ({'high_watermark': 155.20, 'atr_at_entry': 3.5}, 'no trail'),  # 155.20 - 3.5 < 153
+                ({'high_watermark': float('inf'), 'atr_at_entry': 1.0}, 'no trail')):
+            book = self.book()
+            book['positions'][0].update(stop_price=153.00, **fields)
+            problems = check_arithmetic(book)
+            self.assertTrue(any(expected in p for p in problems), (fields, problems))
 
     def test_a_trade_that_exited_before_it_entered_is_caught(self):
         book = self.book()

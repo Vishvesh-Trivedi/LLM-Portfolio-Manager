@@ -2,6 +2,7 @@
 
 import argparse
 import hashlib
+import math
 import os
 from pathlib import Path
 import shutil
@@ -9,6 +10,7 @@ import tempfile
 from types import SimpleNamespace
 
 import screener_portfolio as _reconcile
+from screener_contracts import CONFIG_NUMERIC_BOUNDS
 
 
 def digest(path):
@@ -73,9 +75,33 @@ def check_arithmetic(portfolio):
             broken.append(f'{name} current_value does not match {shares} x {price}')
         stop, target = position.get('stop_price'), position.get('target_price')
         if stop is not None and target is not None:
-            if not float(stop) < entry < float(target):
-                broken.append(f'{name} levels are not stop < entry < target: '
+            stop, target = float(stop), float(target)
+            if not max(stop, entry) < target:
+                broken.append(f'{name} stop and entry are not both below target: '
                               f'{stop} / {entry} / {target}')
+            # The trailing stop ratchets to high_watermark - k*ATR, so a winner
+            # legitimately carries a stop above its entry. Requiring
+            # stop < entry rejected exactly that: MSFT trailed to 523.59 over a
+            # 518.86 entry on 2026-10-13, failed the regression step, and the
+            # gated screener stopped trading for over two weeks. A stop at or
+            # above entry is still a contradiction unless the ratchet could have
+            # set it: no trailed stop sits above high_watermark minus the
+            # smallest trail multiplier the config contract allows times ATR.
+            elif stop >= entry:
+                hwm, atr = position.get('high_watermark'), position.get('atr_at_entry')
+                try:
+                    hwm, atr = float(hwm), float(atr)
+                except (TypeError, ValueError):
+                    broken.append(f'{name} stop {stop} is at or above entry {entry} and '
+                                  f'its trail cannot be checked: high_watermark {hwm!r}, '
+                                  f'atr_at_entry {atr!r}')
+                    continue
+                k = CONFIG_NUMERIC_BOUNDS['trail_atr_mult'][0]
+                if not (math.isfinite(hwm) and math.isfinite(atr) and atr > 0
+                        and stop <= round(hwm - k * atr, 2) + 0.01):
+                    broken.append(f'{name} stop {stop} is at or above entry {entry} '
+                                  f'but no trail from high_watermark {hwm} with ATR '
+                                  f'{atr} could have set it')
 
     for trade in closed:
         entered, exited = str(trade.get('entry_date', ''))[:10], str(trade.get('exit_date', ''))[:10]
