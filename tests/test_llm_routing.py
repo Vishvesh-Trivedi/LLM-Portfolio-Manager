@@ -232,5 +232,79 @@ class ModelRankingTests(unittest.TestCase):
         self.assertEqual(order[0], 'qwen/qwen2.5-72b-instruct')
 
 
+class RetiredBackupModels(unittest.TestCase):
+    """A retired :free id must not stand between the run and a live one.
+
+    On 2026-10-30 the first three backup ids answered 404, the three-try cap
+    was spent on them in every call, and the live ids behind them were never
+    asked while NVIDIA dropped connections - so catalysts and final failed.
+    """
+
+    def setUp(self):
+        import requests
+        self.asked = []
+
+        def post(url, json=None, **kwargs):
+            self.asked.append(json['model'])
+            response = Mock()
+            if json['model'].startswith('dead'):
+                error = requests.HTTPError('404')
+                error.response = Mock(status_code=404)
+                response.raise_for_status.side_effect = error
+            else:
+                response.raise_for_status.return_value = None
+                response.json.return_value = {
+                    'model': json['model'], 'choices': [{'message': {'content': 'ok'}}]}
+            return response
+
+        stack = ExitStack()
+        self.addCleanup(stack.close)
+        for name, value in (('OPENROUTER_API_KEY', 'test-key'), ('_OPENROUTER_ACTIVE', [None]),
+                            ('_OPENROUTER_RECONCILED', [False]), ('_OPENROUTER_RETIRED', set()),
+                            ('_OPENROUTER_MODELS', ['dead1:free', 'dead2:free', 'dead3:free',
+                                                    'live:free'])):
+            stack.enter_context(patch.object(app, name, value))
+        stack.enter_context(patch.object(app, '_llm_acquire_rate_slot'))
+        stack.enter_context(patch.object(app, '_REQUESTS_SESSION', Mock(post=post)))
+        stack.enter_context(patch.object(app, '_HEALTH', app.RunHealth()))
+        # The real breaker is module state; three strikes here would leave it
+        # open for whichever test runs next.
+        self.budget = Mock()
+        stack.enter_context(patch.object(app, '_llm_budget', return_value=self.budget))
+        stack.enter_context(redirect_stdout(io.StringIO()))
+
+    def test_404s_do_not_spend_the_tries_and_are_not_asked_again(self):
+        self.assertEqual(app._call_openrouter('s', 'u'), 'ok')
+        self.assertEqual(self.asked, ['dead1:free', 'dead2:free', 'dead3:free', 'live:free'])
+        self.asked.clear()
+        self.assertEqual(app._call_openrouter('s', 'u'), 'ok')
+        self.assertEqual(self.asked, ['live:free'])
+
+    def test_404s_do_not_open_the_breaker_in_front_of_the_live_model(self):
+        app._call_openrouter('s', 'u')
+        self.budget.note.assert_called_once_with(True)
+
+    def test_when_every_id_has_404ed_they_are_all_asked_again(self):
+        """A live model can 404 while it briefly has no endpoints."""
+        app._OPENROUTER_MODELS[:] = ['dead1:free', 'dead2:free']
+        self.assertEqual(app._call_openrouter('s', 'u'), '')
+        self.asked.clear()
+        self.assertEqual(app._call_openrouter('s', 'u'), '')
+        self.assertEqual(self.asked, ['dead1:free', 'dead2:free'])
+
+    def test_every_id_404ing_is_one_strike_for_the_breaker(self):
+        """Otherwise a moved endpoint is re-asked on every NVIDIA retry, forever."""
+        app._OPENROUTER_MODELS[:] = ['dead1:free', 'dead2:free']
+        app._call_openrouter('s', 'u')
+        self.budget.note.assert_called_once_with(False)
+
+    def test_a_failure_that_is_not_a_404_still_spends_a_try(self):
+        app._OPENROUTER_MODELS[:] = ['live:free', 'b:free', 'c:free', 'd:free']
+        app._REQUESTS_SESSION.post = lambda url, json=None, **kw: (
+            self.asked.append(json['model']) or (_ for _ in ()).throw(ConnectionError()))
+        self.assertEqual(app._call_openrouter('s', 'u'), '')
+        self.assertEqual(self.asked, ['live:free', 'b:free', 'c:free'])
+
+
 if __name__ == '__main__':
     unittest.main()

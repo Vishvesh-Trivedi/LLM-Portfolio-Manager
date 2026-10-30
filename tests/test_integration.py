@@ -136,6 +136,7 @@ class IntegrationTests(unittest.TestCase):
                   '_LAST_LLM_FAILURE_REASON': [''], '_NVIDIA_ACTIVE_MODEL': ['primary'],
                   '_NVIDIA_MODEL_ROTATION': ['primary'], '_OPENROUTER_RECONCILED': [False],
                   '_OPENROUTER_ACTIVE': [None], '_OPENROUTER_MODELS': ['backup:free'],
+                  '_OPENROUTER_RETIRED': set(),
                   '_LLM_MIN_GAP': 0, '_LLM_BATCH_COOLDOWN_EVERY': 100}
         for name, value in values.items():
             self.stack.enter_context(patch.object(APP, name, value))

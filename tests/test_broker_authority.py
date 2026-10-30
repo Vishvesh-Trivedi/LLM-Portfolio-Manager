@@ -124,11 +124,21 @@ class NothingTradesOnAnUnverifiedLedger(unittest.TestCase):
         """It must not be filed alongside the reporting-only degradations."""
         for reason in ('broker_state_unreadable',
                        'broker_discrepancy:anything',
-                       'broker_holding_unprotected:GILD',
-                       'session_never_screened:2026-09-18'):
+                       'broker_holding_unprotected:GILD'):
             with self.subTest(reason=reason):
                 self.assertFalse(reason.startswith(self.app._NON_BLOCKING_DEGRADATIONS),
                                  f'{reason} must block trading')
+
+    def test_a_missed_past_session_is_reported_but_does_not_block(self):
+        """It cannot be traded anyway; blocking only extended the 2026-10 outage."""
+        reason = 'session_never_screened:2026-10-15'
+        self.assertTrue(reason.startswith(self.app._NON_BLOCKING_DEGRADATIONS))
+        with patch.object(self.app, '_HEALTH', self.app.RunHealth()):
+            for name in self.app._CORE_STAGES:
+                self.app._HEALTH.stage(name, True, 'validated')
+            self.app._degrade(reason)
+            self.assertEqual(self.app._trade_readiness()['trade_blockers'], [])
+            self.assertIn(reason, self.app._HEALTH.as_dict()['degraded_reasons'])
 
     def mirror(self, sync_ok):
         """Run the mirror with a ledger the broker does not match.

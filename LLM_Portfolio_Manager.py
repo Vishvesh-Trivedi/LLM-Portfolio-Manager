@@ -199,8 +199,8 @@ def _catch_up_session(portfolio, now=None, lookback=5):
 
     Only looks back a few days: screening a stale session means deciding on
     market data from days ago, which is worth doing for yesterday and not worth
-    doing for last week. Anything older is reported by _missed_sessions instead
-    and left for a human.
+    doing for last week. Anything older is reported by _missed_sessions instead;
+    the report degrades the run but does not stop today's trading.
     """
     from zoneinfo import ZoneInfo
     now = now or datetime.now(ZoneInfo('America/New_York'))
@@ -786,15 +786,16 @@ OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '').strip()
 _OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions'
 _OPENROUTER_MODELS = [
     # Best-reasoning free models first; :free ids that 404 are skipped at runtime.
-    'nvidia/nemotron-3-super-120b-a12b:free',
-    'z-ai/glm-5.2:free',
-    'minimax/minimax-m3:free',
+    # nemotron-3-super, glm-5.2 and minimax-m3 were retired from the catalog in
+    # October 2026. They sat first, so they took every attempt and the backup
+    # answered nothing while NVIDIA dropped connections on 2026-10-30.
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
     'google/gemma-4-31b-it:free',
     'google/gemma-4-26b-a4b-it:free',
-    'nvidia/nemotron-3-ultra-550b-a55b:free',
 ]
 _OPENROUTER_ACTIVE = [None]      # resolved working model id (lazy)
 _OPENROUTER_RECONCILED = [False]
+_OPENROUTER_RETIRED = set()      # ids that 404ed this run; skipped until all have
 
 
 def _openrouter_headers():
@@ -817,15 +818,26 @@ def _reconcile_openrouter_once():
 
 
 def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_timeout=60):
-    """Try at most two distinct :free models; never auto-route to a paid id."""
+    """Try at most three distinct live :free models; never auto-route to a paid id."""
     if not OPENROUTER_API_KEY:
         return ''
     _reconcile_openrouter_once()
+    # OpenRouter also answers 404 while a live model briefly has no endpoints,
+    # so once every id has 404ed, ask them all again rather than lose the backup.
+    if set(_OPENROUTER_MODELS) <= _OPENROUTER_RETIRED:
+        _OPENROUTER_RETIRED.clear()
     models = []
     for m in [_OPENROUTER_ACTIVE[0], *_OPENROUTER_MODELS]:
-        if isinstance(m, str) and m.endswith(':free') and m not in models:
+        if (isinstance(m, str) and m.endswith(':free') and m not in models
+                and m not in _OPENROUTER_RETIRED):
             models.append(m)
-    for m in models[:3]:
+    # A 404 is a model that no longer exists, not an attempt at an answer, so
+    # it neither spends one of the three tries, nor counts toward the breaker,
+    # nor gets asked again this run.
+    tries = 0
+    for m in models:
+        if tries >= 3:
+            break
         actual_model = m
         try:
             _llm_acquire_rate_slot('OpenRouter')
@@ -852,11 +864,22 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
             return raw
         except Exception as e:
             _HEALTH.provider('OpenRouter', actual_model, False)
-            _llm_budget('OpenRouter').note(False)
             print(f'  OpenRouter fallback failed [{m}]: {_safe_llm_error(e)}')
-            if getattr(getattr(e, 'response', None), 'status_code', None) in (401, 403):
+            status = getattr(getattr(e, 'response', None), 'status_code', None)
+            if status == 404:
+                _OPENROUTER_RETIRED.add(m)
+                if _OPENROUTER_ACTIVE[0] == m:
+                    _OPENROUTER_ACTIVE[0] = None
+                continue
+            tries += 1
+            _llm_budget('OpenRouter').note(False)
+            if status in (401, 403):
                 break
-            continue
+    # Every id 404ing is the provider failing (a moved endpoint, a lost free
+    # tier). Count it as one strike, so a few such calls open the breaker and
+    # pause the backup instead of re-asking every id on every NVIDIA retry.
+    if _OPENROUTER_MODELS and set(_OPENROUTER_MODELS) <= _OPENROUTER_RETIRED:
+        _llm_budget('OpenRouter').note(False)
     return ''
 
 
@@ -6217,8 +6240,13 @@ def _market_is_open(et_now=None):
 _CORE_STAGES = ('market_data', 'catalysts', 'final')
 
 # Degradations that are informational rather than dangerous. They keep the run
-# marked degraded (and the job red) without blocking execution.
-_NON_BLOCKING_DEGRADATIONS = ('paper_horizon_', 'advisory_')
+# marked degraded and reported without blocking execution.
+#
+# A missed session is history: it is reported rather than back-filled, so it
+# says nothing about whether today's order is safe. Blocking on it turned the
+# 2026-10-15..28 outage into two more weeks without trading, because the
+# lookback kept finding the same gaps until they aged out.
+_NON_BLOCKING_DEGRADATIONS = ('paper_horizon_', 'advisory_', 'session_never_screened:')
 
 
 def _blocking_degraded_reasons():
