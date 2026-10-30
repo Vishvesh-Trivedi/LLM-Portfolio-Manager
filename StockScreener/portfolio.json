@@ -27,14 +27,14 @@
       "stop_price": 525.89,
       "target_price": 553.9929,
       "sector": "Technology",
-      "current_price": 533.6900024414062,
-      "current_value": 7471.66,
+      "current_price": 539.4400024414062,
+      "current_value": 7552.16,
       "cost_basis": 7264.08,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 207.58,
-      "unrealized_pnl_pct": 2.857622713406238,
-      "hold_days": 10,
-      "held_sessions": 10,
+      "unrealized_pnl": 288.08,
+      "unrealized_pnl_pct": 3.9658153544564367,
+      "hold_days": 11,
+      "held_sessions": 11,
       "hold_sessions": 10,
       "high_watermark": 543.4500122070312,
       "atr_at_entry": 11.71,
@@ -44,14 +44,14 @@
       "broker_order_id": "3b767c98-ae6c-4a62-80fe-5b47f2efd46e",
       "broker_partial_fill": false,
       "requested_shares": 14,
-      "quote_date": "2026-10-14",
-      "last_evaluated_session": "2026-10-14",
+      "quote_date": "2026-10-15",
+      "last_evaluated_session": "2026-10-15",
       "earnings_days_away": 16,
       "indicator_exit_note": "",
       "mark_basis": "broker_current_price",
       "exit_requested": {
         "reason": "hold_period",
-        "session": "2026-10-14"
+        "session": "2026-10-15"
       }
     },
     {
@@ -79,14 +79,14 @@
       "stop_price": 491.46,
       "target_price": 512.6294,
       "sector": "Basic Materials",
-      "current_price": 501.8900146484375,
-      "current_value": 15558.59,
+      "current_price": 500.57000732421875,
+      "current_value": 15517.67,
       "cost_basis": 15148.44,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 410.15,
-      "unrealized_pnl_pct": 2.707539522221425,
-      "hold_days": 10,
-      "held_sessions": 10,
+      "unrealized_pnl": 369.23,
+      "unrealized_pnl_pct": 2.4374126972810384,
+      "hold_days": 11,
+      "held_sessions": 11,
       "hold_sessions": 10,
       "high_watermark": 503.44000244140625,
       "atr_at_entry": 7.99,
@@ -96,14 +96,14 @@
       "broker_order_id": "841c8599-2bdd-487c-95b7-aa98a68c9d94",
       "broker_partial_fill": false,
       "requested_shares": 31,
-      "quote_date": "2026-10-20",
+      "quote_date": "2026-10-21",
       "mark_basis": "broker_current_price",
-      "last_evaluated_session": "2026-10-20",
+      "last_evaluated_session": "2026-10-21",
       "earnings_days_away": 17,
       "indicator_exit_note": "",
       "exit_requested": {
         "reason": "hold_period",
-        "session": "2026-10-20"
+        "session": "2026-10-21"
       }
     }
   ],
@@ -733,7 +733,7 @@
     "2026-10-06"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 102074.78,
+  "broker_equity": 102074.08,
   "alpaca_order_ledger": [
     {
       "source": "poll",
