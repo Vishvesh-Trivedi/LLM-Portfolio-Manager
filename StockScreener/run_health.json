@@ -1,30 +1,15 @@
 {
-  "status": "failed",
+  "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
-      "attempts": 13,
-      "successes": 11,
-      "failures": 2
-    },
-    "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 4,
-      "successes": 3,
+      "attempts": 10,
+      "successes": 9,
       "failures": 1
     },
     "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "OpenRouter:google/gemma-4-31b-it:free": {
       "attempts": 1,
-      "successes": 0,
-      "failures": 1
-    },
-    "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 1,
-      "successes": 0,
-      "failures": 1
+      "successes": 1,
+      "failures": 0
     }
   },
   "stages": {
@@ -34,7 +19,7 @@
     },
     "missed_sessions": {
       "success": false,
-      "detail": "2026-10-15, 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26, 2026-10-27, 2026-10-28"
+      "detail": "2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26, 2026-10-27"
     },
     "session": {
       "success": true,
@@ -54,17 +39,9 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "35/42 covered; missing: VRT, V, VMC, CART, EAT, TXRH, WCC; selected sector checked by order planner"
+      "detail": "33/38 covered; missing: V, WM, WAT, XEL, DIS; selected sector checked by order planner"
     },
     "catalyst_1": {
-      "success": true,
-      "detail": "Recovered with smaller batches after: ValueError: NVIDIA-retry provider unavailable or returned empty content"
-    },
-    "catalyst_1_recovery_1": {
-      "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
-    },
-    "catalyst_1_recovery_2": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
@@ -93,20 +70,20 @@
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
+      "success": false,
+      "detail": "ValueError: ranking contains invalid candidate tickers"
     },
     "round2": {
-      "success": false,
-      "detail": "ValueError: no JSON object in LLM response"
+      "success": true,
+      "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
-      "success": false,
-      "detail": "ValueError: NVIDIA-retry parser/validator rejected response: ValueError: derived rule must be a string"
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
     },
     "broker": {
       "success": false,
-      "detail": "0 order(s) submitted, 2 failed (equity $102079.96)"
+      "detail": "2 order(s) submitted, 1 failed (equity $102135.47)"
     },
     "alerts": {
       "success": true,
@@ -114,7 +91,6 @@
     }
   },
   "degraded_reasons": [
-    "session_never_screened:2026-10-15",
     "session_never_screened:2026-10-16",
     "session_never_screened:2026-10-19",
     "session_never_screened:2026-10-20",
@@ -123,20 +99,20 @@
     "session_never_screened:2026-10-23",
     "session_never_screened:2026-10-26",
     "session_never_screened:2026-10-27",
-    "session_never_screened:2026-10-28"
+    "protection_rejected:LIN"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 21,
-  "successes": 14,
-  "failures": 7,
-  "date": "2026-10-29",
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, NVIDIA:meta/llama-3.2-90b-vision-instruct",
+  "attempts": 11,
+  "successes": 10,
+  "failures": 1,
+  "date": "2026-10-28",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
-    "failed:final"
+    "protection_rejected:LIN"
   ],
-  "order_status": "NO ORDER",
-  "order_reason": "Data/LLM validation incomplete; no new order queued."
+  "order_status": "QUEUED",
+  "order_reason": "Queued COP for the next session Open; not filled"
 }

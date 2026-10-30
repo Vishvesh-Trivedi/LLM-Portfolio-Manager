@@ -27,14 +27,14 @@
       "stop_price": 525.89,
       "target_price": 553.9929,
       "sector": "Technology",
-      "current_price": 539.4400024414062,
-      "current_value": 7552.16,
+      "current_price": 529.0499877929688,
+      "current_value": 7406.7,
       "cost_basis": 7264.08,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 288.08,
-      "unrealized_pnl_pct": 3.9658153544564367,
-      "hold_days": 11,
-      "held_sessions": 11,
+      "unrealized_pnl": 142.62,
+      "unrealized_pnl_pct": 1.963359434367451,
+      "hold_days": 12,
+      "held_sessions": 12,
       "hold_sessions": 10,
       "high_watermark": 543.4500122070312,
       "atr_at_entry": 11.71,
@@ -44,14 +44,14 @@
       "broker_order_id": "3b767c98-ae6c-4a62-80fe-5b47f2efd46e",
       "broker_partial_fill": false,
       "requested_shares": 14,
-      "quote_date": "2026-10-15",
-      "last_evaluated_session": "2026-10-15",
+      "quote_date": "2026-10-16",
+      "last_evaluated_session": "2026-10-16",
       "earnings_days_away": 16,
       "indicator_exit_note": "",
       "mark_basis": "broker_current_price",
       "exit_requested": {
-        "reason": "hold_period",
-        "session": "2026-10-15"
+        "reason": "stop_loss",
+        "session": "2026-10-16"
       }
     },
     {
@@ -79,14 +79,14 @@
       "stop_price": 491.46,
       "target_price": 512.6294,
       "sector": "Basic Materials",
-      "current_price": 500.57000732421875,
-      "current_value": 15517.67,
+      "current_price": 510.3599853515625,
+      "current_value": 15821.16,
       "cost_basis": 15148.44,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 369.23,
-      "unrealized_pnl_pct": 2.4374126972810384,
-      "hold_days": 11,
-      "held_sessions": 11,
+      "unrealized_pnl": 672.72,
+      "unrealized_pnl_pct": 4.440853315588922,
+      "hold_days": 12,
+      "held_sessions": 12,
       "hold_sessions": 10,
       "high_watermark": 503.44000244140625,
       "atr_at_entry": 7.99,
@@ -96,14 +96,14 @@
       "broker_order_id": "841c8599-2bdd-487c-95b7-aa98a68c9d94",
       "broker_partial_fill": false,
       "requested_shares": 31,
-      "quote_date": "2026-10-21",
+      "quote_date": "2026-10-22",
       "mark_basis": "broker_current_price",
-      "last_evaluated_session": "2026-10-21",
+      "last_evaluated_session": "2026-10-22",
       "earnings_days_away": 17,
       "indicator_exit_note": "",
       "exit_requested": {
         "reason": "hold_period",
-        "session": "2026-10-21"
+        "session": "2026-10-22"
       }
     }
   ],
@@ -715,11 +715,41 @@
   "total_realized_pnl": 460.58,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.5724,
-  "last_updated": "2026-10-29",
+  "last_updated": "2026-10-28",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
-  "pending_orders": [],
+  "pending_orders": [
+    {
+      "source": "TECHNICAL",
+      "reasoning": "COP has a strong bull case due to its recent increase in momentum and earnings announced today, with a moderate RSI and ADX. The stock has a high upside potential of 1.0% and a relatively low short ratio of 2.8.",
+      "confidence": 85,
+      "rsi": 68.8,
+      "vix": 16.91,
+      "vix_regime": "MODERATE (p47 neutral)",
+      "qqq_trend": "BULLISH",
+      "earnings_days": 6,
+      "congress": "NEUTRAL",
+      "insider": "BUYING",
+      "position_size_pct": 25,
+      "tech_score": 43,
+      "news_score": 17,
+      "id": "85c4494e-0b17-4e13-8bdc-997c04c40775",
+      "trade_id": "85c4494e-0b17-4e13-8bdc-997c04c40775",
+      "ticker": "COP",
+      "signal_date": "2026-10-28",
+      "execution_session": "2026-10-29",
+      "estimated_entry": 149.51,
+      "stop_distance": 5.09,
+      "target_distance": 10.17,
+      "sector": "Energy",
+      "atr": 3.39,
+      "amount_usd": 19721.4,
+      "shares": 131,
+      "hold_sessions": 10,
+      "status": "PENDING"
+    }
+  ],
   "processed_sessions": [
     "2026-09-16",
     "2026-09-17",
@@ -730,10 +760,11 @@
     "2026-09-29",
     "2026-09-30",
     "2026-10-01",
-    "2026-10-06"
+    "2026-10-06",
+    "2026-10-28"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 102074.08,
+  "broker_equity": 102136.17,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -1543,6 +1574,7 @@
     "2026-10-08",
     "2026-10-09",
     "2026-10-12",
-    "2026-10-29"
+    "2026-10-29",
+    "2026-10-28"
   ]
 }
