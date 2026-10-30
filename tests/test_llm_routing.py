@@ -298,6 +298,46 @@ class RetiredBackupModels(unittest.TestCase):
         app._call_openrouter('s', 'u')
         self.budget.note.assert_called_once_with(False)
 
+    def reasoning_replies(self, replies):
+        """Answer each model with (content, finish_reason) and record the request."""
+        self.sent = []
+
+        def post(url, json=None, **kwargs):
+            self.sent.append(json)
+            content, finish = replies[json['model']]
+            response = Mock()
+            response.raise_for_status.return_value = None
+            response.json.return_value = {'model': json['model'], 'choices': [
+                {'finish_reason': finish, 'message': {'content': content}}]}
+            return response
+
+        app._REQUESTS_SESSION.post = post
+
+    def test_reasoning_is_kept_low_and_given_room_above_the_answer(self):
+        """2026-10-30: nemotron-3-ultra thought through 4000 tokens, no JSON left."""
+        app._OPENROUTER_MODELS[:] = ['think:free']
+        self.reasoning_replies({'think:free': ('{"ok":true}', 'stop')})
+        self.assertEqual(app._call_openrouter('s', 'u', max_tokens=4000), '{"ok":true}')
+        self.assertEqual(self.sent[0]['reasoning'], {'effort': 'low', 'exclude': True})
+        self.assertEqual(self.sent[0]['max_tokens'], 8000)
+
+    def test_a_small_call_gets_bounded_room_to_think(self):
+        app._OPENROUTER_MODELS[:] = ['think:free']
+        self.reasoning_replies({'think:free': ('{"ok":true}', 'stop')})
+        app._call_openrouter('s', 'u', max_tokens=200)
+        app._call_openrouter('s', 'u', max_tokens=20000)
+        self.assertEqual([body['max_tokens'] for body in self.sent], [1200, 28000])
+
+    def test_a_reply_cut_off_at_max_tokens_falls_through_to_the_next_model(self):
+        app._OPENROUTER_MODELS[:] = ['think:free', 'live:free']
+        self.reasoning_replies({'think:free': ('Let me weigh EQIX against', 'length'),
+                                'live:free': ('{"ok":true}', 'stop')})
+        self.assertEqual(app._call_openrouter('s', 'u'), '{"ok":true}')
+        self.assertEqual([body['model'] for body in self.sent], ['think:free', 'live:free'])
+        # It answered, just too long: no breaker strike against the provider.
+        self.budget.note.assert_called_once_with(True)
+        self.assertEqual(app._OPENROUTER_ACTIVE[0], 'live:free')
+
     def test_a_failure_that_is_not_a_404_still_spends_a_try(self):
         app._OPENROUTER_MODELS[:] = ['live:free', 'b:free', 'c:free', 'd:free']
         app._REQUESTS_SESSION.post = lambda url, json=None, **kw: (

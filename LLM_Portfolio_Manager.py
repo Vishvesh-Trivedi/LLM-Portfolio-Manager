@@ -796,6 +796,17 @@ _OPENROUTER_MODELS = [
 _OPENROUTER_ACTIVE = [None]      # resolved working model id (lazy)
 _OPENROUTER_RECONCILED = [False]
 _OPENROUTER_RETIRED = set()      # ids that 404ed this run; skipped until all have
+# The live backups are reasoning models, and OpenRouter counts their thinking
+# against max_tokens. On 2026-10-30 nemotron-3-ultra spent the final round's
+# 4000 tokens thinking and returned no JSON - round 2 and final both failed
+# while it "answered". So thinking is kept low and out of the reply, and gets
+# its own room above the answer's budget - as much again, within bounds, so a
+# 200-token scoring call cannot think for minutes against its read timeout.
+_OPENROUTER_REASONING_HEADROOM = (1000, 8000)
+
+
+class _ReplyCutOff(ValueError):
+    """The model answered but ran out of tokens: not a provider failure."""
 
 
 def _openrouter_headers():
@@ -834,6 +845,8 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
     # A 404 is a model that no longer exists, not an attempt at an answer, so
     # it neither spends one of the three tries, nor counts toward the breaker,
     # nor gets asked again this run.
+    low, high = _OPENROUTER_REASONING_HEADROOM
+    budget = max_tokens + min(high, max(low, max_tokens))
     tries = 0
     for m in models:
         if tries >= 3:
@@ -843,7 +856,8 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
             _llm_acquire_rate_slot('OpenRouter')
             r = _REQUESTS_SESSION.post(
                 _OPENROUTER_ENDPOINT, headers=_openrouter_headers(),
-                json={'model': m, 'max_tokens': max_tokens,
+                json={'model': m, 'max_tokens': budget,
+                      'reasoning': {'effort': 'low', 'exclude': True},
                       'messages': [{'role': 'system', 'content': system},
                                    {'role': 'user', 'content': user}]},
                 timeout=(connect_timeout, read_timeout),
@@ -853,7 +867,12 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
             reported_model = body.get('model')
             if isinstance(reported_model, str) and reported_model.strip():
                 actual_model = reported_model.strip()
-            raw = (body['choices'][0]['message']['content'] or '').strip()
+            choice = body['choices'][0]
+            if choice.get('finish_reason') == 'length':
+                # A cut-off reply cannot pass the strict parser; asking the next
+                # model is the only way this call still produces an answer.
+                raise _ReplyCutOff('reply cut off at max_tokens')
+            raw = (choice['message']['content'] or '').strip()
             if '</think>' in raw:
                 raw = raw[raw.index('</think>') + len('</think>'):].strip()
             if not raw:
@@ -872,6 +891,12 @@ def _call_openrouter(system, user, max_tokens=2000, connect_timeout=15, read_tim
                     _OPENROUTER_ACTIVE[0] = None
                 continue
             tries += 1
+            if isinstance(e, _ReplyCutOff):
+                # Reachable and answering, so no breaker strike - but stop
+                # leading with a model that cannot fit its answer.
+                if _OPENROUTER_ACTIVE[0] == m:
+                    _OPENROUTER_ACTIVE[0] = None
+                continue
             _llm_budget('OpenRouter').note(False)
             if status in (401, 403):
                 break
