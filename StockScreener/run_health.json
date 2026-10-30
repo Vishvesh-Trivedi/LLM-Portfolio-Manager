@@ -3,23 +3,28 @@
   "providers": {
     "NVIDIA:meta/llama-3.2-11b-vision-instruct": {
       "attempts": 10,
-      "successes": 9,
-      "failures": 1
+      "successes": 8,
+      "failures": 2
+    },
+    "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
+      "attempts": 2,
+      "successes": 2,
+      "failures": 0
     },
     "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 1,
-      "successes": 1,
-      "failures": 0
+      "attempts": 2,
+      "successes": 0,
+      "failures": 2
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "3 applied, 0 failed; no changes"
+      "detail": "3 applied, 0 failed; working=1"
     },
     "missed_sessions": {
       "success": false,
-      "detail": "2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26, 2026-10-27"
+      "detail": "2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26"
     },
     "session": {
       "success": true,
@@ -39,7 +44,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "33/38 covered; missing: V, WM, WAT, XEL, DIS; selected sector checked by order planner"
+      "detail": "29/31 covered; missing: V, WM; selected sector checked by order planner"
     },
     "catalyst_1": {
       "success": true,
@@ -63,15 +68,15 @@
     },
     "catalyst_5": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "news": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": false,
-      "detail": "ValueError: ranking contains invalid candidate tickers"
+      "success": true,
+      "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
       "success": true,
@@ -83,7 +88,7 @@
     },
     "broker": {
       "success": false,
-      "detail": "2 order(s) submitted, 1 failed (equity $102135.47)"
+      "detail": "1 order(s) submitted, 1 failed (equity $102135.33)"
     },
     "alerts": {
       "success": true,
@@ -97,22 +102,18 @@
     "session_never_screened:2026-10-21",
     "session_never_screened:2026-10-22",
     "session_never_screened:2026-10-23",
-    "session_never_screened:2026-10-26",
-    "session_never_screened:2026-10-27",
-    "protection_rejected:LIN"
+    "session_never_screened:2026-10-26"
   ],
-  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, NVIDIA:meta/llama-3.2-90b-vision-instruct",
-  "attempts": 11,
+  "label": "NVIDIA:meta/llama-3.2-11b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
+  "attempts": 14,
   "successes": 10,
-  "failures": 1,
-  "date": "2026-10-28",
+  "failures": 4,
+  "date": "2026-10-27",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
-  "trade_ready": false,
-  "trade_blockers": [
-    "protection_rejected:LIN"
-  ],
+  "trade_ready": true,
+  "trade_blockers": [],
   "order_status": "QUEUED",
-  "order_reason": "Queued COP for the next session Open; not filled"
+  "order_reason": "Queued CDNS for the next session Open; not filled"
 }

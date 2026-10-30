@@ -16,34 +16,34 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-30 06:33
+   Time:   2026-10-30 07:04
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
-  Catching up: 2026-10-28 closed without being screened; processing it now instead of reporting "before 16:15 ET"
+  Catching up: 2026-10-27 closed without being screened; processing it now instead of reporting "before 16:15 ET"
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked MSFT at 526.0 (broker)
+  Broker sync: Marked MSFT at 525.65 (broker)
   Broker sync: Marked LIN at 512.47 (broker)
   Broker sync: Cash set from broker: 78885.6 -> 78885.6
-  MISSED SESSION(S) never screened: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26, 2026-10-27
-ALPACA PAPER ACCOUNT: $102,113.46 (+2,113.46 / +2.1% vs $100,000 starting)
+  MISSED SESSION(S) never screened: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26
+ALPACA PAPER ACCOUNT: $102,128.61 (+2,128.61 / +2.1% vs $100,000 starting)
 Cash: $78,885.60  |  Positions: 2/5  |  Deployed: 23%  |  Idle: 77%
 Sector exposure: Basic Materials: 15%  Technology: 7%
-Broker P&L: $+2,113.46 all-time  |  no closed trades this week
-  MSFT [Technology]: 14sh @ $518.8629 → $529.0499877929688 (+143 / +2.0%) | 12d | Stop $525.89 | Target $553.9929
-  LIN [Basic Materials]: 31sh @ $488.6594 → $510.3599853515625 (+673 / +4.4%) | 12d | Stop $491.46 | Target $512.6294
+Broker P&L: $+2,128.61 all-time  |  no closed trades this week
+  MSFT [Technology]: 14sh @ $518.8629 → $533.52001953125 (+205 / +2.8%) | 13d | Stop $525.89 | Target $553.9929
+  LIN [Basic Materials]: 31sh @ $488.6594 → $508.8299865722656 (+625 / +4.1%) | 13d | Stop $491.46 | Target $512.6294
 
 Step 1/8: Updating past results + exit signals...
 
 Step 2/8: Market context...
 
 Market context...
-  VIX:  16.91 (p46.8) -> MODERATE (p47 neutral) (1.0x)
+  VIX:  17.52 (p57.4) -> MODERATE (p57 neutral) (1.0x)
   QQQ:  $715.34 | BEARISH (-1.35% vs 50MA)
   SPY today: -0.38%
-  10Y yield: 4.99% (-1.09%)  DXY: 101.8 (-0.24%)  Nikkei: -2.32%
-  Futures:  ES=-0.91%  NQ=-1.98%
+  10Y yield: 4.99% (-1.09%)  DXY: 101.85 (-0.19%)  Nikkei: -2.12%
+  Futures:  ES=-0.87%  NQ=-1.90%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
@@ -52,43 +52,43 @@ Step 3/8: Fetching all data (parallel)...
   RSS feeds active: 13/16 | Headlines: 78
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
-  Fetching fundamentals for all 898 stocks (parallel)...
-  Full fundamentals: 462/898 stocks
-  Sector ranks - Top 3: ['Technology', 'Energy', 'Industrials'] | Perf: Technology:+4.8% | Energy:+1.3% | Industrials:+1.1% | Basic Materials:+0.3% | Consumer Cyclical:+0.2%
-  Sector flows: TOP Technology +0.8% | BOT Utilities -0.8%
+  Fetching fundamentals for all 897 stocks (parallel)...
+  Full fundamentals: 449/897 stocks
+  Sector ranks - Top 3: ['Utilities', 'Basic Materials', 'Real Estate'] | Perf: Utilities:+2.0% | Basic Materials:+1.0% | Real Estate:+0.9% | Technology:+0.5% | Healthcare:+0.1%
+  Sector flows: TOP Technology +1.7% | BOT Energy -2.0%
 
 Step 4/8: Bidirectional screening...
 
 Phase 2 - Technical screening (926 tickers)...
-  Passed: 30 | Rejected: Price:0 MA:450 Vol:295 RSI:10 Liq:102 ADX:13
+  Passed: 24 | Rejected: Price:1 MA:435 Vol:350 RSI:9 Liq:70 ADX:11
 
 Phase 3 - News screening all 926 stocks...
   News rescued: 0 stocks → []
 
 Phase 4 - Merging candidate pools...
-  Total candidates: 30
-    BOTH (tech+news): 0  TECHNICAL: 30  NEWS: 0
-  Earnings risk flags: ['EXC', 'XOM', 'MLM', 'MSI', 'PFE']
+  Total candidates: 24
+    BOTH (tech+news): 0  TECHNICAL: 24  NEWS: 0
+  Earnings risk flags: ['XOM', 'MAR']
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'AMZN', 'INTC', 'FTNT', 'DIS', 'NFLX', 'TSLA']
-  Stream B added: AAPL | $344.06 | RSI 56.4
-  Stream B added: GOOGL | $325.37 | RSI 39.1
-  Stream B added: AMZN | $254.69 | RSI 50.2
-  Stream B added: INTC | $95.53 | RSI 45.0
-  Stream B added: FTNT | $174.21 | RSI 46.5
-  Stream B added: DIS | $109.04 | RSI 52.1
-  Stream B added: NFLX | $62.0 | RSI 30.3
-  Stream B added: TSLA | $404.34 | RSI 63.6
-  Sector sentiment derived: 10/11 sectors from 33 stocks
+  Stream B: Processing headline mentions: ['AAPL', 'GOOGL', 'AMZN', 'INTC', 'MSFT', 'GOOG', 'NVDA', 'TSLA']
+  Stream B added: AAPL | $347.1 | RSI 61.0
+  Stream B added: GOOGL | $320.6 | RSI 33.8
+  Stream B added: AMZN | $253.15 | RSI 48.6
+  Stream B added: INTC | $93.75 | RSI 42.7
+  Stream B added: MSFT | $531.58 | RSI 56.6
+  Stream B added: GOOG | $316.83 | RSI 32.4
+  Stream B added: NVDA | $217.87 | RSI 46.2
+  Stream B added: TSLA | $407.51 | RSI 65.4
+  Sector sentiment derived: 8/11 sectors from 29 stocks
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 38 candidates...
-  Options data: 0/38 | Insider signals: 24/38
+  Fetching options + insider data for 31 candidates...
+  Options data: 0/31 | Insider signals: 19/31
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (38 candidates)...
-  Pre-score top 5: IQV(61=45T+16N [vader:NEUTRAL])  COP(60=43T+17N [vader:NEUTRAL])  MA(60=42T+18N [vader:NEUTRAL])  AON(57=43T+14N [vader:NEUTRAL])  UPS(57=41T+16N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (31 candidates)...
+  Pre-score top 5: IQV(56=40T+16N [vader:NEUTRAL])  CDNS(53=35T+18N [vader:NEUTRAL])  AJG(52=35T+17N [vader:NEUTRAL])  UPS(52=36T+16N [vader:NEUTRAL])  AAPL(52=36T+16N [vader:NEUTRAL])
   SEC EDGAR 8-K: 19/30 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
@@ -97,99 +97,102 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
     Batch 2/5 
     Batch 3/5 
     Batch 4/5 
+  LLM attempt 1/1 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
+  catalyst_5: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
     Batch 5/5 
-  Catalyst scoring done — 6 auto-dropped, 24 remain
+  Catalyst scoring done — 11 auto-dropped, 19 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (24 candidates, 3 layers)...
+Phase 5 - News intelligence (19 candidates, 3 layers)...
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
   Sentiment: NEUTRAL | Adj: +0
-  24 candidates after news filter
+  AUTO DROPPED: INTC
+  18 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (24 candidates)...
-  Pre-score top 5: COP(60=43T+17N [vader:NEUTRAL])  AON(57=43T+14N [vader:NEUTRAL])  UPS(57=41T+16N [vader:NEUTRAL])  MSI(56=39T+17N [vader:NEUTRAL])  NI(56=41T+15N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (18 candidates)...
+  Pre-score top 5: CDNS(53=35T+18N [vader:NEUTRAL])  AAPL(52=36T+16N [vader:NEUTRAL])  AJG(52=35T+17N [vader:NEUTRAL])  PYPL(51=36T+15N [vader:NEUTRAL])  RCL(51=35T+16N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  24 candidates after config criteria
+  18 candidates after config criteria
   Self-calibration: 19 prior picks, 42% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (24 candidates)...
-  Round 1/3: Ranking 24 candidates...
-  Round 1 failed (ValueError: ranking contains invalid candidate tickers) — using pre_score top 10
+Phase 6 - NVIDIA final scoring (18 candidates)...
+  Round 1/3: Ranking 18 candidates...
+  Round 1 → Top 10: ['ROP', 'BKR', 'RCL', 'XOM', 'NOW', 'TSLA', 'CDNS', 'CMS', 'MA', 'SPGI']
   Round 2/3: Deep-diving top 10...
-  Round 2 → analyses for ['COP', 'AON', 'UPS', 'MSI', 'NI', 'NOW', 'XOM', 'AMT', 'BIIB', 'CNP']
-  Round 3/3: Final deliberation...
   LLM attempt 1/2 failed [meta/llama-3.2-11b-vision-instruct]: ConnectionError
   LLM model fallback: meta/llama-3.2-11b-vision-instruct -> meta/llama-3.2-90b-vision-instruct (transient failure status=unknown)
-  Final pick: COP | pre=60 → 85/100 | BUY | 10 LLM calls this run
+  -> NVIDIA throttled; answered via OpenRouter.
+  Round 2 → analyses for ['CDNS', 'RCL', 'BKR', 'NOW', 'ROP', 'SPGI', 'CMS', 'TSLA', 'MA', 'XOM']
+  Round 3/3: Final deliberation...
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  LLM model fallback: meta/llama-3.2-90b-vision-instruct -> meta/llama-3.2-11b-vision-instruct (transient failure status=unknown)
+  Final pick: CDNS | pre=53 → 85/100 | BUY | 10 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=14, wr=57%, HIGH confidence): In the MID_VIX_NEUTRAL regime, stocks with a moderate RSI (60-70) and increasing momentum have a higher win rate.
-│ → History taught me that in the MID_VIX_NEUTRAL regime, stocks with a moderate RSI and increasing momentum tend to perform well.
+│ 1. Rule (n=14, wr=57%, HIGH confidence): Stocks with strong technicals and high news scores have a 57% win rate over the next 1-4 weeks.
+│ → History suggests that stocks with strong technicals and high news scores have a higher chance of success over the next 1-4 weeks.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
-  Entry estimate: close=$149.06 + 0.3% slippage = $149.51 (stop/target anchored here)
+  Entry estimate: close=$342.99 + 0.3% slippage = $344.02 (stop/target anchored here)
 
 █████████████████████████████████████████████████████████████████
   TODAY'S PICK  —  Friday, Oct 30 2026
 █████████████████████████████████████████████████████████████████
-  Market:  VIX 16.9 (MODERATE (p47 neutral))  |  QQQ BULLISH  |  SPY +0.34%
-  Macro:   The US stock market is experiencing a moderate increase, with the VIX index at 1
+  Market:  VIX 17.5 (MODERATE (p57 neutral))  |  QQQ BEARISH  |  SPY +0.58%
+  Macro:   The US stock market is experiencing a mixed day with the Dow Jones Futures falli
 ─────────────────────────────────────────────────────────────────
-  BUY  COP  [TECHNICAL]
-  Sector:     Energy
+  BUY  CDNS  [TECHNICAL]
+  Sector:     Technology
   Confidence: 85/100  █████████████████░░░
-  Entry:  ~$149.51   Stop: ~$144.42   Target: ~$159.68   R:R 1:2
+  Entry:  ~$344.02   Stop: ~$325.15   Target: ~$381.76   R:R 1:2
   Score:  
 ─────────────────────────────────────────────────────────────────
-  Why:      COP has a strong bull case due to its recent increase in momentum and earnings announced today, with a moderate RSI and ADX. The stock has a high upside potential of 1.0% and a relatively low short ratio of 2.8.
-  Key Risk: Earnings announcement in 6 days may lead to volatility.
-  Bear case: COP's bear case is that it has a near-term earnings announcement in 6 days, which may lead to volatility and potentially negatively impact the stock price. Additionally, COP has a high short ratio of 2.8, which may indicate a potential short squeeze.
+  Why:      CDNS is a strong pick due to its extraordinary earnings growth, solid revenue, and positive technical indicators. The stock has a strong breakout pattern and is leading the sector, with a 5.92% relative strength vs. the S&P 500 and a 20% upside to analyst targets.
+  Key Risk: Earnings catalyst spent — any guidance disappointment could trigger 5-10% pullback in 1-2 weeks.
+  Bear case: The stock's recent momentum is weak, and insider buying is not enough to outweigh this risk. Additionally, the stock's negative CMF (-0.073) shows distribution despite price rise, and the ADX only 20 indicates weak trend strength.
 
   WATCH LIST:
-    AON     74/100  [Financial Services]  AON has a stable momentum and distant earnings in 91 days, which sugge
+    RCL     74/100  [Consumer Cyclical]  RCL has a strong technical structure in the leading sector with short-
 █████████████████████████████████████████████████████████████████
-  Broker BUY 131 COP: submitted with stop/target attached
-  Broker: the LIN stop/target has not cleared yet; selling anyway
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"31","held_for_orders":"31","message":"insufficient qty available for order (requested: 31, available: 0)","related_orders":["c0696b50-882c-4ca3-9b06-cc
-  Broker SELL 31 LIN: FAILED
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"31","held_for_orders":"31","message":"insufficient qty available for order (requested: 31, available: 0)","related_orders":["c0696b50-882c-4ca3-9b06-cc
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"31","held_for_orders":"31","message":"insufficient qty available for order (requested: 31, available: 0)","related_orders":["c0696b50-882c-4ca3-9b06-cc
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"31","held_for_orders":"31","message":"insufficient qty available for order (requested: 31, available: 0)","related_orders":["c0696b50-882c-4ca3-9b06-cc
-  Broker: could not restore the stop/target on 31 LIN; it is unprotected
-  Broker SELL 14 MSFT: submitted
+  Broker BUY 54 CDNS: submitted with stop/target attached
+  Broker SELL 31 LIN: FAILED - its stop/target order could not be cancelled to free the shares
 
 Step 8/8: Saving results...
-  OK: Saved COP | Stop:144.42 Target:159.68
-  OK: Saved AON | Stop:305.11 Target:337.01
+  OK: Saved CDNS | Stop:325.15 Target:381.76
+  OK: Saved RCL | Stop:280.7 Target:326.2
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
-  CONFIRMED PICKS: 6/19 wins (31.6%) | avg 10d -1.4% | 3 pending
-  WATCH LIST: 26/49 wins (53.1%) | avg 10d -1.1% | 2 pending
+  CONFIRMED PICKS: 6/19 wins (31.6%) | avg 10d -1.4% | 4 pending
+  WATCH LIST: 26/49 wins (53.1%) | avg 10d -1.1% | 3 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1264 chars):
-ALPACA - Oct 28 2026
+  run-digest (1248 chars):
+ALPACA - Oct 27 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- ORDERED 131 COP at about $149.51 - fills at the next open, nothing spent yet
-- NOTE: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26, 2026-10-27 closed without being screened, so no pick was made those days
+- ORDERED 54 CDNS at about $344.02 - fills at the next open, nothing spent yet
+- NOTE: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23, 2026-10-26 closed without being screened, so no pick was made those days
 
 WHAT YOU HOLD (2)
-- MSFT: up $143 (+2.0%)  |  14 shares, $518.86 -> $529.05
-  sells at $525.89 or $553.99  |  day 12 of 10
+- MSFT: up $205 (+2.8%)  |  14 shares, $518.86 -> $533.52
+  sells at $525.89 or $553.99  |  day 13 of 10
   Close to its sell price - watch this one
-- LIN: up $673 (+4.4%)  |  31 shares, $488.66 -> $510.36
-  sells at $491.46 or $512.63  |  day 12 of 10
+- LIN: up $625 (+4.1%)  |  31 shares, $488.66 -> $508.83
+  sells at $491.46 or $512.63  |  day 13 of 10
   Almost at its target price
 
 MONEY
-- Cash $78,886  |  In shares $23,228
-- Total $102,136 (up $2,136, +2.1% since start)
+- Cash $78,886  |  In shares $23,243
+- Total $102,131 (up $2,131, +2.1% since start)
 - NOTE $873 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 
 SINCE TRADING ON ALPACA
@@ -202,14 +205,14 @@ SINCE TRADING ON ALPACA
 
 NEXT ORDER
 - Buy 131 COP at about $149.51
+- Buy 54 CDNS at about $344.02
 - Fills when the market next opens
 
 STATUS
 - Checks: degraded
-- Blocked: protection_rejected:LIN
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1565616696494919681
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1565624744890597417
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23; session_never_screened:2026-10-26; session_never_screened:2026-10-27; protection_rejected:LIN | stages: missed_sessions, round1, broker
+::warning title=Run completed with degradations::session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23; session_never_screened:2026-10-26 | stages: missed_sessions, broker
 
-  Completed with degradations (not a failure): session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23; session_never_screened:2026-10-26; session_never_screened:2026-10-27; protection_rejected:LIN | stages: missed_sessions, round1, broker
+  Completed with degradations (not a failure): session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23; session_never_screened:2026-10-26 | stages: missed_sessions, broker
