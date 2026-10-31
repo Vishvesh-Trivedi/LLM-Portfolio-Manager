@@ -4,7 +4,7 @@
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "4 applied, 0 failed; exit_filled=1, working=1"
+      "detail": "1 applied, 0 failed; working=1"
     },
     "missed_sessions": {
       "success": false,
@@ -20,7 +20,7 @@
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
+      "detail": "discord: 1 sent, 0 failed; whatsapp: 0 sent, 0 failed"
     }
   },
   "degraded_reasons": [

@@ -16,23 +16,19 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-31 00:54
+   Time:   2026-10-31 01:48
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Closed CDNS: 54 @ 324.97 (broker confirmed)
-  Broker sync: Marked COP at 153.803 (broker)
-  Broker sync: Marked RTX at 199.3 (broker)
   Broker sync: Cash set from broker: 65571.45 -> 65571.45
   MISSED SESSION(S) never screened: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23
-  run-digest (1169 chars):
+  run-digest (1131 chars):
 ALPACA - Oct 30 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- SOLD 54 CDNS at $324.97 — lost $596
 - ORDERED 25 MA at about $640.07 - fills at the next open, nothing spent yet
 - NOTE: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23 closed without being screened, so no pick was made those days
 
@@ -63,8 +59,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1565891576260067380
-  WhatsApp run-digest: sent
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1565905326006345759
 ::warning title=Run completed with degradations::session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
 
   Completed with degradations (not a failure): session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
