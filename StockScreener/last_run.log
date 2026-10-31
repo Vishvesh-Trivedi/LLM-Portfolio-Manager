@@ -16,12 +16,14 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-10-31 01:48
+   Time:   2026-10-31 02:14
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
+  Broker sync: Marked COP at 154.03 (broker)
+  Broker sync: Marked RTX at 199.8 (broker)
   Broker sync: Cash set from broker: 65571.45 -> 65571.45
   MISSED SESSION(S) never screened: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23
   run-digest (1131 chars):
@@ -33,15 +35,15 @@ WHAT HAPPENED TODAY
 - NOTE: 2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23 closed without being screened, so no pick was made those days
 
 WHAT YOU HOLD (2)
-- RTX: down $322 (-2.0%)  |  79 shares, $203.37 -> $199.30
+- RTX: down $282 (-1.8%)  |  79 shares, $203.37 -> $199.80
   sells at $195.97 or $218.16  |  day 1 of 10
   Close to its sell price - watch this one
-- COP: up $240 (+1.2%)  |  131 shares, $151.97 -> $153.80
+- COP: up $270 (+1.4%)  |  131 shares, $151.97 -> $154.03
   sells at $148.94 or $162.14  |  day 1 of 10
 
 MONEY
-- Cash $65,571  |  In shares $35,893
-- Total $101,464 (up $1,464, +1.5% since start)
+- Cash $65,571  |  In shares $35,962
+- Total $101,534 (up $1,534, +1.5% since start)
 - NOTE $873 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 
 SINCE TRADING ON ALPACA
@@ -59,7 +61,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1565905326006345759
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1565911753328431115
 ::warning title=Run completed with degradations::session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
 
   Completed with degradations (not a failure): session_never_screened:2026-10-16; session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
