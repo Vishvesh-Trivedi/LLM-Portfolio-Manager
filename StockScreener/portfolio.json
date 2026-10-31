@@ -1,5 +1,5 @@
 {
-  "cash": 65571.45,
+  "cash": 65570.59,
   "starting_capital": 100000.0,
   "positions": [
     {
@@ -941,7 +941,7 @@
     "2026-10-30"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 101533.58,
+  "broker_equity": 101532.72,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -1895,7 +1895,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-10-31T00:04:55.006867517Z",
+      "timestamp": "2026-10-31T00:04:55.006868Z",
       "order_id": "c70fed27-b7ff-4fb0-bdce-f0227fe70090",
       "client_order_id": "lpm-B-MA-443d284ffd1b4befa819adcbb52aa11a",
       "symbol": "MA",
@@ -1908,7 +1908,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-10-31T00:04:55.00689633Z",
+      "timestamp": "2026-10-31T00:04:55.006896Z",
       "order_id": "94dbbc3a-4835-48f2-a3cb-be0c86c2ec4a",
       "client_order_id": "0a6d46bf-f15a-486d-b621-db6be3f61c7d",
       "symbol": "MA",
@@ -1921,7 +1921,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-10-31T00:04:55.006917432Z",
+      "timestamp": "2026-10-31T00:04:55.006917Z",
       "order_id": "52a74750-dbb7-432b-ac7e-9f5f198aedcd",
       "client_order_id": "9b0f1d56-b169-4c69-a785-da9137b7fa1d",
       "symbol": "MA",
@@ -1934,7 +1934,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-10-31T00:04:54.917612823Z",
+      "timestamp": "2026-10-31T00:04:54.917613Z",
       "order_id": "bde70492-5084-4a7f-991c-afdfd85fe45c",
       "client_order_id": "1e798b2e-8f33-4991-a660-30104dc4fb2a",
       "symbol": "CDNS",
@@ -1947,7 +1947,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-10-31T00:04:54.91764409Z",
+      "timestamp": "2026-10-31T00:04:54.917644Z",
       "order_id": "9aecc0c6-fcb6-45b5-b123-f85de851d489",
       "client_order_id": "a1372285-f8b8-4171-8719-4c955d494341",
       "symbol": "CDNS",
@@ -1960,7 +1960,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-10-31T00:04:54.917579173Z",
+      "timestamp": "2026-10-31T00:04:54.917579Z",
       "order_id": "7060f4a4-5279-4711-8c5d-4c955f70063b",
       "client_order_id": "lpm-B-CDNS-1793405094393bfb6a",
       "symbol": "CDNS",
