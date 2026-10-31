@@ -4,15 +4,15 @@
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "3 applied, 0 failed; working=1"
+      "detail": "1 applied, 0 failed; working=1"
     },
     "missed_sessions": {
       "success": false,
-      "detail": "2026-10-16, 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23"
+      "detail": "2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23"
     },
     "session": {
       "success": true,
-      "detail": "already processed"
+      "detail": "weekend"
     },
     "protection": {
       "success": true,
@@ -20,11 +20,10 @@
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 0 sent, 0 failed"
+      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
   "degraded_reasons": [
-    "session_never_screened:2026-10-16",
     "session_never_screened:2026-10-19",
     "session_never_screened:2026-10-20",
     "session_never_screened:2026-10-21",
@@ -35,9 +34,9 @@
   "attempts": 0,
   "successes": 0,
   "failures": 0,
-  "date": "2026-10-30",
+  "date": "2026-10-31",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "already_processed",
+  "mode": "no_session",
   "report": null,
   "trade_ready": false,
   "trade_blockers": [
