@@ -16,13 +16,14 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-03 07:53
+   Time:   2026-11-03 09:32
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Cash set from broker: 51290.33 -> 51290.33
+  Broker sync: Marked MA at 655.99 (broker)
+  Broker sync: Cash set from broker: 51289.91 -> 51289.91
   MISSED SESSION(S) never screened: 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23
   No completed trading session (before 16:15 ET); broker state reconciled only
 ::warning title=Run completed with degradations::session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
