@@ -16,205 +16,34 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-03 02:58
+   Time:   2026-11-03 03:42
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
   Broker sync: Marked MA at 655.81 (broker)
+  Broker sync: Marked CDNS at 331.48 (broker)
   Broker sync: Cash set from broker: 51290.33 -> 51290.33
   MISSED SESSION(S) never screened: 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23
-  Protection: MA 25 sh  stop $641.30 / target $676.60 (replaced)
-ALPACA PAPER ACCOUNT: $101,556.78 (+1,556.78 / +1.6% vs $100,000 starting)
-Cash: $51,290.33  |  Positions: 3/5  |  Deployed: 49%  |  Idle: 51%
-Sector exposure: Technology: 18%  Financial Services: 16%  Industrials: 16%
-Broker P&L: $+1,556.78 all-time  |  no closed trades this week
-  RTX [Industrials]: 79sh @ $203.37 → $202.7899932861328 (-46 / -0.3%) | 2d | Stop $195.97 | Target $218.16
-  MA [Financial Services]: 25sh @ $643.0 → $658.0999755859375 (+378 / +2.3%) | 1d | Stop $641.3 | Target $676.6
-  CDNS [Technology]: 54sh @ $328.13 → $329.510009765625 (+75 / +0.4%) | 0d | Stop $308.03 | Target $368.33
-
-Step 1/8: Updating past results + exit signals...
-
-Step 2/8: Market context...
-
-Market context...
-  VIX:  21.15 (p86.8) -> ELEVATED (p87 cautious) (0.85x)
-  QQQ:  $681.09 | BEARISH (-5.94% vs 50MA)
-  SPY today: -0.48%
-  10Y yield: 4.89% (-0.79%)  DXY: 101.84 (-0.04%)  Nikkei: -0.33%
-  Futures:  ES=-0.49%  NQ=-1.04%
-
-Step 3/8: Fetching all data (parallel)...
-  Alpaca: 926/926 tickers
-  Downloaded: 926/926 tickers
-  WARNING: No NVIDIA model confirmed 200 (probes inconclusive) — trying: meta/llama-3.2-90b-vision-instruct
-  RSS feeds active: 13/16 | Headlines: 78
-  Fetching news for all 900 stocks (parallel)...
-  News found: 0/900 stocks have news today
-  Fetching fundamentals for all 896 stocks (parallel)...
-  Full fundamentals: 449/896 stocks
-  Sector ranks - Top 3: ['Consumer Defensive', 'Basic Materials', 'Healthcare'] | Perf: Consumer Defensive:+4.2% | Basic Materials:+3.6% | Healthcare:+3.0% | Financial Services:+3.0% | Real Estate:+2.8%
-  Sector flows: TOP Consumer Cyclical +2.4% | BOT Energy -3.9%
-
-Step 4/8: Bidirectional screening...
-
-Phase 2 - Technical screening (925 tickers)...
-  Passed: 37 | Rejected: Price:0 MA:358 Vol:325 RSI:38 Liq:125 ADX:16
-
-Phase 3 - News screening all 925 stocks...
-  News rescued: 0 stocks → []
-
-Phase 4 - Merging candidate pools...
-  Total candidates: 37
-    BOTH (tech+news): 0  TECHNICAL: 37  NEWS: 0
-  Earnings risk flags: ['CAH', 'CRL', 'COP', 'EW', 'KMB', 'MLM', 'MTD', 'PFE', 'SO']
-
-Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['AAPL', 'ORCL', 'META', 'PLTR', 'AVAV', 'DG']
-  Stream B added: AAPL | $338.7 | RSI 48.2
-  Stream B added: ORCL | $119.11 | RSI 38.2
-  Stream B added: META | $606.65 | RSI 31.9
-  Stream B added: PLTR | $178.44 | RSI 37.8
-  Stream B added: AVAV | $123.01 | RSI 40.7
-  Stream B added: DG | $135.81 | RSI 60.1
-  Sector sentiment derived: 10/11 sectors from 38 stocks
-  [ADVISORY ONLY] HOLD [LOW] RTX: RTX remains within its original thesis parameters, with no fresh news or significant market changes to warrant an adjustment. (no ledger changes)
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  exit:MA: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] MA: Price above entry with stop protected, but QQQ bearish suggests caution. (no ledger changes)
-  [ADVISORY ONLY] HOLD [LOW] CDNS: The current price remains within a reasonable range above the entry point, with no significant changes in market conditions or news that would warrant an immediate adjustment. (no ledger changes)
-
-Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 43 candidates...
-  Options data: 0/43 | Insider signals: 27/43
-  Congress trades: all sources unavailable (no cache)
-
-Phase 5.5 - Computing score breakdown (43 candidates)...
-  Pre-score top 5: EW(56=39T+17N [vader:NEUTRAL])  ABBV(55=40T+15N [vader:NEUTRAL])  AJG(55=38T+17N [vader:NEUTRAL])  COST(53=36T+17N [vader:NEUTRAL])  JNJ(53=36T+17N [vader:NEUTRAL])
-  SEC EDGAR 8-K: 14/30 candidates have recent filings
-
-Step 4.7/8: LLM catalyst scoring (every candidate)...
-  Catalyst scoring: 30 stocks → 5 LLM calls...
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_1: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 1/5 
-    Batch 2/5 
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_3: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 3/5 
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_4: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 4/5 
-  NVIDIA paused for 120s after repeated failures
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_5: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 5/5 
-  Catalyst scoring done — 4 auto-dropped, 26 remain
-
-Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
-
-Phase 5 - News intelligence (26 candidates, 3 layers)...
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  news: NVIDIA provider unavailable or returned empty content
-  news: OpenRouter parser/validator rejected response: ValueError: unknown ticker: PLTR
-  NVIDIA paused for 120s after repeated failures
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  news: NVIDIA-retry provider unavailable or returned empty content
-  News intelligence failed (ValueError: NVIDIA-retry provider unavailable or returned empty content) - neutral baseline for display only
-  News enrichment unavailable - trading continues on verified prices, verified catalysts and the final decision.
-
-Phase 5.5 - Computing score breakdown (26 candidates)...
-  Pre-score top 5: EW(56=39T+17N [vader:NEUTRAL])  ABBV(55=40T+15N [vader:NEUTRAL])  AJG(55=38T+17N [vader:NEUTRAL])  COST(53=36T+17N [vader:NEUTRAL])  UNP(53=36T+17N [vader:NEUTRAL])
-
-Step 5.5/8: Applying LLM config criteria...
-  26 candidates after config criteria
-  Self-calibration: 23 prior picks, 43% win rate
-
-Step 6/8: LLM final scoring...
-
-Phase 6 - NVIDIA final scoring (26 candidates)...
-  Round 1/3: Ranking 26 candidates...
-  Round 1 → Top 10: ['EW', 'AJG', 'CRL', 'COP', 'SO', 'CAH', 'GD', 'ARES', 'PFE', 'HLT']
-  Round 2/3: Deep-diving top 10...
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: ConnectionError
-  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
-  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
-  OpenRouter paused for 120s after repeated failures
-  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  -> Answered via OpenRouter backup provider.
-  Round 2 → analyses for ['GD', 'AJG', 'CAH', 'ARES', 'HLT', 'SO', 'EW', 'PFE', 'COP', 'CRL']
-  Round 3/3: Final deliberation...
-  NVIDIA paused for 120s after repeated failures
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  Final pick: GD | pre=45 → 85/100 | BUY | 14 LLM calls this run
-
-┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=6, wr=33%, LOW confidence): In MID_VIX_BULL regime, tech_score > 35 and adx > 30 can lead to a win (avg +0.7%)
-│ 2. Rule (n=4, wr=50%, LOW confidence): In MID_VIX_NEUTRAL regime, sector rotation can lead to a win (avg +3.2%)
-│ → History suggests that sector rotation and strong technicals can lead to wins in mid-VIX regimes, but sample sizes are small and confidence is low.
-└──────────────────────────────────────────────────────────────
-  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
-  Entry estimate: close=$373.32 + 0.3% slippage = $374.44 (stop/target anchored here)
-
-█████████████████████████████████████████████████████████████████
-  TODAY'S PICK  —  Tuesday, Nov 03 2026
-█████████████████████████████████████████████████████████████████
-  Market:  VIX 21.1 (ELEVATED (p87 cautious))  |  QQQ BEARISH  |  SPY -0.49%
-  Macro:   Unavailable
-─────────────────────────────────────────────────────────────────
-  BUY  GD  [TECHNICAL]
-  Sector:     Industrials
-  Confidence: 85/100  █████████████████░░░
-  Entry:  ~$374.44   Stop: ~$364.34   Target: ~$394.63   R:R 1:2
-  Score:  
-─────────────────────────────────────────────────────────────────
-  Why:      GD has a strong bull case with a high ADX of 40.2 and a 5.2% 5-day momentum, suggesting a breakout continuation. Insider buying confirms confidence, and the stock has 11.3% upside to analyst targets with 85 days to next earnings, removing near-term event risk.
-  Key Risk: RSI 73.9 + stoch_rsi 1.0 = extremely overbought
-  Bear case: 1) RSI 73.9 + stoch_rsi 1.0 = extremely overbought; any market pullback (QQQ -5.95% vs 50MA) triggers sharp profit-taking in high-beta names. 2) Defense budget uncertainty: continuing resolution expires Sept 30, debt ceiling fights could delay appropriations.
-
-  WATCH LIST:
-    AJG     74/100  [Financial Services]  AJG has a strong momentum with a 7.7% 5-day move and a high ADX of 33.
-█████████████████████████████████████████████████████████████████
-  Broker BUY 34 GD: submitted with stop/target attached
-
-Step 8/8: Saving results...
-  OK: Saved GD | Stop:364.34 Target:394.63
-  OK: Saved AJG | Stop:267.61 Target:301.76
-Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
-
-────────────────────────────────────────────────────────────
-  CONFIRMED PICKS: 8/23 wins (34.8%) | avg 10d -1.2% | 3 pending
-  WATCH LIST: 26/49 wins (53.1%) | avg 10d -1.1% | 9 pending
-  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
-────────────────────────────────────────────────────────────
-  run-digest (1173 chars):
+  run-digest (1130 chars):
 ALPACA - Nov 02 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- MA protected: sells at $641.30 or $676.60
 - ORDERED 34 GD at about $374.44 - fills at the next open, nothing spent yet
 - NOTE: 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23 closed without being screened, so no pick was made those days
 
 WHAT YOU HOLD (3)
 - RTX: down $46 (-0.3%)  |  79 shares, $203.37 -> $202.79
   sells at $195.97 or $218.16  |  day 2 of 10
-- CDNS: up $75 (+0.4%)  |  54 shares, $328.13 -> $329.51
+- CDNS: up $181 (+1.0%)  |  54 shares, $328.13 -> $331.48
   sells at $308.03 or $368.33  |  day 0 of 10
-- MA: up $378 (+2.3%)  |  25 shares, $643.00 -> $658.10
+- MA: up $320 (+2.0%)  |  25 shares, $643.00 -> $655.81
   sells at $641.30 or $676.60  |  day 1 of 10
 
 MONEY
-- Cash $51,290  |  In shares $50,266
+- Cash $51,290  |  In shares $50,316
 - Total $101,606 (up $1,606, +1.6% since start)
 - NOTE $872 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 
@@ -232,8 +61,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1567017301604171848
-  WhatsApp run-digest: sent
-::warning title=Run completed with degradations::session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23; advisory_news_unavailable | stages: missed_sessions, news
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1567021218413019237
+::warning title=Run completed with degradations::session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
 
-  Completed with degradations (not a failure): session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23; advisory_news_unavailable | stages: missed_sessions, news
+  Completed with degradations (not a failure): session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
