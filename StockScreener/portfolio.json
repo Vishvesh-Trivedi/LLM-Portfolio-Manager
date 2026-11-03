@@ -107,10 +107,10 @@
       "sector": "Technology",
       "cost_basis": 17719.02,
       "brokerage_in": 0.0,
-      "current_price": 331.48,
-      "current_value": 17899.92,
-      "unrealized_pnl": 180.9,
-      "unrealized_pnl_pct": 1.0209368238198069,
+      "current_price": 328.0,
+      "current_value": 17712.0,
+      "unrealized_pnl": -7.02,
+      "unrealized_pnl_pct": -0.03961844390942826,
       "hold_days": 0,
       "held_sessions": 0,
       "hold_sessions": 10,
@@ -125,7 +125,7 @@
       "stop_price": 308.03,
       "target_price": 368.33,
       "risk_levels_basis": "atr_derived_at_adoption",
-      "quote_date": "2026-11-02",
+      "quote_date": "2026-11-03",
       "last_evaluated_session": "2026-11-02",
       "mark_basis": "broker_current_price"
     }
@@ -981,7 +981,7 @@
   "total_realized_pnl": 313.9,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.5724,
-  "last_updated": "2026-11-02",
+  "last_updated": "2026-11-03",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
@@ -1034,7 +1034,7 @@
     "2026-11-02"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 101605.91,
+  "broker_equity": 101417.99,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -2144,7 +2144,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-03T03:27:18.346817631Z",
+      "timestamp": "2026-11-03T03:27:18.346818Z",
       "order_id": "c6bcaf36-afc7-4df7-ba9c-c6a54158978b",
       "client_order_id": "0a7ddfc4-0e30-4cd3-a167-debfc547d03b",
       "symbol": "GD",
@@ -2157,7 +2157,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-03T03:27:18.346764921Z",
+      "timestamp": "2026-11-03T03:27:18.346765Z",
       "order_id": "8629ec14-ed75-4a75-9eb4-8b0c1b98f12b",
       "client_order_id": "lpm-B-GD-0329866398204b89aed4175dae035fa3",
       "symbol": "GD",
@@ -2170,7 +2170,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-03T03:27:18.346798442Z",
+      "timestamp": "2026-11-03T03:27:18.346798Z",
       "order_id": "51af88d1-6fbe-41fc-95bf-c36e325070cd",
       "client_order_id": "86990c8a-3a6e-499f-b03f-d557107a9ad7",
       "symbol": "GD",
