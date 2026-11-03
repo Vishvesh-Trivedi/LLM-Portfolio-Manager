@@ -16,14 +16,12 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-03 03:42
+   Time:   2026-11-03 03:54
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked MA at 655.81 (broker)
-  Broker sync: Marked CDNS at 331.48 (broker)
   Broker sync: Cash set from broker: 51290.33 -> 51290.33
   MISSED SESSION(S) never screened: 2026-10-19, 2026-10-20, 2026-10-21, 2026-10-22, 2026-10-23
   run-digest (1130 chars):
@@ -61,7 +59,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1567021218413019237
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1567024157609304209
 ::warning title=Run completed with degradations::session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
 
   Completed with degradations (not a failure): session_never_screened:2026-10-19; session_never_screened:2026-10-20; session_never_screened:2026-10-21; session_never_screened:2026-10-22; session_never_screened:2026-10-23 | stages: missed_sessions
