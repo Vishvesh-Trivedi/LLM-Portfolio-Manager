@@ -16,13 +16,13 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-04 07:00
+   Time:   2026-11-04 07:28
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked CDNS at 321.96 (broker)
+  Broker sync: Marked CDNS at 319.89 (broker)
   Broker sync: Cash set from broker: 38607.91 -> 38607.91
   MISSED SESSION(S) never screened: 2026-10-21, 2026-10-22, 2026-10-23
   No completed trading session (before 16:15 ET); broker state reconciled only
