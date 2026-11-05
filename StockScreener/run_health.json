@@ -1,10 +1,31 @@
 {
   "status": "degraded",
-  "providers": {},
+  "providers": {
+    "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
+      "attempts": 17,
+      "successes": 12,
+      "failures": 5
+    },
+    "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
+      "attempts": 4,
+      "successes": 0,
+      "failures": 4
+    },
+    "OpenRouter:google/gemma-4-31b-it:free": {
+      "attempts": 4,
+      "successes": 0,
+      "failures": 4
+    },
+    "OpenRouter:google/gemma-4-26b-a4b-it:free": {
+      "attempts": 4,
+      "successes": 0,
+      "failures": 4
+    }
+  },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "5 applied, 0 failed; working=1"
+      "detail": "6 applied, 0 failed; exit_filled=2, fill=1"
     },
     "missed_sessions": {
       "success": false,
@@ -12,15 +33,83 @@
     },
     "session": {
       "success": true,
-      "detail": "before 16:15 ET"
+      "detail": "Completed session after 16:15 ET"
     },
     "protection": {
       "success": true,
-      "detail": "0 placed, 0 moved, 0 without levels"
+      "detail": "0 placed, 1 moved, 0 without levels"
+    },
+    "market_context": {
+      "success": true,
+      "detail": "Exact-session VIX available"
+    },
+    "market_data": {
+      "success": true,
+      "detail": "926/926 exact-session quotes; missing: none"
+    },
+    "fundamental_coverage": {
+      "success": true,
+      "detail": "75/82 covered; missing: WMT, DIS, WAT, XEL, BURL, EAT, UTHR; selected sector checked by order planner"
+    },
+    "exit:MA": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "exit:CDNS": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "exit:MPWR": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalyst_1": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalysts": {
+      "success": true,
+      "detail": "30/30 verified"
+    },
+    "catalyst_2": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalyst_3": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "catalyst_4": {
+      "success": true,
+      "detail": "NVIDIA-retry: JSON and contract accepted"
+    },
+    "catalyst_5": {
+      "success": true,
+      "detail": "NVIDIA-retry: JSON and contract accepted"
+    },
+    "news": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "round1": {
+      "success": true,
+      "detail": "Optional ranking context available; not a decision contract"
+    },
+    "round2": {
+      "success": false,
+      "detail": "RuntimeError: ConnectionError"
+    },
+    "final": {
+      "success": true,
+      "detail": "NVIDIA: JSON and contract accepted"
+    },
+    "broker": {
+      "success": true,
+      "detail": "1 order(s) submitted, 0 failed (equity $100465.83)"
     },
     "alerts": {
       "success": true,
-      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
+      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
   "degraded_reasons": [
@@ -28,20 +117,16 @@
     "session_never_screened:2026-10-22",
     "session_never_screened:2026-10-23"
   ],
-  "label": "No successful LLM response",
-  "attempts": 0,
-  "successes": 0,
-  "failures": 0,
+  "label": "NVIDIA:meta/llama-3.2-90b-vision-instruct",
+  "attempts": 29,
+  "successes": 12,
+  "failures": 17,
   "date": "2026-11-04",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "no_session",
-  "report": null,
-  "trade_ready": false,
-  "trade_blockers": [
-    "missing:market_data",
-    "missing:catalysts",
-    "missing:final"
-  ],
-  "order_status": "NO ORDER",
-  "order_reason": null
+  "mode": "screening",
+  "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
+  "trade_ready": true,
+  "trade_blockers": [],
+  "order_status": "QUEUED",
+  "order_reason": "Queued DASH for the next session Open; not filled"
 }
