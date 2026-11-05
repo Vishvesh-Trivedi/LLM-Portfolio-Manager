@@ -27,12 +27,12 @@
       "stop_price": 655.88,
       "target_price": 676.6,
       "sector": "Financial Services",
-      "current_price": 676.34,
-      "current_value": 16908.5,
+      "current_price": 679.89,
+      "current_value": 16997.25,
       "cost_basis": 16075.0,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 833.5,
-      "unrealized_pnl_pct": 5.185069984447899,
+      "unrealized_pnl": 922.25,
+      "unrealized_pnl_pct": 5.737169517884921,
       "hold_days": 3,
       "held_sessions": 3,
       "hold_sessions": 10,
@@ -1170,7 +1170,7 @@
     "2026-11-04"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 100326.08,
+  "broker_equity": 100414.83,
   "alpaca_order_ledger": [
     {
       "source": "poll",
