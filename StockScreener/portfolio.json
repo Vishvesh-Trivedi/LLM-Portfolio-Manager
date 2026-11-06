@@ -1,5 +1,5 @@
 {
-  "cash": 82639.91,
+  "cash": 82639.27,
   "starting_capital": 100000.0,
   "positions": [
     {
@@ -11,10 +11,10 @@
       "sector": "Technology",
       "cost_basis": 17719.02,
       "brokerage_in": 0.0,
-      "current_price": 312.98,
-      "current_value": 16900.92,
-      "unrealized_pnl": -818.1,
-      "unrealized_pnl_pct": -4.617072501752362,
+      "current_price": 313.65,
+      "current_value": 16937.1,
+      "unrealized_pnl": -781.92,
+      "unrealized_pnl_pct": -4.412885136988399,
       "hold_days": 3,
       "held_sessions": 3,
       "hold_sessions": 10,
@@ -29,7 +29,7 @@
       "stop_price": 308.03,
       "target_price": 368.33,
       "risk_levels_basis": "atr_derived_at_adoption",
-      "quote_date": "2026-11-05",
+      "quote_date": "2026-11-06",
       "last_evaluated_session": "2026-11-05",
       "mark_basis": "broker_current_price",
       "earnings_days_away": -10,
@@ -1242,7 +1242,7 @@
     "2026-11-05"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 99540.83,
+  "broker_equity": 99576.37,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -2547,7 +2547,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-06T01:33:18.602329122Z",
+      "timestamp": "2026-11-06T01:33:18.602329Z",
       "order_id": "fc61f0cf-e046-4902-8298-fcecf9ef7abd",
       "client_order_id": "abeb6c5e-f30f-4a94-8041-c64a16c6034c",
       "symbol": "PG",
@@ -2560,7 +2560,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-06T01:33:18.602353769Z",
+      "timestamp": "2026-11-06T01:33:18.602354Z",
       "order_id": "d0077511-5146-4972-943c-915cf69c415d",
       "client_order_id": "ff186383-b897-411d-922c-41fd17086860",
       "symbol": "PG",
@@ -2572,12 +2572,12 @@
     },
     {
       "source": "poll",
-      "event": "accepted",
-      "timestamp": "2026-11-06T01:33:18.602293319Z",
+      "event": "new",
+      "timestamp": "2026-11-06T09:00:24.054018Z",
       "order_id": "8b20207d-f99e-43be-a6a8-1365a09a4c78",
       "client_order_id": "lpm-B-PG-5cc22826d5ee42bfb0928bac8a0c6a3d",
       "symbol": "PG",
-      "status": "accepted",
+      "status": "new",
       "filled_qty": "0",
       "filled_avg_price": "",
       "qty": "123",
