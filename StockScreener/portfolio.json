@@ -11,10 +11,10 @@
       "sector": "Technology",
       "cost_basis": 17719.02,
       "brokerage_in": 0.0,
-      "current_price": 313.65,
-      "current_value": 16937.1,
-      "unrealized_pnl": -781.92,
-      "unrealized_pnl_pct": -4.412885136988399,
+      "current_price": 313.91,
+      "current_value": 16951.14,
+      "unrealized_pnl": -767.88,
+      "unrealized_pnl_pct": -4.333648249169542,
       "hold_days": 3,
       "held_sessions": 3,
       "hold_sessions": 10,
@@ -1242,7 +1242,7 @@
     "2026-11-05"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 99576.37,
+  "broker_equity": 99590.41,
   "alpaca_order_ledger": [
     {
       "source": "poll",
