@@ -1,5 +1,5 @@
 {
-  "cash": 79157.29,
+  "cash": 79156.93,
   "starting_capital": 100000.0,
   "positions": [
     {
@@ -1304,7 +1304,7 @@
     "2026-11-06"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 99501.49,
+  "broker_equity": 99501.13,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -2674,7 +2674,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-07T00:26:21.076996148Z",
+      "timestamp": "2026-11-07T00:26:21.076996Z",
       "order_id": "b6d78965-6069-43ec-bb18-c9fa79ff1567",
       "client_order_id": "4d0fc6ad-6c39-4f17-b507-84e45f9c9f26",
       "symbol": "DUK",
@@ -2687,7 +2687,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-07T00:26:21.076961366Z",
+      "timestamp": "2026-11-07T00:26:21.076961Z",
       "order_id": "6550ac41-a21a-4207-90ed-7340721d0ea4",
       "client_order_id": "lpm-B-DUK-c17860d664f2411ca9383faf126ba320",
       "symbol": "DUK",
@@ -2700,7 +2700,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-07T00:26:21.077016308Z",
+      "timestamp": "2026-11-07T00:26:21.077016Z",
       "order_id": "3a5411de-f42b-4107-b11f-17956d211c57",
       "client_order_id": "f733f8d8-fc81-45f4-8d8b-4f691ff8af24",
       "symbol": "DUK",
