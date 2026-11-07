@@ -16,178 +16,19 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-07 00:08
+   Time:   2026-11-07 00:59
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Filled PG: 123 @ 163.2647 (broker confirmed)
-  Broker sync: Closed CDNS: 54 @ 307.3996 (broker confirmed)
   Broker sync: Cash set from broker: 79157.29 -> 79157.29
   MISSED SESSION(S) never screened: 2026-10-23
-  Protection: PG 123 sh  stop $160.01 / target $174.03
-ALPACA PAPER ACCOUNT: $99,501.49 (-498.51 / -0.5% vs $100,000 starting)
-Cash: $79,157.29  |  Positions: 1/5  |  Deployed: 20%  |  Idle: 80%
-Sector exposure: Consumer Defensive: 20%
-Broker P&L: $-498.51 all-time  |  no closed trades this week
-  PG [Consumer Defensive]: 123sh @ $163.2647 → $165.39999389648438 (+263 / +1.3%) | 1d | Stop $160.01 | Target $174.0347
-
-Step 1/8: Updating past results + exit signals...
-
-Step 2/8: Market context...
-
-Market context...
-  VIX:  25.64 (p95.3) -> HIGH (p95 risk-off) (0.7x)
-  QQQ:  $656.1 | BEARISH (-8.97% vs 50MA)
-  SPY today: +0.31%
-  10Y yield: 4.86% (+0.48%)  DXY: 102.28 (+0.72%)  Nikkei: -1.79%
-  Futures:  ES=+0.28%  NQ=+1.33%
-  *** DEFENSIVE MODE ACTIVE ***
-
-Step 3/8: Fetching all data (parallel)...
-  Alpaca: 926/926 tickers
-  Downloaded: 926/926 tickers
-  OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-90b-vision-instruct
-  RSS feeds active: 13/16 | Headlines: 78
-  Fetching news for all 900 stocks (parallel)...
-  News found: 0/900 stocks have news today
-  Fetching fundamentals for all 899 stocks (parallel)...
-  Full fundamentals: 475/899 stocks
-  Sector ranks - Top 3: ['Communication Services', 'Real Estate', 'Healthcare'] | Perf: Communication Services:+4.5% | Real Estate:+0.8% | Healthcare:+0.1% | Consumer Cyclical:-0.5% | Financial Services:-0.7%
-  Sector flows: TOP Technology +1.4% | BOT Consumer Defensive -1.3%
-
-Step 4/8: Bidirectional screening...
-
-Phase 2 - Technical screening (926 tickers)...
-  Passed: 27 | Rejected: Price:0 MA:441 Vol:340 RSI:10 Liq:75 ADX:7
-
-Phase 3 - News screening all 926 stocks...
-  News rescued: 0 stocks → []
-
-Phase 4 - Merging candidate pools...
-  Total candidates: 27
-    BOTH (tech+news): 0  TECHNICAL: 27  NEWS: 0
-
-Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['NVDA', 'AMD', 'MU']
-  Stream B added: NVDA | $186.7 | RSI 30.6
-  Stream B added: AMD | $447.46 | RSI 38.2
-  Stream B added: MU | $689.67 | RSI 31.1
-  Sector sentiment derived: 9/11 sectors from 30 stocks
-  [ADVISORY ONLY] HOLD [LOW] PG: The stock is currently in an uptrend and has shown strong relative strength, warranting a continued hold despite the market's bearish sentiment. (no ledger changes)
-
-Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 30 candidates...
-  Options data: 0/30 | Insider signals: 20/30
-  Congress trades: all sources unavailable (no cache)
-
-Phase 5.5 - Computing score breakdown (30 candidates)...
-  Pre-score top 5: JNJ(58=41T+17N [vader:NEUTRAL])  AMT(53=35T+18N [vader:NEUTRAL])  PPL(52=35T+17N [vader:NEUTRAL])  MTD(51=38T+13N [vader:NEUTRAL])  LLY(50=33T+17N [vader:NEUTRAL])
-  SEC EDGAR 8-K: 15/30 candidates have recent filings
-
-Step 4.7/8: LLM catalyst scoring (every candidate)...
-  Catalyst scoring: 30 stocks → 5 LLM calls...
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_1: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 1/5 
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_2: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 2/5 
-  NVIDIA paused for 120s after repeated failures
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_3: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 3/5 
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_4: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 4/5 
-  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  catalyst_5: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-    Batch 5/5 
-  Catalyst scoring done — 13 auto-dropped, 17 remain
-
-Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
-
-Phase 5 - News intelligence (17 candidates, 3 layers)...
-  NVIDIA paused for 120s after repeated failures
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  news: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-  Sentiment: BEARISH | Adj: -10
-  17 candidates after news filter
-
-Phase 5.5 - Computing score breakdown (17 candidates)...
-  Pre-score top 5: JNJ(55=41T+14N [vader:NEUTRAL])  MTD(48=38T+10N [vader:NEUTRAL])  ADSK(44=32T+12N [vader:NEUTRAL])  DUK(44=31T+13N [vader:NEUTRAL])  KDP(44=30T+14N [vader:NEUTRAL])
-
-Step 5.5/8: Applying LLM config criteria...
-  17 candidates after config criteria
-  Self-calibration: 29 prior picks, 38% win rate
-
-Step 6/8: LLM final scoring...
-
-Phase 6 - NVIDIA final scoring (17 candidates)...
-  Round 1/3: Ranking 17 candidates...
-  Round 1 → Top 10: ['DUK', 'LOW', 'KDP', 'EL', 'WMT', 'FSLR', 'ADSK', 'MCD', 'CPRT', 'AWK']
-  Round 2/3: Deep-diving top 10...
-  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
-  -> NVIDIA throttled; answered via OpenRouter.
-  Round 2 → analyses for ['ADSK', 'DUK', 'EL', 'KDP', 'LOW', 'FSLR', 'CPRT', 'WMT', 'MCD', 'AWK']
-  Round 3/3: Final deliberation...
-  Final pick: DUK | pre=44 → 84/100 | BUY | 11 LLM calls this run
-
-┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=6, wr=33%, LOW confidence): Avoid stocks with earnings within 12 days in the MID_VIX_BEAR regime.
-│ 2. Rule (n=10, wr=53%, MEDIUM confidence): Favor defensive sector rotation plays in the MID_VIX_NEUTRAL regime.
-│ → History taught me to avoid stocks with earnings within 12 days in the MID_VIX_BEAR regime and favor defensive sector rotation plays in the MID_VIX_NEUTRAL regime, but our current regime is HIGH_VIX_BEAR, which has limited historical data.
-└──────────────────────────────────────────────────────────────
-  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
-  Entry estimate: close=$127.8 + 0.3% slippage = $128.18 (stop/target anchored here)
-
-█████████████████████████████████████████████████████████████████
-  TODAY'S PICK  —  Saturday, Nov 07 2026
-█████████████████████████████████████████████████████████████████
-  Market:  VIX 25.6 (HIGH (p95 risk-off))  |  QQQ BEARISH  |  SPY +0.27%
-  Macro:   Markets show mixed signals with VIX elevated at 95th percentile (25.64) and QQQ 
-─────────────────────────────────────────────────────────────────
-  BUY  DUK  [TECHNICAL]
-  Sector:     Utilities
-  Confidence: 84/100  ████████████████░░░░
-  Entry:  ~$128.18   Stop: ~$124.66   Target: ~$135.23   R:R 1:2
-  Score:  
-─────────────────────────────────────────────────────────────────
-  Why:      DUK is a defensive utility with strong technical trend (ADX 46.8) and insider buying, which aligns with the current market regime. The stock has a high VIX (25.6) and is favored as a yield/defensive play.
-  Key Risk: 10Y yield breaking 5%.
-  Bear case: 1) 10Y yield breaks 5% triggering rate-sensitive selloff in utilities; 2) Sector rotation reverses as VIX mean-reverts from p95.3.
-
-  WATCH LIST:
-    EL      74/100  [Consumer Defensive]  EL is a defensive stock with strong 5-day momentum (+5.13%) and inside
-█████████████████████████████████████████████████████████████████
-  Broker BUY 154 DUK: submitted with stop/target attached
-
-Step 8/8: Saving results...
-  OK: Saved DUK | Stop:124.66 Target:135.23
-  OK: Saved EL | Stop:103.36 Target:123.61
-Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
-
-────────────────────────────────────────────────────────────
-  CONFIRMED PICKS: 9/28 wins (32.1%) | avg 10d -1.3% | 2 pending
-  WATCH LIST: 26/49 wins (53.1%) | avg 10d -1.1% | 14 pending
-  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
-────────────────────────────────────────────────────────────
-  run-digest (1000 chars):
+  run-digest (879 chars):
 ALPACA - Nov 06 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- BOUGHT 123 PG at $163.26 ($20,082)
-- SOLD 54 CDNS at $307.40 — lost $1,119
-- PG protected: sells at $160.01 or $174.03
 - ORDERED 154 DUK at about $128.18 - fills at the next open, nothing spent yet
 - NOTE: 2026-10-23 closed without being screened, so no pick was made those days
 
@@ -214,8 +55,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1568421314300088382
-  WhatsApp run-digest: sent
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1568429676698013897
 ::warning title=Run completed with degradations::session_never_screened:2026-10-23 | stages: missed_sessions
 
   Completed with degradations (not a failure): session_never_screened:2026-10-23 | stages: missed_sessions

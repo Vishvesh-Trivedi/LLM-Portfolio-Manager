@@ -2648,7 +2648,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-07T00:08:31.549631027Z",
+      "timestamp": "2026-11-07T00:08:31.549631Z",
       "order_id": "aa150dce-2d40-4460-b4c6-7781e9a4471d",
       "client_order_id": "d2a6d6aa-4f21-48de-9e66-328ce72561eb",
       "symbol": "PG",
@@ -2661,7 +2661,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-07T00:08:31.549587281Z",
+      "timestamp": "2026-11-07T00:08:31.549587Z",
       "order_id": "64584bbf-02e2-4a5e-be13-eb435230c04f",
       "client_order_id": "lpm-P-PG-5cc22826d5ee42bfb09291672a31",
       "symbol": "PG",
@@ -2669,6 +2669,45 @@
       "filled_qty": "0",
       "filled_avg_price": "",
       "qty": "123",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-11-07T00:26:21.076996148Z",
+      "order_id": "b6d78965-6069-43ec-bb18-c9fa79ff1567",
+      "client_order_id": "4d0fc6ad-6c39-4f17-b507-84e45f9c9f26",
+      "symbol": "DUK",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "154",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-11-07T00:26:21.076961366Z",
+      "order_id": "6550ac41-a21a-4207-90ed-7340721d0ea4",
+      "client_order_id": "lpm-B-DUK-c17860d664f2411ca9383faf126ba320",
+      "symbol": "DUK",
+      "status": "accepted",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "154",
+      "side": "buy"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-11-07T00:26:21.077016308Z",
+      "order_id": "3a5411de-f42b-4107-b11f-17956d211c57",
+      "client_order_id": "f733f8d8-fc81-45f4-8d8b-4f691ff8af24",
+      "symbol": "DUK",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "154",
       "side": "sell"
     }
   ],
