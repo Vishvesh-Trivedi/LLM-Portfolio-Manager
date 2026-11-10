@@ -16,12 +16,196 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-09 13:48
+   Time:   2026-11-10 02:45
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked PG at 165.82 (broker)
-  Broker sync: Cash set from broker: 79156.93 -> 79156.93
-  No completed trading session (before 16:15 ET); broker state reconciled only
+  Broker sync: Filled DUK: 154 @ 128.4388 (broker confirmed)
+  Broker sync: Marked PG at 168.06 (broker)
+  Broker sync: Cash set from broker: 59377.35 -> 59377.35
+  Protection: the old PG order has not cleared yet; replacing anyway
+  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"123","held_for_orders":"123","message":"insufficient qty available for order (requested: 123, available: 0)","related_orders":["64584bbf-02e2-4a5e-be13
+  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"123","held_for_orders":"123","message":"insufficient qty available for order (requested: 123, available: 0)","related_orders":["64584bbf-02e2-4a5e-be13
+  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"123","held_for_orders":"123","message":"insufficient qty available for order (requested: 123, available: 0)","related_orders":["64584bbf-02e2-4a5e-be13
+  Protection: DUK 154 sh  stop $124.92 / target $135.49
+ALPACA PAPER ACCOUNT: $99,808.11 (-191.89 / -0.2% vs $100,000 starting)
+Cash: $59,377.35  |  Positions: 2/5  |  Deployed: 41%  |  Idle: 59%
+Sector exposure: Consumer Defensive: 21%  Utilities: 20%
+Broker P&L: $-191.89 all-time  |  no closed trades this week
+  PG [Consumer Defensive]: 123sh @ $163.2647 → $168.32000732421875 (+622 / +3.1%) | 2d | Stop $162.94 | Target $174.0347
+  DUK [Utilities]: 154sh @ $128.4388 → $128.10000610351562 (-52 / -0.3%) | 1d | Stop $124.9188 | Target $135.4888 | EARNINGS IN -4d ⚠
+
+Step 1/8: Updating past results + exit signals...
+
+Step 2/8: Market context...
+
+Market context...
+  VIX:  19.92 (p80.2) -> ELEVATED (p80 cautious) (0.85x)
+  QQQ:  $679.35 | BEARISH (-5.65% vs 50MA)
+  SPY today: +2.37%
+  10Y yield: 4.86% (+0.02%)  DXY: 101.71 (-0.58%)  Nikkei: +2.89%
+  Futures:  ES=+2.44%  NQ=+3.41%
+
+Step 3/8: Fetching all data (parallel)...
+  Alpaca: 926/926 tickers
+  Downloaded: 926/926 tickers
+  OK: NVIDIA models verified by JSON probe (1 answering chat): active = meta/llama-3.2-90b-vision-instruct
+  RSS feeds active: 13/16 | Headlines: 78
+  Fetching news for all 900 stocks (parallel)...
+  News found: 0/900 stocks have news today
+  Fetching fundamentals for all 896 stocks (parallel)...
+  Full fundamentals: 467/896 stocks
+  Sector ranks - Top 3: ['Communication Services', 'Consumer Cyclical', 'Healthcare'] | Perf: Communication Services:+5.8% | Consumer Cyclical:+3.1% | Healthcare:+2.4% | Real Estate:+2.3% | Consumer Defensive:+2.2%
+  Sector flows: TOP Industrials +3.8% | BOT Energy +0.5%
+
+Step 4/8: Bidirectional screening...
+
+Phase 2 - Technical screening (924 tickers)...
+  Passed: 27 | Rejected: Price:0 MA:328 Vol:418 RSI:19 Liq:92 ADX:14
+
+Phase 3 - News screening all 924 stocks...
+  News rescued: 0 stocks → []
+
+Phase 4 - Merging candidate pools...
+  Total candidates: 27
+    BOTH (tech+news): 0  TECHNICAL: 27  NEWS: 0
+  Earnings risk flags: ['TDG']
+
+Step 4.5/8: Stream B - headline ticker extraction...
+  Stream B: Processing headline mentions: ['NVDA', 'DG', 'ROST']
+  Stream B added: NVDA | $178.64 | RSI 27.2
+  Stream B added: DG | $136.66 | RSI 56.1
+  Stream B added: ROST | $237.19 | RSI 53.8
+  Sector sentiment derived: 8/11 sectors from 26 stocks
+  [ADVISORY ONLY] HOLD [LOW] PG: Current price remains above the stop and within the confirmed uptrend, maintaining the original thesis. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] DUK: DUK's current price is still within the defensive utility's strong technical trend and near the original entry point, with no fresh news to alter the thesis. (no ledger changes)
+
+Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
+  Fetching options + insider data for 30 candidates...
+  Options data: 30/30 | Insider signals: 0/30
+  Congress trades: all sources unavailable (no cache)
+
+Phase 5.5 - Computing score breakdown (30 candidates)...
+  Pre-score top 5: COR(55=39T+16N [vader:NEUTRAL])  KMB(53=38T+15N [vader:NEUTRAL])  ROST(52=35T+17N [vader:NEUTRAL])  AJG(49=32T+17N [vader:NEUTRAL])  ADP(49=34T+15N [vader:NEUTRAL])
+  SEC EDGAR 8-K: 9/30 candidates have recent filings
+
+Step 4.7/8: LLM catalyst scoring (every candidate)...
+  Catalyst scoring: 30 stocks → 5 LLM calls...
+  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  catalyst_1: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
+    Batch 1/5 
+  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  catalyst_2: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
+    Batch 2/5 
+  NVIDIA paused for 120s after repeated failures
+  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  catalyst_3: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
+    Batch 3/5 
+  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  catalyst_4: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
+    Batch 4/5 
+    Batch 5/5 
+  Catalyst scoring done — 7 auto-dropped, 23 remain
+
+Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
+
+Phase 5 - News intelligence (23 candidates, 3 layers)...
+  Sentiment: NEUTRAL | Adj: +0
+  AUTO DROPPED: NVDA
+  22 candidates after news filter
+
+Phase 5.5 - Computing score breakdown (22 candidates)...
+  Pre-score top 5: KMB(53=38T+15N [vader:NEUTRAL])  ROST(52=35T+17N [vader:NEUTRAL])  AJG(49=32T+17N [vader:NEUTRAL])  AZO(49=33T+16N [vader:NEUTRAL])  HLT(49=34T+15N [vader:NEUTRAL])
+
+Step 5.5/8: Applying LLM config criteria...
+  22 candidates after config criteria
+  Self-calibration: 29 prior picks, 38% win rate
+
+Step 6/8: LLM final scoring...
+
+Phase 6 - NVIDIA final scoring (22 candidates)...
+  Round 1/3: Ranking 22 candidates...
+  Round 1 failed (ValueError: ranking contains invalid candidate tickers) — using pre_score top 10
+  Round 2/3: Deep-diving top 10...
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  -> NVIDIA throttled; answered via OpenRouter.
+  Round 2 → analyses for ['SHW', 'AZO', 'KMB', 'AJG', 'BURL', 'FERG', 'HLT', 'TDG', 'ROST', 'MAR']
+  Round 3/3: Final deliberation...
+  Final pick: SHW | pre=49 → 85/100 | BUY | 12 LLM calls this run
+
+┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
+│ 1. Rule (n=10, wr=80%, HIGH confidence): High ADX and strong sector momentum are key indicators of a successful trade in the MID_VIX_BEAR regime.
+│ → History taught me that in the current MID_VIX_BEAR regime, focusing on stocks with high ADX and strong sector momentum is crucial for success.
+└──────────────────────────────────────────────────────────────
+  LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
+
+█████████████████████████████████████████████████████████████████
+  TODAY'S PICK  —  Tuesday, Nov 10 2026
+█████████████████████████████████████████████████████████████████
+  Market:  VIX 19.9 (ELEVATED (p80 cautious))  |  QQQ BEARISH  |  SPY +2.36%
+  Macro:   US stock futures are steady, with a focus on the upcoming CPI report. Nvidia's s
+─────────────────────────────────────────────────────────────────
+  NO PICK TODAY
+  Data/LLM validation incomplete; no new order queued.
+
+  WATCH LIST:
+    KMB     74/100  [Consumer Defensive]  KMB has a strong momentum setup with a high ADX of 38.5 and a short sq
+    FERG    72/100  [Industrials]  FERG has a strong post-earnings momentum with a high vol ratio of 2.94
+█████████████████████████████████████████████████████████████████
+  Broker: in sync (2 position(s))
+
+Step 8/8: Saving results...
+  OK: Saved KMB | Stop:106.52 Target:122.81
+  OK: Saved FERG | Stop:247.56 Target:284.33
+Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+
+────────────────────────────────────────────────────────────
+  CONFIRMED PICKS: 9/28 wins (32.1%) | avg 10d -1.3% | 2 pending
+  WATCH LIST: 27/50 wins (54.0%) | avg 10d -1.0% | 15 pending
+  Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
+────────────────────────────────────────────────────────────
+  run-digest (987 chars):
+ALPACA - Nov 09 2026
+Live paper account.
+
+WHAT HAPPENED TODAY
+- BOUGHT 154 DUK at $128.44 ($19,780)
+- DUK protected: sells at $124.92 or $135.49
+
+WHAT YOU HOLD (2)
+- DUK: down $52 (-0.3%)  |  154 shares, $128.44 -> $128.10
+  sells at $124.92 or $135.49  |  day 1 of 10
+- PG: up $622 (+3.1%)  |  123 shares, $163.26 -> $168.32
+  sells at $162.94 or $174.03  |  day 2 of 10
+
+MONEY
+- Cash $59,377  |  In shares $40,431
+- Total $99,776 (down $224, -0.2% since start)
+- NOTE $870 of realised money is not accounted for by any closed trade - one is probably recorded wrong
+
+SINCE TRADING ON ALPACA
+- 16 trades finished: 4 made money, 9 lost money, 3 broke even
+- Win rate 31% (4 of 13 that moved)
+- Won $3,491 across 4 trades (average +4.6%)
+- Lost $5,123 across 9 trades (average -3.7%)
+- Banked $1,632 loss
+
+NEXT ORDER
+- Nothing ordered, because:
+  a stop order was refused by Alpaca, so no new risk was added until that is sorted
+
+STATUS
+- Checks: degraded
+- Blocked: protection_rejected:PG
+
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1569547086024671327
+  WhatsApp run-digest: sent
+::warning title=Run completed with degradations::protection_rejected:PG | stages: round1
+
+  Completed with degradations (not a failure): protection_rejected:PG | stages: round1
