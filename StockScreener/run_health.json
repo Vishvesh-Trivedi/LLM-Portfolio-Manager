@@ -2,20 +2,20 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.2-90b-vision-instruct": {
-      "attempts": 12,
-      "successes": 7,
-      "failures": 5
+      "attempts": 13,
+      "successes": 4,
+      "failures": 9
     },
     "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 5,
-      "successes": 5,
+      "attempts": 8,
+      "successes": 8,
       "failures": 0
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "3 applied, 0 failed; fill=1"
+      "detail": "2 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -27,7 +27,7 @@
     },
     "protection": {
       "success": true,
-      "detail": "1 placed, 0 moved, 0 without levels"
+      "detail": "0 placed, 0 moved, 0 without levels"
     },
     "market_context": {
       "success": true,
@@ -39,7 +39,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "26/30 covered; missing: WMT, YUM, BURL, TOST; selected sector checked by order planner"
+      "detail": "23/28 covered; missing: V, WMT, YUM, BURL, TOST; selected sector checked by order planner"
     },
     "exit:PG": {
       "success": true,
@@ -47,7 +47,7 @@
     },
     "exit:DUK": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "catalyst_1": {
       "success": true,
@@ -55,7 +55,7 @@
     },
     "catalysts": {
       "success": true,
-      "detail": "30/30 verified"
+      "detail": "28/28 verified"
     },
     "catalyst_2": {
       "success": true,
@@ -71,15 +71,15 @@
     },
     "catalyst_5": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "news": {
       "success": true,
       "detail": "NVIDIA: JSON and contract accepted"
     },
     "round1": {
-      "success": false,
-      "detail": "ValueError: ranking contains invalid candidate tickers"
+      "success": true,
+      "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
       "success": true,
@@ -87,7 +87,7 @@
     },
     "final": {
       "success": true,
-      "detail": "NVIDIA: JSON and contract accepted"
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "broker": {
       "success": true,
@@ -99,19 +99,19 @@
     }
   },
   "degraded_reasons": [
-    "protection_rejected:PG"
+    "protection_stale:PG"
   ],
   "label": "NVIDIA:meta/llama-3.2-90b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 17,
+  "attempts": 21,
   "successes": 12,
-  "failures": 5,
+  "failures": 9,
   "date": "2026-11-09",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
-    "protection_rejected:PG"
+    "protection_stale:PG"
   ],
   "order_status": "NO ORDER",
   "order_reason": "Data/LLM validation incomplete; no new order queued."
