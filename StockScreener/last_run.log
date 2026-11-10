@@ -16,13 +16,12 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-10 07:48
+   Time:   2026-11-10 08:23
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked PG at 169.28 (broker)
   Broker sync: Cash set from broker: 59377.35 -> 59377.35
   run-digest (885 chars):
 ALPACA - Nov 10 2026
@@ -56,7 +55,7 @@ NEXT ORDER
 STATUS
 - Checks: degraded
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1569619859422187581
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1569628598040662097
   WhatsApp run-digest: sent
   No completed trading session (before 16:15 ET); broker state reconciled only
 ::warning title=Run completed with degradations::protection_stale:PG
