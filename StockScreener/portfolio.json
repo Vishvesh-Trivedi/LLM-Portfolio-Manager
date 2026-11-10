@@ -2731,7 +2731,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-10T02:45:56.066573125Z",
+      "timestamp": "2026-11-10T02:45:56.066573Z",
       "order_id": "894070b0-0426-4e72-977d-4649b6b037ee",
       "client_order_id": "lpm-P-DUK-c17860d664f2411ca938249bb5b3",
       "symbol": "DUK",
@@ -2744,7 +2744,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-10T02:45:56.066614707Z",
+      "timestamp": "2026-11-10T02:45:56.066615Z",
       "order_id": "3972f853-1391-456b-a01e-4c220160e0e8",
       "client_order_id": "a54c82fd-7922-482a-8345-46532f33db35",
       "symbol": "DUK",
