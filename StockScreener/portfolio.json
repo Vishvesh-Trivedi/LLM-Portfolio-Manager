@@ -27,12 +27,12 @@
       "stop_price": 163.28,
       "target_price": 174.0347,
       "sector": "Consumer Defensive",
-      "current_price": 166.88,
-      "current_value": 20526.24,
+      "current_price": 166.55,
+      "current_value": 20485.65,
       "cost_basis": 20081.56,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 444.68,
-      "unrealized_pnl_pct": 2.214369799955773,
+      "unrealized_pnl": 404.09,
+      "unrealized_pnl_pct": 2.012244068687896,
       "hold_days": 3,
       "held_sessions": 3,
       "hold_sessions": 10,
@@ -1354,7 +1354,7 @@
     "2026-11-10"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 99760.34,
+  "broker_equity": 99719.75,
   "alpaca_order_ledger": [
     {
       "source": "poll",
