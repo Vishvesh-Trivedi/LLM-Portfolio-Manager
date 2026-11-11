@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LLM Portfolio Manager — 2026-11-10</title>
+<title>LLM Portfolio Manager — 2026-11-11</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
@@ -31,16 +31,16 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round1; protection_stale:PG<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round1<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Tuesday November 10 2026  04:42 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-90b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Wednesday November 11 2026  00:52 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-90b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
-    <div class="mi"><div class="ml">VIX</div><div class="mv">19.9 &nbsp;ELEVATED (p80 </div></div>
+    <div class="mi"><div class="ml">VIX</div><div class="mv">19.5 &nbsp;ELEVATED (p77 </div></div>
     <div class="mi"><div class="ml">SPY Today</div>
-        <div class="mv" style="color:#00c853">+2.36%</div></div>
+        <div class="mv" style="color:#f44336">-0.37%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BEARISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">US stock market had its best day since April, with the Dow jumping 1,100 points. A key report on October inflation is set to be released on Tuesday, which may p</div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">November has started historically weak for the S&amp;P 500, with hot inflation data reigniting Fed tightening fears and sending Treasury yields surging. The White H</div>
   </div>
 
   <div class="tabs">
@@ -54,20 +54,50 @@ tr:last-child td{border-bottom:none}
   <div id="t-buy" class="tp on">
     <div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
-    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">MID_VIX_BEAR regime has 17% historical win rate with Technology and Industrials showing 0% success across 4 trades; only Financial Services worked once but with n=1. Current bounce into CPI tomorrow adds binary risk.</p>
-    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Avoid Technology in MID_VIX_BEAR (n=2, wr=0%, avg -5.0%, HIGH confidence): Both CDNS and MPWR lost heavily in this regime</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Avoid Industrials in MID_VIX_BEAR (n=2, wr=0%, avg -3.0%, HIGH confidence): RTX and GD both failed despite sector momentum</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Financial Services showed lone win but n=1 (MA +5.3%, LOW confidence): Single observation, not reliable</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 4:</span> Consumer Cyclical failed once (DASH -1.2%, LOW confidence): Insufficient sample</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 5:</span> Overbought names (RSI&gt;70) mixed: MA won at 70.8, GD lost at 73.9 - no clear rule</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 6:</span> Regime win rate only 17% (6 picks): Extremely hostile environment for directional trades</li></ul>
-    <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-07 00:26</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=6, wr=33%, LOW confidence): Avoid stocks with earnings within 12 days in the MID_VIX_BEAR regime.</li><li style="padding:2px 0">Rule (n=10, wr=53%, MEDIUM confidence): Favor defensive sector rotation plays in the MID_VIX_NEUTRAL regime.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-06 01:33</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with HH/HL and MACD bull in the Consumer Defensive sector have a higher win rate in the HIGH_VIX_BEAR regime.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-05 01:17</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=6, wr=33%, HIGH confidence): In the MID_VIX_BULL regime, stocks with high tech scores (>40) and insider buying signals tend to perform well.</li><li style="padding:2px 0">Rule (n=3, wr=0%, LOW confidence): In the MID_VIX_BEAR regime, stocks with high tech scores (>40) and insider buying signals tend to underperform.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-04 01:15</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=6, wr=33%, LOW confidence): Technology stocks in MID_VIX_BULL regime tend to have lower win rates.</li><li style="padding:2px 0">Rule (n=14, wr=57%, HIGH confidence): Stocks in MID_VIX_NEUTRAL regime tend to have higher win rates.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-03 03:27</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=6, wr=33%, LOW confidence): In MID_VIX_BULL regime, tech_score > 35 and adx > 30 can lead to a win (avg +0.7%)</li><li style="padding:2px 0">Rule (n=4, wr=50%, LOW confidence): In MID_VIX_NEUTRAL regime, sector rotation can lead to a win (avg +3.2%)</li></ul></div></details>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History taught me that insider buying and sector bonus are key factors in the MID_VIX_NEUTRAL regime.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=15, wr=53%, HIGH confidence): In the MID_VIX_NEUTRAL regime, picks with insider buying and high sector bonus tend to outperform.</li></ul>
+    <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-10 04:42</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Avoid Technology in MID_VIX_BEAR (n=2, wr=0%, avg -5.0%, HIGH confidence): Both CDNS and MPWR lost heavily in this regime</li><li style="padding:2px 0">Avoid Industrials in MID_VIX_BEAR (n=2, wr=0%, avg -3.0%, HIGH confidence): RTX and GD both failed despite sector momentum</li><li style="padding:2px 0">Financial Services showed lone win but n=1 (MA +5.3%, LOW confidence): Single observation, not reliable</li><li style="padding:2px 0">Consumer Cyclical failed once (DASH -1.2%, LOW confidence): Insufficient sample</li><li style="padding:2px 0">Overbought names (RSI>70) mixed: MA won at 70.8, GD lost at 73.9 - no clear rule</li><li style="padding:2px 0">Regime win rate only 17% (6 picks): Extremely hostile environment for directional trades</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-10 04:01</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">MID_VIX_BEAR regime (n=6, wr=17%, HIGH confidence): Avoid Technology, Industrials, Consumer Cyclical sectors — only Financial Services produced a win (MA).</li><li style="padding:2px 0">MID_VIX_BEAR regime (n=6, wr=17%, HIGH confidence): High RSI (>70) does not prevent losses — GD lost with RSI 73.9.</li><li style="padding:2px 0">Across regimes (n=29, wr=38%, HIGH confidence): Insider buying signal correlates with better outcomes (MA, LIN, MSFT, MTD, BR, AXON, CPRT, DXCM, EXPE).</li><li style="padding:2px 0">MID_VIX_NEUTRAL regime (n=15, wr=53%, HIGH confidence): Positive relative strength vs SPY + rising ADX >30 are strong predictors (CPRT, AXON, BR, EXPE, DXCM, JKHY).</li><li style="padding:2px 0">Earnings within 2 weeks (n=multiple, HIGH confidence): Elevated risk — avoid unless exceptional setup (LOW 8 days, DE 15 days flagged).</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-10 02:59</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): High ADX and strong sector momentum are key indicators of a successful trade in the MID_VIX_BEAR regime.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-07 00:26</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=6, wr=33%, LOW confidence): Avoid stocks with earnings within 12 days in the MID_VIX_BEAR regime.</li><li style="padding:2px 0">Rule (n=10, wr=53%, MEDIUM confidence): Favor defensive sector rotation plays in the MID_VIX_NEUTRAL regime.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-06 01:33</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): Stocks with HH/HL and MACD bull in the Consumer Defensive sector have a higher win rate in the HIGH_VIX_BEAR regime.</li></ul></div></details>
   </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
-                margin-bottom:14px;border-left:8px solid #546e7a">
-      <div style="font-size:28px;font-weight:800;color:#546e7a;margin-bottom:6px">
-        NO PICK TODAY
+                margin-bottom:14px;border-left:8px solid #2196f3">
+      <div style="font-size:28px;font-weight:800;color:#2196f3;margin-bottom:6px">
+        QUEUED KMB — next session Open
       </div>
       <div style="color:#aaa;font-size:13px">
-        2026-11-10 &nbsp;·&nbsp;  &nbsp;·&nbsp; 
+        2026-11-11 &nbsp;·&nbsp; Consumer Defensive &nbsp;·&nbsp; TECHNICAL
       </div>
-            <div style="margin-top:10px;color:#ffb3b3;font-size:12px">LLM failure reason: Data/LLM validation incomplete; no new order queued.</div>
-      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: Data/LLM validation incomplete; no new order queued.</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div>
+            
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>QUEUED</b>: Queued KMB for the next session Open; not filled<br>Next session Open, subject to execution checks; no cash debited.</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">LLM score (uncalibrated)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">85/100</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
+            <div style="background:#2196f3;border-radius:99px;height:6px;width:85%"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Reference price (not a fill)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">111.12</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">105.62 / 122.13</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1:2.0</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
+                  font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
+          <b>LLM narrative (not verified facts)</b><br>
+          KMB is a defensive staple with insider buying and a MACD bullish crossover, providing a safe haven in a risk-off tape. Its low beta offers shelter if the SPY breaks down further.
+      </div>
+      <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
+                  border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
+          Risk (LLM narrative): Earnings risk is low, but a decline in consumer spending could negatively impact KMB&#x27;s stock price.
+      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-11-10)</b><br>ticker=KMB; sector=Consumer Defensive; source=TECHNICAL; rsi=58.8; short_ratio=11.2; short_pct_float=17.4</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
@@ -75,24 +105,13 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
                   border-radius:6px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <span style="font-weight:700;font-size:16px">SHW</span>
-          <span style="color:#888;font-size:13px">75/100 &nbsp;·&nbsp; Basic Materials</span>
+          <span style="font-weight:700;font-size:16px">EL</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Consumer Defensive</span>
         </div>
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
-          <div style="background:#f9a825;border-radius:4px;height:4px;width:75%"></div>
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
         </div>
-        <div style="font-size:13px;color:#555">LLM narrative: Basic Materials not in historical loss list; 5-day momentum +5%, RS vs SPY +1.68%, CMF 0.227 confirms buying flow, optio</div>
-      </div>
-      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
-                  border-radius:6px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <span style="font-weight:700;font-size:16px">LOW</span>
-          <span style="color:#888;font-size:13px">72/100 &nbsp;·&nbsp; Consumer Cyclical</span>
-        </div>
-        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
-          <div style="background:#f9a825;border-radius:4px;height:4px;width:72%"></div>
-        </div>
-        <div style="font-size:13px;color:#555">LLM narrative: Consumer Cyclical sector leading (+2.9%), ADX 41.3 strong trend, momentum +8.85%, CMF 0.224, options BULLISH, rs_vs_spy </div>
+        <div style="font-size:13px;color:#555">LLM narrative: EL is a relative strength leader in the defensive sector with institutional accumulation, but its upside to 52-week high</div>
       </div>
     </div>
   </div>
@@ -103,8 +122,8 @@ tr:last-child td{border-bottom:none}
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
-        <div style="font-size:28px;font-weight:700">USD 99,776</div>
-                <div style="color:#f44336;font-size:15px;margin-top:2px">-0.2% vs Alpaca paper capital</div>
+        <div style="font-size:28px;font-weight:700">USD 99,979</div>
+                <div style="color:#f44336;font-size:15px;margin-top:2px">-0.0% vs Alpaca paper capital</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
@@ -123,60 +142,60 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">PG</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +2.9%</span>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +3.3%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          123 shares &nbsp;·&nbsp; Value USD 20,671
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+590</span>
+          123 shares &nbsp;·&nbsp; Value USD 20,745
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+664</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 162.94</span><span>Target 174.0347</span>
+            <span>Stop 163.28</span><span>Target 174.0347</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:46%;background:#00c853;
+            <div style="position:absolute;left:0;width:50%;background:#00c853;
                         border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:3%;width:3px;height:14px;top:-3px;
+            <div style="position:absolute;left:2%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:46%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:50%;width:4px;height:16px;top:-4px;
                         background:#00c853;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 163.2647 &nbsp;·&nbsp; Current 168.06</div>
+          <div style="font-size:11px;color:#999">Entry 163.2647 &nbsp;·&nbsp; Current 168.66000366210938</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:20%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:30%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 2 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 3 of 10</div>
       </div>
       <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
-                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
           <div>
             <span style="font-size:20px;font-weight:700">DUK</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -0.3%</span>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +0.4%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          154 shares &nbsp;·&nbsp; Value USD 19,727
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-52</span>
+          154 shares &nbsp;·&nbsp; Value USD 19,857
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+77</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 124.9188</span><span>Target 135.4888</span>
+            <span>Stop 125.42</span><span>Target 135.4888</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:30%;background:#f44336;
+            <div style="position:absolute;left:0;width:35%;background:#00c853;
                         border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
+            <div style="position:absolute;left:30%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:30%;width:4px;height:16px;top:-4px;
-                        background:#f44336;border-radius:2px"></div>
+            <div style="position:absolute;left:35%;width:4px;height:16px;top:-4px;
+                        background:#00c853;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 128.4388 &nbsp;·&nbsp; Current 128.10000610351562</div>
+          <div style="font-size:11px;color:#999">Entry 128.4388 &nbsp;·&nbsp; Current 128.94000244140625</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:10%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:20%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 1 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 2 of 10</div>
       </div>
   </div>
 
@@ -223,8 +242,8 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">2.5% above stop</div>
-          <div style="font-size:12px;color:#888">Current 128.10000610351562 &nbsp;·&nbsp; Stop 124.9188</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.7% above stop</div>
+          <div style="font-size:12px;color:#888">Current 128.94000244140625 &nbsp;·&nbsp; Stop 125.42</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
@@ -234,8 +253,8 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">3.0% above stop</div>
-          <div style="font-size:12px;color:#888">Current 168.06 &nbsp;·&nbsp; Stop 162.94</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">3.2% above stop</div>
+          <div style="font-size:12px;color:#888">Current 168.66000366210938 &nbsp;·&nbsp; Stop 163.28</div>
         </div>
       </div>
     </div>
