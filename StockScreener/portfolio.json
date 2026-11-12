@@ -2981,7 +2981,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-12T04:08:26.554436921Z",
+      "timestamp": "2026-11-12T04:08:26.554437Z",
       "order_id": "da79ce12-e43d-4662-89fc-1ec33ebff126",
       "client_order_id": "152244af-c667-4885-887a-070854258f56",
       "symbol": "REGN",
@@ -2994,7 +2994,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-12T04:08:26.55446313Z",
+      "timestamp": "2026-11-12T04:08:26.554463Z",
       "order_id": "c417c489-5525-4e27-9a1a-a01ca6760b97",
       "client_order_id": "c06b974a-d7c8-4191-a72d-c130f9e2ff09",
       "symbol": "REGN",
@@ -3007,7 +3007,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-12T04:08:26.554405394Z",
+      "timestamp": "2026-11-12T04:08:26.554405Z",
       "order_id": "4ffb216a-a12e-4621-9591-6b488ad50090",
       "client_order_id": "lpm-B-REGN-44fa62d0568c42da914f1aee4b8ff441",
       "symbol": "REGN",
