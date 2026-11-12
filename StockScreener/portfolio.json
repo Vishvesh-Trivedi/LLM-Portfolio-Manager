@@ -125,12 +125,12 @@
       "stop_price": 103.38,
       "target_price": 119.89,
       "sector": "Consumer Defensive",
-      "current_price": 108.88,
-      "current_value": 14481.04,
+      "current_price": 109.0,
+      "current_value": 14497.0,
       "cost_basis": 14481.04,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 0.0,
-      "unrealized_pnl_pct": 0.0,
+      "unrealized_pnl": 15.96,
+      "unrealized_pnl_pct": 0.11021307861864837,
       "hold_days": 0,
       "held_sessions": 0,
       "hold_sessions": 10,
@@ -142,7 +142,9 @@
       "broker_order_id": "57a1c89d-3f5d-40a7-b042-60f9ba8cfeec",
       "broker_partial_fill": false,
       "requested_shares": 133,
-      "update_error": "quote gap: missing/invalid exact session 2026-11-11"
+      "update_error": "quote gap: missing/invalid exact session 2026-11-11",
+      "quote_date": "2026-11-11",
+      "mark_basis": "broker_current_price"
     }
   ],
   "closed_trades": [
