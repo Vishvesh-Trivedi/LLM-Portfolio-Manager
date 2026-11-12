@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LLM Portfolio Manager — 2026-11-12</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+     background:#f0f2f5;color:#1a1a2e;padding:20px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:20px;font-weight:700;color:#333}
+.sub{color:#888;font-size:12px;margin-bottom:18px;margin-top:3px}
+.mkt{display:flex;gap:20px;background:white;border-radius:10px;padding:12px 20px;
+      margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-wrap:wrap;font-size:13px}
+.mi .ml{color:#888;font-size:11px} .mi .mv{font-weight:600}
+.tabs{display:flex;gap:4px;margin-bottom:18px}
+.tb{flex:1;padding:12px;text-align:center;font-size:15px;font-weight:600;
+     border:none;border-radius:8px;cursor:pointer;background:#e0e0e0;color:#666;transition:.15s}
+.tb.on{background:#1a1a2e;color:white}
+.tp{display:none} .tp.on{display:block}
+.sec{background:white;border-radius:10px;padding:20px;margin-bottom:14px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.sh{font-size:14px;font-weight:700;color:#333;margin-bottom:12px;
+     border-bottom:2px solid #f0f0f0;padding-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fa;padding:9px 8px;text-align:left;font-weight:600;
+    color:#555;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+td{padding:8px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+</style>
+</head>
+<body>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round1; stale_quote:PG; stale_quote:DUK; stale_quote:KMB; paper_horizon_unavailable:AON<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+  <h1>LLM Portfolio Manager</h1>
+        <p class="sub">Thursday November 12 2026  02:11 &nbsp;·&nbsp; NVIDIA:meta/llama-3.2-90b-vision-instruct, OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free &nbsp;·&nbsp; Alpaca paper</p>
+
+  <div class="mkt">
+    <div class="mi"><div class="ml">VIX</div><div class="mv">17.5 &nbsp;MODERATE (p56 </div></div>
+    <div class="mi"><div class="ml">SPY Today</div>
+        <div class="mv" style="color:#00c853">+1.32%</div></div>
+    <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BEARISH</div></div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">Markets are dominated by reports of Nvidia&#x27;s board potentially ousting CEO Jensen Huang, sending NVDA down 8% after hours and weighing on Nasdaq futures. Meanwh</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tb on" onclick="sw('buy',this)">BUY</button>
+    <button class="tb"    onclick="sw('see',this)">SEE</button>
+    <button class="tb"    onclick="sw('hold',this)">HOLD</button>
+    <button class="tb"    onclick="sw('stop',this)" style="">STOP</button>
+  </div>
+
+  <!-- ═══ BUY ═══ -->
+  <div id="t-buy" class="tp on">
+    <div class="section" style="border-left:4px solid #1565c0">
+    <h2>🧠 What the AI Learned from Your Trade History</h2>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">History suggests that in certain VIX regimes, sector-specific trends and insider buying signals can be strong indicators of short-term outperformance.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=6, wr=33%, HIGH confidence): In MID_VIX_BULL regime, Technology sector stocks with high tech scores and insider buying signals tend to outperform. Rule (n=10, wr=53%, HIGH confidence): In MID_VIX_NEUTRAL regime, stocks with high momentum scores and sector bonuses tend to outperform.</li></ul>
+    <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-11 00:52</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=15, wr=53%, HIGH confidence): In the MID_VIX_NEUTRAL regime, picks with insider buying and high sector bonus tend to outperform.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-10 04:42</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Avoid Technology in MID_VIX_BEAR (n=2, wr=0%, avg -5.0%, HIGH confidence): Both CDNS and MPWR lost heavily in this regime</li><li style="padding:2px 0">Avoid Industrials in MID_VIX_BEAR (n=2, wr=0%, avg -3.0%, HIGH confidence): RTX and GD both failed despite sector momentum</li><li style="padding:2px 0">Financial Services showed lone win but n=1 (MA +5.3%, LOW confidence): Single observation, not reliable</li><li style="padding:2px 0">Consumer Cyclical failed once (DASH -1.2%, LOW confidence): Insufficient sample</li><li style="padding:2px 0">Overbought names (RSI>70) mixed: MA won at 70.8, GD lost at 73.9 - no clear rule</li><li style="padding:2px 0">Regime win rate only 17% (6 picks): Extremely hostile environment for directional trades</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-10 04:01</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">MID_VIX_BEAR regime (n=6, wr=17%, HIGH confidence): Avoid Technology, Industrials, Consumer Cyclical sectors — only Financial Services produced a win (MA).</li><li style="padding:2px 0">MID_VIX_BEAR regime (n=6, wr=17%, HIGH confidence): High RSI (>70) does not prevent losses — GD lost with RSI 73.9.</li><li style="padding:2px 0">Across regimes (n=29, wr=38%, HIGH confidence): Insider buying signal correlates with better outcomes (MA, LIN, MSFT, MTD, BR, AXON, CPRT, DXCM, EXPE).</li><li style="padding:2px 0">MID_VIX_NEUTRAL regime (n=15, wr=53%, HIGH confidence): Positive relative strength vs SPY + rising ADX >30 are strong predictors (CPRT, AXON, BR, EXPE, DXCM, JKHY).</li><li style="padding:2px 0">Earnings within 2 weeks (n=multiple, HIGH confidence): Elevated risk — avoid unless exceptional setup (LOW 8 days, DE 15 days flagged).</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-10 02:59</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=10, wr=80%, HIGH confidence): High ADX and strong sector momentum are key indicators of a successful trade in the MID_VIX_BEAR regime.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-07 00:26</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=6, wr=33%, LOW confidence): Avoid stocks with earnings within 12 days in the MID_VIX_BEAR regime.</li><li style="padding:2px 0">Rule (n=10, wr=53%, MEDIUM confidence): Favor defensive sector rotation plays in the MID_VIX_NEUTRAL regime.</li></ul></div></details>
+  </div>
+    <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
+                margin-bottom:14px;border-left:8px solid #546e7a">
+      <div style="font-size:28px;font-weight:800;color:#546e7a;margin-bottom:6px">
+        NO PICK TODAY
+      </div>
+      <div style="color:#aaa;font-size:13px">
+        2026-11-12 &nbsp;·&nbsp; Technology &nbsp;·&nbsp; TECHNICAL
+      </div>
+            <div style="margin-top:10px;color:#ffb3b3;font-size:12px">LLM failure reason: Data/LLM validation incomplete; no new order queued.</div>
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: Data/LLM validation incomplete; no new order queued.</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-11-11)</b><br>ticker=AMD; sector=Technology; source=TECHNICAL; rsi=53.6; short_ratio=1.9; short_pct_float=2.4</div>
+    </div>
+    <div class="sec">
+      <div class="sh">Watch List</div>
+      
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">TDG</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Industrials</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">LLM narrative: TDG&#x27;s strong institutional accumulation and sector momentum suggest a potential breakout, but the stock&#x27;s ADX is relativ</div>
+      </div>
+      <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
+                  border-radius:6px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-weight:700;font-size:16px">REGN</span>
+          <span style="color:#888;font-size:13px">72/100 &nbsp;·&nbsp; Healthcare</span>
+        </div>
+        <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
+          <div style="background:#f9a825;border-radius:4px;height:4px;width:72%"></div>
+        </div>
+        <div style="font-size:13px;color:#555">LLM narrative: REGN&#x27;s strong institutional buying pressure and defensive sector rotation play suggest a potential upside, but the stock</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SEE ═══ -->
+  <div id="t-see" class="tp">
+    <div style="background:#1a1a2e;color:white;border-radius:12px;padding:20px;
+                margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
+        <div style="font-size:28px;font-weight:700">USD 99,872</div>
+                <div style="color:#f44336;font-size:15px;margin-top:2px">-0.1% vs Alpaca paper capital</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
+        <div style="font-size:22px;font-weight:600">USD 44,896</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Slots Used</div>
+        <div style="font-size:22px;font-weight:600">3 / 5</div>
+      </div>
+    </div>
+    
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">PG</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +2.9%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          123 shares &nbsp;·&nbsp; Value USD 20,664
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+582</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 163.28</span><span>Target 174.0347</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:44%;background:#00c853;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:2%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:44%;width:4px;height:16px;top:-4px;
+                        background:#00c853;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 163.2647 &nbsp;·&nbsp; Current 168.0</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:30%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 3 of 10</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">DUK</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +0.3%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          154 shares &nbsp;·&nbsp; Value USD 19,831
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+51</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 125.42</span><span>Target 135.4888</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:33%;background:#00c853;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:30%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:33%;width:4px;height:16px;top:-4px;
+                        background:#00c853;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 128.4388 &nbsp;·&nbsp; Current 128.77</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:20%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 2 of 10</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">KMB</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +0.0%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          133 shares &nbsp;·&nbsp; Value USD 14,481
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+0</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 103.38</span><span>Target 119.89</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:33%;background:#00c853;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:33%;width:4px;height:16px;top:-4px;
+                        background:#00c853;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 108.88 &nbsp;·&nbsp; Current 108.88</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:0%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 0 of 10</div>
+      </div>
+  </div>
+
+  <!-- ═══ HOLD ═══ -->
+  <div id="t-hold" class="tp">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px">
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700;color:#f44336">-1,596</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Realized P&amp;L (USD)</div>
+      </div>
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700">38%</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Win Rate &nbsp;(11W / 18L)</div>
+      </div>
+      <div class="sec" style="padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:700">29</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">Trades Closed</div>
+      </div>
+    </div>
+    <div class="sec">
+      <table>
+        <tr><th>Closed</th><th>Ticker</th><th>Entry</th><th>Exit</th>
+            <th>P&amp;L USD</th><th>Return</th><th>Days</th><th>Reason</th></tr>
+        <tr style="background:#fff1f1"><td>2026-11-06</td><td><b>CDNS</b></td><td>328.13</td><td>307.3996</td><td style="color:#f44336;font-weight:600">-1,119</td><td style="color:#f44336">-6.3%</td><td>3d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#f1fff6"><td>2026-11-05</td><td><b>MA</b></td><td>643.0</td><td>677.2068</td><td style="color:#00c853;font-weight:600">+855</td><td style="color:#00c853">+5.3%</td><td>3d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-11-05</td><td><b>DASH</b></td><td>185.8046</td><td>183.5841</td><td style="color:#f44336;font-weight:600">-164</td><td style="color:#f44336">-1.2%</td><td>1d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-11-04</td><td><b>RTX</b></td><td>203.37</td><td>196.0014</td><td style="color:#f44336;font-weight:600">-582</td><td style="color:#f44336">-3.6%</td><td>3d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-11-04</td><td><b>GD</b></td><td>373.0</td><td>364.3456</td><td style="color:#f44336;font-weight:600">-294</td><td style="color:#f44336">-2.3%</td><td>1d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-11-04</td><td><b>MPWR</b></td><td>1313.7786</td><td>1227.36</td><td style="color:#f44336;font-weight:600">-605</td><td style="color:#f44336">-6.6%</td><td>1d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-11-02</td><td><b>COP</b></td><td>151.97</td><td>148.96</td><td style="color:#f44336;font-weight:600">-394</td><td style="color:#f44336">-2.0%</td><td>1d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#f1fff6"><td>2026-10-30</td><td><b>MSFT</b></td><td>518.8629</td><td>521.81</td><td style="color:#00c853;font-weight:600">+41</td><td style="color:#00c853">+0.6%</td><td>14d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#f1fff6"><td>2026-10-30</td><td><b>LIN</b></td><td>488.6594</td><td>514.53</td><td style="color:#00c853;font-weight:600">+802</td><td style="color:#00c853">+5.3%</td><td>14d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-10-30</td><td><b>CDNS</b></td><td>336.0</td><td>324.97</td><td style="color:#f44336;font-weight:600">-596</td><td style="color:#f44336">-3.3%</td><td>1d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-10-13</td><td><b>CDNS</b></td><td>356.1259</td><td>341.988</td><td style="color:#f44336;font-weight:600">-721</td><td style="color:#f44336">-4.0%</td><td>7d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-10-09</td><td><b>AMD</b></td><td>635.0684</td><td>609.2</td><td style="color:#f44336;font-weight:600">-647</td><td style="color:#f44336">-4.1%</td><td>10d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:"><td>2026-09-29</td><td><b>DHR</b></td><td>226.78</td><td>226.78</td><td style="color:#00c853;font-weight:600">+0</td><td style="color:#00c853">+0.0%</td><td>2d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:"><td>2026-09-28</td><td><b>CDNS</b></td><td>322.1806</td><td>322.1806</td><td style="color:#00c853;font-weight:600">+0</td><td style="color:#00c853">+0.0%</td><td>3d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#f1fff6"><td>2026-09-22</td><td><b>MTD</b></td><td>1403.282222</td><td>1502.87</td><td style="color:#00c853;font-weight:600">+1,793</td><td style="color:#00c853">+7.1%</td><td>1d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:"><td>2026-09-21</td><td><b>GILD</b></td><td>149.5798</td><td>149.5798</td><td style="color:#00c853;font-weight:600">+0</td><td style="color:#00c853">+0.0%</td><td>8d</td><td style="font-size:11px;color:#666">broker_confirmed_exit</td></tr><tr style="background:#fff1f1"><td>2026-09-16</td><td><b>FSLR</b></td><td>207.79</td><td>196.83</td><td style="color:#f44336;font-weight:600">-110</td><td style="color:#f44336">-5.3%</td><td>4d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#fff1f1"><td>2026-09-11</td><td><b>AES</b></td><td>14.84</td><td>14.78</td><td style="color:#f44336;font-weight:600">-10</td><td style="color:#f44336">-0.4%</td><td>1d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-27</td><td><b>AXON</b></td><td>572.72</td><td>607.48</td><td style="color:#00c853;font-weight:600">+29</td><td style="color:#00c853">+5.0%</td><td>20d</td><td style="font-size:11px;color:#666">macd_bearish_cross</td></tr><tr style="background:#fff1f1"><td>2026-08-25</td><td><b>FANG</b></td><td>211.65</td><td>199.89</td><td style="color:#f44336;font-weight:600">-81</td><td style="color:#f44336">-6.3%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-24</td><td><b>EXPE</b></td><td>320.62</td><td>339.12</td><td style="color:#00c853;font-weight:600">+64</td><td style="color:#00c853">+5.0%</td><td>19d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-24</td><td><b>GNRC</b></td><td>222.57</td><td>203.56</td><td style="color:#f44336;font-weight:600">-42</td><td style="color:#f44336">-9.4%</td><td>12d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-24</td><td><b>JKHY</b></td><td>163.55</td><td>170.51</td><td style="color:#00c853;font-weight:600">+46</td><td style="color:#00c853">+3.5%</td><td>5d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#f1fff6"><td>2026-08-20</td><td><b>BR</b></td><td>168.92</td><td>178.5</td><td style="color:#00c853;font-weight:600">+158</td><td style="color:#00c853">+5.5%</td><td>16d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#f1fff6"><td>2026-08-19</td><td><b>CPRT</b></td><td>31.8</td><td>33.85</td><td style="color:#00c853;font-weight:600">+46</td><td style="color:#00c853">+5.4%</td><td>2d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-18</td><td><b>AKAM</b></td><td>125.67</td><td>115.2</td><td style="color:#f44336;font-weight:600">-47</td><td style="color:#f44336">-9.2%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-17</td><td><b>MPC</b></td><td>356.49</td><td>358.18</td><td style="color:#00c853;font-weight:600">+1</td><td style="color:#00c853">+0.0%</td><td>3d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr><tr style="background:#fff1f1"><td>2026-08-12</td><td><b>COR</b></td><td>325.99</td><td>314.17</td><td style="color:#f44336;font-weight:600">-40</td><td style="color:#f44336">-4.1%</td><td>5d</td><td style="font-size:11px;color:#666">stop_loss</td></tr><tr style="background:#f1fff6"><td>2026-08-12</td><td><b>DXCM</b></td><td>87.91</td><td>90.8</td><td style="color:#00c853;font-weight:600">+22</td><td style="color:#00c853">+2.8%</td><td>2d</td><td style="font-size:11px;color:#666">rsi_overbought</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ STOP ═══ -->
+  <div id="t-stop" class="tp">
+    
+    <div style="background:#f1fff6;border-left:5px solid #00c853;border-radius:8px;
+                padding:14px 18px;margin-bottom:14px;font-size:15px;font-weight:600;color:#00a040">
+      No stop losses hit today
+    </div>
+    
+    <div class="sec">
+      <div class="sh" style="color:#e65100">Approaching Stop (&lt;5%)</div>
+      
+      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
+                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:17px;font-weight:700">DUK</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.6% above stop</div>
+          <div style="font-size:12px;color:#888">Current 128.77 &nbsp;·&nbsp; Stop 125.42</div>
+        </div>
+      </div>
+      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
+                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:17px;font-weight:700">PG</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.8% above stop</div>
+          <div style="font-size:12px;color:#888">Current 168.0 &nbsp;·&nbsp; Stop 163.28</div>
+        </div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sh" style="color:#c62828">Stop Loss History</div>
+      <table>
+        <tr><th>Date</th><th>Ticker</th><th>Entry</th><th>Exit</th>
+            <th>Loss USD</th><th>Return</th><th>Days</th></tr>
+        <tr style="background:#fff1f1"><td>2026-09-16</td><td><b>FSLR</b></td><td>207.79</td><td>196.83</td><td style="color:#f44336;font-weight:600">-110</td><td style="color:#f44336">-5.3%</td><td>4d</td></tr><tr style="background:#fff1f1"><td>2026-09-11</td><td><b>AES</b></td><td>14.84</td><td>14.78</td><td style="color:#f44336;font-weight:600">-10</td><td style="color:#f44336">-0.4%</td><td>1d</td></tr><tr style="background:#fff1f1"><td>2026-08-25</td><td><b>FANG</b></td><td>211.65</td><td>199.89</td><td style="color:#f44336;font-weight:600">-81</td><td style="color:#f44336">-6.3%</td><td>5d</td></tr><tr style="background:#fff1f1"><td>2026-08-24</td><td><b>GNRC</b></td><td>222.57</td><td>203.56</td><td style="color:#f44336;font-weight:600">-42</td><td style="color:#f44336">-9.4%</td><td>12d</td></tr><tr style="background:#fff1f1"><td>2026-08-18</td><td><b>AKAM</b></td><td>125.67</td><td>115.2</td><td style="color:#f44336;font-weight:600">-47</td><td style="color:#f44336">-9.2%</td><td>5d</td></tr><tr style="background:#fff1f1"><td>2026-08-12</td><td><b>COR</b></td><td>325.99</td><td>314.17</td><td style="color:#f44336;font-weight:600">-40</td><td style="color:#f44336">-4.1%</td><td>5d</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:#ccc;font-size:11px;margin-top:18px">
+    Not financial advice &nbsp;·&nbsp; Personal project &nbsp;·&nbsp; DYOR
+  </p>
+</div>
+<script>
+function sw(id,btn){
+  document.querySelectorAll('.tp').forEach(function(p){p.classList.remove('on')});
+  document.querySelectorAll('.tb').forEach(function(b){b.classList.remove('on')});
+  document.getElementById('t-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>
