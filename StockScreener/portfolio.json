@@ -174,12 +174,12 @@
       "stop_price": 498.6007,
       "target_price": 689.6707,
       "sector": "Technology",
-      "current_price": 562.2907,
-      "current_value": 8434.36,
+      "current_price": 585.35,
+      "current_value": 8780.25,
       "cost_basis": 8434.36,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 0.0,
-      "unrealized_pnl_pct": 0.0,
+      "unrealized_pnl": 345.89,
+      "unrealized_pnl_pct": 4.100963202898611,
       "hold_days": 0,
       "held_sessions": 0,
       "hold_sessions": 10,
@@ -191,7 +191,9 @@
       "broker_order_id": "ceaeeb33-2012-431d-a4ab-bbba502a683a",
       "broker_partial_fill": false,
       "requested_shares": 15,
-      "update_error": "quote gap: missing/invalid exact session 2026-11-12"
+      "update_error": "quote gap: missing/invalid exact session 2026-11-12",
+      "quote_date": "2026-11-12",
+      "mark_basis": "broker_current_price"
     },
     {
       "trade_id": "0c807877-9abd-4955-9251-926487e98d51",
@@ -1449,7 +1451,7 @@
     "2026-11-11"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 99677.37,
+  "broker_equity": 99714.12,
   "alpaca_order_ledger": [
     {
       "source": "poll",

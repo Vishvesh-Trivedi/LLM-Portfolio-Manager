@@ -16,30 +16,22 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-13 01:08
+   Time:   2026-11-13 01:58
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Alpaca: 1/1 tickers
-  Downloaded: 1/1 tickers
-  Broker sync: Filled AMD: 15 @ 562.2907 (broker confirmed)
-  Broker sync: Marked PG at 167.88 (broker)
-  Broker sync: Marked DUK at 128.73 (broker)
-  Broker sync: Marked KMB at 107.3852 (broker)
-  Broker sync: Adopted REGN: 11 @ 979.723636 (stop 924.96, target 1089.25)
+  Broker sync: Marked AMD at 585.35 (broker)
   Broker sync: Cash set from broker: 25684.97 -> 25684.97
-  Protection: AMD 15 sh  stop $498.60 / target $689.67
-  Protection: REGN 11 sh  stop $924.96 / target $1,089.25
-ALPACA PAPER ACCOUNT: $99,368.23 (-631.77 / -0.6% vs $100,000 starting)
+ALPACA PAPER ACCOUNT: $99,714.12 (-285.88 / -0.3% vs $100,000 starting)
 Cash: $25,684.97  |  Positions: 5/5  |  Deployed: 74%  |  Idle: 26%
-Sector exposure: Consumer Defensive: 35%  Utilities: 20%  Healthcare: 11%  Technology: 8%
-Broker P&L: $-631.77 all-time  |  no closed trades this week
+Sector exposure: Consumer Defensive: 35%  Utilities: 20%  Healthcare: 11%  Technology: 9%
+Broker P&L: $-285.88 all-time  |  no closed trades this week
   PG [Consumer Defensive]: 123sh @ $163.2647 → $167.88 (+568 / +2.8%) | 4d | Stop $163.28 | Target $174.0347
   DUK [Utilities]: 154sh @ $128.4388 → $128.73 (+45 / +0.2%) | 3d | Stop $125.42 | Target $135.4888 | EARNINGS IN -6d ⚠
   KMB [Consumer Defensive]: 133sh @ $108.88 → $107.3852 (-199 / -1.4%) | 1d | Stop $103.38 | Target $119.89
-  AMD [Technology]: 15sh @ $562.2907 → $562.2907 (+0 / +0.0%) | 0d | Stop $498.6007 | Target $689.6707
+  AMD [Technology]: 15sh @ $562.2907 → $585.35 (+346 / +4.1%) | 0d | Stop $498.6007 | Target $689.6707
   REGN [Healthcare]: 11sh @ $979.723636 → $953.91 (-284 / -2.6%) | 0d | Stop $924.96 | Target $1089.25
 
 Step 1/8: Updating past results + exit signals...
@@ -50,8 +42,8 @@ Market context...
   VIX:  18.7 (p70.3) -> MODERATE (p70 neutral) (1.0x)
   QQQ:  $690.38 | BEARISH (-3.96% vs 50MA)
   SPY today: +1.32%
-  10Y yield: 5.1% (+2.04%)  DXY: 103.2 (+0.28%)  Nikkei: +0.69%
-  Futures:  ES=-0.07%  NQ=+0.10%
+  10Y yield: 5.1% (+2.04%)  DXY: 103.13 (+0.21%)  Nikkei: +0.90%
+  Futures:  ES=+0.08%  NQ=+0.28%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
@@ -61,7 +53,7 @@ Step 3/8: Fetching all data (parallel)...
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 894 stocks (parallel)...
-  Full fundamentals: 453/894 stocks
+  Full fundamentals: 441/894 stocks
   Sector ranks - Top 3: ['Technology', 'Energy', 'Industrials'] | Perf: Technology:+5.4% | Energy:+4.3% | Industrials:+4.1% | Communication Services:+2.7% | Consumer Cyclical:+2.5%
   Sector flows: TOP Energy +1.5% | BOT Basic Materials -1.3%
 
@@ -78,62 +70,95 @@ Phase 4 - Merging candidate pools...
     BOTH (tech+news): 0  TECHNICAL: 12  NEWS: 0
 
 Step 4.5/8: Stream B - headline ticker extraction...
-  Stream B: Processing headline mentions: ['NVDA', 'TSLA', 'MPWR', 'ANET', 'MSFT', 'CSCO']
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: _ReplyCutOff: reply cut off at max_tokens
+  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
+  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
+  Stream B: Processing headline mentions: ['NVDA', 'TSLA', 'MPWR', 'ANET', 'MSFT']
   Stream B added: NVDA | $166.07 | RSI 25.9
   Stream B added: TSLA | $397.43 | RSI 56.5
   Stream B added: MPWR | $1447.42 | RSI 60.3
   Stream B added: ANET | $206.78 | RSI 60.5
   Stream B added: MSFT | $523.0 | RSI 48.4
-  Stream B added: CSCO | $101.97 | RSI 45.1
-  Sector sentiment derived: 6/11 sectors from 14 stocks
+  Sector sentiment derived: 5/11 sectors from 12 stocks
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
-  Fetching options + insider data for 17 candidates...
-  Options data: 17/17 | Insider signals: 3/17
+  Fetching options + insider data for 16 candidates...
+  Options data: 0/16 | Insider signals: 10/16
   Congress trades: all sources unavailable (no cache)
 
-Phase 5.5 - Computing score breakdown (17 candidates)...
-  Pre-score top 5: AVGO(59=39T+20N [vader:NEUTRAL])  XEL(57=43T+14N [vader:NEUTRAL])  MMM(54=36T+18N [vader:NEUTRAL])  ATI(51=38T+13N [vader:NEUTRAL])  ANET(51=36T+15N [vader:NEUTRAL])
-  SEC EDGAR 8-K: 5/17 candidates have recent filings
+Phase 5.5 - Computing score breakdown (16 candidates)...
+  Pre-score top 5: XEL(58=43T+15N [vader:NEUTRAL])  AVGO(57=39T+18N [vader:NEUTRAL])  ANET(54=36T+18N [vader:NEUTRAL])  MMM(52=36T+16N [vader:NEUTRAL])  ATI(51=38T+13N [vader:NEUTRAL])
+  SEC EDGAR 8-K: 4/16 candidates have recent filings
 
 Step 4.7/8: LLM catalyst scoring (every candidate)...
-  Catalyst scoring: 17 stocks → 3 LLM calls...
+  Catalyst scoring: 16 stocks → 3 LLM calls...
+  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  catalyst_1: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
     Batch 1/3 
+  LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  catalyst_2: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
     Batch 2/3 
+  NVIDIA paused for 120s after repeated failures
   LLM attempt 1/1 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
   catalyst_3: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
     Batch 3/3 
-  Catalyst scoring done — 3 auto-dropped, 14 remain
+  Catalyst scoring done — 5 auto-dropped, 11 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (14 candidates, 3 layers)...
-  Sentiment: NEUTRAL | Adj: +0
-  14 candidates after news filter
+Phase 5 - News intelligence (11 candidates, 3 layers)...
+  news: NVIDIA parser/validator rejected response: ValueError: unknown sector: Energy
+  news: OpenRouter parser/validator rejected response: ValueError: unknown sector: Energy
+  news: NVIDIA-retry parser/validator rejected response: ValueError: unknown ticker: TSM
+  News intelligence failed (ValueError: NVIDIA-retry parser/validator rejected response: ValueError: unknown ticker: TSM) - neutral baseline for display only
+  News enrichment unavailable - trading continues on verified prices, verified catalysts and the final decision.
 
-Phase 5.5 - Computing score breakdown (14 candidates)...
-  Pre-score top 5: AVGO(59=39T+20N [vader:NEUTRAL])  MMM(54=36T+18N [vader:NEUTRAL])  ANET(51=36T+15N [vader:NEUTRAL])  ATI(51=38T+13N [vader:NEUTRAL])  DE(50=35T+15N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (11 candidates)...
+  Pre-score top 5: XEL(58=43T+15N [vader:NEUTRAL])  AVGO(57=39T+18N [vader:NEUTRAL])  ANET(54=36T+18N [vader:NEUTRAL])  ATI(51=38T+13N [vader:NEUTRAL])  DE(50=35T+15N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  14 candidates after config criteria
+  11 candidates after config criteria
   Self-calibration: 29 prior picks, 38% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (14 candidates)...
-  Round 1/3: Ranking 14 candidates...
-  Round 1 → Top 10: ['AVGO', 'ANET', 'MPWR', 'CSCO', 'NVDA', 'ATI', 'IR', 'DE', 'V', 'TTWO']
+Phase 6 - NVIDIA final scoring (11 candidates)...
+  Round 1/3: Ranking 11 candidates...
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: _ReplyCutOff: reply cut off at max_tokens
+  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
+  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
+  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: _ReplyCutOff: reply cut off at max_tokens
+  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
+  OpenRouter paused for 120s after repeated failures
+  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
+  Round 1 failed (RuntimeError: ConnectionError) — using pre_score top 10
   Round 2/3: Deep-diving top 10...
+  NVIDIA paused for 120s after repeated failures
   LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
   -> NVIDIA throttled; answered via OpenRouter.
-  Round 2 → analyses for ['AVGO', 'CSCO', 'IR', 'V', 'ANET', 'MPWR', 'TTWO', 'DE', 'ATI']
+  Round 2 → analyses for ['AVGO', 'ANET', 'MPWR', 'TSLA', 'TTWO', 'IR', 'ATI', 'DE', 'XEL', 'V']
   Round 3/3: Final deliberation...
-  Final pick: AVGO | pre=59 → 85/100 | BUY | 8 LLM calls this run
+  LLM attempt 1/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  LLM attempt 2/2 failed [meta/llama-3.2-90b-vision-instruct]: ConnectionError
+  final: NVIDIA provider unavailable or returned empty content
+  ↩️  Critical LLM call recovered via OpenRouter.
+  Final pick: NONE | pre=? → 0/100 | NO PICK | 9 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=10, wr=80%, HIGH confidence): In the MID_VIX_BEAR regime, prioritize stocks with high momentum (5-day momentum > 20%) and unusual call activity. Rule (n=5, wr=60%, MEDIUM confidence): In the MID_VIX_BEAR regime, consider stocks with a high analyst rating (> 1.5) and a low short ratio (< 3).
-│ → History suggests that in the MID_VIX_BEAR regime, stocks with high momentum and unusual call activity tend to perform well, while those with high analyst ratings and low short ratios may also be worth considering.
+│ 1. MID_VIX_BEAR + Technology sector = avoid (n=3, wr=0%, HIGH confidence): CDNS lost twice, MPWR lost -6.6% in this regime
+│ 2. MID_VIX_BEAR + Defensive sector (Financials) + insider buying = favorable (n=1 win MA +5.3%, LOW confidence n=1)
+│ 3. Earnings within 14 days = elevated risk, avoid (rule explicit, HIGH confidence): DE at 12 days
+│ 4. Post-earnings immediate window (days_ago <=1) = high uncertainty (XEL, V, ATI), MEDIUM confidence
+│ 5. Negative RS vs SPY in bear regime correlates with losses (MPWR, TTWO, DE, V), MEDIUM confidence
+│ 6. StochRSI at 1.0 (overbought) in bear market = pullback risk (AVGO, ANET, MPWR, XEL, ATI), MEDIUM confidence
+│ 7. StochRSI at 0.0 (oversold) with ADX>40 = bounce candidate (V), MEDIUM confidence
+│ → In MID_VIX_BEAR regime (today), historical win rate is only 17% with avg -1.9% return; technology momentum plays fail consistently; only defensive financial with insider buying (MA) produced a win.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
 
@@ -141,51 +166,50 @@ Phase 6 - NVIDIA final scoring (14 candidates)...
   TODAY'S PICK  —  Friday, Nov 13 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 18.7 (MODERATE (p70 neutral))  |  QQQ BEARISH  |  SPY -0.35%
-  Macro:   The market is experiencing a mixed reaction with some sectors showing positivity
+  Macro:   Unavailable
 ─────────────────────────────────────────────────────────────────
   NO PICK TODAY
   Data/LLM validation incomplete; no new order queued.
 
   WATCH LIST:
-    V       74/100  [Financial Services]  V is a potential oversold bounce candidate in a strong uptrend, with a
+    V       75/100  [Unknown]  Financial Services defensive with insider buying, ADX 40.9 strong tren
+    AVGO    70/100  [Technology]  Explosive momentum (+24% 5d) with RSI 59.5 not overbought, 26 days to 
+    XEL     65/100  [Unknown]  High volume ratio 4.4x suggests institutional accumulation, MACD bulli
 █████████████████████████████████████████████████████████████████
   Broker: in sync (5 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved V | Stop:405.56 Target:449.8
+  Already have V on 2026-11-12 - skipping
+  OK: Saved AVGO | Stop:335.79 Target:421.15
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 9/28 wins (32.1%) | avg 10d -1.3% | 4 pending
-  WATCH LIST: 29/52 wins (55.8%) | avg 10d -0.5% | 22 pending
+  WATCH LIST: 29/52 wins (55.8%) | avg 10d -0.5% | 23 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1550 chars):
+  run-digest (1345 chars):
 ALPACA - Nov 12 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- BOUGHT 15 AMD at $562.29 ($8,434)
-- Found 0 REGN at Alpaca and added it to the records
-- AMD protected: sells at $498.60 or $689.67
-- REGN protected: sells at $924.96 or $1,089.25
+- Nothing was bought or sold
 
 WHAT YOU HOLD (5)
 - REGN: down $284 (-2.6%)  |  11 shares, $979.72 -> $953.91
   sells at $924.96 or $1,089.25  |  day 0 of 10
 - KMB: down $199 (-1.4%)  |  133 shares, $108.88 -> $107.39
   sells at $103.38 or $119.89  |  day 1 of 10
-- AMD: up $0 (+0.0%)  |  15 shares, $562.29 -> $562.29
-  sells at $498.60 or $689.67  |  day 0 of 10
 - DUK: up $45 (+0.2%)  |  154 shares, $128.44 -> $128.73
   sells at $125.42 or $135.49  |  day 3 of 10
 - PG: up $568 (+2.8%)  |  123 shares, $163.26 -> $167.88
   sells at $163.28 or $174.03  |  day 4 of 10
+- AMD: up $346 (+4.1%)  |  15 shares, $562.29 -> $585.35
+  sells at $498.60 or $689.67  |  day 0 of 10
 
 MONEY
-- Cash $25,685  |  In shares $73,683
-- Total $99,677 (down $323, -0.3% since start)
-- AMD not yet priced since the fill, so shown at cost
+- Cash $25,685  |  In shares $74,029
+- Total $99,714 (down $286, -0.3% since start)
 - NOTE $870 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 - 35% of everything is in one industry (Consumer Defensive) - a bad week there hits the whole account
 
@@ -206,8 +230,8 @@ STATUS
 - Checks: degraded
 - Blocked: stale_quote:PG, stale_quote:DUK, stale_quote:KMB
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1570608809997639691
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1570625771255365775
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::stale_quote:PG; stale_quote:DUK; stale_quote:KMB; stale_quote:AMD; stale_quote:REGN; paper_horizon_unavailable:MA
+::warning title=Run completed with degradations::stale_quote:PG; stale_quote:DUK; stale_quote:KMB; stale_quote:AMD; stale_quote:REGN; paper_horizon_unavailable:MA; advisory_news_unavailable | stages: news, round1
 
-  Completed with degradations (not a failure): stale_quote:PG; stale_quote:DUK; stale_quote:KMB; stale_quote:AMD; stale_quote:REGN; paper_horizon_unavailable:MA
+  Completed with degradations (not a failure): stale_quote:PG; stale_quote:DUK; stale_quote:KMB; stale_quote:AMD; stale_quote:REGN; paper_horizon_unavailable:MA; advisory_news_unavailable | stages: news, round1
