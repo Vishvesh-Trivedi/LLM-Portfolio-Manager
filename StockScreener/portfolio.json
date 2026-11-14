@@ -1,5 +1,5 @@
 {
-  "cash": 33510.46,
+  "cash": 33510.28,
   "starting_capital": 100000.0,
   "positions": [
     {
@@ -1468,7 +1468,7 @@
     "2026-11-13"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 99350.86,
+  "broker_equity": 99350.68,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -3202,7 +3202,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-14T00:54:32.701315594Z",
+      "timestamp": "2026-11-14T00:54:32.701316Z",
       "order_id": "c783d00a-ba3d-4b20-81e5-79b77389e101",
       "client_order_id": "21bcc2f6-3a71-4652-a27d-ba0bcafce167",
       "symbol": "KMB",
@@ -3215,7 +3215,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-14T00:54:32.7012792Z",
+      "timestamp": "2026-11-14T00:54:32.701279Z",
       "order_id": "1b499a33-0494-4c70-9fce-056620274bfe",
       "client_order_id": "lpm-P-KMB-0e7e1fce45764862aba12212c355",
       "symbol": "KMB",
@@ -3228,7 +3228,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-14T00:54:32.218874412Z",
+      "timestamp": "2026-11-14T00:54:32.218874Z",
       "order_id": "e4653455-ca56-42d3-98da-78cacc790a53",
       "client_order_id": "d9219949-81bd-4cda-87a5-397d4298196e",
       "symbol": "DUK",
@@ -3241,7 +3241,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-14T00:54:32.218835193Z",
+      "timestamp": "2026-11-14T00:54:32.218835Z",
       "order_id": "98e4f3ec-f677-4565-9591-f3a0e980d4a1",
       "client_order_id": "lpm-P-DUK-c17860d664f2411ca9382b464797",
       "symbol": "DUK",
