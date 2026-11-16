@@ -16,13 +16,11 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-16 07:22
+   Time:   2026-11-16 07:57
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked PG at 171.0 (broker)
-  Broker sync: Marked DUK at 128.13 (broker)
   Broker sync: Cash set from broker: 33510.28 -> 33510.28
   No completed trading session (before 16:15 ET); broker state reconciled only
