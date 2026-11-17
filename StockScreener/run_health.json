@@ -2,54 +2,54 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.3-70b-instruct": {
-      "attempts": 4,
-      "successes": 0,
-      "failures": 4
-    },
-    "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 18,
-      "successes": 8,
-      "failures": 10
-    },
-    "OpenRouter:google/gemma-4-31b-it:free": {
-      "attempts": 10,
-      "successes": 0,
-      "failures": 10
-    },
-    "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 10,
-      "successes": 0,
-      "failures": 10
-    },
-    "NVIDIA:meta/llama-3.1-70b-instruct": {
-      "attempts": 4,
-      "successes": 0,
-      "failures": 4
-    },
-    "NVIDIA:nvidia/llama-3.1-nemotron-70b-instruct": {
-      "attempts": 4,
-      "successes": 0,
-      "failures": 4
-    },
-    "NVIDIA:meta/llama-3.1-405b-instruct": {
-      "attempts": 4,
-      "successes": 0,
-      "failures": 4
-    },
-    "NVIDIA:mistralai/mixtral-8x22b-instruct-v0.1": {
-      "attempts": 4,
-      "successes": 0,
-      "failures": 4
-    },
-    "NVIDIA:google/gemma-2-27b-it": {
-      "attempts": 4,
-      "successes": 0,
-      "failures": 4
-    },
-    "NVIDIA:meta/llama-3.1-8b-instruct": {
       "attempts": 3,
       "successes": 0,
       "failures": 3
+    },
+    "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
+      "attempts": 15,
+      "successes": 11,
+      "failures": 4
+    },
+    "OpenRouter:google/gemma-4-31b-it:free": {
+      "attempts": 4,
+      "successes": 0,
+      "failures": 4
+    },
+    "OpenRouter:google/gemma-4-26b-a4b-it:free": {
+      "attempts": 4,
+      "successes": 0,
+      "failures": 4
+    },
+    "NVIDIA:meta/llama-3.1-70b-instruct": {
+      "attempts": 3,
+      "successes": 0,
+      "failures": 3
+    },
+    "NVIDIA:nvidia/llama-3.1-nemotron-70b-instruct": {
+      "attempts": 3,
+      "successes": 0,
+      "failures": 3
+    },
+    "NVIDIA:meta/llama-3.1-405b-instruct": {
+      "attempts": 3,
+      "successes": 0,
+      "failures": 3
+    },
+    "NVIDIA:mistralai/mixtral-8x22b-instruct-v0.1": {
+      "attempts": 3,
+      "successes": 0,
+      "failures": 3
+    },
+    "NVIDIA:google/gemma-2-27b-it": {
+      "attempts": 3,
+      "successes": 0,
+      "failures": 3
+    },
+    "NVIDIA:meta/llama-3.1-8b-instruct": {
+      "attempts": 2,
+      "successes": 0,
+      "failures": 2
     }
   },
   "stages": {
@@ -79,33 +79,25 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "18/23 covered; missing: FISV, DIS, WEC, XEL, SN; selected sector checked by order planner"
+      "detail": "16/23 covered; missing: FISV, UNP, UPS, DIS, WEC, XEL, SN; selected sector checked by order planner"
     },
     "exit:PG": {
-      "success": false,
-      "detail": "NVIDIA-retry provider unavailable or returned empty content"
-    },
-    "exit:DUK": {
-      "success": false,
-      "detail": "NVIDIA-retry provider unavailable or returned empty content"
-    },
-    "exit:KMB": {
-      "success": false,
-      "detail": "NVIDIA-retry provider unavailable or returned empty content"
-    },
-    "exit:REGN": {
-      "success": false,
-      "detail": "NVIDIA-retry provider unavailable or returned empty content"
-    },
-    "catalyst_1": {
-      "success": true,
-      "detail": "Recovered with smaller batches after: ValueError: NVIDIA-retry provider unavailable or returned empty content"
-    },
-    "catalyst_1_recovery_1": {
       "success": true,
       "detail": "OpenRouter: JSON and contract accepted"
     },
-    "catalyst_1_recovery_2": {
+    "exit:DUK": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
+    "exit:KMB": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
+    "exit:REGN": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
+    "catalyst_1": {
       "success": true,
       "detail": "OpenRouter: JSON and contract accepted"
     },
@@ -151,24 +143,24 @@
     }
   },
   "degraded_reasons": [
-    "protection_rejected:PG",
-    "protection_rejected:DUK",
-    "protection_rejected:KMB",
+    "protection_stale:PG",
+    "protection_stale:DUK",
+    "protection_stale:KMB",
     "advisory_news_unavailable"
   ],
   "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 65,
-  "successes": 8,
-  "failures": 57,
+  "attempts": 43,
+  "successes": 11,
+  "failures": 32,
   "date": "2026-11-16",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
-    "protection_rejected:PG",
-    "protection_rejected:DUK",
-    "protection_rejected:KMB"
+    "protection_stale:PG",
+    "protection_stale:DUK",
+    "protection_stale:KMB"
   ],
   "order_status": "NO ORDER",
   "order_reason": "Data/LLM validation incomplete; no new order queued."
