@@ -1438,7 +1438,7 @@
   "total_realized_pnl": -2204.85,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.5724,
-  "last_updated": "2026-11-16",
+  "last_updated": "2026-11-17",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
@@ -3346,6 +3346,7 @@
     "2026-11-11",
     "2026-11-12",
     "2026-11-13",
-    "2026-11-16"
+    "2026-11-16",
+    "2026-11-17"
   ]
 }

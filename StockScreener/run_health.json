@@ -55,7 +55,7 @@
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "5 applied, 0 failed; no changes"
+      "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -79,7 +79,7 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "16/23 covered; missing: FISV, UNP, UPS, DIS, WEC, XEL, SN; selected sector checked by order planner"
+      "detail": "18/23 covered; missing: FISV, DIS, WEC, XEL, SN; selected sector checked by order planner"
     },
     "exit:PG": {
       "success": true,
@@ -152,7 +152,7 @@
   "attempts": 43,
   "successes": 11,
   "failures": 32,
-  "date": "2026-11-16",
+  "date": "2026-11-17",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
