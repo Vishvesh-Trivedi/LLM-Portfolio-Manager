@@ -2,13 +2,13 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.3-70b-instruct": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 11,
-      "successes": 7,
+      "attempts": 15,
+      "successes": 11,
       "failures": 4
     },
     "OpenRouter:google/gemma-4-31b-it:free": {
@@ -22,29 +22,29 @@
       "failures": 4
     },
     "NVIDIA:meta/llama-3.1-70b-instruct": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:nvidia/llama-3.1-nemotron-70b-instruct": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:meta/llama-3.1-405b-instruct": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:mistralai/mixtral-8x22b-instruct-v0.1": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:google/gemma-2-27b-it": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:meta/llama-3.1-8b-instruct": {
       "attempts": 2,
@@ -55,7 +55,7 @@
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "5 applied, 0 failed; no changes"
+      "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -81,6 +81,22 @@
       "success": true,
       "detail": "14/19 covered; missing: FISV, DIS, WEC, XEL, TXRH; selected sector checked by order planner"
     },
+    "exit:PG": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
+    "exit:DUK": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
+    "exit:KMB": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
+    "exit:REGN": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
     "catalyst_1": {
       "success": true,
       "detail": "OpenRouter: JSON and contract accepted"
@@ -102,8 +118,8 @@
       "detail": "OpenRouter: JSON and contract accepted"
     },
     "news": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "success": false,
+      "detail": "ValueError: NVIDIA-retry provider unavailable or returned empty content (sentiment enrichment skipped)"
     },
     "round1": {
       "success": false,
@@ -119,7 +135,7 @@
     },
     "broker": {
       "success": true,
-      "detail": "In sync: 4 position(s) match Alpaca"
+      "detail": "1 order(s) submitted, 0 failed (equity $99520.68)"
     },
     "alerts": {
       "success": true,
@@ -127,27 +143,18 @@
     }
   },
   "degraded_reasons": [
-    "stale_quote:PG",
-    "stale_quote:DUK",
-    "stale_quote:KMB",
-    "stale_quote:REGN",
-    "paper_horizon_unavailable:CMCSA"
+    "advisory_news_unavailable"
   ],
   "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 33,
-  "successes": 7,
-  "failures": 26,
+  "attempts": 43,
+  "successes": 11,
+  "failures": 32,
   "date": "2026-11-17",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
-  "trade_ready": false,
-  "trade_blockers": [
-    "stale_quote:PG",
-    "stale_quote:DUK",
-    "stale_quote:KMB",
-    "stale_quote:REGN"
-  ],
-  "order_status": "NO ORDER",
-  "order_reason": "Data/LLM validation incomplete; no new order queued."
+  "trade_ready": true,
+  "trade_blockers": [],
+  "order_status": "QUEUED",
+  "order_reason": "Queued ORLY for the next session Open; not filled"
 }
