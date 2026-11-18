@@ -3389,7 +3389,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-18T03:19:20.016647945Z",
+      "timestamp": "2026-11-18T03:19:20.016648Z",
       "order_id": "8643ca10-9b87-42b0-b04b-8860b5c4e168",
       "client_order_id": "8b4c1063-076b-49c2-9b58-2549c572fd6e",
       "symbol": "ORLY",
@@ -3402,7 +3402,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-18T03:19:20.016610549Z",
+      "timestamp": "2026-11-18T03:19:20.016611Z",
       "order_id": "673a4855-d252-4f64-b1ea-f3e52d2c3788",
       "client_order_id": "lpm-B-ORLY-802e33f423a7481ea2b024d1ac57bd0f",
       "symbol": "ORLY",
@@ -3415,7 +3415,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-18T03:19:20.016669097Z",
+      "timestamp": "2026-11-18T03:19:20.016669Z",
       "order_id": "3f6e0cde-e397-474d-b68a-8d704a21773f",
       "client_order_id": "50356261-5d61-4a05-bab1-59c1eae6eeed",
       "symbol": "ORLY",
