@@ -16,15 +16,12 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-18 03:52
+   Time:   2026-11-18 04:08
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked PG at 171.58 (broker)
-  Broker sync: Marked KMB at 107.9 (broker)
-  Broker sync: Marked REGN at 960.0 (broker)
   Broker sync: Cash set from broker: 33510.28 -> 33510.28
   run-digest (1291 chars):
 ALPACA - Nov 17 2026
@@ -65,4 +62,4 @@ NEXT ORDER
 STATUS
 - Checks: healthy
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1572459361240883272
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1572463423168581693
