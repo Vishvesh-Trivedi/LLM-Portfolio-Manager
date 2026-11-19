@@ -1,61 +1,10 @@
 {
-  "status": "degraded",
-  "providers": {
-    "NVIDIA:meta/llama-3.3-70b-instruct": {
-      "attempts": 3,
-      "successes": 0,
-      "failures": 3
-    },
-    "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 16,
-      "successes": 11,
-      "failures": 5
-    },
-    "OpenRouter:google/gemma-4-31b-it:free": {
-      "attempts": 5,
-      "successes": 0,
-      "failures": 5
-    },
-    "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 5,
-      "successes": 0,
-      "failures": 5
-    },
-    "NVIDIA:meta/llama-3.1-70b-instruct": {
-      "attempts": 3,
-      "successes": 0,
-      "failures": 3
-    },
-    "NVIDIA:nvidia/llama-3.1-nemotron-70b-instruct": {
-      "attempts": 3,
-      "successes": 0,
-      "failures": 3
-    },
-    "NVIDIA:meta/llama-3.1-405b-instruct": {
-      "attempts": 3,
-      "successes": 0,
-      "failures": 3
-    },
-    "NVIDIA:mistralai/mixtral-8x22b-instruct-v0.1": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:google/gemma-2-27b-it": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:meta/llama-3.1-8b-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    }
-  },
+  "status": "healthy",
+  "providers": {},
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "6 applied, 0 failed; no changes"
+      "detail": "2 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -63,96 +12,32 @@
     },
     "session": {
       "success": true,
-      "detail": "Completed session after 16:15 ET"
+      "detail": "before 16:15 ET"
     },
     "protection": {
       "success": true,
       "detail": "0 placed, 0 moved, 0 without levels"
     },
-    "market_context": {
-      "success": true,
-      "detail": "Exact-session VIX available"
-    },
-    "market_data": {
-      "success": true,
-      "detail": "925/926 exact-session quotes; missing: TCBI"
-    },
-    "fundamental_coverage": {
-      "success": true,
-      "detail": "13/14 covered; missing: SN; selected sector checked by order planner"
-    },
-    "exit:PG": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "exit:DUK": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "exit:KMB": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "exit:REGN": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "exit:ORLY": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "catalyst_1": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "catalysts": {
-      "success": true,
-      "detail": "14/14 verified"
-    },
-    "catalyst_2": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "catalyst_3": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "news": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "round1": {
-      "success": false,
-      "detail": "RuntimeError: HTTPError (HTTP 410)"
-    },
-    "round2": {
-      "success": true,
-      "detail": "Optional analysis context available; not a decision contract"
-    },
-    "final": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "broker": {
-      "success": true,
-      "detail": "In sync: 5 position(s) match Alpaca"
-    },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
+      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
     }
   },
   "degraded_reasons": [],
-  "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 44,
-  "successes": 11,
-  "failures": 33,
-  "date": "2026-11-18",
+  "label": "No successful LLM response",
+  "attempts": 0,
+  "successes": 0,
+  "failures": 0,
+  "date": "2026-11-19",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "screening",
-  "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
-  "trade_ready": true,
-  "trade_blockers": [],
-  "order_status": "REJECTED",
-  "order_reason": "Order not queued: maximum positions including pending orders reached"
+  "mode": "no_session",
+  "report": null,
+  "trade_ready": false,
+  "trade_blockers": [
+    "missing:market_data",
+    "missing:catalysts",
+    "missing:final"
+  ],
+  "order_status": "NO ORDER",
+  "order_reason": null
 }
