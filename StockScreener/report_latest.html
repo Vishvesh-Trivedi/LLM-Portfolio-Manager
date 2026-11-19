@@ -31,16 +31,16 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round1; stale_quote:PG; stale_quote:DUK; stale_quote:KMB; stale_quote:REGN; stale_quote:ORLY; paper_horizon_unavailable:BKNG; paper_horizon_unavailable:LOW<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
+<div class="wrap"><section role="status" style="background:white;border-left:5px solid #a15c00;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;line-height:1.6"><b>System status: DEGRADED</b><br>round1<br>Scores are uncalibrated LLM assessments, not probabilities of profit or correctness. LLM narratives are not verified facts; neither validation nor a healthy status guarantees correctness. Candidate observations and their as-of date are shown separately when available.<br>New entries are queued for a verified next-session open; estimated or reference prices are not fills. Orders remain subject to data freshness and mechanical safety checks. Not financial advice; no returns are guaranteed.</section>
   <h1>LLM Portfolio Manager</h1>
-        <p class="sub">Thursday November 19 2026  02:09 &nbsp;·&nbsp; OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free &nbsp;·&nbsp; Alpaca paper</p>
+        <p class="sub">Thursday November 19 2026  02:59 &nbsp;·&nbsp; OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free &nbsp;·&nbsp; Alpaca paper</p>
 
   <div class="mkt">
     <div class="mi"><div class="ml">VIX</div><div class="mv">24.6 &nbsp;HIGH (p92 risk</div></div>
     <div class="mi"><div class="ml">SPY Today</div>
         <div class="mv" style="color:#f44336">-0.28%</div></div>
     <div class="mi"><div class="ml">QQQ Trend</div><div class="mv">BEARISH</div></div>
-    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">Fed minutes signal further rate hikes and concern over AI-driven inflation, while Nvidia&#x27;s leadership turmoil and a record $81B Anthropic IPO highlight tech sec</div>
+    <div style="flex:1;color:#666;font-size:12px;padding-top:2px">Fed minutes signaling further rate hikes have pressured equities, with the S&amp;P 500 breaking key support and the VIX elevated at the 92nd percentile. Nvidia&#x27;s le</div>
   </div>
 
   <div class="tabs">
@@ -54,20 +54,50 @@ tr:last-child td{border-bottom:none}
   <div id="t-buy" class="tp on">
     <div class="section" style="border-left:4px solid #1565c0">
     <h2>🧠 What the AI Learned from Your Trade History</h2>
-    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">In MID_VIX_BEAR (VIX&gt;20, QQQ&lt;-5% vs 50MA), only defensive mean-reversion setups with no binary event risk have worked; momentum/chasing and earnings plays fail as correlation spikes.</p>
-    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Avoid earnings within 5 days in MID_VIX_BEAR regime (n=4/7 picks had earnings risk, all lost or neutral) - HIGH confidence</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Avoid Technology sector in MID_VIX_BEAR (n=3 picks: CDNS, MPWR, AMD all lost, avg -5.7%) - HIGH confidence</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Avoid Industrials in MID_VIX_BEAR (n=2 picks: RTX, GD both lost, avg -3.0%) - LOW CONFIDENCE (n&lt;3)</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 4:</span> Prefer defensive sectors with oversold short-term oscillators (stoch RSI &lt;0.1) + strong trend (ADX &gt;35) + insider buying + no earnings risk - pattern seen in CL setup</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 5:</span> Financial Services can work if rate-hike fears peak (MA won +5.3% with RSI 70.8, ADX not shown) - LOW CONFIDENCE (n=1)</li></ul>
+    <p style="color:#555;font-size:13px;margin-bottom:12px;font-style:italic">MID_VIX_BEAR regime (14% win rate) brutally punishes cyclical/tech exposure; only defensive names with confirmed institutional flow (unusual calls/insider buying) and relative strength vs SPY have edge, but post-earnings overbought conditions require smaller sizing.</p>
+    <ul style="list-style:none;padding:0"><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 1:</span> Rule (n=5, wr=0%, HIGH confidence): In MID_VIX_BEAR regime, Technology picks (CDNS, MPWR, AMD) all failed with avg loss -5.7% — avoid tech entirely.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 2:</span> Rule (n=2, wr=0%, HIGH confidence): In MID_VIX_BEAR, Industrials (RTX, GD) lost avg -3.0% — cyclical industrials fail in risk-off.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 3:</span> Rule (n=1, wr=100%, LOW confidence): Only MID_VIX_BEAR win was MA (Financial Services) with insider buying + defensive traits + strong momentum — institutional flow signal matters.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 4:</span> Rule (n=4, wr=0%, MEDIUM confidence): Post-earnings momentum plays (TGT, DIS, SN, WMT flagged at -1 day) historically reverse in week 2 per Round 2 analysis — earnings recency is a risk factor.</li><li style="padding:6px 0;border-bottom:1px solid #f0f0f0;color:#333"><span style="color:#1565c0;font-weight:600">Rule 5:</span> Rule (n=3, wr=0%, MEDIUM confidence): High ADX + bearish MACD (UPS, WMT, MDLZ) signals trend exhaustion — avoid trend-following when MACD contradicts ADX.</li></ul>
     <details style="margin-top:12px"><summary style="cursor:pointer;color:#888;font-size:12px">▶ Show rule evolution (last 5 runs)</summary><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-18 03:19</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Avoid earnings names in high VIX bear regimes (n=4 earnings names in MID_VIX_BEAR, 0 wins): TGT, DIS, WEC, LOW all have earnings risk and should be avoided.</li><li style="padding:2px 0">Cyclical sectors (Consumer Cyclical, Industrials, Financials) underperform in risk-off (n=7 MID_VIX_BEAR picks, 14% wr): Financials -1.9%, Industrials -0.6%, Cons Cyclical -0.8% today confirm.</li><li style="padding:2px 0">Relative strength vs SPY >0.5 with confirmed trend (ADX>30) is only reliable edge in bear markets (n=15 MID_VIX_NEUTRAL, 53% wr): BDX (ADX 53, RS +0.6), ORLY (ADX 33, RS +0.99) qualify; NOC (ADX 27) does not.</li><li style="padding:2px 0">Healthcare and recession-resilient defensives outperform when VIX>90th pctl (n=2 HIGH_VIX_BULL 0% wr but small sample; MID_VIX_NEUTRAL healthcare picks DHR/GILD neutral): BDX and ORLY (auto parts) fit.</li><li style="padding:2px 0">Overbought stochRSI>0.9 with negative CMF precedes pullbacks in bear tape (n=3 MID_VIX_BEAR losses with similar setup): ORLY stochRSI 0.95, CMF -0.075 is a specific risk.</li><li style="padding:2px 0">Position size <25% when VIX multiplier 0.7x and 4 positions open (risk management from portfolio constraints).</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-18 02:46</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">In bearish VIX regimes (MID_VIX_BEAR, n=7, wr=14%, LOW confidence): Technology picks lost 100% (0/3), Industrials lost 100% (0/2), Consumer Cyclical lost 100% (0/1). Only Financial Services won (1/1) but sector currently worst (-1.9%).</li><li style="padding:2px 0">In neutral VIX regimes (MID_VIX_NEUTRAL, n=15, wr=53%, HIGH confidence): Healthcare picks won 3/3 (DXCM, AXON, MTD), Industrials won 2/3 (CPRT, BR), Consumer Cyclical won 1/1 (EXPE). Technology lost 2/2 (FSLR, CDNS).</li><li style="padding:2px 0">System rule (HIGH confidence): Earnings within 5 days = near-disqualifier. Candidates TGT (today), UPS/DIS/HD (yesterday), LOW (risk) all carry extreme gap risk.</li><li style="padding:2px 0">Extreme overbought Stoch RSI >0.9 (n=1 observed ORLY, LOW confidence): Leads to immediate pullback in risk-off tapes.</li><li style="padding:2px 0">Strong trend (ADX>40) + accumulation (CMF>0.2) + insider buying (n=1 BDX, LOW confidence): Rare combo noted to persist 2-4 weeks in risk-off per Round 2 edge.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-17 05:08</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">MID_VIX_BEAR regime is hostile to momentum strategies (n=7, wr=14%, avg -2.7%) - HIGH CONFIDENCE</li><li style="padding:2px 0">Technology sector fails in MID_VIX_BEAR (n=3, wr=0%) - HIGH CONFIDENCE</li><li style="padding:2px 0">Industrials sector fails in MID_VIX_BEAR (n=2, wr=0%) - HIGH CONFIDENCE</li><li style="padding:2px 0">Consumer Cyclical fails in bear markets (DASH loss in regime, logical sector rotation) - MEDIUM CONFIDENCE</li><li style="padding:2px 0">Strong volume surge (vol_ratio >2x) with ADX >35 confirms trend conviction (CL profile) - MEDIUM CONFIDENCE</li><li style="padding:2px 0">Consumer Defensive sector leadership in risk-off flows aligns with regime (today's flows +0.3%) - HIGH CONFIDENCE</li><li style="padding:2px 0">Extreme overbought (stoch RSI=1.0) in bear market precedes pullbacks (GD RSI 73.9 lost -2.3% in regime) - MEDIUM CONFIDENCE</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-17 04:21</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Rule (n=7, wr=14%, HIGH confidence): In MID_VIX_BEAR regime, avoid Technology, Consumer Cyclical, and Industrials — all 6 picks in these sectors lost -1.2% to -7.2%. Only Financial Services (MA) won with insider buying + defensive traits.</li><li style="padding:2px 0">Rule (n=1 win pattern, LOW confidence): The sole MID_VIX_BEAR winner (MA +5.3%) combined insider buying, defensive sector tailwind, and bullish options flow.</li><li style="padding:2px 0">Rule (n=4, wr=0%, HIGH confidence): Post-earnings names (days_away ≤ 0) failed in bear tape — UPS, WEC, UNP all reported yesterday with sell-the-news reversal risk.</li><li style="padding:2px 0">Rule (n=4, wr=0%, HIGH confidence): Names with stoch_rsi = 1.0 (CL, KO, PEP, RSG) show extreme overbought vulnerability; in risk-off tape these face 3-5% pullbacks before any continuation.</li><li style="padding:2px 0">Rule (n=3, wr=0%, MEDIUM confidence): Weak tech_score (<40) combined with low vol_ratio (<1.5) correlates with losses in this regime — CDNS (35), MPWR (33), DASH (39) all failed.</li></ul></div><div style="margin-top:8px;padding:8px;background:#f8f9fa;border-radius:4px"><b style="font-size:11px;color:#888">2026-11-17 03:32</b><ul style="margin-top:4px;padding-left:16px;font-size:12px"><li style="padding:2px 0">Avoid Technology in MID_VIX_BEAR (n=3, wr=0%, HIGH confidence): CDNS, MPWR, AMD all lost -3% to -7%</li><li style="padding:2px 0">Avoid Industrials in MID_VIX_BEAR (n=2, wr=0%, HIGH confidence): RTX, GD both lost -2% to -4% despite strong ADX/momentum</li><li style="padding:2px 0">Avoid Consumer Cyclical in MID_VIX_BEAR (n=1, wr=0%, LOW confidence): DASH lost -1.2%</li><li style="padding:2px 0">Financial Services with insider buying only regime win (n=1, wr=100%, LOW confidence): MA +5.3% with insider buying score</li><li style="padding:2px 0">High ADX (>40) fails in bear regime (n=2, wr=0%, HIGH confidence): GD ADX 40.2, RTX strong momentum both lost</li><li style="padding:2px 0">Overbought RSI (>70) dangerous in bear market (n=2, mixed, MEDIUM confidence): GD RSI 73.9 lost, MA RSI 70.8 won but had insider catalyst</li></ul></div></details>
   </div>
     <div style="background:#1a1a2e;color:white;border-radius:12px;padding:24px;
-                margin-bottom:14px;border-left:8px solid #546e7a">
-      <div style="font-size:28px;font-weight:800;color:#546e7a;margin-bottom:6px">
-        NO PICK TODAY
+                margin-bottom:14px;border-left:8px solid #ff9800">
+      <div style="font-size:28px;font-weight:800;color:#ff9800;margin-bottom:6px">
+        REJECTED TGT
       </div>
       <div style="color:#aaa;font-size:13px">
         2026-11-19 &nbsp;·&nbsp; Consumer Defensive &nbsp;·&nbsp; TECHNICAL
       </div>
-            <div style="margin-top:10px;color:#ffb3b3;font-size:12px">LLM failure reason: Data/LLM validation incomplete; no new order queued.</div>
-      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>NO ORDER</b>: Data/LLM validation incomplete; no new order queued.</div><div style="color:#aaa;padding:10px 0">The LLM did not find a high-conviction setup today.</div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-11-18)</b><br>ticker=CL; sector=Consumer Defensive; source=TECHNICAL; rsi=59.4; short_ratio=3.8; short_pct_float=2.6</div>
+            
+      <div class="order-state" style="padding:12px;border:1px solid #888;color:#fff"><b>REJECTED</b>: Order not queued: maximum positions including pending orders reached</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0">
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">LLM score (uncalibrated)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">82/100</div>
+          <div style="background:rgba(255,255,255,.1);border-radius:99px;height:6px;margin-top:8px">
+            <div style="background:#ff9800;border-radius:99px;height:6px;width:82%"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Reference price (not a fill)</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">166.34</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Stop / Target</div>
+          <div style="font-size:18px;font-weight:700;color:white;margin-top:4px">157.28 / 184.46</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:8px;padding:14px">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Risk:Reward</div>
+          <div style="font-size:24px;font-weight:700;color:white;margin-top:4px">1:2.0</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:14px;
+                  font-size:14px;line-height:1.6;margin-bottom:10px;color:#ddd">
+          <b>LLM narrative (not verified facts)</b><br>
+          Consumer Defensive sector aligns with risk-off rotation (VIX 92nd pctile); 3.07% 5-day momentum on 2.5x volume with MACD bullish and CMF +0.17 confirms accumulation. Unusual call activity + RS vs SPY +4.3% signals institutional conviction in a bearish tape where defensive leadership is scarce.
+      </div>
+      <div style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);
+                  border-radius:8px;padding:12px;font-size:13px;color:#ffaaaa">
+          Risk (LLM narrative): Overbought stoch RSI + earnings recency in highest VIX regime since 2022 creates asymmetric downside if risk-off deepens.
+      </div><div style="font-size:12px;line-height:1.6;margin-top:12px;color:#ccc"><b>Candidate observations (facts_as_of: 2026-11-18)</b><br>ticker=TGT; sector=Consumer Defensive; source=TECHNICAL; rsi=60.1; short_ratio=4.1; short_pct_float=3.6</div>
     </div>
     <div class="sec">
       <div class="sh">Watch List</div>
@@ -75,24 +105,24 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
                   border-radius:6px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <span style="font-weight:700;font-size:16px">UPS</span>
-          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Industrials</span>
+          <span style="font-weight:700;font-size:16px">CL</span>
+          <span style="color:#888;font-size:13px">74/100 &nbsp;·&nbsp; Consumer Defensive</span>
         </div>
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
           <div style="background:#f9a825;border-radius:4px;height:4px;width:74%"></div>
         </div>
-        <div style="font-size:13px;color:#555">LLM narrative: Strongest technical setup (ADX 47.5, CMF +0.272, stoch RSI 0.06, short ratio 5.3%) offering asymmetric bounce if macro d</div>
+        <div style="font-size:13px;color:#555">LLM narrative: Deeply oversold stoch RSI 0.09 with ADX 38 trend intact in Consumer Defensive — pure mean-reversion bounce candidate if </div>
       </div>
       <div style="background:#fffde7;border-left:4px solid #ffc107;padding:12px 16px;
                   border-radius:6px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-          <span style="font-weight:700;font-size:16px">CB</span>
-          <span style="color:#888;font-size:13px">71/100 &nbsp;·&nbsp; Financial Services</span>
+          <span style="font-weight:700;font-size:16px">UPS</span>
+          <span style="color:#888;font-size:13px">71/100 &nbsp;·&nbsp; Industrials</span>
         </div>
         <div style="background:#ffe082;border-radius:4px;height:4px;margin-bottom:6px">
           <div style="background:#f9a825;border-radius:4px;height:4px;width:71%"></div>
         </div>
-        <div style="font-size:13px;color:#555">LLM narrative: Extreme oversold (stoch RSI 0.019) in strong trend (ADX 39.9) near 52-week high; could rally sharply if Fed minutes trig</div>
+        <div style="font-size:13px;color:#555">LLM narrative: Stoch RSI 0.06 extremely oversold with high ADX 47.5 and CMF +0.27 — high-probability bounce setup with short-cover fuel</div>
       </div>
     </div>
   </div>
@@ -103,8 +133,8 @@ tr:last-child td{border-bottom:none}
                 margin-bottom:14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Portfolio</div>
-        <div style="font-size:28px;font-weight:700">USD 99,004</div>
-                <div style="color:#f44336;font-size:15px;margin-top:2px">-1.0% vs Alpaca paper capital</div>
+        <div style="font-size:28px;font-weight:700">USD 99,209</div>
+                <div style="color:#f44336;font-size:15px;margin-top:2px">-0.8% vs Alpaca paper capital</div>
       </div>
       <div>
         <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px">Cash</div>
@@ -123,25 +153,56 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">PG</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +4.1%</span>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +4.3%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          123 shares &nbsp;·&nbsp; Value USD 20,904
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+822</span>
+          123 shares &nbsp;·&nbsp; Value USD 20,946
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+864</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
             <span>Stop 167.64</span><span>Target 174.0347</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:36%;background:#00c853;
+            <div style="position:absolute;left:0;width:41%;background:#00c853;
                         border-radius:4px;height:8px;opacity:.35"></div>
             <div style="position:absolute;left:2%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:36%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:41%;width:4px;height:16px;top:-4px;
                         background:#00c853;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 163.2647 &nbsp;·&nbsp; Current 169.95</div>
+          <div style="font-size:11px;color:#999">Entry 163.2647 &nbsp;·&nbsp; Current 170.2899932861328</div>
+        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:90%"></div>
+        </div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 9 of 10</div>
+      </div>
+      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
+                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div>
+            <span style="font-size:20px;font-weight:700">DUK</span>
+            <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
+          </div>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +1.3%</span>
+        </div>
+        <div style="color:#555;font-size:13px;margin-top:4px">
+          154 shares &nbsp;·&nbsp; Value USD 20,028
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+248</span>
+        </div>
+        
+          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
+            <span>Stop 127.06</span><span>Target 135.4888</span>
+          </div>
+          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
+            <div style="position:absolute;left:0;width:35%;background:#00c853;
+                        border-radius:4px;height:8px;opacity:.35"></div>
+            <div style="position:absolute;left:16%;width:3px;height:14px;top:-3px;
+                        background:#888;border-radius:2px"></div>
+            <div style="position:absolute;left:35%;width:4px;height:16px;top:-4px;
+                        background:#00c853;border-radius:2px"></div>
+          </div>
+          <div style="font-size:11px;color:#999">Entry 128.4388 &nbsp;·&nbsp; Current 130.0500030517578</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
           <div style="background:#90a4ae;border-radius:4px;height:5px;width:80%"></div>
         </div>
@@ -151,63 +212,32 @@ tr:last-child td{border-bottom:none}
                   box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
           <div>
-            <span style="font-size:20px;font-weight:700">DUK</span>
-            <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
-          </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +0.5%</span>
-        </div>
-        <div style="color:#555;font-size:13px;margin-top:4px">
-          154 shares &nbsp;·&nbsp; Value USD 19,883
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+103</span>
-        </div>
-        
-          <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 127.06</span><span>Target 135.4888</span>
-          </div>
-          <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:24%;background:#00c853;
-                        border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:16%;width:3px;height:14px;top:-3px;
-                        background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:24%;width:4px;height:16px;top:-4px;
-                        background:#00c853;border-radius:2px"></div>
-          </div>
-          <div style="font-size:11px;color:#999">Entry 128.4388 &nbsp;·&nbsp; Current 129.11</div>
-        <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:70%"></div>
-        </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 7 of 10</div>
-      </div>
-      <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
-                  box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #00c853">
-        <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <div>
             <span style="font-size:20px;font-weight:700">ORLY</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Consumer Cyclical</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +0.0%</span>
+          <span style="font-size:22px;font-weight:700;color:#00c853">▲ +0.8%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          79 shares &nbsp;·&nbsp; Value USD 7,315
-          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+0</span>
+          79 shares &nbsp;·&nbsp; Value USD 7,376
+          &nbsp;·&nbsp; P&amp;L <span style="color:#00c853;font-weight:600">+61</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
-            <span>Stop 89.2118</span><span>Target 99.3418</span>
+            <span>Stop 90.0</span><span>Target 99.3418</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:33%;background:#00c853;
+            <div style="position:absolute;left:0;width:36%;background:#00c853;
                         border-radius:4px;height:8px;opacity:.35"></div>
-            <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
+            <div style="position:absolute;left:28%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:33%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:36%;width:4px;height:16px;top:-4px;
                         background:#00c853;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 92.5918 &nbsp;·&nbsp; Current 92.5918</div>
+          <div style="font-size:11px;color:#999">Entry 92.5918 &nbsp;·&nbsp; Current 93.37000274658203</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:0%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:10%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 0 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 1 of 10</div>
       </div>
       <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
                   box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
@@ -216,29 +246,29 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">KMB</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -1.4%</span>
+          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -1.5%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          133 shares &nbsp;·&nbsp; Value USD 14,279
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-202</span>
+          133 shares &nbsp;·&nbsp; Value USD 14,263
+          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-218</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
             <span>Stop 105.83</span><span>Target 119.89</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:11%;background:#f44336;
+            <div style="position:absolute;left:0;width:10%;background:#f44336;
                         border-radius:4px;height:8px;opacity:.35"></div>
             <div style="position:absolute;left:22%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:11%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:10%;width:4px;height:16px;top:-4px;
                         background:#f44336;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 108.88 &nbsp;·&nbsp; Current 107.36</div>
+          <div style="font-size:11px;color:#999">Entry 108.88 &nbsp;·&nbsp; Current 107.23999786376953</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:50%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:60%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 5 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 6 of 10</div>
       </div>
       <div style="background:white;border-radius:10px;padding:16px 20px;margin-bottom:12px;
                   box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:5px solid #f44336">
@@ -247,29 +277,29 @@ tr:last-child td{border-bottom:none}
             <span style="font-size:20px;font-weight:700">REGN</span>
             <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
           </div>
-          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -3.2%</span>
+          <span style="font-size:22px;font-weight:700;color:#f44336">▼ -3.5%</span>
         </div>
         <div style="color:#555;font-size:13px;margin-top:4px">
-          11 shares &nbsp;·&nbsp; Value USD 10,428
-          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-349</span>
+          11 shares &nbsp;·&nbsp; Value USD 10,401
+          &nbsp;·&nbsp; P&amp;L <span style="color:#f44336;font-weight:600">-376</span>
         </div>
         
           <div style="margin:12px 0 2px;display:flex;justify-content:space-between;font-size:11px;color:#888">
             <span>Stop 924.96</span><span>Target 1089.25</span>
           </div>
           <div style="position:relative;background:#e8e8e8;border-radius:4px;height:8px;margin-bottom:4px">
-            <div style="position:absolute;left:0;width:14%;background:#f44336;
+            <div style="position:absolute;left:0;width:13%;background:#f44336;
                         border-radius:4px;height:8px;opacity:.35"></div>
             <div style="position:absolute;left:33%;width:3px;height:14px;top:-3px;
                         background:#888;border-radius:2px"></div>
-            <div style="position:absolute;left:14%;width:4px;height:16px;top:-4px;
+            <div style="position:absolute;left:13%;width:4px;height:16px;top:-4px;
                         background:#f44336;border-radius:2px"></div>
           </div>
-          <div style="font-size:11px;color:#999">Entry 979.723636 &nbsp;·&nbsp; Current 948.0</div>
+          <div style="font-size:11px;color:#999">Entry 979.723636 &nbsp;·&nbsp; Current 945.530029296875</div>
         <div style="margin-top:10px;background:#f0f0f0;border-radius:4px;height:5px">
-          <div style="background:#90a4ae;border-radius:4px;height:5px;width:30%"></div>
+          <div style="background:#90a4ae;border-radius:4px;height:5px;width:40%"></div>
         </div>
-        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 3 of 10</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">Day 4 of 10</div>
       </div>
   </div>
 
@@ -312,34 +342,23 @@ tr:last-child td{border-bottom:none}
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
                   padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <span style="font-size:17px;font-weight:700">PG</span>
-          <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">1.4% above stop</div>
-          <div style="font-size:12px;color:#888">Current 169.95 &nbsp;·&nbsp; Stop 167.64</div>
-        </div>
-      </div>
-      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
-                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div>
           <span style="font-size:17px;font-weight:700">KMB</span>
           <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">1.4% above stop</div>
-          <div style="font-size:12px;color:#888">Current 107.36 &nbsp;·&nbsp; Stop 105.83</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">1.3% above stop</div>
+          <div style="font-size:12px;color:#888">Current 107.23999786376953 &nbsp;·&nbsp; Stop 105.83</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
                   padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <span style="font-size:17px;font-weight:700">DUK</span>
-          <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
+          <span style="font-size:17px;font-weight:700">PG</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">Consumer Defensive</span>
         </div>
         <div style="text-align:right">
           <div style="font-size:15px;font-weight:600;color:#e65100">1.6% above stop</div>
-          <div style="font-size:12px;color:#888">Current 129.11 &nbsp;·&nbsp; Stop 127.06</div>
+          <div style="font-size:12px;color:#888">Current 170.2899932861328 &nbsp;·&nbsp; Stop 167.64</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
@@ -349,8 +368,19 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Healthcare</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">2.4% above stop</div>
-          <div style="font-size:12px;color:#888">Current 948.0 &nbsp;·&nbsp; Stop 924.96</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.2% above stop</div>
+          <div style="font-size:12px;color:#888">Current 945.530029296875 &nbsp;·&nbsp; Stop 924.96</div>
+        </div>
+      </div>
+      <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
+                  padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:17px;font-weight:700">DUK</span>
+          <span style="color:#888;font-size:13px;margin-left:8px">Utilities</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:600;color:#e65100">2.3% above stop</div>
+          <div style="font-size:12px;color:#888">Current 130.0500030517578 &nbsp;·&nbsp; Stop 127.06</div>
         </div>
       </div>
       <div style="background:#fff8e1;border-left:4px solid #ff9800;border-radius:8px;
@@ -360,8 +390,8 @@ tr:last-child td{border-bottom:none}
           <span style="color:#888;font-size:13px;margin-left:8px">Consumer Cyclical</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:15px;font-weight:600;color:#e65100">3.7% above stop</div>
-          <div style="font-size:12px;color:#888">Current 92.5918 &nbsp;·&nbsp; Stop 89.2118</div>
+          <div style="font-size:15px;font-weight:600;color:#e65100">3.6% above stop</div>
+          <div style="font-size:12px;color:#888">Current 93.37000274658203 &nbsp;·&nbsp; Stop 90.0</div>
         </div>
       </div>
     </div>
