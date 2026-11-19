@@ -1,5 +1,5 @@
 {
-  "cash": 26195.53,
+  "cash": 26195.52,
   "starting_capital": 100000.0,
   "positions": [
     {
@@ -1517,7 +1517,7 @@
     "2026-11-17"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 99120.68,
+  "broker_equity": 99120.67,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -3472,7 +3472,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-19T02:40:29.984171547Z",
+      "timestamp": "2026-11-19T02:40:29.984172Z",
       "order_id": "d1a35f77-177c-4132-b65a-d122bc0371e4",
       "client_order_id": "268b489f-8600-4868-9fa9-429711e6d893",
       "symbol": "ORLY",
@@ -3485,7 +3485,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-19T02:40:29.984121852Z",
+      "timestamp": "2026-11-19T02:40:29.984122Z",
       "order_id": "1543c6ca-8551-42bb-a08b-910a3679d899",
       "client_order_id": "lpm-P-ORLY-802e33f423a7481ea2b08cac3315",
       "symbol": "ORLY",
