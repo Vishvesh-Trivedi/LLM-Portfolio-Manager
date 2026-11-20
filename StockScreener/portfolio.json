@@ -27,12 +27,12 @@
       "stop_price": 127.06,
       "target_price": 135.4888,
       "sector": "Utilities",
-      "current_price": 129.1,
-      "current_value": 19881.4,
+      "current_price": 129.3,
+      "current_value": 19912.2,
       "cost_basis": 19779.58,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 101.82,
-      "unrealized_pnl_pct": 0.5147733167236046,
+      "unrealized_pnl": 132.62,
+      "unrealized_pnl_pct": 0.6704894643870141,
       "hold_days": 9,
       "held_sessions": 9,
       "hold_sessions": 10,
@@ -1588,7 +1588,7 @@
     "2026-11-19"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 98262.7,
+  "broker_equity": 98293.5,
   "alpaca_order_ledger": [
     {
       "source": "poll",
