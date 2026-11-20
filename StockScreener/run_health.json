@@ -7,19 +7,19 @@
       "failures": 2
     },
     "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 10,
-      "successes": 5,
-      "failures": 5
+      "attempts": 11,
+      "successes": 7,
+      "failures": 4
     },
     "OpenRouter:google/gemma-4-31b-it:free": {
-      "attempts": 5,
+      "attempts": 4,
       "successes": 0,
-      "failures": 5
+      "failures": 4
     },
     "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 5,
+      "attempts": 4,
       "successes": 0,
-      "failures": 5
+      "failures": 4
     },
     "NVIDIA:meta/llama-3.1-70b-instruct": {
       "attempts": 2,
@@ -42,20 +42,20 @@
       "failures": 2
     },
     "NVIDIA:google/gemma-2-27b-it": {
-      "attempts": 1,
+      "attempts": 2,
       "successes": 0,
-      "failures": 1
+      "failures": 2
     },
     "NVIDIA:meta/llama-3.1-8b-instruct": {
-      "attempts": 1,
+      "attempts": 2,
       "successes": 0,
-      "failures": 1
+      "failures": 2
     }
   },
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "6 applied, 0 failed; exit_filled=3"
+      "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -79,7 +79,15 @@
     },
     "fundamental_coverage": {
       "success": true,
-      "detail": "11/12 covered; missing: SN; selected sector checked by order planner"
+      "detail": "9/12 covered; missing: UPS, DIS, SN; selected sector checked by order planner"
+    },
+    "exit:DUK": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
+    },
+    "exit:ORLY": {
+      "success": true,
+      "detail": "OpenRouter: JSON and contract accepted"
     },
     "catalyst_1": {
       "success": true,
@@ -111,31 +119,24 @@
     },
     "broker": {
       "success": true,
-      "detail": "In sync: 2 position(s) match Alpaca"
+      "detail": "1 order(s) submitted, 0 failed (equity $98279.42)"
     },
     "alerts": {
       "success": true,
       "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
     }
   },
-  "degraded_reasons": [
-    "stale_quote:DUK",
-    "stale_quote:ORLY",
-    "paper_horizon_unavailable:MDLZ"
-  ],
+  "degraded_reasons": [],
   "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 32,
-  "successes": 5,
-  "failures": 27,
+  "attempts": 33,
+  "successes": 7,
+  "failures": 26,
   "date": "2026-11-19",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
-  "trade_ready": false,
-  "trade_blockers": [
-    "stale_quote:DUK",
-    "stale_quote:ORLY"
-  ],
-  "order_status": "NO ORDER",
-  "order_reason": "Data/LLM validation incomplete; no new order queued."
+  "trade_ready": true,
+  "trade_blockers": [],
+  "order_status": "QUEUED",
+  "order_reason": "Queued CAH for the next session Open; not filled"
 }
