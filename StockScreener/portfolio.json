@@ -3687,7 +3687,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-21T02:56:37.858176341Z",
+      "timestamp": "2026-11-21T02:56:37.858176Z",
       "order_id": "d794d723-2158-427b-87c5-f952748d30e2",
       "client_order_id": "ea9d2871-b13b-4e40-b423-346e73f8d690",
       "symbol": "KHC",
@@ -3700,7 +3700,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-21T02:56:37.85814227Z",
+      "timestamp": "2026-11-21T02:56:37.858142Z",
       "order_id": "9b66f3b0-4980-4fdd-b70f-0949f7fbbbb5",
       "client_order_id": "lpm-B-KHC-269f2bf2020a4fbf96170386bcd7a3d1",
       "symbol": "KHC",
@@ -3713,7 +3713,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-21T02:56:37.858198715Z",
+      "timestamp": "2026-11-21T02:56:37.858199Z",
       "order_id": "269fd7da-48d5-411e-ad21-1d7154f76a2a",
       "client_order_id": "4d6dfaab-8337-42aa-baa4-c12567033ce8",
       "symbol": "KHC",
