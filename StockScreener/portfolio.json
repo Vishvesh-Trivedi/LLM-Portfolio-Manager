@@ -1641,7 +1641,7 @@
     "2026-11-20"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 97965.93,
+  "broker_equity": 97971.46,
   "alpaca_order_ledger": [
     {
       "source": "poll",
@@ -3478,12 +3478,12 @@
     },
     {
       "source": "poll",
-      "event": "new",
-      "timestamp": "2026-11-17T09:10:43.598618Z",
+      "event": "pending_cancel",
+      "timestamp": "2026-11-21T02:56:26.973041Z",
       "order_id": "51e44199-1e22-4043-9ab9-3c0f5257a3f4",
       "client_order_id": "lpm-P-DUK-c17860d664f2411ca938041bc8ed",
       "symbol": "DUK",
-      "status": "new",
+      "status": "pending_cancel",
       "filled_qty": "0",
       "filled_avg_price": "",
       "qty": "154",
@@ -3661,7 +3661,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-21T01:34:04.555986848Z",
+      "timestamp": "2026-11-21T01:34:04.555987Z",
       "order_id": "9293addf-689c-45f0-bb18-7b75f16af7d5",
       "client_order_id": "3cef66e5-0f42-456b-a810-646a7d00f342",
       "symbol": "CAH",
@@ -3674,7 +3674,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-21T01:34:04.555940638Z",
+      "timestamp": "2026-11-21T01:34:04.555941Z",
       "order_id": "37b9ed3c-4660-49b1-aa5e-3805534bda41",
       "client_order_id": "lpm-P-CAH-5510fff02275435eb74e4c338fe3",
       "symbol": "CAH",
@@ -3682,6 +3682,45 @@
       "filled_qty": "0",
       "filled_avg_price": "",
       "qty": "64",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-11-21T02:56:37.858176341Z",
+      "order_id": "d794d723-2158-427b-87c5-f952748d30e2",
+      "client_order_id": "ea9d2871-b13b-4e40-b423-346e73f8d690",
+      "symbol": "KHC",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "522",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-11-21T02:56:37.85814227Z",
+      "order_id": "9b66f3b0-4980-4fdd-b70f-0949f7fbbbb5",
+      "client_order_id": "lpm-B-KHC-269f2bf2020a4fbf96170386bcd7a3d1",
+      "symbol": "KHC",
+      "status": "accepted",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "522",
+      "side": "buy"
+    },
+    {
+      "source": "poll",
+      "event": "held",
+      "timestamp": "2026-11-21T02:56:37.858198715Z",
+      "order_id": "269fd7da-48d5-411e-ad21-1d7154f76a2a",
+      "client_order_id": "4d6dfaab-8337-42aa-baa4-c12567033ce8",
+      "symbol": "KHC",
+      "status": "held",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "522",
       "side": "sell"
     }
   ],
