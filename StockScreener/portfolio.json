@@ -79,12 +79,12 @@
       "stop_price": 90.0,
       "target_price": 99.3418,
       "sector": "Consumer Cyclical",
-      "current_price": 93.12,
-      "current_value": 7356.48,
+      "current_price": 93.07,
+      "current_value": 7352.53,
       "cost_basis": 7314.75,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 41.73,
-      "unrealized_pnl_pct": 0.5704911309340588,
+      "unrealized_pnl": 37.78,
+      "unrealized_pnl_pct": 0.5164906524488089,
       "hold_days": 3,
       "held_sessions": 3,
       "hold_sessions": 10,
@@ -1641,7 +1641,7 @@
     "2026-11-20"
   ],
   "equity_peak": 103487.41,
-  "broker_equity": 97957.76,
+  "broker_equity": 97953.81,
   "alpaca_order_ledger": [
     {
       "source": "poll",
