@@ -16,54 +16,11 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-24 10:29
+   Time:   2026-11-24 10:53
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Marked DUK at 129.99 (broker)
-  Broker sync: Marked KHC at 25.41 (broker)
   Broker sync: Cash set from broker: 40156.13 -> 40156.13
-  Protection: ORLY 79 sh  stop $90.25 / target $99.34
-  run-digest (1188 chars):
-ALPACA - Nov 24 2026
-Live paper account.
-
-WHAT HAPPENED TODAY
-- ORLY protected: sells at $90.25 or $99.34
-
-WHAT YOU HOLD (4)
-- CAH: down $383 (-2.2%)  |  64 shares, $277.96 -> $271.97
-  sells at $267.88 or $298.12  |  day 2 of 10
-  Close to its sell price - watch this one
-- ORLY: up $56 (+0.8%)  |  79 shares, $92.59 -> $93.30
-  sells at $90.25 or $99.34  |  day 4 of 10
-- DUK: up $239 (+1.2%)  |  154 shares, $128.44 -> $129.99
-  sells at $127.06 or $135.49  |  day 11 of 10
-  Holding period is up - due to be sold
-- KHC: up $214 (+1.6%)  |  522 shares, $25.00 -> $25.41
-  sells at $23.95 or $27.31  |  day 1 of 10
-
-MONEY
-- Cash $40,156  |  In shares $58,059
-- Total $98,215 (down $1,785, -1.8% since start)
-- NOTE $869 of realised money is not accounted for by any closed trade - one is probably recorded wrong
-
-SINCE TRADING ON ALPACA
-- 20 trades finished: 5 made money, 12 lost money, 3 broke even
-- Win rate 29% (5 of 17 that moved)
-- Won $4,012 across 5 trades (average +4.2%)
-- Lost $6,791 across 12 trades (average -4.1%)
-- Banked $2,779 loss
-
-NEXT ORDER
-- None. US markets were shut (before 16:15 ET)
-- Your holdings and their sell orders are unchanged
-
-STATUS
-- Checks: healthy
-
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1574733815128268900
-  WhatsApp run-digest: sent
   No completed trading session (before 16:15 ET); broker state reconciled only
