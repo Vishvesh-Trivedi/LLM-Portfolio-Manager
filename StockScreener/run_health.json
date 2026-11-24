@@ -2,39 +2,39 @@
   "status": "degraded",
   "providers": {
     "NVIDIA:meta/llama-3.3-70b-instruct": {
-      "attempts": 3,
+      "attempts": 2,
       "successes": 0,
-      "failures": 3
+      "failures": 2
     },
     "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 14,
-      "successes": 9,
-      "failures": 5
+      "attempts": 12,
+      "successes": 10,
+      "failures": 2
     },
     "OpenRouter:google/gemma-4-31b-it:free": {
-      "attempts": 5,
+      "attempts": 2,
       "successes": 0,
-      "failures": 5
+      "failures": 2
     },
     "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 5,
+      "attempts": 2,
       "successes": 0,
-      "failures": 5
+      "failures": 2
     },
     "NVIDIA:meta/llama-3.1-70b-instruct": {
-      "attempts": 3,
+      "attempts": 2,
       "successes": 0,
-      "failures": 3
+      "failures": 2
     },
     "NVIDIA:nvidia/llama-3.1-nemotron-70b-instruct": {
-      "attempts": 3,
+      "attempts": 2,
       "successes": 0,
-      "failures": 3
+      "failures": 2
     },
     "NVIDIA:meta/llama-3.1-405b-instruct": {
-      "attempts": 3,
+      "attempts": 2,
       "successes": 0,
-      "failures": 3
+      "failures": 2
     },
     "NVIDIA:mistralai/mixtral-8x22b-instruct-v0.1": {
       "attempts": 2,
@@ -55,7 +55,7 @@
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "5 applied, 0 failed; fill=1"
+      "detail": "4 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -67,11 +67,11 @@
     },
     "protection": {
       "success": true,
-      "detail": "1 placed, 0 moved, 0 without levels"
+      "detail": "0 placed, 0 moved, 0 without levels"
     },
     "market_context": {
-      "success": true,
-      "detail": "Exact-session VIX available"
+      "success": false,
+      "detail": "ValueError: VIX exact-session quote unavailable"
     },
     "market_data": {
       "success": true,
@@ -114,8 +114,8 @@
       "detail": "ValueError: NVIDIA-retry provider unavailable or returned empty content (sentiment enrichment skipped)"
     },
     "round1": {
-      "success": false,
-      "detail": "RuntimeError: HTTPError (HTTP 410)"
+      "success": true,
+      "detail": "Optional ranking context available; not a decision contract"
     },
     "round2": {
       "success": true,
@@ -127,7 +127,7 @@
     },
     "broker": {
       "success": true,
-      "detail": "1 order(s) submitted, 0 failed (equity $97748.26)"
+      "detail": "In sync: 3 position(s) match Alpaca"
     },
     "alerts": {
       "success": true,
@@ -135,20 +135,22 @@
     }
   },
   "degraded_reasons": [
-    "protection_rejected:ORLY",
+    "protection_stale:ORLY",
+    "stale_vix",
     "advisory_news_unavailable"
   ],
   "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 42,
-  "successes": 9,
-  "failures": 33,
-  "date": "2026-11-24",
+  "attempts": 30,
+  "successes": 10,
+  "failures": 20,
+  "date": "2026-11-23",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
-    "protection_rejected:ORLY"
+    "protection_stale:ORLY",
+    "stale_vix"
   ],
   "order_status": "NO ORDER",
   "order_reason": "Data/LLM validation incomplete; no new order queued."

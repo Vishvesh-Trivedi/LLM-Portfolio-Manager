@@ -27,12 +27,12 @@
       "stop_price": 127.06,
       "target_price": 135.4888,
       "sector": "Utilities",
-      "current_price": 129.47000122070312,
-      "current_value": 19938.38,
+      "current_price": 127.9057,
+      "current_value": 19697.48,
       "cost_basis": 19779.58,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 158.8,
-      "unrealized_pnl_pct": 0.8028481899008844,
+      "unrealized_pnl": -82.1,
+      "unrealized_pnl_pct": -0.4150745364664088,
       "hold_days": 11,
       "held_sessions": 11,
       "hold_sessions": 10,
@@ -79,12 +79,12 @@
       "stop_price": 90.25,
       "target_price": 99.3418,
       "sector": "Consumer Cyclical",
-      "current_price": 93.62000274658203,
-      "current_value": 7395.98,
+      "current_price": 93.3,
+      "current_value": 7370.7,
       "cost_basis": 7314.75,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 81.23,
-      "unrealized_pnl_pct": 1.1104959157865801,
+      "unrealized_pnl": 55.95,
+      "unrealized_pnl_pct": 0.7648928534809807,
       "hold_days": 4,
       "held_sessions": 4,
       "hold_sessions": 10,
@@ -175,12 +175,12 @@
       "stop_price": 23.95,
       "target_price": 27.31,
       "sector": "Consumer Defensive",
-      "current_price": 25.100000381469727,
-      "current_value": 13102.2,
+      "current_price": 25.13,
+      "current_value": 13117.86,
       "cost_basis": 13050.0,
       "brokerage_in": 0.0,
-      "unrealized_pnl": 52.2,
-      "unrealized_pnl_pct": 0.40000000000000036,
+      "unrealized_pnl": 67.86,
+      "unrealized_pnl_pct": 0.5200000000000093,
       "hold_days": 1,
       "held_sessions": 1,
       "hold_sessions": 10,
@@ -195,7 +195,8 @@
       "quote_date": "2026-11-23",
       "last_evaluated_session": "2026-11-23",
       "earnings_days_away": -19,
-      "indicator_exit_note": ""
+      "indicator_exit_note": "",
+      "mark_basis": "broker_current_price"
     }
   ],
   "closed_trades": [
@@ -1625,7 +1626,7 @@
   "total_realized_pnl": -2743.41,
   "created": "2026-08-03",
   "last_nzdusd_rate": 0.5724,
-  "last_updated": "2026-11-24",
+  "last_updated": "2026-11-23",
   "sharesies_month": "2026-09",
   "sharesies_bought_usd": 4615.54,
   "sharesies_sold_usd": 4495.68,
@@ -3743,7 +3744,7 @@
     {
       "source": "poll",
       "event": "accepted",
-      "timestamp": "2026-11-24T04:49:17.024147937Z",
+      "timestamp": "2026-11-24T04:49:17.024148Z",
       "order_id": "6ab0f69b-9fec-40b7-9f92-ffcedec5168c",
       "client_order_id": "lpm-P-KHC-269f2bf2020a4fbf96172d86feba",
       "symbol": "KHC",
@@ -3756,7 +3757,7 @@
     {
       "source": "poll",
       "event": "held",
-      "timestamp": "2026-11-24T04:49:17.024187216Z",
+      "timestamp": "2026-11-24T04:49:17.024187Z",
       "order_id": "3b7eba48-be99-4e13-880f-c8cb3158e285",
       "client_order_id": "902ca40f-4681-432d-8899-59334477ce7d",
       "symbol": "KHC",
@@ -3764,6 +3765,19 @@
       "filled_qty": "0",
       "filled_avg_price": "",
       "qty": "522",
+      "side": "sell"
+    },
+    {
+      "source": "poll",
+      "event": "accepted",
+      "timestamp": "2026-11-24T05:10:12.326967378Z",
+      "order_id": "994989eb-8ebf-4a95-9079-5bcdeff2f6c7",
+      "client_order_id": "lpm-S-DUK-c17860d664f2411ca9383faf126ba320",
+      "symbol": "DUK",
+      "status": "accepted",
+      "filled_qty": "0",
+      "filled_avg_price": "",
+      "qty": "154",
       "side": "sell"
     }
   ],
@@ -3840,6 +3854,7 @@
     "2026-11-18",
     "2026-11-19",
     "2026-11-20",
-    "2026-11-24"
+    "2026-11-24",
+    "2026-11-23"
   ]
 }

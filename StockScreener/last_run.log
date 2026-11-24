@@ -16,42 +16,36 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-24 04:49
+   Time:   2026-11-24 05:23
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
 note: No config_overrides.json — using defaults
+  Catching up: 2026-11-23 closed without being screened; processing it now instead of reporting "before 16:15 ET"
   Discord: bot can post to #alpaca-bot-1 (server 412586050452455424)
-  Broker sync: Filled KHC: 522 @ 25.0 (broker confirmed)
   Broker sync: Marked DUK at 127.9057 (broker)
   Broker sync: Marked ORLY at 93.3 (broker)
-  Broker sync: Marked CAH at 271.97 (broker)
+  Broker sync: Marked KHC at 25.13 (broker)
   Broker sync: Cash set from broker: 40156.14 -> 40156.14
-  Protection: the old ORLY order has not cleared yet; replacing anyway
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"79","held_for_orders":"79","message":"insufficient qty available for order (requested: 79, available: 0)","related_orders":["1543c6ca-8551-42bb-a08b-91
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"79","held_for_orders":"79","message":"insufficient qty available for order (requested: 79, available: 0)","related_orders":["1543c6ca-8551-42bb-a08b-91
-  Alpaca POST HTTP 403: {"available":"0","code":40310000,"existing_qty":"79","held_for_orders":"79","message":"insufficient qty available for order (requested: 79, available: 0)","related_orders":["1543c6ca-8551-42bb-a08b-91
-  Protection: KHC 522 sh  stop $23.95 / target $27.31
-ALPACA PAPER ACCOUNT: $97,998.78 (-2,001.22 / -2.0% vs $100,000 starting)
+ALPACA PAPER ACCOUNT: $97,748.26 (-2,251.74 / -2.2% vs $100,000 starting)
 Cash: $40,156.14  |  Positions: 4/5  |  Deployed: 59%  |  Idle: 41%
 Sector exposure: Utilities: 20%  Healthcare: 18%  Consumer Defensive: 13%  Consumer Cyclical: 8%
-Broker P&L: $-2,001.22 all-time  |  no closed trades this week
-  DUK [Utilities]: 154sh @ $128.4388 → $129.47000122070312 (+159 / +0.8%) | 11d | Stop $127.06 | Target $135.4888 | EARNINGS IN -18d ⚠
-  ORLY [Consumer Cyclical]: 79sh @ $92.5918 → $93.62000274658203 (+81 / +1.1%) | 4d | Stop $90.25 | Target $99.3418 | EARNINGS IN -26d ⚠
+Broker P&L: $-2,251.74 all-time  |  no closed trades this week
+  DUK [Utilities]: 154sh @ $128.4388 → $127.9057 (-82 / -0.4%) | 11d | Stop $127.06 | Target $135.4888 | EARNINGS IN -18d ⚠
+  ORLY [Consumer Cyclical]: 79sh @ $92.5918 → $93.3 (+56 / +0.8%) | 4d | Stop $90.25 | Target $99.3418 | EARNINGS IN -26d ⚠
   CAH [Healthcare]: 64sh @ $277.96 → $271.9700012207031 (-383 / -2.2%) | 2d | Stop $267.88 | Target $298.12
-  KHC [Consumer Defensive]: 522sh @ $25.0 → $25.100000381469727 (+52 / +0.4%) | 1d | Stop $23.95 | Target $27.31 | EARNINGS IN -19d ⚠
+  KHC [Consumer Defensive]: 522sh @ $25.0 → $25.13 (+68 / +0.5%) | 1d | Stop $23.95 | Target $27.31 | EARNINGS IN -19d ⚠
 
 Step 1/8: Updating past results + exit signals...
 
 Step 2/8: Market context...
 
 Market context...
-  VIX:  26.62 (p95.7) -> HIGH (p96 risk-off) (0.7x)
+  VIX unavailable: display fallback only; new orders blocked
   QQQ:  $651.03 | BEARISH (-8.27% vs 50MA)
   SPY today: +4.71%
-  10Y yield: 4.92% (+0.16%)  DXY: 104.29 (+0.46%)  Nikkei: +3.88%
-  Futures:  ES=+4.87%  NQ=+6.87%
-  *** DEFENSIVE MODE ACTIVE ***
+  10Y yield: 4.92% (+0.16%)  DXY: 104.28 (-0.04%)  Nikkei: +4.08%
+  Futures:  ES=+0.26%  NQ=+0.19%
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
@@ -61,7 +55,7 @@ Step 3/8: Fetching all data (parallel)...
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 895 stocks (parallel)...
-  Full fundamentals: 625/895 stocks
+  Full fundamentals: 429/895 stocks
   Sector ranks - Top 3: ['Consumer Cyclical', 'Utilities', 'Technology'] | Perf: Consumer Cyclical:-0.1% | Utilities:-0.3% | Technology:-0.5% | Consumer Defensive:-1.2% | Industrials:-1.4%
   Sector flows: TOP Technology +8.9% | BOT Energy -1.2%
 
@@ -95,23 +89,23 @@ Step 4.5/8: Stream B - headline ticker extraction...
   LLM attempt 1/1 failed [nvidia/llama-3.1-nemotron-70b-instruct]: HTTPError (HTTP 410)
   exit:DUK: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] DUK: Position up 0.8% after 11 sessions (exceeding 10-session plan) but well above stop and far from target; defensive utility characteristics provide buffer amid elevated VIX and bearish QQQ. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] DUK: Position remains above stop with defensive characteristics intact despite session limit exceeded. (no ledger changes)
   LLM model fallback: meta/llama-3.1-405b-instruct -> mistralai/mixtral-8x22b-instruct-v0.1 (404 model unavailable)
   LLM attempt 1/1 failed [meta/llama-3.1-405b-instruct]: HTTPError (HTTP 404)
   exit:ORLY: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] ORLY: Position up 1.1% with stop intact and 6 sessions remaining; thesis intact despite elevated VIX and bearish QQQ. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] ORLY: Position shows a small gain with thesis still intact, but bearish QQQ backdrop suggests staying patient rather than adding or exiting. (no ledger changes)
   LLM model fallback: mistralai/mixtral-8x22b-instruct-v0.1 -> google/gemma-2-27b-it (410 model unavailable)
   LLM attempt 1/1 failed [mistralai/mixtral-8x22b-instruct-v0.1]: HTTPError (HTTP 410)
   exit:CAH: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [MEDIUM] CAH: Position down 2.15% but above stop ($267.88) with oversold thesis intact; bearish market (VIX 26.6, QQQ bearish) warrants close monitoring for stop breach or thesis confirmation. (no ledger changes)
+  [ADVISORY ONLY] HOLD [MEDIUM] CAH: Position down 2.15% in bearish market but still above stop; monitor for oversold bounce confirmation or further deterioration. (no ledger changes)
   NVIDIA paused for 120s after repeated failures
   LLM model fallback: google/gemma-2-27b-it -> meta/llama-3.1-8b-instruct (404 model unavailable)
   LLM attempt 1/1 failed [google/gemma-2-27b-it]: HTTPError (HTTP 404)
   exit:KHC: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] KHC: Thesis intact with bullish MACD and defensive sector tailwind; position up 0.4% after 1 of 10 sessions, well above stop at $23.95. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] KHC: Position up 0.52% after one session with thesis intact; well above stop and far from target, so maintain. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
   Fetching options + insider data for 10 candidates...
@@ -133,11 +127,11 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
   catalyst_2: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
     Batch 2/2 
-  Catalyst scoring done — 7 auto-dropped, 3 remain
+  Catalyst scoring done — 8 auto-dropped, 2 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (3 candidates, 3 layers)...
+Phase 5 - News intelligence (2 candidates, 3 layers)...
   NVIDIA paused for 120s after repeated failures
   LLM model fallback: meta/llama-3.1-70b-instruct -> nvidia/llama-3.1-nemotron-70b-instruct (410 model unavailable)
   LLM attempt 1/2 failed [meta/llama-3.1-70b-instruct]: HTTPError (HTTP 410)
@@ -154,107 +148,87 @@ Phase 5 - News intelligence (3 candidates, 3 layers)...
   News intelligence failed (ValueError: NVIDIA-retry provider unavailable or returned empty content) - neutral baseline for display only
   News enrichment unavailable - trading continues on verified prices, verified catalysts and the final decision.
 
-Phase 5.5 - Computing score breakdown (3 candidates)...
-  Pre-score top 5: CTAS(49=35T+14N [vader:NEUTRAL])  CMS(47=31T+16N [vader:NEUTRAL])  BDX(46=29T+17N [vader:NEUTRAL])
+Phase 5.5 - Computing score breakdown (2 candidates)...
+  Pre-score top 5: CMS(47=31T+16N [vader:NEUTRAL])  BDX(46=29T+17N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  3 candidates after config criteria
+  2 candidates after config criteria
   Self-calibration: 33 prior picks, 36% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (3 candidates)...
-  Round 1/3: Ranking 3 candidates...
-  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: _ReplyCutOff: reply cut off at max_tokens
-  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
-  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
+Phase 6 - NVIDIA final scoring (2 candidates)...
+  Round 1/3: Ranking 2 candidates...
+  -> NVIDIA unavailable; answered via OpenRouter.
+  Round 1 → Top 10: ['CMS', 'BDX']
+  Round 2/3: Deep-diving top 10...
+  -> NVIDIA unavailable; answered via OpenRouter.
+  Round 2 → analyses for ['BDX', 'CMS']
+  Round 3/3: Final deliberation...
   LLM model fallback: google/gemma-2-27b-it -> meta/llama-3.1-8b-instruct (404 model unavailable)
   LLM attempt 1/2 failed [google/gemma-2-27b-it]: HTTPError (HTTP 404)
-  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: _ReplyCutOff: reply cut off at max_tokens
-  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
-  OpenRouter paused for 120s after repeated failures
-  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
   LLM model fallback: meta/llama-3.1-8b-instruct -> meta/llama-3.3-70b-instruct (410 model unavailable)
   LLM attempt 2/2 failed [meta/llama-3.1-8b-instruct]: HTTPError (HTTP 410)
-  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: _ReplyCutOff: reply cut off at max_tokens
-  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
-  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
-  OpenRouter paused for 120s after repeated failures
-  Round 1 failed (RuntimeError: HTTPError (HTTP 410)) — using pre_score top 10
-  Round 2/3: Deep-diving top 10...
-  NVIDIA paused for 120s after repeated failures
-  LLM model fallback: meta/llama-3.3-70b-instruct -> meta/llama-3.1-70b-instruct (410 model unavailable)
-  LLM attempt 1/2 failed [meta/llama-3.3-70b-instruct]: HTTPError (HTTP 410)
-  LLM model fallback: meta/llama-3.1-70b-instruct -> nvidia/llama-3.1-nemotron-70b-instruct (410 model unavailable)
-  LLM attempt 2/2 failed [meta/llama-3.1-70b-instruct]: HTTPError (HTTP 410)
-  -> Answered via OpenRouter backup provider.
-  Round 2 → analyses for ['BDX', 'CTAS', 'CMS']
-  Round 3/3: Final deliberation...
-  LLM model fallback: nvidia/llama-3.1-nemotron-70b-instruct -> meta/llama-3.1-405b-instruct (410 model unavailable)
-  LLM attempt 1/2 failed [nvidia/llama-3.1-nemotron-70b-instruct]: HTTPError (HTTP 410)
-  NVIDIA paused for 120s after repeated failures
-  LLM model fallback: meta/llama-3.1-405b-instruct -> mistralai/mixtral-8x22b-instruct-v0.1 (404 model unavailable)
-  LLM attempt 2/2 failed [meta/llama-3.1-405b-instruct]: HTTPError (HTTP 404)
   final: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
   Final pick: NONE | pre=? → 0/100 | NO PICK | 12 LLM calls this run
 
 ┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. Rule (n=8, wr=12%, HIGH confidence): In bearish regimes with VIX>20 (MID_VIX_BEAR), technology and industrial picks lost 6 of 6 times — avoid these sectors when QQQ below 50MA and VIX elevated.
-│ 2. Rule (n=1, wr=100%, LOW confidence): In HIGH_VIX_BEAR, consumer defensive with tech_score>35 and RSI>65 succeeded — but no consumer defensive candidate today.
-│ 3. Rule (n=16, wr=50%, HIGH confidence): In neutral regimes, positive 5d momentum (>1%), tech_score>35, and bullish options/insider signals yielded 50% win rate but negative avg return (-0.8%).
-│ 4. Rule (n=multiple, HIGH confidence): MACD bearish + negative RS vs SPY + ADX<30 consistently preceded losses (CTAS, CMS profiles).
-│ → History shows bearish high-VIX regimes punish cyclicals/tech; only defensive quality worked, but today's defensive sector lag suggests regime rotation, leaving no high-conviction setup above 80.
+│ 1. Avoid Technology in MID_VIX_BEAR (n=3, wr=0%, avg loss -4.6%) - HIGH confidence
+│ 2. Avoid Industrials in MID_VIX_BEAR (n=2, wr=0%, avg loss -3.0%) - LOW confidence (small sample)
+│ 3. Healthcare untested in MID_VIX_BEAR (0 picks) - UNKNOWN
+│ 4. Strong trend (ADX>40) not protective in this regime: GD lost with ADX 40.2 - LOW confidence (n=1)
+│ 5. Only Financial Services worked in MID_VIX_BEAR (MA +5.3%) - n=1, LOW confidence
+│ 6. Stochastic RSI oversold divergence (<0.3) in strong uptrend (ADX>50) is a high-probability continuation setup not historically tested in this regime - NEW PATTERN
+│ → MID_VIX_BEAR is the worst-performing regime historically (12% win rate, -2.7% avg); only Financial Services (MA) succeeded, while Tech/Industrials/Cyclical consistently failed — extreme selectivity required.
 └──────────────────────────────────────────────────────────────
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
 
 █████████████████████████████████████████████████████████████████
   TODAY'S PICK  —  Tuesday, Nov 24 2026
 █████████████████████████████████████████████████████████████████
-  Market:  VIX 26.6 (HIGH (p96 risk-off))  |  QQQ BEARISH  |  SPY +4.62%
+  Market:  VIX 20.0 (MODERATE (p50 neutral))  |  QQQ BEARISH  |  SPY +4.62%
   Macro:   Unavailable
 ─────────────────────────────────────────────────────────────────
   NO PICK TODAY
   Data/LLM validation incomplete; no new order queued.
 
   WATCH LIST:
-    BDX     76/100  [Healthcare]  Strongest trend (ADX 51) with bullish options and positive CMF; near 5
-    CTAS    72/100  [Industrials]  Defined earnings catalyst (Apr 24) with volume spike (2.15x) and solid
+    BDX     75/100  [Healthcare]  Strongest technical trend (ADX 51) with heavy accumulation (CMF 0.214,
+    CMS     65/100  [Utilities]  Defensive utility catching sector rotation bid as capital flees tech (
 █████████████████████████████████████████████████████████████████
-  Broker SELL 154 DUK: submitted
+  Broker: in sync (3 position(s))
 
 Step 8/8: Saving results...
   OK: Saved BDX | Stop:208.67 Target:229.14
-  OK: Saved CTAS | Stop:216.41 Target:238.06
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
   CONFIRMED PICKS: 10/31 wins (32.3%) | avg 10d -1.4% | 7 pending
-  WATCH LIST: 37/68 wins (54.4%) | avg 10d -0.5% | 31 pending
+  WATCH LIST: 37/68 wins (54.4%) | avg 10d -0.5% | 32 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1276 chars):
-ALPACA - Nov 24 2026
+  run-digest (1261 chars):
+ALPACA - Nov 23 2026
 Live paper account.
 
 WHAT HAPPENED TODAY
-- BOUGHT 522 KHC at $25.00 ($13,050)
-- KHC protected: sells at $23.95 or $27.31
+- Nothing was bought or sold
 
 WHAT YOU HOLD (4)
 - CAH: down $383 (-2.2%)  |  64 shares, $277.96 -> $271.97
   sells at $267.88 or $298.12  |  day 2 of 10
   Close to its sell price - watch this one
-- KHC: up $52 (+0.4%)  |  522 shares, $25.00 -> $25.10
-  sells at $23.95 or $27.31  |  day 1 of 10
-- DUK: up $159 (+0.8%)  |  154 shares, $128.44 -> $129.47
+- DUK: down $82 (-0.4%)  |  154 shares, $128.44 -> $127.91
   sells at $127.06 or $135.49  |  day 11 of 10
   Close to its sell price - watch this one
-- ORLY: up $81 (+1.1%)  |  79 shares, $92.59 -> $93.62
+- KHC: up $68 (+0.5%)  |  522 shares, $25.00 -> $25.13
+  sells at $23.95 or $27.31  |  day 1 of 10
+- ORLY: up $56 (+0.8%)  |  79 shares, $92.59 -> $93.30
   sells at $90.25 or $99.34  |  day 4 of 10
 
 MONEY
-- Cash $40,156  |  In shares $57,843
+- Cash $40,156  |  In shares $57,592
 - Total $97,748 (down $2,252, -2.3% since start)
 - NOTE $869 of realised money is not accounted for by any closed trade - one is probably recorded wrong
 
@@ -267,14 +241,15 @@ SINCE TRADING ON ALPACA
 
 NEXT ORDER
 - Nothing ordered, because:
-  a stop order was refused by Alpaca, so no new risk was added until that is sorted
+  an old stop could not be cancelled, so no new risk was added
+  the market volatility reading was out of date
 
 STATUS
 - Checks: degraded
-- Blocked: protection_rejected:ORLY
+- Blocked: protection_stale:ORLY, stale_vix
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1574653342586634262
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1574660076055044187
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::protection_rejected:ORLY; advisory_news_unavailable | stages: news, round1
+::warning title=Run completed with degradations::protection_stale:ORLY; stale_vix; advisory_news_unavailable | stages: market_context, news
 
-  Completed with degradations (not a failure): protection_rejected:ORLY; advisory_news_unavailable | stages: news, round1
+  Completed with degradations (not a failure): protection_stale:ORLY; stale_vix; advisory_news_unavailable | stages: market_context, news
