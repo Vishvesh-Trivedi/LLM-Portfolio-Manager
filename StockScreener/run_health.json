@@ -8,18 +8,18 @@
     },
     "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
       "attempts": 14,
-      "successes": 9,
-      "failures": 5
+      "successes": 7,
+      "failures": 7
     },
     "OpenRouter:google/gemma-4-31b-it:free": {
-      "attempts": 5,
+      "attempts": 7,
       "successes": 0,
-      "failures": 5
+      "failures": 7
     },
     "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 5,
+      "attempts": 7,
       "successes": 0,
-      "failures": 5
+      "failures": 7
     },
     "NVIDIA:meta/llama-3.1-70b-instruct": {
       "attempts": 3,
@@ -42,14 +42,14 @@
       "failures": 3
     },
     "NVIDIA:google/gemma-2-27b-it": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:meta/llama-3.1-8b-instruct": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     }
   },
   "stages": {
@@ -114,16 +114,16 @@
       "detail": "OpenRouter: JSON and contract accepted"
     },
     "news": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "success": false,
+      "detail": "ValueError: NVIDIA-retry provider unavailable or returned empty content (sentiment enrichment skipped)"
     },
     "round1": {
       "success": false,
-      "detail": "RuntimeError: HTTPError (HTTP 404)"
+      "detail": "RuntimeError: HTTPError (HTTP 410)"
     },
     "round2": {
-      "success": true,
-      "detail": "Optional analysis context available; not a decision contract"
+      "success": false,
+      "detail": "RuntimeError: HTTPError (HTTP 410)"
     },
     "final": {
       "success": false,
@@ -141,13 +141,14 @@
   "degraded_reasons": [
     "protection_stale:ORLY",
     "protection_stale:CAH",
-    "protection_stale:KHC"
+    "protection_stale:KHC",
+    "advisory_news_unavailable"
   ],
   "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 43,
-  "successes": 9,
-  "failures": 34,
-  "date": "2026-11-25",
+  "attempts": 49,
+  "successes": 7,
+  "failures": 42,
+  "date": "2026-11-26",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
