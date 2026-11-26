@@ -16,7 +16,7 @@ OK: Universe loaded:
 
 OK: All functions loaded
 DAILY STOCK SCREENER v6.2
-   Time:   2026-11-26 03:40
+   Time:   2026-11-26 04:23
    Folder: /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener
    Stocks: 903 | ETFs: 26
 =================================================================
@@ -39,19 +39,19 @@ Market context...
   VIX:  28.29 (p98.0) -> HIGH (p98 risk-off) (0.7x)
   QQQ:  $633.93 | BEARISH (-10.34% vs 50MA)
   SPY today: -0.29%
-  10Y yield: 4.85% (-1.10%)  DXY: 103.81 (+0.00%)  Nikkei: +1.54%
-  Futures:  ES=+0.26%  NQ=+0.12%
+  10Y yield: 4.85% (-1.10%)  DXY: 103.81 (+0.00%)  Nikkei: +1.27%
+  Futures:  ES=+0.41%  NQ=+0.38%
   *** DEFENSIVE MODE ACTIVE ***
 
 Step 3/8: Fetching all data (parallel)...
   Alpaca: 926/926 tickers
   Downloaded: 926/926 tickers
   WARNING: No NVIDIA chat model answered the probe — keeping hardcoded rotation.
-  RSS feeds active: 11/16 | Headlines: 66
+  RSS feeds active: 13/16 | Headlines: 78
   Fetching news for all 900 stocks (parallel)...
   News found: 0/900 stocks have news today
   Fetching fundamentals for all 896 stocks (parallel)...
-  Full fundamentals: 448/896 stocks
+  Full fundamentals: 451/896 stocks
   Sector ranks - Top 3: ['Basic Materials', 'Healthcare', 'Consumer Defensive'] | Perf: Basic Materials:+3.5% | Healthcare:+3.5% | Consumer Defensive:+2.6% | Communication Services:+2.5% | Real Estate:+2.3%
   Sector flows: TOP Basic Materials +2.0% | BOT Technology -0.8%
 
@@ -85,17 +85,17 @@ Step 4.5/8: Stream B - headline ticker extraction...
   LLM attempt 1/1 failed [nvidia/llama-3.1-nemotron-70b-instruct]: HTTPError (HTTP 410)
   exit:ORLY: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] ORLY: Position up 4.4% with stop well below current price; target not yet reached, hold for remaining sessions. (no ledger changes)
+  [ADVISORY ONLY] HOLD [MEDIUM] ORLY: Price remains above stop and below target with 4 sessions left, but elevated VIX and bearish QQQ warrant close monitoring. (no ledger changes)
   LLM model fallback: meta/llama-3.1-405b-instruct -> mistralai/mixtral-8x22b-instruct-v0.1 (404 model unavailable)
   LLM attempt 1/1 failed [meta/llama-3.1-405b-instruct]: HTTPError (HTTP 404)
   exit:CAH: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [LOW] CAH: Position up 1.78% with 4 of 10 sessions held, above stop but below target; bearish market backdrop warrants patience (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] CAH: Position up 1.78% with thesis intact, stop not threatened, and 6 sessions remaining; bearish market warrants patience but no urgent action needed. (no ledger changes)
   LLM model fallback: mistralai/mixtral-8x22b-instruct-v0.1 -> google/gemma-2-27b-it (410 model unavailable)
   LLM attempt 1/1 failed [mistralai/mixtral-8x22b-instruct-v0.1]: HTTPError (HTTP 410)
   exit:KHC: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
-  [ADVISORY ONLY] HOLD [MEDIUM] KHC: Position up 6% with defensive characteristics intact, but elevated VIX and bearish QQQ warrant monitoring for risk-off pressure. (no ledger changes)
+  [ADVISORY ONLY] HOLD [LOW] KHC: Position up 6% in 3 sessions, well above stop at $25.36, target $27.31 not yet reached, defensive sector offers resilience amid high VIX and bearish QQQ. (no ledger changes)
 
 Step 4.6/8: Options P/C + insider + congress + SEC 8-K...
   Fetching options + insider data for 23 candidates...
@@ -129,11 +129,11 @@ Step 4.7/8: LLM catalyst scoring (every candidate)...
   catalyst_4: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
     Batch 4/4 
-  Catalyst scoring done — 3 auto-dropped, 20 remain
+  Catalyst scoring done — 1 auto-dropped, 22 remain
 
 Step 5/8: News intelligence (3 layers + analyst actions + SEC filings)...
 
-Phase 5 - News intelligence (20 candidates, 3 layers)...
+Phase 5 - News intelligence (22 candidates, 3 layers)...
   LLM model fallback: nvidia/llama-3.1-nemotron-70b-instruct -> meta/llama-3.1-405b-instruct (410 model unavailable)
   LLM attempt 1/2 failed [nvidia/llama-3.1-nemotron-70b-instruct]: HTTPError (HTTP 410)
   LLM model fallback: meta/llama-3.1-405b-instruct -> mistralai/mixtral-8x22b-instruct-v0.1 (404 model unavailable)
@@ -141,19 +141,20 @@ Phase 5 - News intelligence (20 candidates, 3 layers)...
   news: NVIDIA provider unavailable or returned empty content
   ↩️  Critical LLM call recovered via OpenRouter.
   Sentiment: NEUTRAL | Adj: -5
-  20 candidates after news filter
+  AUTO DROPPED: AZO
+  21 candidates after news filter
 
-Phase 5.5 - Computing score breakdown (20 candidates)...
+Phase 5.5 - Computing score breakdown (21 candidates)...
   Pre-score top 5: LIN(53=36T+17N [vader:NEUTRAL])  DIS(51=36T+15N [vader:NEUTRAL])  TGT(51=35T+16N [vader:NEUTRAL])  COR(49=35T+14N [vader:NEUTRAL])  EXC(48=31T+17N [vader:NEUTRAL])
 
 Step 5.5/8: Applying LLM config criteria...
-  20 candidates after config criteria
+  21 candidates after config criteria
   Self-calibration: 34 prior picks, 38% win rate
 
 Step 6/8: LLM final scoring...
 
-Phase 6 - NVIDIA final scoring (20 candidates)...
-  Round 1/3: Ranking 20 candidates...
+Phase 6 - NVIDIA final scoring (21 candidates)...
+  Round 1/3: Ranking 21 candidates...
   NVIDIA paused for 120s after repeated failures
   LLM model fallback: mistralai/mixtral-8x22b-instruct-v0.1 -> google/gemma-2-27b-it (410 model unavailable)
   LLM attempt 1/2 failed [mistralai/mixtral-8x22b-instruct-v0.1]: HTTPError (HTTP 410)
@@ -174,43 +175,38 @@ Phase 6 - NVIDIA final scoring (20 candidates)...
   LLM model fallback: meta/llama-3.3-70b-instruct -> meta/llama-3.1-70b-instruct (410 model unavailable)
   LLM attempt 2/2 failed [meta/llama-3.3-70b-instruct]: HTTPError (HTTP 410)
   -> Answered via OpenRouter backup provider.
-  Round 2 → analyses for ['LIN', 'CB', 'TGT', 'GD', 'EXC', 'COR', 'ABBV', 'DIS', 'AZO', 'XEL']
+  Round 2 → analyses for ['LIN', 'CB', 'AJG', 'EXC', 'GD', 'COR', 'ABBV', 'TGT', 'DIS', 'XEL']
   Round 3/3: Final deliberation...
   LLM model fallback: meta/llama-3.1-70b-instruct -> nvidia/llama-3.1-nemotron-70b-instruct (410 model unavailable)
   LLM attempt 1/2 failed [meta/llama-3.1-70b-instruct]: HTTPError (HTTP 410)
   LLM model fallback: nvidia/llama-3.1-nemotron-70b-instruct -> meta/llama-3.1-405b-instruct (410 model unavailable)
   LLM attempt 2/2 failed [nvidia/llama-3.1-nemotron-70b-instruct]: HTTPError (HTTP 410)
   final: NVIDIA provider unavailable or returned empty content
-  ↩️  Critical LLM call recovered via OpenRouter.
-  Final pick: NONE | pre=? → 0/100 | NO PICK | 12 LLM calls this run
-
-┌─ LLM SELF-DERIVED RULES ────────────────────────────────────────────
-│ 1. In HIGH_VIX_BEAR regime, defensive sectors (Utilities, Consumer Defensive) with insider buying and strong trend (ADX>35) produced 100% win rate (n=2, wr=100%, LOW CONFIDENCE due to n<3).
-│ 2. Technology, Industrials, and Cyclicals underperformed in elevated VIX bear regimes (MID_VIX_BEAR: n=8, wr=12%, HIGH CONFIDENCE).
-│ 3. Earnings risk within 2 weeks correlated with losses across regimes (multiple instances, HIGH CONFIDENCE).
-│ 4. Positive money flow (CMF>0.1) combined with bullish options flow improved win probability in neutral regimes (MID_VIX_NEUTRAL: n=16, wr=50%, LOW CONFIDENCE).
-│ → History shows defensive quality with insider signals wins in high-VIX risk-off, but current candidates lack the strong trend (ADX>35) that characterized past winners.
-└──────────────────────────────────────────────────────────────
+  OpenRouter fallback failed [nvidia/nemotron-3-ultra-550b-a55b:free]: _ReplyCutOff: reply cut off at max_tokens
+  OpenRouter fallback failed [google/gemma-4-31b-it:free]: HTTPError (HTTP 429)
+  OpenRouter fallback failed [google/gemma-4-26b-a4b-it:free]: HTTPError (HTTP 429)
+  final: OpenRouter provider unavailable or returned empty content
+  NVIDIA paused for 120s after repeated failures
+  LLM model fallback: meta/llama-3.1-405b-instruct -> mistralai/mixtral-8x22b-instruct-v0.1 (404 model unavailable)
+  LLM attempt 1/2 failed [meta/llama-3.1-405b-instruct]: HTTPError (HTTP 404)
+  LLM model fallback: mistralai/mixtral-8x22b-instruct-v0.1 -> google/gemma-2-27b-it (410 model unavailable)
+  LLM attempt 2/2 failed [mistralai/mixtral-8x22b-instruct-v0.1]: HTTPError (HTTP 410)
+  final: NVIDIA-retry provider unavailable or returned empty content
+  Round 3 failed: ValueError: NVIDIA-retry provider unavailable or returned empty content
   LLM configuration proposals disabled (self-tuning opt-in is off); no automatic tuning.
 
 █████████████████████████████████████████████████████████████████
   TODAY'S PICK  —  Thursday, Nov 26 2026
 █████████████████████████████████████████████████████████████████
   Market:  VIX 28.3 (HIGH (p98 risk-off))  |  QQQ BEARISH  |  SPY -0.30%
-  Macro:   U.S. markets showed mixed action with a sharp tech selloff (QQQ -10.35% vs 50MA)
+  Macro:   U.S. equity futures are rebounding after a volatile session where the Dow outper
 ─────────────────────────────────────────────────────────────────
   NO PICK TODAY
   Data/LLM validation incomplete; no new order queued.
-
-  WATCH LIST:
-    EXC     72/100  [Utilities]  Utilities defensive with insider BUYING and bullish options flow, but 
-    TGT     70/100  [Consumer Defensive]  Consumer Defensive with bullish MACD, positive CMF (+0.155), and unusu
 █████████████████████████████████████████████████████████████████
   Broker: in sync (3 position(s))
 
 Step 8/8: Saving results...
-  OK: Saved EXC | Stop:45.4 Target:48.73
-  OK: Saved TGT | Stop:163.57 Target:189.72
 Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 
 ────────────────────────────────────────────────────────────
@@ -218,7 +214,7 @@ Report saved → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/S
   WATCH LIST: 38/73 wins (52.1%) | avg 10d -1.1% | 33 pending
   Full report → /home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html
 ────────────────────────────────────────────────────────────
-  run-digest (1052 chars):
+  run-digest (1076 chars):
 ALPACA - Nov 25 2026
 Live paper account.
 
@@ -247,14 +243,12 @@ SINCE TRADING ON ALPACA
 
 NEXT ORDER
 - Nothing ordered, because:
+  the final decision did not pass
   an old stop could not be cancelled, so no new risk was added
 
 STATUS
-- Checks: degraded
-- Blocked: protection_stale:ORLY, protection_stale:CAH, protection_stale:KHC
+- Checks: failed
+- Blocked: failed:final, protection_stale:ORLY, protection_stale:CAH
 
-  Discord run-digest: sent -> channel 1550275967325310996 msg 1575360561124876429
+  Discord run-digest: sent -> channel 1550275967325310996 msg 1575372356522610691
   WhatsApp run-digest: sent
-::warning title=Run completed with degradations::protection_stale:ORLY; protection_stale:CAH; protection_stale:KHC | stages: round1
-
-  Completed with degradations (not a failure): protection_stale:ORLY; protection_stale:CAH; protection_stale:KHC | stages: round1

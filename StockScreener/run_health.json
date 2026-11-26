@@ -1,5 +1,5 @@
 {
-  "status": "degraded",
+  "status": "failed",
   "providers": {
     "NVIDIA:meta/llama-3.3-70b-instruct": {
       "attempts": 3,
@@ -8,18 +8,18 @@
     },
     "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
       "attempts": 14,
-      "successes": 10,
-      "failures": 4
+      "successes": 9,
+      "failures": 5
     },
     "OpenRouter:google/gemma-4-31b-it:free": {
-      "attempts": 4,
+      "attempts": 5,
       "successes": 0,
-      "failures": 4
+      "failures": 5
     },
     "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 4,
+      "attempts": 5,
       "successes": 0,
-      "failures": 4
+      "failures": 5
     },
     "NVIDIA:meta/llama-3.1-70b-instruct": {
       "attempts": 3,
@@ -32,14 +32,14 @@
       "failures": 3
     },
     "NVIDIA:meta/llama-3.1-405b-instruct": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:mistralai/mixtral-8x22b-instruct-v0.1": {
-      "attempts": 2,
+      "attempts": 3,
       "successes": 0,
-      "failures": 2
+      "failures": 3
     },
     "NVIDIA:google/gemma-2-27b-it": {
       "attempts": 2,
@@ -126,8 +126,8 @@
       "detail": "Optional analysis context available; not a decision contract"
     },
     "final": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
+      "success": false,
+      "detail": "ValueError: NVIDIA-retry provider unavailable or returned empty content"
     },
     "broker": {
       "success": true,
@@ -144,15 +144,16 @@
     "protection_stale:KHC"
   ],
   "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 39,
-  "successes": 10,
-  "failures": 29,
+  "attempts": 43,
+  "successes": 9,
+  "failures": 34,
   "date": "2026-11-25",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
   "mode": "screening",
   "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
   "trade_ready": false,
   "trade_blockers": [
+    "failed:final",
     "protection_stale:ORLY",
     "protection_stale:CAH",
     "protection_stale:KHC"
