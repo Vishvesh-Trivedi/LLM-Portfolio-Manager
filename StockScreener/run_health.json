@@ -1,61 +1,10 @@
 {
-  "status": "degraded",
-  "providers": {
-    "NVIDIA:meta/llama-3.3-70b-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free": {
-      "attempts": 10,
-      "successes": 8,
-      "failures": 2
-    },
-    "OpenRouter:google/gemma-4-31b-it:free": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "OpenRouter:google/gemma-4-26b-a4b-it:free": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:meta/llama-3.1-70b-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:nvidia/llama-3.1-nemotron-70b-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:meta/llama-3.1-405b-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:mistralai/mixtral-8x22b-instruct-v0.1": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:google/gemma-2-27b-it": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    },
-    "NVIDIA:meta/llama-3.1-8b-instruct": {
-      "attempts": 2,
-      "successes": 0,
-      "failures": 2
-    }
-  },
+  "status": "healthy",
+  "providers": {},
   "stages": {
     "broker_sync": {
       "success": true,
-      "detail": "4 applied, 0 failed; no changes"
+      "detail": "1 applied, 0 failed; no changes"
     },
     "missed_sessions": {
       "success": true,
@@ -63,82 +12,32 @@
     },
     "session": {
       "success": true,
-      "detail": "Completed session after 16:15 ET"
+      "detail": "already processed"
     },
     "protection": {
       "success": true,
       "detail": "0 placed, 0 moved, 0 without levels"
     },
-    "market_context": {
-      "success": true,
-      "detail": "Exact-session VIX available"
-    },
-    "market_data": {
-      "success": true,
-      "detail": "925/926 exact-session quotes; missing: TCBI"
-    },
-    "fundamental_coverage": {
-      "success": true,
-      "detail": "1/1 covered; missing: none; selected sector checked by order planner"
-    },
-    "exit:ORLY": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "exit:CAH": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "exit:KHC": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "catalyst_1": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "catalysts": {
-      "success": true,
-      "detail": "1/1 verified"
-    },
-    "news": {
-      "success": false,
-      "detail": "ValueError: NVIDIA-retry provider unavailable or returned empty content (sentiment enrichment skipped)"
-    },
-    "round1": {
-      "success": true,
-      "detail": "Optional ranking context available; not a decision contract"
-    },
-    "round2": {
-      "success": true,
-      "detail": "Optional analysis context available; not a decision contract"
-    },
-    "final": {
-      "success": true,
-      "detail": "OpenRouter: JSON and contract accepted"
-    },
-    "broker": {
-      "success": true,
-      "detail": "In sync: 3 position(s) match Alpaca"
-    },
     "alerts": {
       "success": true,
-      "detail": "discord: 1 sent, 0 failed; whatsapp: 1 sent, 0 failed"
+      "detail": "discord: 0 sent, 0 failed; whatsapp: 0 sent, 0 failed"
     }
   },
-  "degraded_reasons": [
-    "advisory_news_unavailable"
-  ],
-  "label": "OpenRouter:nvidia/nemotron-3-ultra-550b-a55b:free",
-  "attempts": 28,
-  "successes": 8,
-  "failures": 20,
+  "degraded_reasons": [],
+  "label": "No successful LLM response",
+  "attempts": 0,
+  "successes": 0,
+  "failures": 0,
   "date": "2026-11-27",
   "output": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener",
-  "mode": "screening",
-  "report": "/home/runner/work/LLM-Portfolio-Manager/LLM-Portfolio-Manager/StockScreener/report_latest.html",
-  "trade_ready": true,
-  "trade_blockers": [],
+  "mode": "already_processed",
+  "report": null,
+  "trade_ready": false,
+  "trade_blockers": [
+    "missing:market_data",
+    "missing:catalysts",
+    "missing:final"
+  ],
   "order_status": "NO ORDER",
-  "order_reason": "No qualifying BUY signal"
+  "order_reason": null
 }
